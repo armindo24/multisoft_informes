@@ -1,0 +1,136 @@
+{% extends 'admin/base_site.html'%}
+
+{% block extrahead %}
+	<link rel="stylesheet" href="/static/css/jquery-ui.css"> 
+    <link rel="stylesheet" href="/static/chosen_v1.4.2/chosen.css">
+    <link rel="stylesheet" href="/static/chosen_v1.4.2/docsupport/prism.css">
+    <script src="/static/js/jquery-ui.js"></script>
+    <script src="/static/js/puntos-decimales.js"></script>
+    <script src="/static/js/jquery.maskedinput.min.js"></script>
+    <script src="/static/chosen_v1.4.2/chosen.jquery.js"></script>
+	<script src="/static/chosen_v1.4.2/docsupport/prism.js"></script> 
+	{% include 'finanzas/balancegeneral_metodos.html' %}
+{% endblock %}
+
+{% block header %}
+	Balance General: 
+{% endblock %}
+
+{% block content %}
+	<div class="panel-group" id="accordion" >
+	    <div class="panel panel-default">
+	        <div class="panel-heading"  data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
+	            <h4 class="panel-title">
+	               Filtros
+	            </h4>
+	        </div>
+	        <div id="collapseOne" class="panel-collapse collapse">
+	            <div class="panel-body">
+					<div class="panel-group" id="archivo_accordion" style="margin-bottom: 0px;">
+						<div class="row show-grid">
+						   <div style="text-align:center;" class="col-md-6 col-sm-6">
+						   		<th style="vertical-align: middle;">
+									<b>
+										Empresa:
+									</b>
+								</th>
+								<td>
+									<select name="empresa" data-placeholder="Empresa..." onchange="" class="chosen-select" tabindex="2">
+						          	</select>
+								</td>
+						   </div>
+						    <div style="text-align:center;" class="col-md-6 col-sm-6">
+						   		<th style="vertical-align: middle;">
+									<b>
+										Per&#237;odo:
+									</b>
+								</th>
+								<td>
+									<input style="width:50px" type="text" onkeyup="" name="periodo" >
+									<a type="button" class="btn btn-xs btn-primary" onclick="buscar_cuenta();"><i class="fa fa-check"></i></a>
+								</td>
+						   </div>
+						</div>
+						<div class="row show-grid">
+						   <div style="text-align:center;" class="col-md-6 col-sm-6">
+						   		<th style="vertical-align: middle;">
+									<b>
+										Cta. desde:
+									</b>
+								</th>
+								<td>
+									<select name="cuentad" data-placeholder="Cuenta..." onchange="" class="chosen-select" tabindex="2">
+						          	</select>
+								</td>
+						   </div>
+						    <div style="text-align:center;" class="col-md-6 col-sm-6">
+						   		<th style="vertical-align: middle;">
+									<b>
+										Cta. hasta:
+									</b>
+								</th>
+								<td>
+									<select name="cuentah" data-placeholder="Cuenta..." onchange="" class="chosen-select" tabindex="2">
+						          	</select>
+								</td>
+						   </div>
+						</div>
+						<div class="row show-grid">
+						   <div style="text-align:center;" class="col-md-6 col-sm-6">
+						   		<th style="vertical-align: middle;">
+									<b>
+										Nivel:
+									</b>
+								</th>
+								<td>
+									<input style="width:50px" type="text" value="0" onkeyup="" name="nivel" >
+								</td>
+						   </div>
+						    <div style="text-align:center;" class="col-md-6 col-sm-6">
+						   		<th style="vertical-align: middle;">
+									<b>
+										Incluir cuentas con saldo cero:
+									</b>
+								</th>
+								<td>
+									<input style="width:50px" type="checkbox" onkeyup="" name="incluir" >
+								</td>
+						   </div>
+						</div>
+					</div>
+				</div>
+	        </div>
+	        <div class="modal-footer">
+		        <a type="button" class="btn btn-primary" onclick="buscar()">Filtrar <i class="fa fa-search"></i></a>
+	        </div>
+	    </div>
+	</div> 
+	
+	<div id="cabecera">
+    	<div class="row show-grid">
+        	<div style="text-align:center;" class="col-md-4 col-sm-2">
+        		<b>Proveedor</b>
+        	</div>
+        	<div style="text-align:center;" class="col-md-2 col-sm-2">
+        		<b>Sucursal</b>
+        	</div>
+        	<div style="text-align:center;" class="col-md-2 col-sm-2">
+        		<b>OP N&#176;</b>
+        	</div>
+        	<div style="text-align:center;" class="col-md-2 col-sm-2">
+        		<b>Fecha</b>
+        	</div>
+        	<div style="text-align:center;" class="col-md-2 col-sm-2">
+        		<b>Monto</b>
+        	</div>
+		</div>            
+		<div id="lista" class="list-group">
+        	
+    	</div>
+    	<div style="text-align:center;">
+    		<a onclick="cargar()" class="btn btn-default">Mas</a>
+    	</div>
+    </div>
+    <br>
+	</br>
+{% endblock %}

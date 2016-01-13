@@ -1,0 +1,304 @@
+<style>
+
+</style>
+
+<script type="text/javascript">
+
+var cant_reg = 10;
+var ult_reg = 10;
+var lista = null
+var aux1 = null
+ 
+$(document).ready(function() {
+	$("#cabecera").hide()
+	var url = window.location.href
+	
+	aux = url.toString().split("http://")
+	aux1 = aux[1].toString().split(":8000")
+	
+    $(".chosen-select").chosen({
+        disable_search_threshold: 0,
+        no_results_text: "Oops, nothing found!",
+        width: "200px",
+        allow_single_deselect: true
+     	});
+});
+
+function renewDatePickers() {
+    $('.datepicker').datepicker('destroy');
+    $(".datepicker").datepicker({dateFormat: 'yy-mm-dd'});
+}
+
+function cargar(){
+	var a=1;
+	while(a < cant_reg){
+		var string = '<div class="row show-grid">'+
+						'<div style="text-align:center;" class="col-md-4 col-sm-2">'+
+		            		lista.data[parseInt(ult_reg)+parseInt(a)].RazonSocial +
+		            	'</div>'+
+		            	'<div style="text-align:center;" class="col-md-2 col-sm-2">'+
+		            		lista.data[parseInt(ult_reg)+parseInt(a)].Des_Sucursal +
+		            	'</div>'+
+		            	'<div style="text-align:center;" class="col-md-2 col-sm-2">'+
+		            		lista.data[parseInt(ult_reg)+parseInt(a)].NroOP + '/' + lista.data[parseInt(ult_reg)+parseInt(a)].des_tp_comp +
+		            	'</div>'+
+		            	'<div style="text-align:center;" class="col-md-2  col-sm-2">'+
+		            		lista.data[parseInt(ult_reg)+parseInt(a)].Fecha +
+		            	'</div>'+
+		            	'<div style="text-align:center;" class="col-md-2 col-sm-2">'+
+		            		convertir_rever(lista.data[parseInt(ult_reg)+parseInt(a)].TotalImporte) +
+		            	'</div>'+
+		            '</div>'
+		$('#lista').append(string)
+		a++;
+	}
+	ult_reg = parseInt(ult_reg)+parseInt(cant_reg)
+}
+
+$(renewDatePickers);
+$.datepicker.regional['es'] = {
+	closeText: 'Cerrar',
+	prevText: '<Ant',
+	nextText: 'Sig>',
+	currentText: 'Hoy',
+	monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+	monthNamesShort: ['Ene','Feb','Mar','Abr', 'May','Jun','Jul','Ago','Sep', 'Oct','Nov','Dic'],
+	dateFormat: 'yy/mm/dd',
+	firstDay: 1,
+	isRTL: false,
+	showMonthAfterYear: false,
+	yearSuffix: ''
+};
+$.datepicker.setDefaults($.datepicker.regional["es"]);
+
+function remover(selectbox){
+    var i;
+    for(i=selectbox.options.length-1;i>=0;i--)
+    {
+        selectbox.remove(i);
+    }
+} 
+
+function SelectElement(value,name){    
+    var element = document.getElementsByName(name)[0];
+    element.value = value;
+}
+
+function buscar(){
+		var desde = $("[name=fechad]").val()
+		var hasta = $("[name=fechah]").val()
+		var empresa = $("[name=empresa]").val()
+		var sucursal = $("[name=sucursal]").val()
+		var tipoop = $("[name=tipoop]").val()
+		var comprobante = $("[name=comprobante]").val()
+		var tipoproveedor = $("[name=tipoproveedor]").val()
+		var proveedor = $("[name=proveedor]").val()
+		if (sucursal == "" || sucursal == null)
+			sucursal = " ";
+		if (tipoop == "" || tipoop == null)
+			tipoop = " ";
+		if (comprobante == "" || comprobante == null)
+			comprobante = " ";
+		if (tipoproveedor == "" || tipoproveedor == null)
+			tipoproveedor = " ";
+		if (proveedor == "" || proveedor == null)
+			proveedor = " ";
+		if (desde == " " || desde == "" || desde == null || hasta == " " || hasta == "" || hasta == null){
+			alert("No hay datos suficientes para generar el listado")		
+		} else {
+			$('.collapse').collapse('hide')
+			$('#lista').empty()
+			$.get("http://"+aux1[0]+":3000/api/v1/ordenpago/list/"+empresa+"/"+sucursal+"/"+tipoop+"/"+comprobante+"/"+tipoproveedor+"/"+proveedor+"/"+desde+"/"+hasta,
+			    function(data) {
+			    	if (data != null){
+			    		lista = null
+			    		console.log(data)
+			    		lista = data
+			    		$("#cabecera").show()
+			    		for (var i=1;i < cant_reg;i++){
+			    			var string = '<div class="row show-grid">'+
+			    							'<div style="text-align:center;" class="col-md-4 col-sm-2">'+
+							            		data.data[i].RazonSocial +
+							            	'</div>'+
+							            	'<div style="text-align:center;" class="col-md-2 col-sm-2">'+
+							            		data.data[i].Des_Sucursal +
+							            	'</div>'+
+							            	'<div style="text-align:center;" class="col-md-2 col-sm-2">'+
+							            		data.data[i].NroOP + '/' + data.data[i].des_tp_comp +
+							            	'</div>'+
+							            	'<div style="text-align:center;" class="col-md-2  col-sm-2">'+
+							            		data.data[i].Fecha +
+							            	'</div>'+
+							            	'<div style="text-align:center;" class="col-md-2 col-sm-2">'+
+							            		convertir_rever(data.data[i].TotalImporte) +
+							            	'</div>'+
+							            '</div>'
+							$('#lista').append(string)
+			    		}
+			    	}
+			    }
+			);  
+		}
+}
+
+function buscar_comprobante(){
+	$.get("http://"+aux1[0]+":3000/api/v1/comprobante/select/"+document.getElementsByName('empresa')[0].value,
+	    function(data) {
+	    	if (data != null){
+	    		var select = document.getElementsByName("comprobante")[0]
+	    		remover(select);
+	    		var option = document.createElement("option");
+				option.text = "NINGUNO";
+				select.add(option);
+				for (var i=0;i < data.data.length;i++){
+					var option = document.createElement("option");
+					option.value = data.data[i].Cod_Tp_Comp;
+					option.text =data.data[i].des_tp_comp;
+					select.add(option);
+				}
+				SelectElement(data.data[0].Cod_Tp_Comp,'comprobante')
+				$('.chosen-select').trigger('chosen:updated');
+	    	}
+	    }
+	);  
+}
+
+function buscar_proveedor(){
+	$.get("http://"+aux1[0]+":3000/api/v1/proveedor/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('tipoproveedor')[0].value,
+	    function(data) {
+	    	if (data != null){
+	    		var select = document.getElementsByName("proveedor")[0]
+	    		remover(select);
+	    		var option = document.createElement("option");
+				option.text = "NINGUNO";
+				select.add(option);
+				for (var i=0;i < data.data.length;i++){
+					var option = document.createElement("option");
+					option.value = data.data[i].CodProv;
+					option.text =data.data[i].RazonSocial;
+					select.add(option);
+				}
+				SelectElement(data.data[0].CodProv,'proveedor')
+				$('.chosen-select').trigger('chosen:updated');
+	    	}
+	    }
+	);  
+}
+
+function buscar_sucursal(){
+	$.get("http://"+aux1[0]+":3000/api/v1/sucursal/select/"+document.getElementsByName('empresa')[0].value,
+	    function(data) 	{
+	    	if (data != null){
+	    		var select = document.getElementsByName("sucursal")[0]
+	    		remover(select);
+	    		var option = document.createElement("option");
+				option.text = "NINGUNA";
+				select.add(option);
+				for (var i=0;i < data.data.length;i++){
+					var option = document.createElement("option");
+					option.value = data.data[i].Cod_Sucursal;
+					option.text =data.data[i].Des_Sucursal;
+					select.add(option);
+				}
+				SelectElement(data.data[0].Cod_Sucursal,'sucursal')
+				$('.chosen-select').trigger('chosen:updated');
+	    	}
+	    }
+	);    
+}
+
+window.onload = function() {
+	
+    $.get("http://"+aux1[0]+":3000/api/v1/empresa/select",
+		    function(data) {
+		    	if (data != null){
+		    		var select = document.getElementsByName("empresa")[0]
+		    		remover(select);
+					for (var i=0;i < data.data.length;i++){
+						var option = document.createElement("option");
+						option.value = data.data[i].Cod_Empresa;
+						option.text = data.data[i].Des_Empresa;
+						select.add(option);
+					}
+					SelectElement(data.data[0].Cod_Empresa,'empresa')
+									
+					$.get("http://"+aux1[0]+":3000/api/v1/comprobante/select/"+document.getElementsByName('empresa')[0].value,
+					    function(data) 	{
+					    	if (data != null){
+					    		var select = document.getElementsByName("comprobante")[0]
+					    		remover(select);
+					    		var option = document.createElement("option");
+								option.text = "NINGUNO";
+								select.add(option);
+								for (var i=0;i < data.data.length;i++){
+									var option = document.createElement("option");
+									option.value = data.data[i].Cod_Tp_Comp;
+									option.text =data.data[i].des_tp_comp;
+									select.add(option);
+								}
+								SelectElement(data.data[0].Cod_Tp_Comp,'comprobante')
+					    	}
+					    }
+					);  
+					
+					$.get("http://"+aux1[0]+":3000/api/v1/proveedor/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('tipoproveedor')[0].value,
+					    function(data) {
+					    	if (data != null){
+					    		var select = document.getElementsByName("proveedor")[0]
+					    		remover(select);
+					    		var option = document.createElement("option");
+								option.text = "NINGUNO";
+								select.add(option);
+								for (var i=0;i < data.data.length;i++){
+									var option = document.createElement("option");
+									option.value = data.data[i].CodProv;
+									option.text =data.data[i].RazonSocial;
+									select.add(option);
+								}
+								SelectElement(data.data[0].CodProv,'proveedor')
+					    	}
+					    }
+					);  
+					
+					$.get("http://"+aux1[0]+":3000/api/v1/sucursal/select/"+document.getElementsByName('empresa')[0].value,
+					    function(data) 	{
+					    	if (data != null){
+					    		var select = document.getElementsByName("sucursal")[0]
+					    		remover(select);
+					    		var option = document.createElement("option");
+								option.text = "NINGUNA";
+								select.add(option);
+								for (var i=0;i < data.data.length;i++){
+									var option = document.createElement("option");
+									option.value = data.data[i].Cod_Sucursal;
+									option.text =data.data[i].Des_Sucursal;
+									select.add(option);
+								}
+								SelectElement(data.data[0].Cod_Sucursal,'sucursal')
+								$('.chosen-select').trigger('chosen:updated');
+
+					    	}
+					    }
+					);  
+		    	}
+		    }
+		); 
+	var today = new Date();
+	var dd = today.getDate();
+	var mm = today.getMonth()+1; //January is 0!
+	var yyyy = today.getFullYear();
+	
+	if(dd<10) {
+	    dd='0'+dd
+	} 
+	
+	if(mm<10) {
+	    mm='0'+mm
+	} 
+	
+	today = yyyy+'-'+mm+'-'+dd; 
+	
+	$('[name=fechad]').val(today)
+	$('[name=fechah]').val(today)
+};
+</script>

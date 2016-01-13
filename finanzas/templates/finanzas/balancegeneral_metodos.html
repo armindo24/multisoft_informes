@@ -1,0 +1,172 @@
+<style>
+
+</style>
+
+<script type="text/javascript">
+
+var cant_reg = 10;
+var ult_reg = 10;
+var lista = null
+var aux1 = null
+ 
+$(document).ready(function() {
+	$("#cabecera").hide()
+	var url = window.location.href
+	
+	aux = url.toString().split("http://")
+	aux1 = aux[1].toString().split(":8000")
+	
+    $(".chosen-select").chosen({
+        disable_search_threshold: 0,
+        no_results_text: "Oops, nothing found!",
+        width: "200px",
+        allow_single_deselect: true
+     	});
+});
+
+function renewDatePickers() {
+    $('.datepicker').datepicker('destroy');
+    $(".datepicker").datepicker({dateFormat: 'yy-mm-dd'});
+}
+
+function cargar(){
+	var a=1;
+	while(a < cant_reg){
+		var string = '<div class="row show-grid">'+
+						'<div style="text-align:center;" class="col-md-4 col-sm-2">'+
+		            		lista.data[parseInt(ult_reg)+parseInt(a)].RazonSocial +
+		            	'</div>'+
+		            	'<div style="text-align:center;" class="col-md-2 col-sm-2">'+
+		            		lista.data[parseInt(ult_reg)+parseInt(a)].Des_Sucursal +
+		            	'</div>'+
+		            	'<div style="text-align:center;" class="col-md-2 col-sm-2">'+
+		            		lista.data[parseInt(ult_reg)+parseInt(a)].NroOP + '/' + lista.data[parseInt(ult_reg)+parseInt(a)].des_tp_comp +
+		            	'</div>'+
+		            	'<div style="text-align:center;" class="col-md-2  col-sm-2">'+
+		            		lista.data[parseInt(ult_reg)+parseInt(a)].Fecha +
+		            	'</div>'+
+		            	'<div style="text-align:center;" class="col-md-2 col-sm-2">'+
+		            		convertir_rever(lista.data[parseInt(ult_reg)+parseInt(a)].TotalImporte) +
+		            	'</div>'+
+		            '</div>'
+		$('#lista').append(string)
+		a++;
+	}
+	ult_reg = parseInt(ult_reg)+parseInt(cant_reg)
+}
+
+$(renewDatePickers);
+$.datepicker.regional['es'] = {
+	closeText: 'Cerrar',
+	prevText: '<Ant',
+	nextText: 'Sig>',
+	currentText: 'Hoy',
+	monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+	monthNamesShort: ['Ene','Feb','Mar','Abr', 'May','Jun','Jul','Ago','Sep', 'Oct','Nov','Dic'],
+	dateFormat: 'yy/mm/dd',
+	firstDay: 1,
+	isRTL: false,
+	showMonthAfterYear: false,
+	yearSuffix: ''
+};
+$.datepicker.setDefaults($.datepicker.regional["es"]);
+
+function remover(selectbox){
+    var i;
+    for(i=selectbox.options.length-1;i>=0;i--)
+    {
+        selectbox.remove(i);
+    }
+} 
+
+function SelectElement(value,name){    
+    var element = document.getElementsByName(name)[0];
+    element.value = value;
+}
+
+function buscar_cuenta(){
+	$.get("http://"+aux1[0]+":3000/api/v1/cuenta/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('periodo')[0].value,
+	    function(data) 	{
+	    	if (data != null){
+	    		var select = document.getElementsByName("cuentad")[0]
+	    		var select1 = document.getElementsByName("cuentah")[0]
+	    		remover(select);
+	    		remover(select1);
+				for (var i=0;i < data.data.length;i++){
+					var option = document.createElement("option");
+					var option1 = document.createElement("option");
+					option.value = data.data[i].CodPlanCta;
+					option.text =data.data[i].Nombre;
+					option1.value = data.data[i].CodPlanCta;
+					option1.text =data.data[i].Nombre;
+					select.add(option);
+					select1.add(option1);
+				}
+				SelectElement(data.data[0].CodPlanCta,'cuentad')
+				SelectElement(data.data[0].CodPlanCta,'cuentah')
+	    	}
+	    }
+	);  
+	
+	$('.chosen-select').trigger('chosen:updated');   
+	$('.chosen-select').trigger('chosen:updated');   
+}
+
+window.onload = function() {
+	
+    $.get("http://"+aux1[0]+":3000/api/v1/empresa/select",
+		    function(data) {
+		    	if (data != null){
+		    		var select = document.getElementsByName("empresa")[0]
+		    		remover(select);
+					for (var i=0;i < data.data.length;i++){
+						var option = document.createElement("option");
+						option.value = data.data[i].Cod_Empresa;
+						option.text = data.data[i].Des_Empresa;
+						select.add(option);
+					}
+					SelectElement(data.data[0].Cod_Empresa,'empresa')
+					
+					$.get("http://"+aux1[0]+":3000/api/v1/cuenta/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('periodo')[0].value,
+					    function(data) 	{
+					    	if (data != null){
+					    		var select = document.getElementsByName("cuentad")[0]
+					    		var select1 = document.getElementsByName("cuentah")[0]
+					    		remover(select);
+					    		remover(select1);
+								for (var i=0;i < data.data.length;i++){
+									var option = document.createElement("option");
+									option.value = data.data[i].CodPlanCta;
+									option.text =data.data[i].Nombre;
+									select.add(option);
+									select1.add(option);
+								}
+								SelectElement(data.data[0].CodPlanCta,'cuentad')
+								SelectElement(data.data[0].CodPlanCta,'cuentah')
+					    	}
+					    }
+					);  
+					
+					$('.chosen-select').trigger('chosen:updated');
+		    	}
+		    }
+		); 
+	var today = new Date();
+	var dd = today.getDate();
+	var mm = today.getMonth()+1; //January is 0!
+	var yyyy = today.getFullYear();
+	
+	if(dd<10) {
+	    dd='0'+dd
+	} 
+	
+	if(mm<10) {
+	    mm='0'+mm
+	} 
+	
+	today = yyyy//+'-'+mm+'-'+dd; 
+	
+	$('[name=periodo]').val(today)
+	//$('[name=fechah]').val(today)
+};
+</script>

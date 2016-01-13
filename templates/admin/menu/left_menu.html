@@ -1,0 +1,23 @@
+<div  id="my-left-menu" class="navbar-default sidebar" role="navigation">
+	<div class="sidebar-nav navbar-collapse">
+		<ul class="nav" id="side-menu">
+			<li>
+				<a class="active" href="/accounts/loggedin/"><i class="fa fa-home fa-fw"></i> Inicio </a>
+			</li>
+			{% if  request.session.modulo_seleccionado == "Ventas"  %}
+				<li>
+					<a href="/ventas/comprobante/resumido/"> Ventas por Comprobante - Resumido </a>
+			    </li>
+			    <li>
+					<a href="/ventas/ranking/articulos/"> Ranking de Art&#237;culos Vendidos </a>
+			    </li>
+		    {% endif %}
+			{% if  request.session.modulo_seleccionado == "Admin"  %}
+			<li>
+				<a href="/admin/auth/"> Usuarios </a>
+			</li>
+			{% endif %}
+    	</ul>
+  	</div>
+</div>
+
