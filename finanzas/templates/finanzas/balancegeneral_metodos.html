@@ -10,7 +10,7 @@ var lista = null
 var aux1 = null
  
 $(document).ready(function() {
-	$("#cabecera").hide()
+	$("#table-div").hide()
 	var url = window.location.href
 	
 	aux = url.toString().split("http://")
@@ -84,6 +84,49 @@ function SelectElement(value,name){
     element.value = value;
 }
 
+function buscar(){
+	var empresa = $("[name=empresa]").val()
+	var periodo = $("[name=periodo]").val()
+	var cuentad = $("[name=cuentad]").val()
+	var cuentah = $("[name=cuentah]").val()
+	var mesd = $("[name=mesd]").val()
+	var mesh = $("[name=mesh]").val()
+	var nivel = $("[name=nivel]").val()
+	var moneda = document.getElementsByName("moneda")[0]
+	var incluir = document.getElementsByName("incluir")[0]
+	
+	if(moneda.checked == true){
+		moneda = "extranjera"
+	  }else{
+		moneda = "local"
+	  }
+	  
+  	if(incluir.checked == true){
+		incluir = "SI"
+	  }else{
+		incluir = "NO"
+	  }
+	
+	if (nivel == "" || nivel == null || nivel == " " || nivel == '0')
+		nivel = 0
+	
+	if (periodo == "" || periodo == null || periodo == " "){
+		alert("No hay datos suficientes para generar el listado")
+	} else {
+		$('.collapse').collapse('hide')
+		//$('#table-div').empty()
+		$.get("http://"+aux1[0]+":3000/api/v1/balancegeneral/list/"+empresa+"/"+periodo+"/"+cuentad+"/"+cuentah+"/"+mesd+"/"+mesh+"/"+nivel+"/"+incluir+"/"+moneda,
+		    function(data) {
+		    	if (data != null){
+		    		$('#table-div').show()
+		    		console.log(data)
+		    		$('#resultados tbody').empty();
+		    	}
+		    }
+		);  
+	}
+}
+
 function buscar_cuenta(){
 	$.get("http://"+aux1[0]+":3000/api/v1/cuenta/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('periodo')[0].value,
 	    function(data) 	{
@@ -108,7 +151,6 @@ function buscar_cuenta(){
 	    }
 	);  
 	
-	$('.chosen-select').trigger('chosen:updated');   
 	$('.chosen-select').trigger('chosen:updated');   
 }
 
@@ -164,9 +206,8 @@ window.onload = function() {
 	    mm='0'+mm
 	} 
 	
-	today = yyyy//+'-'+mm+'-'+dd; 
+	today = yyyy
 	
 	$('[name=periodo]').val(today)
-	//$('[name=fechah]').val(today)
 };
 </script>
