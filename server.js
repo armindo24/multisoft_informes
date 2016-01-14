@@ -118,7 +118,7 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 	});
 	
 	//list balance general
-	restapi.get('/api/v1/balancegeneral/list/:empresa/:periodo/:cuentad/:cuentah/:mesd/:mesh/:nivel/:saldo/:moneda', function(req, res){
+	restapi.get('/api/v1/balancegeneral/list/:empresa/:periodo/:cuentad/:cuentah/:mesd/:mesh/:nivel/:saldo/:moneda/:aux', function(req, res){
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		var empresa = req.params.empresa;
 		var periodo = req.params.periodo;
@@ -129,60 +129,169 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 		var nivel = req.params.nivel;
 		var saldo = req.params.saldo;
 		var moneda = req.params.moneda;
-		var string = "SELECT "+ 
-						"DBA.PLANCTA.Cod_Empresa,"+
-						"DBA.PLANCTA.CodPlanCta,"+
-						"DBA.PLANCTA.Nombre,"+ 
-						"DBA.PLANCTA.Nivel,"+
-						"DBA.PLANCTA.Imputable,"+
-						"DBA.PLANCTA.TipoSaldo,"+
-						"DBA.Control.CTCtaOrden,"
-						if (moneda == 'local'){
-							string+="cast(sum(DBA.AcumPlan.TotalDb)as decimal(20,0)) as 'TOTAL_DEBITO',"+
-									"cast(sum(DBA.AcumPlan.TotalCr)as decimal(20,0)) as 'TOTAL_CREDITO',"+
-									"cast(sum(DBA.AcumPlan.TotalDb)as decimal(20,0)) - sum(DBA.AcumPlan.TotalCr) as 'SALDO' "
-						} else {
-							string+="cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,0)) as 'TOTAL_DEBITO'",+
-									"cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,0)) as 'TOTAL_CREDITO'",+
-									"cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,0)) - sum(DBA.AcumPlan.TotalCrME) as 'SALDO' "
-						}
-						string+="FROM "+
-									"DBA.CONTROL,"+
-									"DBA.PLANCTA,"+
-									"DBA.ACUMPLAN "+
-								"WHERE "+
-									"(DBA.Control.Cod_Empresa = DBA.PLANCTA.Cod_Empresa) AND "+
-									"(DBA.Control.Periodo = DBA.PLANCTA.Periodo) AND "+
-									"(DBA.PLANCTA.Cod_Empresa = DBA.AcumPlan.Cod_Empresa) AND "+
-									"(DBA.PLANCTA.Periodo = DBA.AcumPlan.Periodo) AND "+
-									"(DBA.PLANCTA.CodPlanCta = DBA.AcumPlan.CodPlanCta) AND "+
-									"(DBA.PLANCTA.Cod_Empresa = '"+empresa+"') "+
-									"AND (DBA.PLANCTA.Periodo = "+periodo+") "+
-									"AND (DBA.PLANCTA.CodPlanCta >= '"+cuentad+"') "+  
-									"AND (DBA.PLANCTA.CodPlanCta <= '"+cuentah+"') "
-					  if (nivel > 0)
-						string+="AND (DBA.PLANCTA.Nivel <= "+nivel+") "
-						string+="AND (DBA.AcumPlan.AnhoMes >= "+parseInt(periodo.toString()+mesd.toString())+") "+
-							    "AND (DBA.AcumPlan.AnhoMes <= "+parseInt(periodo.toString()+mesh.toString())+") "	
-					  string+="GROUP BY "+
-								"DBA.PLANCTA.Cod_Empresa,"+
-								"DBA.PLANCTA.CodPlanCta,"+
-								"DBA.PLANCTA.Nombre,"+
-								"DBA.PLANCTA.Nivel,"+
-								"DBA.PLANCTA.Imputable,"+
-								"DBA.PLANCTA.TipoSaldo,"+
-								"DBA.CONTROL.CtCtaOrden "
-					  if (saldo == 'NO'){
-							string+="having SALDO >= 0 "
-						} else {
-							string+="having SALDO > 0 "	
-						}
-					  string+="ORDER BY "+
-								"DBA.PLANCTA.CodPlanCta"
+		var aux = req.params.aux;
+		
+		if (aux == 'NO'){
+			var string = "SELECT "+ 
+							"DBA.PLANCTA.Cod_Empresa,"+
+							"DBA.PLANCTA.CodPlanCta,"+
+							"DBA.PLANCTA.Nombre,"+ 
+							"DBA.PLANCTA.Nivel,"+
+							"DBA.PLANCTA.Imputable,"+
+							"DBA.PLANCTA.TipoSaldo,"+
+							"DBA.Control.CTCtaOrden,"
+							if (moneda == 'local'){
+								string+="cast(sum(DBA.AcumPlan.TotalDb)as decimal(20,0)) as 'TOTAL_DEBITO',"+
+										"cast(sum(DBA.AcumPlan.TotalCr)as decimal(20,0)) as 'TOTAL_CREDITO',"+
+										"cast(sum(DBA.AcumPlan.TotalDb)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalCr)as decimal(20,0)) as 'SALDO' "
+							} else {
+								string+="cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,0)) as 'TOTAL_DEBITO',"+
+										"cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,0)) as 'TOTAL_CREDITO',"+
+										"cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,0)) as 'SALDO' "
+							}
+							string+="FROM "+
+										"DBA.CONTROL,"+
+										"DBA.PLANCTA,"+
+										"DBA.ACUMPLAN "+
+									"WHERE "+
+										"(DBA.Control.Cod_Empresa = DBA.PLANCTA.Cod_Empresa) AND "+
+										"(DBA.Control.Periodo = DBA.PLANCTA.Periodo) AND "+
+										"(DBA.PLANCTA.Cod_Empresa = DBA.AcumPlan.Cod_Empresa) AND "+
+										"(DBA.PLANCTA.Periodo = DBA.AcumPlan.Periodo) AND "+
+										"(DBA.PLANCTA.CodPlanCta = DBA.AcumPlan.CodPlanCta) AND "+
+										"(DBA.PLANCTA.Cod_Empresa = '"+empresa+"') "+
+										"AND (DBA.PLANCTA.Periodo = "+periodo+") "+
+										"AND (DBA.PLANCTA.CodPlanCta >= '"+cuentad+"') "+  
+										"AND (DBA.PLANCTA.CodPlanCta <= '"+cuentah+"') "
+						  if (nivel > 0)
+							string+="AND (DBA.PLANCTA.Nivel <= "+nivel+") "
+							string+="AND (DBA.AcumPlan.AnhoMes >= "+parseInt(periodo.toString()+mesd.toString())+") "+
+									"AND (DBA.AcumPlan.AnhoMes <= "+parseInt(periodo.toString()+mesh.toString())+") "	
+						  string+="GROUP BY "+
+									"DBA.PLANCTA.Cod_Empresa,"+
+									"DBA.PLANCTA.CodPlanCta,"+
+									"DBA.PLANCTA.Nombre,"+
+									"DBA.PLANCTA.Nivel,"+
+									"DBA.PLANCTA.Imputable,"+
+									"DBA.PLANCTA.TipoSaldo,"+
+									"DBA.CONTROL.CtCtaOrden "
+						  if (saldo == 'SI'){
+								string+="having SALDO >= 0 "
+							} else {
+								string+="having SALDO > 0 "	
+							}
+						  string+="ORDER BY "+
+									"DBA.PLANCTA.CodPlanCta"
+		} else {
+			var string = "SELECT "+ 
+							"DBA.PLANCTA.Cod_Empresa,"+
+							"DBA.PLANCTA.CodPlanCta,"+
+							"DBA.PLANCTA.Nombre,"+ 
+							"DBA.PLANCTA.Nivel,"+
+							"DBA.PLANCTA.Imputable,"+
+							"DBA.PLANCTA.TipoSaldo,"+
+							"DBA.Control.CTCtaOrden,"
+							if (moneda == 'local'){
+								string+="cast(sum(DBA.AcumPlan.TotalDb)as decimal(20,0)) as 'TOTAL_DEBITO',"+
+										"cast(sum(DBA.AcumPlan.TotalCr)as decimal(20,0)) as 'TOTAL_CREDITO',"+
+										"cast(sum(DBA.AcumPlan.TotalDb)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalCr)as decimal(20,0)) as 'SALDO' "
+							} else {
+								string+="cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,0)) as 'TOTAL_DEBITO',"+
+										"cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,0)) as 'TOTAL_CREDITO',"+
+										"cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,0)) as 'SALDO' "
+							}
+							string+="FROM "+
+										"DBA.CONTROL,"+
+										"DBA.PLANCTA,"+
+										"DBA.ACUMPLAN "+
+									"WHERE "+
+										"(DBA.Control.Cod_Empresa = DBA.PLANCTA.Cod_Empresa) AND "+
+										"(DBA.Control.Periodo = DBA.PLANCTA.Periodo) AND "+
+										"(DBA.PLANCTA.Cod_Empresa = DBA.AcumPlan.Cod_Empresa) AND "+
+										"(DBA.PLANCTA.Periodo = DBA.AcumPlan.Periodo) AND "+
+										"(DBA.PLANCTA.CodPlanCta = DBA.AcumPlan.CodPlanCta) AND "+
+										"(DBA.PLANCTA.Cod_Empresa = '"+empresa+"') "+
+										"AND (DBA.PLANCTA.Periodo = "+periodo+") "+
+										"AND (DBA.PLANCTA.CodPlanCta >= '"+cuentad+"') "+  
+										"AND (DBA.PLANCTA.CodPlanCta <= '"+cuentah+"') "
+						  if (nivel > 0)
+							string+="AND (DBA.PLANCTA.Nivel <= "+nivel+") "
+							string+="AND (DBA.AcumPlan.AnhoMes >= "+parseInt(periodo.toString()+mesd.toString())+") "+
+									"AND (DBA.AcumPlan.AnhoMes <= "+parseInt(periodo.toString()+mesh.toString())+") "	
+						  string+="GROUP BY "+
+									"DBA.PLANCTA.Cod_Empresa,"+
+									"DBA.PLANCTA.CodPlanCta,"+
+									"DBA.PLANCTA.Nombre,"+
+									"DBA.PLANCTA.Nivel,"+
+									"DBA.PLANCTA.Imputable,"+
+									"DBA.PLANCTA.TipoSaldo,"+
+									"DBA.CONTROL.CtCtaOrden "
+						  if (saldo == 'SI'){
+								string+="having SALDO >= 0 "
+							} else {
+								string+="having SALDO > 0 "	
+							}
+						  string+="UNION "+
+								  "SELECT "+
+									"DBA.PLANAUXI.Cod_Empresa,"+
+									"DBA.PLANCTA.CodPlanCta + '-' + DBA.PLANAUXI.CodPlanAux as CTA,"+
+									"DBA.PLANAUXI.Nombre,"+
+									"DBA.PLANAUXI.Nivel,"+
+									"DBA.PLANAUXI.Imputable,"+
+									"DBA.PLANCTA.TipoSaldo,"+
+									"DBA.Control.CTCtaOrden,"
+									if (moneda == 'local'){
+										string+="cast(sum(DBA.AcumAuxi.TotalDb)as decimal(20,0)) as 'TOTAL_DEBITO',"+
+												"cast(sum(DBA.AcumAuxi.TotalCr)as decimal(20,0)) as 'TOTAL_CREDITO',"+
+												"cast(sum(DBA.AcumAuxi.TotalDb)as decimal(20,0)) - cast(sum(DBA.AcumAuxi.TotalCr)as decimal(20,0)) as 'SALDO' "
+									} else {
+										string+="cast(sum(DBA.AcumAuxi.TotalDbME)as decimal(20,0)) as 'TOTAL_DEBITO',"+
+												"cast(sum(DBA.AcumAuxi.TotalCrME)as decimal(20,0)) as 'TOTAL_CREDITO',"+
+												"cast(sum(DBA.AcumAuxi.TotalDbME)as decimal(20,0)) - cast(sum(DBA.AcumAuxi.TotalCrME)as decimal(20,0)) as 'SALDO' "
+									}
+									string+="FROM "+
+												"DBA.CONTROL,"+
+												"DBA.PLANAUXI,"+
+												"DBA.PLANCTA,"+
+												"DBA.AcumAuxi "+
+											"WHERE "+
+												"(DBA.Control.Cod_Empresa = DBA.PLANAUXI.Cod_Empresa) AND "+
+												"(DBA.Control.Periodo = DBA.PLANAUXI.Periodo) AND "+
+												"(DBA.PLANAUXI.CodPlanCta = DBA.PLANCTA.CodPlanCta) AND "+
+												"(DBA.PLANAUXI.Cod_Empresa = DBA.AcumAuxi.Cod_Empresa) AND "+
+												"(DBA.PLANAUXI.Periodo = DBA.AcumAuxi.Periodo) AND "+
+												"(DBA.PLANAUXI.CodPlanAux = DBA.AcumAuxi.CodPlanAux) AND "+
+												"(DBA.PLANAUXI.CodPlanCta  = DBA.AcumAuxi.CodPlanCta) "+
+												"AND (DBA.plancta.imputable = 'N') "+
+												"AND (DBA.plancta.Auxiliar = 'S') "+
+												"AND (DBA.PLANAUXI.Cod_Empresa = '"+empresa+"') "+
+												"AND (DBA.PLANAUXI.Periodo = "+periodo+") "+
+												"AND (DBA.PLANCTA.CodPlanCta >= '"+cuentad+"') "+  
+												"AND (DBA.PLANCTA.CodPlanCta <= '"+cuentah+"') "
+												if (nivel > 0)
+													string+="AND (DBA.PLANCTA.Nivel <= "+nivel+") "
+												string+="AND (DBA.AcumAuxi.AnhoMes >= "+parseInt(periodo.toString()+mesd.toString())+") "+
+														"AND (DBA.AcumAuxi.AnhoMes <= "+parseInt(periodo.toString()+mesh.toString())+") "
+												string+="GROUP BY "+
+															"DBA.PLANAUXI.Cod_Empresa,"+
+															"CTA,"+
+															"DBA.PLANAUXI.Nombre,"+
+															"DBA.PLANAUXI.Nivel,"+
+															"DBA.PLANAUXI.Imputable,"+
+															"DBA.PLANCTA.TipoSaldo,"+
+															"DBA.Control.CTCtaOrden "		
+												if (saldo == 'SI'){
+													string+="having SALDO >= 0 "
+												} else {
+													string+="having SALDO > 0 "	
+												}
+												string+="ORDER BY 1, 2"
+		}						
 		conn.exec(string, function(err, row){
 			res.json({ data : row });
 		});
 	});
+	
 
 	restapi.listen(3000);
 	restapi.use(function(req, res, next){
@@ -197,45 +306,6 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 });
 
 /*
- * SELECT 
-    DBA.PLANCTA.Cod_Empresa,
-    DBA.PLANCTA.CodPlanCta,
-    DBA.PLANCTA.Nombre,
-    DBA.PLANCTA.Nivel,
-    DBA.PLANCTA.Imputable,
-    DBA.PLANCTA.TipoSaldo,
-    DBA.Control.CTCtaOrden,
-    cast(sum(DBA.AcumPlan.TotalDb)as decimal(20,0)) as 'TOTAL_DEBITO',
-    cast(sum(DBA.AcumPlan.TotalCr)as decimal(20,0)) as 'TOTAL_CREDITO',
-    cast((sum(DBA.AcumPlan.TotalDb) - sum(DBA.AcumPlan.TotalCr))as decimal(20,0)) as 'SALDO' 
-FROM 
-    DBA.CONTROL,
-    DBA.PLANCTA,
-    DBA.ACUMPLAN 
-WHERE 
-    (DBA.Control.Cod_Empresa = DBA.PLANCTA.Cod_Empresa) AND 
-    (DBA.Control.Periodo = DBA.PLANCTA.Periodo) AND 
-    (DBA.PLANCTA.Cod_Empresa = DBA.AcumPlan.Cod_Empresa) AND 
-    (DBA.PLANCTA.Periodo = DBA.AcumPlan.Periodo) AND 
-    (DBA.PLANCTA.CodPlanCta = DBA.AcumPlan.CodPlanCta) AND 
-    (DBA.PLANCTA.Cod_Empresa = 'BT') AND 
-    (DBA.PLANCTA.Periodo = 2011) AND 
-    (DBA.PLANCTA.CodPlanCta >= '1') AND 
-    (DBA.PLANCTA.CodPlanCta <= '5') AND 
-    (DBA.PLANCTA.Nivel <= 4) AND 
-    (DBA.AcumPlan.AnhoMes >= 201101) AND 
-    (DBA.AcumPlan.AnhoMes <= 201112) --AND 
-    --cast((sum(DBA.AcumPlan.TotalDb) - sum(DBA.AcumPlan.TotalCr))as decimal(20,0)) > 0 
-GROUP BY 
-    DBA.PLANCTA.Cod_Empresa,
-    DBA.PLANCTA.CodPlanCta,
-    DBA.PLANCTA.Nombre,
-    DBA.PLANCTA.Nivel,
-    DBA.PLANCTA.Imputable,
-    DBA.PLANCTA.TipoSaldo,
-    DBA.CONTROL.CtCtaOrden 
-having SALDO >= 0
-ORDER BY DBA.PLANCTA.CodPlanCta 
-
+ 
 */
 
