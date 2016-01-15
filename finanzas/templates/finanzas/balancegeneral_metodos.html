@@ -4,10 +4,12 @@
 
 <script type="text/javascript">
 
-var cant_reg = 10;
-var ult_reg = 10;
-var lista = null
 var aux1 = null
+var total_debito = 0
+var total_credito = 0
+var total_saldo = 0
+var ingreso = 0
+var egreso = 0
  
 $(document).ready(function() {
 	var url = window.location.href
@@ -26,32 +28,6 @@ $(document).ready(function() {
 function renewDatePickers() {
     $('.datepicker').datepicker('destroy');
     $(".datepicker").datepicker({dateFormat: 'yy-mm-dd'});
-}
-
-function cargar(){
-	var a=1;
-	while(a < cant_reg){
-		var string = '<div class="row show-grid">'+
-						'<div style="text-align:center;" class="col-md-4 col-sm-2">'+
-		            		lista.data[parseInt(ult_reg)+parseInt(a)].RazonSocial +
-		            	'</div>'+
-		            	'<div style="text-align:center;" class="col-md-2 col-sm-2">'+
-		            		lista.data[parseInt(ult_reg)+parseInt(a)].Des_Sucursal +
-		            	'</div>'+
-		            	'<div style="text-align:center;" class="col-md-2 col-sm-2">'+
-		            		lista.data[parseInt(ult_reg)+parseInt(a)].NroOP + '/' + lista.data[parseInt(ult_reg)+parseInt(a)].des_tp_comp +
-		            	'</div>'+
-		            	'<div style="text-align:center;" class="col-md-2  col-sm-2">'+
-		            		lista.data[parseInt(ult_reg)+parseInt(a)].Fecha +
-		            	'</div>'+
-		            	'<div style="text-align:center;" class="col-md-2 col-sm-2">'+
-		            		convertir_rever(lista.data[parseInt(ult_reg)+parseInt(a)].TotalImporte) +
-		            	'</div>'+
-		            '</div>'
-		$('#lista').append(string)
-		a++;
-	}
-	ult_reg = parseInt(ult_reg)+parseInt(cant_reg)
 }
 
 $(renewDatePickers);
@@ -94,32 +70,28 @@ function buscar(){
 	var moneda = document.getElementsByName("moneda")[0]
 	var incluir = document.getElementsByName("incluir")[0]
 	var aux = document.getElementsByName("auxiliar")[0]
-	var compro = document.getElementsByName("comprobacion")[0]
+	//var compro = document.getElementsByName("comprobacion")[0]
 	
 	if(moneda.checked == true){
 		moneda = "extranjera"
 	  }else{
 		moneda = "local"
 	  }
-	  
   	if(incluir.checked == true){
 		incluir = "SI"
 	  }else{
 		incluir = "NO"
 	  }
-	  
 	if(aux.checked == true){
 		aux = "SI"
 	  }else{
 		aux = "NO"
 	  }
-	  
-	if(compro.checked == true){
+	/*if(compro.checked == true){
 		compro = "SI"
 	  }else{
 		compro = "NO"
-	  }
-	
+	  }*/
 	if (nivel == "" || nivel == null || nivel == " " || nivel == '0')
 		nivel = 0
 	
@@ -132,7 +104,7 @@ function buscar(){
 		    function(data) {
 		    	if (data != null){
 		    		$('#table-div').empty()
-		    		if (compro == 'NO'){
+		    		//if (compro == 'NO'){
 		    			var tableta = '<table id="resultados" class="table table-striped table-hover table-bordered table-filter scroll" tyle="width:90%">'+
 							    		'<thead>'+
 							    			'<tr>'+
@@ -142,7 +114,8 @@ function buscar(){
 							    			'</tr>'+
 							    		'</thead>'+
 							    		'<tbody></tbody>'+
-							    	'</table>'}else{
+							    	'</table>'
+					/*}else{
 						var tableta = '<table id="resultados" class="table table-striped table-hover table-bordered table-filter scroll" tyle="width:90%">'+
 							    		'<thead>'+
 							    			'<tr>'+
@@ -155,14 +128,23 @@ function buscar(){
 							    		'</thead>'+
 							    		'<tbody></tbody>'+
 							    	'</table>'
-					}
+					}*/
 					$('#table-div').append(tableta)
-		    		console.log(data)
+		    		//console.log(data)
 		    		//$('#resultados tbody').empty();
 		    		var string=""
 		    		for (var a=0; a < data.data.length; a++) {
+		    			if (data.data[a].Nombre=='INGRESOS'){
+		    				var ingreso = parseInt(data.data[a].SALDO)
+		    			}
+		    			if (data.data[a].Nombre=='EGRESOS'){
+		    				var egreso = parseInt(data.data[a].SALDO)
+		    			}
+		    			total_debito+=parseInt(data.data[a].TOTAL_DEBITO)
+		    			total_credito+=parseInt(data.data[a].TOTAL_CREDITO)
+		    			total_saldo+=parseInt(data.data[a].SALDO)
 		    			if (data.data[a].CodPlanCta.length == 1){
-							if (compro == 'NO'){
+							//if (compro == 'NO'){
 								string+='<tr>'+
 										   '<td></td>'+
 										   '<td></td>'+
@@ -178,7 +160,7 @@ function buscar(){
 										   '<td><b>'+data.data[a].Nombre+'</b></td>'+
 										   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'+
 									    '</tr>'
-							} else {
+							/*} else {
 								string+='<tr>'+
 										   '<td></td>'+
 										   '<td></td>'+
@@ -200,15 +182,15 @@ function buscar(){
 										   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_CREDITO)+'</b></td>'+
 										   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'+
 									    '</tr>'
-							}
+							}*/
 					    } else if (data.data[a].CodPlanCta.length == 2){
-					    	if (compro == 'NO'){
+					    	//if (compro == 'NO'){
 						    	string+='<tr>'+
 										   '<td><b><u>'+data.data[a].CodPlanCta+'</u></b></td>'+
 										   '<td><b>&nbsp;&nbsp;&nbsp;<u>'+data.data[a].Nombre+'</u></b></td>'+
 										   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'+
 									    '</tr>'
-							} else {
+							/*} else {
 								string+='<tr>'+
 										   '<td><b><u>'+data.data[a].CodPlanCta+'</u></b></td>'+
 										   '<td><b>&nbsp;&nbsp;&nbsp;<u>'+data.data[a].Nombre+'</u></b></td>'+
@@ -216,15 +198,15 @@ function buscar(){
 										   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_CREDITO)+'</b></td>'+
 										   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'+
 									    '</tr>'
-							}
+							}*/
 					    } else if (data.data[a].CodPlanCta.length == 4){
-					    	if (compro == 'NO'){
+					    	//if (compro == 'NO'){
 						    	string+='<tr>'+
 										   '<td><b>'+data.data[a].CodPlanCta+'</b></td>'+
 										   '<td><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+data.data[a].Nombre+'</b></td>'+
 										   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'+
 									    '</tr>'
-							} else {
+							/*} else {
 								string+='<tr>'+
 										   '<td><b>'+data.data[a].CodPlanCta+'</b></td>'+
 										   '<td><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+data.data[a].Nombre+'</b></td>'+
@@ -232,15 +214,15 @@ function buscar(){
 										   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_CREDITO)+'</b></td>'+
 										   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'+
 									    '</tr>'
-							}
+							}*/
 					    } else if (data.data[a].CodPlanCta.length > 4 && data.data[a].CodPlanCta.length < 10){
-					    	if (compro == 'NO'){
+					    	//if (compro == 'NO'){
 						    	string+='<tr>'+
 										   '<td>'+data.data[a].CodPlanCta+'</td>'+
 										   '<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+data.data[a].Nombre+'</td>'+
 										   '<td style="text-align: right;">'+convertir_rever(data.data[a].SALDO)+'</td>'+
 									    '</tr>'
-							} else {
+							/*} else {
 								string+='<tr>'+
 										   '<td>'+data.data[a].CodPlanCta+'</td>'+
 										   '<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+data.data[a].Nombre+'</td>'+
@@ -248,16 +230,44 @@ function buscar(){
 										   '<td style="text-align: right;">'+convertir_rever(data.data[a].TOTAL_CREDITO)+'</td>'+
 										   '<td style="text-align: right;">'+convertir_rever(data.data[a].SALDO)+'</td>'+
 									    '</tr>'
-							}
+							}*/
 					    } else {
 					    	var new_codigo = data.data[a].CodPlanCta.toString().split('-')
-					    	string+='<tr>'+
-									   '<td></td>'+
-									   '<td style="font-size: 12px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+new_codigo[1]+" - "+data.data[a].Nombre+'</td>'+
-									   '<td style="font-size: 12px;text-align: right;">'+convertir_rever(data.data[a].SALDO)+'</td>'+
-								    '</tr>'					    	
+					    	//if (compro == 'NO'){
+						    	string+='<tr>'+
+										   '<td></td>'+
+										   '<td style="font-size: 12px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+new_codigo[1]+" - "+data.data[a].Nombre+'</td>'+
+										   '<td style="font-size: 12px;text-align: right;">'+convertir_rever(data.data[a].SALDO)+'</td>'+
+									    '</tr>'	
+								/*} else {
+									string+='<tr>'+
+										   '<td></td>'+
+										   '<td style="font-size: 12px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+new_codigo[1]+" - "+data.data[a].Nombre+'</td>'+
+										   '<td style="font-size: 12px;text-align: right;">'+convertir_rever(data.data[a].SALDO)+'</td>'+
+										   '<td style="text-align: right;"></td>'+
+										   '<td style="text-align: right;"></td>'+
+									    '</tr>'	
+								}*/				    	
 					    }
 				    }
+				   //if (compro == 'NO'){
+				    	string+='<tr>'+
+								   '<td></td>'+
+								   '<td><b>TOTALES</b></td>'+
+								   '<td style="text-align: right;"><b>'+convertir_rever(total_saldo)+'</b></td>'+
+							    '</tr>'
+				    /*} else {
+						string+='<tr>'+
+								   '<td></td>'+
+								   '<td><b>TOTALES</b></td>'+
+								   '<td style="text-align: right;"><b>'+convertir_rever(total_debito)+'</b></td>'+
+								   '<td style="text-align: right;"><b>'+convertir_rever(total_credito)+'</b></td>'+
+								   '<td style="text-align: right;"><b>'+convertir_rever(total_saldo)+'</b></td>'+
+							    '</tr>'
+					}*/
+					string+='<tr>'+
+							   '<td style="text-align: center;" colspan="4"><b>Resultado del Ejercicio: '+convertir_rever(ingreso-egreso)+'</b></td>'+
+						    '</tr>'
 					$('#resultados tbody').html(string)
 		    	}
 		    }

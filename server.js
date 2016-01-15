@@ -143,11 +143,17 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 							if (moneda == 'local'){
 								string+="cast(sum(DBA.AcumPlan.TotalDb)as decimal(20,0)) as 'TOTAL_DEBITO',"+
 										"cast(sum(DBA.AcumPlan.TotalCr)as decimal(20,0)) as 'TOTAL_CREDITO',"+
-										"cast(sum(DBA.AcumPlan.TotalDb)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalCr)as decimal(20,0)) as 'SALDO' "
+										"(CASE DBA.PLANCTA.TipoSaldo "+
+											"WHEN 'D' then cast(sum(DBA.AcumPlan.TotalDb)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalCr)as decimal(20,0)) "+
+											"ELSE cast(sum(DBA.AcumPlan.TotalCr)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalDb)as decimal(20,0)) "+
+											"END) as 'SALDO' "
 							} else {
 								string+="cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,0)) as 'TOTAL_DEBITO',"+
 										"cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,0)) as 'TOTAL_CREDITO',"+
-										"cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,0)) as 'SALDO' "
+										"(CASE DBA.PLANCTA.TipoSaldo "+
+											"WHEN 'D' then cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,0)) "+
+											"ELSE cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,0)) "+
+											"END) as 'SALDO' "
 							}
 							string+="FROM "+
 										"DBA.CONTROL,"+
@@ -176,9 +182,9 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 									"DBA.PLANCTA.TipoSaldo,"+
 									"DBA.CONTROL.CtCtaOrden "
 						  if (saldo == 'SI'){
-								string+="having SALDO >= 0 "
+								//string+="having SALDO >= 0 "
 							} else {
-								string+="having SALDO > 0 "	
+								string+="having SALDO <> 0 "	
 							}
 						  string+="ORDER BY "+
 									"DBA.PLANCTA.CodPlanCta"
@@ -194,11 +200,17 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 							if (moneda == 'local'){
 								string+="cast(sum(DBA.AcumPlan.TotalDb)as decimal(20,0)) as 'TOTAL_DEBITO',"+
 										"cast(sum(DBA.AcumPlan.TotalCr)as decimal(20,0)) as 'TOTAL_CREDITO',"+
-										"cast(sum(DBA.AcumPlan.TotalDb)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalCr)as decimal(20,0)) as 'SALDO' "
+										"(CASE DBA.PLANCTA.TipoSaldo "+
+											"WHEN 'D' then cast(sum(DBA.AcumPlan.TotalDb)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalCr)as decimal(20,0)) "+
+											"ELSE cast(sum(DBA.AcumPlan.TotalCr)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalDb)as decimal(20,0)) "+
+											"END) as 'SALDO' "
 							} else {
 								string+="cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,0)) as 'TOTAL_DEBITO',"+
 										"cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,0)) as 'TOTAL_CREDITO',"+
-										"cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,0)) as 'SALDO' "
+										"(CASE DBA.PLANCTA.TipoSaldo "+
+											"WHEN 'D' then cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,0)) "+
+											"ELSE cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,0)) "+
+											"END) as 'SALDO' "
 							}
 							string+="FROM "+
 										"DBA.CONTROL,"+
@@ -227,9 +239,9 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 									"DBA.PLANCTA.TipoSaldo,"+
 									"DBA.CONTROL.CtCtaOrden "
 						  if (saldo == 'SI'){
-								string+="having SALDO >= 0 "
+								//string+="having SALDO >= 0 "
 							} else {
-								string+="having SALDO > 0 "	
+								string+="having SALDO <> 0 "	
 							}
 						  string+="UNION "+
 								  "SELECT "+
@@ -243,11 +255,17 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 									if (moneda == 'local'){
 										string+="cast(sum(DBA.AcumAuxi.TotalDb)as decimal(20,0)) as 'TOTAL_DEBITO',"+
 												"cast(sum(DBA.AcumAuxi.TotalCr)as decimal(20,0)) as 'TOTAL_CREDITO',"+
-												"cast(sum(DBA.AcumAuxi.TotalDb)as decimal(20,0)) - cast(sum(DBA.AcumAuxi.TotalCr)as decimal(20,0)) as 'SALDO' "
+												"(CASE DBA.PLANCTA.TipoSaldo "+
+													"WHEN 'D' then cast(sum(DBA.AcumAuxi.TotalDb)as decimal(20,0)) - cast(sum(DBA.AcumAuxi.TotalCr)as decimal(20,0)) "+
+													"ELSE cast(sum(DBA.AcumAuxi.TotalCr)as decimal(20,0)) - cast(sum(DBA.AcumAuxi.TotalDb)as decimal(20,0)) "+
+													"END) as 'SALDO' "
 									} else {
 										string+="cast(sum(DBA.AcumAuxi.TotalDbME)as decimal(20,0)) as 'TOTAL_DEBITO',"+
 												"cast(sum(DBA.AcumAuxi.TotalCrME)as decimal(20,0)) as 'TOTAL_CREDITO',"+
-												"cast(sum(DBA.AcumAuxi.TotalDbME)as decimal(20,0)) - cast(sum(DBA.AcumAuxi.TotalCrME)as decimal(20,0)) as 'SALDO' "
+												"(CASE DBA.PLANCTA.TipoSaldo "+
+													"WHEN 'D' then cast(sum(DBA.AcumAuxi.TotalDbME)as decimal(20,0)) - cast(sum(DBA.AcumAuxi.TotalCrME)as decimal(20,0)) "+
+													"ELSE cast(sum(DBA.AcumAuxi.TotalCrME)as decimal(20,0)) - cast(sum(DBA.AcumAuxi.TotalDbME)as decimal(20,0)) "+
+													"END) as 'SALDO' "
 									}
 									string+="FROM "+
 												"DBA.CONTROL,"+
@@ -281,12 +299,13 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 															"DBA.PLANCTA.TipoSaldo,"+
 															"DBA.Control.CTCtaOrden "		
 												if (saldo == 'SI'){
-													string+="having SALDO >= 0 "
+													//string+="having SALDO >= 0 "
 												} else {
-													string+="having SALDO > 0 "	
+													string+="having SALDO <> 0 "	
 												}
 												string+="ORDER BY 1, 2"
-		}						
+		}	
+		
 		conn.exec(string, function(err, row){
 			res.json({ data : row });
 		});
