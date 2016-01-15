@@ -325,6 +325,47 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 });
 
 /*
- 
+ SELECT 
+    DBA.PLANCTA.Cod_Empresa,
+    DBA.PLANCTA.CodPlanCta,
+    DBA.PLANCTA.Nombre,
+    DBA.PLANCTA.Nivel,
+	DBA.PLANCTA.Imputable,		
+    (SELECT 
+        cast(SUM (A2.TotalDB) -  SUM(A2.TotalCR) as decimal(20,0))
+    FROM 
+        DBA.ACUMPLAN A2
+    WHERE 
+        A2.Cod_Empresa = DBA.PLANCTA.Cod_Empresa
+        AND A2.Periodo     = DBA.PLANCTA.Periodo
+        AND A2.CodPlanCta  = DBA.PLANCTA.CodPlanCta
+        AND A2.AnhoMes    >= 201111
+        AND A2.AnhoMes    =  201111
+    ) as SALDO_ANTERIOR,
+    (SELECT 
+        cast(SUM (A2.TotalDBME) -  SUM(A2.TotalCRME) as decimal(20,0))
+    FROM 
+        DBA.ACUMPLAN A2
+    WHERE 
+        A2.Cod_Empresa = DBA.PLANCTA.Cod_Empresa
+        AND A2.Periodo = DBA.PLANCTA.Periodo
+        AND A2.CodPlanCta  = DBA.PLANCTA.CodPlanCta
+        AND A2.AnhoMes    >= 201111
+        AND A2.AnhoMes    =  201111
+    ) as SALDO_ANTERIORME,
+    cast(DBA.ACUMPLAN.TotalDb as decimal(20,0)) as TOTAL_DEBITO,
+    cast(DBA.ACUMPLAN.TotalCr as decimal(20,0)) as TOTAL_CREDITO,
+    cast(DBA.ACUMPLAN.TotalDbME as decimal(20,0)) as TOTAL_DEBITOME,
+    cast(DBA.ACUMPLAN.TotalCrME as decimal(20,0)) as TOTAL_CREDITOME,
+  	DBA.PLANCTA.TipoSaldo	
+FROM DBA.PLANCTA  LEFT OUTER JOIN DBA.ACUMPLAN  ON
+      DBA.PLANCTA.Cod_Empresa = DBA.ACUMPLAN.Cod_Empresa  AND
+      DBA.PLANCTA.Periodo     = DBA.ACUMPLAN.Periodo      AND
+      DBA.PLANCTA.CodPlanCta  = DBA.ACUMPLAN.CodPlanCta   AND
+      DBA.ACUMPLAN.AnhoMes   >= 201112 AND
+      DBA.ACUMPLAN.AnhoMes    = 201112 
+WHERE 
+    DBA.PLANCTA.cod_empresa = 'BT'
+    AND DBA.PLANCTA.periodo = 2011
 */
 
