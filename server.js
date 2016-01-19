@@ -307,6 +307,44 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 			res.json({ data : row });
 		});
 	});	
+	
+	//list diario comprobado
+	restapi.get('/api/v1/diariocomprobado/list/:empresa/:periodo/:tipoasiento/:fechad/:fechah/:autorizado', function(req, res){
+		res.setHeader('Access-Control-Allow-Origin', '*');
+		
+		var empresa = req.params.empresa;
+		var periodo = req.params.periodo;
+		var tipoasiento = req.params.tipoasiento;
+		var fechad = req.params.fechad;
+		var fechah = req.params.fechah;
+		var autorizado = req.params.autorizado;
+		
+		var string =  "SELECT "+
+							"dba.asientosdet.Cod_Empresa as EMPRESA,dba.asientosdet.NroTransac,dba.asientoscab.TipoAsiento,dba.asientoscab.NroCompr,dba.asientosdet.NroOrden as Linea,dba.asientosdet.CodPlanCta,"+
+							"dba.asientosdet.CodPlanAux,dba.asientosdet.Concepto,dba.asientosdet.DbCr,dba.asientosdet.Importe,dba.asientosdet.ImporteME,dba.asientoscab.Fecha,dba.asientosdet.DEBITO,"+
+							"dba.asientosdet.CREDITO,dba.asientosdet.DEBITOME as DEBITO_ME,dba.asientosdet.CREDITOME as CREDITO_ME,DBA.PLANCTA.Nombre as NOMBRECUENTA,DBA.PLANAUXI.Nombre as NOMBRECUENTAAUX,"+
+							"dba.tipoasiento.Descrip as TIPOASIENTO,DBA.asientoscab.autorizado,DBA.asientoscab.cargadopor,DBA.asientoscab.fechacarga,DBA.asientoscab.autorizadopor,DBA.asientoscab.fechaautoriz,"+
+							"DBA.asientoscab.nroasiento,upper(dba.asientosdet.Concepto) as BUSCAR_CONCEPTO	"+
+					  "FROM "+
+							"DBA.PLANCTA,dba.asientoscab,dba.tipoasiento,dba.asientosdet,DBA.PLANAUXI "+
+					  "WHERE "+
+							"( dba.asientosdet.Cod_Empresa = DBA.PLANCTA.Cod_Empresa ) AND ( dba.asientosdet.Cod_Empresa = DBA.PLANAUXI.Cod_Empresa ) AND ( dba.asientosdet.Periodo = DBA.PLANAUXI.Periodo ) "+
+							"AND ( dba.asientosdet.CodPlanCta = DBA.PLANAUXI.CodPlanCta ) AND ( dba.asientosdet.CodPlanAux = DBA.PLANAUXI.CodPlanAux ) AND ( dba.asientosdet.Periodo = DBA.PLANCTA.Periodo ) "+
+							"AND ( dba.asientosdet.Periodo = DBA.asientoscab.Periodo ) AND ( dba.asientosdet.CodPlanCta = DBA.PLANCTA.CodPlanCta ) AND ( dba.asientoscab.Cod_Empresa = dba.asientosdet.Cod_Empresa ) "+
+							"AND ( dba.asientoscab.NroTransac = dba.asientosdet.NroTransac ) AND ( dba.asientoscab.TipoAsiento = dba.tipoasiento.TipoAsiento ) AND ( dba.AsientosCAB.cod_empresa = '"+empresa+"' ) "+
+							"AND ( dba.AsientosCAB.periodo = "+periodo+" ) AND ( dba.asientoscab.TipoAsiento = '"+tipoasiento+"') AND (DBA.asientoscab.fechacarga BETWEEN '"+fechad+"' and '"+fechah+"') "
+		if(autorizado == 'SI')
+				string+="AND (DBA.asientoscab.autorizado = 'S') "
+		if(autorizado == 'NO')
+				string+="AND (DBA.asientoscab.autorizado = 'N') "
+			string+= "ORDER BY "+
+							"DBA.AsientosCAB.Cod_Empresa ASC,DBA.AsientosCAB.Fecha ASC,DBA.AsientosDet.NroTransac ASC,DBA.AsientosDet.Linea ASC"
+			
+		conn.exec(string, function(err, row){
+			res.json({ data : row });
+		});
+	});	
+
 
 	restapi.listen(3000);
 	restapi.use(function(req, res, next){

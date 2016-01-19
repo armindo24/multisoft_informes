@@ -1,0 +1,145 @@
+<style>
+
+</style>
+
+<script type="text/javascript">
+
+var aux1 = null
+
+ 
+$(document).ready(function() {
+	$('#page-wrapper').css('margin-left','0px');
+    $('#my-left-menu').toggle(0);
+	var url = window.location.href
+	
+	aux = url.toString().split("http://")
+	aux1 = aux[1].toString().split(":8000")
+	
+    $(".chosen-select").chosen({
+        disable_search_threshold: 0,
+        no_results_text: "Oops, nothing found!",
+        width: "200px",
+        allow_single_deselect: true
+     	});
+});
+
+function renewDatePickers() {
+    $('.datepicker').datepicker('destroy');
+    $(".datepicker").datepicker({dateFormat: 'yy-mm-dd'});
+}
+
+$(renewDatePickers);
+$.datepicker.regional['es'] = {
+	closeText: 'Cerrar',
+	prevText: '<Ant',
+	nextText: 'Sig>',
+	currentText: 'Hoy',
+	monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+	monthNamesShort: ['Ene','Feb','Mar','Abr', 'May','Jun','Jul','Ago','Sep', 'Oct','Nov','Dic'],
+	dateFormat: 'yy/mm/dd',
+	firstDay: 1,
+	isRTL: false,
+	showMonthAfterYear: false,
+	yearSuffix: ''
+};
+$.datepicker.setDefaults($.datepicker.regional["es"]);
+
+function remover(selectbox){
+    var i;
+    for(i=selectbox.options.length-1;i>=0;i--)
+    {
+        selectbox.remove(i);
+    }
+} 
+
+function SelectElement(value,name){    
+    var element = document.getElementsByName(name)[0];
+    element.value = value;
+}
+
+
+function buscar(){
+	var empresa = $("[name=empresa]").val()
+	var periodo = $("[name=periodo]").val()
+	var desde = $("[name=fechad]").val()
+	var hasta = $("[name=fechah]").val()
+	var tipoasiento = $("[name=tipoasiento]").val()
+	
+	if (periodo == "" || periodo == null || periodo == " "){
+		alert("No hay datos suficientes para generar el listado")
+	} else {
+		$('.collapse').collapse('hide')
+		
+		$.get("http://"+aux1[0]+":3000/api/v1/tipoasiento/select/",
+					    function(data) 	{
+					    	if (data != null){
+					    		$('#table-div').empty()
+					    	}
+					    }
+					); 
+	}
+}
+
+
+window.onload = function() {
+	
+	 $.get("http://"+aux1[0]+":3000/api/v1/empresa/select",
+		    function(data) {
+		    	if (data != null){
+		    		var select = document.getElementsByName("empresa")[0]
+		    		remover(select);
+					for (var i=0;i < data.data.length;i++){
+						var option = document.createElement("option");
+						option.value = data.data[i].Cod_Empresa;
+						option.text = data.data[i].Des_Empresa;
+						select.add(option);
+					}
+					SelectElement(data.data[0].Cod_Empresa,'empresa')
+									
+					$.get("http://"+aux1[0]+":3000/api/v1/tipoasiento/select/",
+					    function(data) 	{
+					    	if (data != null){
+					    		var select = document.getElementsByName("tipoasiento")[0]
+					    		remover(select);
+					    		var option = document.createElement("option");
+								option.text = "NINGUNO";
+								select.add(option);
+								for (var i=0;i < data.data.length;i++){
+									var option = document.createElement("option");
+									option.value = data.data[i].TipoAsiento;
+									option.text =data.data[i].Descrip;
+									select.add(option);
+								}
+								SelectElement(data.data[0].TipoAsiento,'tipoasiento')
+								$('.chosen-select').trigger('chosen:updated');
+					    	}
+					    }
+					);  
+					
+		    	}
+		    }
+		); 
+  
+	var today = new Date();
+	var dd = today.getDate();
+	var mm = today.getMonth()+1; //January is 0!
+	var yyyy = today.getFullYear();
+	
+	if(dd<10) {
+	    dd='0'+dd
+	} 
+	
+	if(mm<10) {
+	    mm='0'+mm
+	} 
+	
+	today = yyyy+'-'+mm+'-'+dd; 
+	
+	$('[name=fechad]').val(today)
+	$('[name=fechah]').val(today)
+	
+	mountperiodo = yyyy
+	
+	$('[name=periodo]').val(mountperiodo)
+};
+</script>
