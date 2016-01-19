@@ -312,14 +312,13 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 	});
 	
 	//list balance comprobado
-	restapi.get('/api/v1/balancecomprobado/list/:empresa/:periodo/:cuentad/:cuentah/:mesanterior/:mesd/:nivel/:moneda', function(req, res){
+	restapi.get('/api/v1/balancecomprobado/list/:empresa/:periodo/:periodoant/:mes/:mesant/:nivel/:moneda', function(req, res){
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		var empresa = req.params.empresa;
 		var periodo = req.params.periodo;
-		var cuentad = req.params.cuentad;
-		var cuentah = req.params.cuentah;
-		var mesd = req.params.mesd;
-		var mesh = req.params.mesanterior;
+		var periodoant = req.params.periodoant;
+		var mes = req.params.mes;
+		var mesant = req.params.mesant;
 		var nivel = req.params.nivel;
 		var moneda = req.params.moneda;
 		
@@ -343,12 +342,10 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 									"DBA.ACUMPLAN A2 "+
 								"WHERE "+
 									"A2.Cod_Empresa = DBA.PLANCTA.Cod_Empresa "+
-									"AND A2.Periodo = DBA.PLANCTA.Periodo "+
 									"AND A2.CodPlanCta  = DBA.PLANCTA.CodPlanCta "+
-									"AND (DBA.PLANCTA.CodPlanCta >= '"+cuentad+"') "+  
-									"AND (DBA.PLANCTA.CodPlanCta <= '"+cuentah+"') "+
-									"AND A2.AnhoMes    >= "+parseInt(periodo.toString()+mesd.toString())+" "+
-									"AND A2.AnhoMes    =  "+parseInt(periodo.toString()+mesd.toString())+" "
+									"AND A2.Periodo = DBA.PLANCTA.Periodo "+
+									"AND A2.Anho = "+parseInt(periodoant)+" "+
+									"AND A2.Mes < "+parseInt(mesant)+" "
 									if (nivel > 0)
 										string+="AND (DBA.PLANCTA.Nivel <= "+nivel+") "
 							string+="),0,(SELECT "
@@ -365,12 +362,10 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 											"DBA.ACUMPLAN A2 "+
 									 "WHERE "+
 											"A2.Cod_Empresa = DBA.PLANCTA.Cod_Empresa "+
-											"AND A2.Periodo     = DBA.PLANCTA.Periodo "+
 											"AND A2.CodPlanCta  = DBA.PLANCTA.CodPlanCta "+
-											"AND (DBA.PLANCTA.CodPlanCta >= '"+cuentad+"') "+  
-											"AND (DBA.PLANCTA.CodPlanCta <= '"+cuentah+"') "+
-											"AND A2.AnhoMes    >= "+parseInt(periodo.toString()+mesd.toString())+" "+
-											"AND A2.AnhoMes    =  "+parseInt(periodo.toString()+mesd.toString())+" "
+											"AND A2.Periodo = DBA.PLANCTA.Periodo "+
+											"AND A2.Anho = "+parseInt(periodoant)+" "+
+											"AND A2.Mes < "+parseInt(mesant)+" "
 											if (nivel > 0)
 												string+="AND (DBA.PLANCTA.Nivel <= "+nivel+") "
 							string+=")) as SALDO_ANTERIOR,"
@@ -385,23 +380,17 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 						"(CASE DBA.PLANCTA.TipoSaldo "+
 							"WHEN 'D' THEN (SALDO_ANTERIOR + TOTAL_DEBITO)-TOTAL_CREDITO "+
 							"ELSE (SALDO_ANTERIOR + TOTAL_CREDITO)-TOTAL_DEBITO END) AS SALDO "+
-					"FROM DBA.PLANCTA  LEFT OUTER JOIN DBA.ACUMPLAN  ON "+
+					"FROM DBA.PLANCTA,DBA.ACUMPLAN WHERE "+
 						"DBA.PLANCTA.Cod_Empresa = DBA.ACUMPLAN.Cod_Empresa "+
-						"AND DBA.PLANCTA.Periodo = DBA.ACUMPLAN.Periodo "+
+						"AND DBA.ACUMPLAN.Periodo = DBA.PLANCTA.Periodo "+
 						"AND DBA.PLANCTA.CodPlanCta = DBA.ACUMPLAN.CodPlanCta "+
-						"AND (DBA.PLANCTA.CodPlanCta >= '"+cuentad+"') "+  
-						"AND (DBA.PLANCTA.CodPlanCta <= '"+cuentah+"') "+
-						"AND DBA.ACUMPLAN.AnhoMes >= "+parseInt(mesh.toString())+" "+
-						"AND DBA.ACUMPLAN.AnhoMes = "+parseInt(mesh.toString())+" "
+						"AND DBA.ACUMPLAN.Anho = "+parseInt(periodo)+" "+
+						"AND DBA.ACUMPLAN.Mes =  "+parseInt(mes)+" "
 						if (nivel > 0)
 							string+="AND (DBA.PLANCTA.Nivel <= "+nivel+") "
-				string+="WHERE "+
-						"DBA.PLANCTA.cod_empresa = '"+empresa+"' "+
-						"AND DBA.PLANCTA.periodo = "+periodo+" "
-						 if (nivel > 0)
-							string+="AND (DBA.PLANCTA.Nivel <= "+nivel+") "
-				string+="ORDER BY DBA.PLANCTA.CodPlanCta"
-                console.log(string)                                                       
+				string+="AND DBA.PLANCTA.cod_empresa = '"+empresa+"' "+
+							"ORDER BY DBA.PLANCTA.CodPlanCta"
+                                                                    
 		conn.exec(string, function(err, row){
 			res.json({ data : row });
 		});
