@@ -11,6 +11,8 @@ var total_saldo = 0
 var total_saldo_anterior = 0
  
 $(document).ready(function() {
+	$('#page-wrapper').css('margin-left','0px');
+    $('#my-left-menu').toggle(0);
 	var url = window.location.href
 	
 	aux = url.toString().split("http://")
