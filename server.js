@@ -70,6 +70,20 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 		if (proveedor == "NINGUNO" || proveedor == " ")
 			proveedor = ""
 		
+		console.log("SELECT "+ 
+				"Des_Sucursal,NroOP,des_tp_comp,date(Fecha) as Fecha,RazonSocial,cast(TotalImporte as decimal(20,0)) "+
+				"FROM "+
+					"DBA.OPCAB,DBA.EMPRESA,DBA.SUCURSAL,DBA.TPOCBTE,DBA.PROVEED "+
+				"WHERE "+ 
+					"DBA.OPCAB.Cod_Empresa = DBA.EMPRESA.Cod_Empresa AND DBA.SUCURSAL.Cod_Empresa = DBA.EMPRESA.Cod_Empresa AND "+  
+					"DBA.SUCURSAL.Cod_Sucursal = DBA.OPCAB.Cod_Sucursal AND DBA.TPOCBTE.Cod_Tp_Comp = DBA.OPCAB.Cod_Tp_Comp AND "+ 
+					"DBA.PROVEED.CodProv = DBA.OPCAB.CodProv AND DBA.PROVEED.Cod_Empresa = DBA.OPCAB.Cod_Empresa AND "+
+					"DBA.PROVEED.Cod_Empresa = DBA.EMPRESA.Cod_Empresa AND DBA.OPCAB.Anulado = 'N' AND "+
+					"cast(DBA.SUCURSAL.Cod_Sucursal as varchar(50)) like '%"+sucursal+"%' AND cast(DBA.EMPRESA.Cod_Empresa as varchar(50)) like '%"+empresa+"%' "+
+					"AND cast(DBA.OPCAB.TipoOP as varchar(50)) like '%"+tipoop+"%' AND cast(DBA.TPOCBTE.Cod_Tp_Comp as varchar(50)) like '%"+comprobante+"%' "+
+					"AND cast(DBA.PROVEED.TipoProv as varchar(50)) like '%"+tipoproveedor+"%' AND cast(DBA.PROVEED.CodProv as varchar(50)) like '%"+proveedor+"%' "+
+					"AND DBA.OPCAB.Fecha BETWEEN '"+desde+"' and '"+hasta+"'")
+				
 		conn.exec("SELECT "+ 
 						"Des_Sucursal,NroOP,des_tp_comp,date(Fecha) as Fecha,RazonSocial,cast(TotalImporte as decimal(20,0)) "+
 					"FROM "+
@@ -121,10 +135,10 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 							"ELSE cast(sum(DBA.AcumPlan.TotalCr)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalDb)as decimal(20,0)) "+
 							"END) as 'SALDO' "
 			} else {
-				string+="cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,0)) as 'TOTAL_DEBITO',cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,0)) as 'TOTAL_CREDITO',"+
+				string+="cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,2)) as 'TOTAL_DEBITO',cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,2)) as 'TOTAL_CREDITO',"+
 						"(CASE DBA.PLANCTA.TipoSaldo "+
-							"WHEN 'D' then cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,0)) "+
-							"ELSE cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,0)) "+
+							"WHEN 'D' then cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,2)) - cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,2)) "+
+							"ELSE cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,2)) - cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,2)) "+
 							"END) as 'SALDO' "
 			}
 			string+="FROM "+
@@ -157,10 +171,10 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 							"ELSE cast(sum(DBA.AcumPlan.TotalCr)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalDb)as decimal(20,0)) "+
 							"END) as 'SALDO' "
 			} else {
-				string+="cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,0)) as 'TOTAL_DEBITO',cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,0)) as 'TOTAL_CREDITO',"+
+				string+="cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,2)) as 'TOTAL_DEBITO',cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,2)) as 'TOTAL_CREDITO',"+
 						"(CASE DBA.PLANCTA.TipoSaldo "+
-							"WHEN 'D' then cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,0)) "+
-							"ELSE cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,0)) - cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,0)) "+
+							"WHEN 'D' then cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,2)) - cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,2)) "+
+							"ELSE cast(sum(DBA.AcumPlan.TotalCrME)as decimal(20,2)) - cast(sum(DBA.AcumPlan.TotalDbME)as decimal(20,2)) "+
 							"END) as 'SALDO' "
 			}
 			string+="FROM "+
@@ -191,10 +205,10 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 						"ELSE cast(sum(DBA.AcumAuxi.TotalCr)as decimal(20,0)) - cast(sum(DBA.AcumAuxi.TotalDb)as decimal(20,0)) "+
 						"END) as 'SALDO' "
 		} else {
-			string+="cast(sum(DBA.AcumAuxi.TotalDbME)as decimal(20,0)) as 'TOTAL_DEBITO',cast(sum(DBA.AcumAuxi.TotalCrME)as decimal(20,0)) as 'TOTAL_CREDITO',"+
+			string+="cast(sum(DBA.AcumAuxi.TotalDbME)as decimal(20,2)) as 'TOTAL_DEBITO',cast(sum(DBA.AcumAuxi.TotalCrME)as decimal(20,2)) as 'TOTAL_CREDITO',"+
 					"(CASE DBA.PLANCTA.TipoSaldo "+
-						"WHEN 'D' then cast(sum(DBA.AcumAuxi.TotalDbME)as decimal(20,0)) - cast(sum(DBA.AcumAuxi.TotalCrME)as decimal(20,0)) "+
-						"ELSE cast(sum(DBA.AcumAuxi.TotalCrME)as decimal(20,0)) - cast(sum(DBA.AcumAuxi.TotalDbME)as decimal(20,0)) "+
+						"WHEN 'D' then cast(sum(DBA.AcumAuxi.TotalDbME)as decimal(20,2)) - cast(sum(DBA.AcumAuxi.TotalCrME)as decimal(20,2)) "+
+						"ELSE cast(sum(DBA.AcumAuxi.TotalCrME)as decimal(20,2)) - cast(sum(DBA.AcumAuxi.TotalDbME)as decimal(20,2)) "+
 						"END) as 'SALDO' "
 		}
 		string+="FROM "+
@@ -245,8 +259,8 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 										"ELSE cast(SUM (A2.TotalCR) -  SUM(A2.TotalDB) as decimal(20,0)) END)"
 						} else {
 							string+="(CASE DBA.PLANCTA.TipoSaldo "+
-										"WHEN 'D' then cast(SUM (A2.TotalDBME) -  SUM(A2.TotalCRME) as decimal(20,0)) "+
-										"ELSE cast(SUM (A2.TotalCRME) -  SUM(A2.TotalDBME) as decimal(20,0)) END)"
+										"WHEN 'D' then cast(SUM (A2.TotalDBME) -  SUM(A2.TotalCRME) as decimal(20,2)) "+
+										"ELSE cast(SUM (A2.TotalCRME) -  SUM(A2.TotalDBME) as decimal(20,2)) END)"
 						}
 						string+="FROM "+ 
 								"DBA.ACUMPLAN A2 "+
@@ -263,8 +277,8 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 															"ELSE cast(SUM (A2.TotalCR) -  SUM(A2.TotalDB) as decimal(20,0)) END)"
 											} else {
 												string+="(CASE DBA.PLANCTA.TipoSaldo "+
-															"WHEN 'D' then cast(SUM (A2.TotalDBME) -  SUM(A2.TotalCRME) as decimal(20,0)) "+
-															"ELSE cast(SUM (A2.TotalCRME) -  SUM(A2.TotalDBME) as decimal(20,0)) END)"
+															"WHEN 'D' then cast(SUM (A2.TotalDBME) -  SUM(A2.TotalCRME) as decimal(20,2)) "+
+															"ELSE cast(SUM (A2.TotalCRME) -  SUM(A2.TotalDBME) as decimal(20,2)) END)"
 											}
 							 string+="FROM "+
 											"DBA.ACUMPLAN A2 "+
@@ -279,8 +293,8 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 							string+="ifnull(cast(DBA.ACUMPLAN.TotalDb as decimal(20,0)),0,cast(DBA.ACUMPLAN.TotalDb as decimal(20,0))) as TOTAL_DEBITO,"+
 									"ifnull(cast(DBA.ACUMPLAN.TotalCr as decimal(20,0)),0,cast(DBA.ACUMPLAN.TotalCr as decimal(20,0))) as TOTAL_CREDITO,"
 						} else {
-							string+="ifnull(cast(DBA.ACUMPLAN.TotalDbME as decimal(20,0)),0,cast(DBA.ACUMPLAN.TotalCr as decimal(20,0))) as TOTAL_DEBITO,"+
-									"ifnull(cast(DBA.ACUMPLAN.TotalCrME as decimal(20,0)),0,cast(DBA.ACUMPLAN.TotalCrME as decimal(20,0))) as TOTAL_CREDITO,"
+							string+="ifnull(cast(DBA.ACUMPLAN.TotalDbME as decimal(20,2)),0,cast(DBA.ACUMPLAN.TotalDbME as decimal(20,2))) as TOTAL_DEBITO,"+
+									"ifnull(cast(DBA.ACUMPLAN.TotalCrME as decimal(20,0)),0,cast(DBA.ACUMPLAN.TotalCrME as decimal(20,2))) as TOTAL_CREDITO,"
 						}
 				string+="DBA.PLANCTA.TipoSaldo,"+
 						"(CASE DBA.PLANCTA.TipoSaldo "+
@@ -313,7 +327,6 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		
 		var empresa = req.params.empresa;
-		//var periodo = req.params.periodo;
 		var tipoasiento = req.params.tipoasiento;
 		var fechad = req.params.fechad;
 		var fechah = req.params.fechah;
@@ -327,7 +340,6 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 							"DBA.asientoscab.nroasiento,upper(dba.asientosdet.Concepto) as BUSCAR_CONCEPTO	"+
 					  "FROM "+
 							"(dba.asientosdet LEFT OUTER JOIN DBA.PLANAUXI ON dba.asientosdet.Cod_Empresa = DBA.PLANAUXI.Cod_Empresa AND dba.asientosdet.Periodo = DBA.PLANAUXI.Periodo AND dba.asientosdet.CodPlanCta = DBA.PLANAUXI.CodPlanCta AND dba.asientosdet.CodPlanAux = DBA.PLANAUXI.CodPlanAux),DBA.PLANCTA,dba.asientoscab,dba.tipoasiento "+
-							//"DBA.PLANCTA,dba.asientoscab,dba.tipoasiento,dba.asientosdet,DBA.PLANAUXI "+
 					  "WHERE "+
 							"( dba.asientosdet.Periodo = DBA.PLANCTA.Periodo ) "+
 							"AND ( dba.asientosdet.CodPlanCta = DBA.PLANCTA.CodPlanCta ) "+
@@ -335,14 +347,8 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 							"AND ( dba.asientoscab.NroTransac  = dba.asientosdet.NroTransac ) "+
 							"AND ( dba.asientoscab.TipoAsiento = dba.tipoasiento.TipoAsiento ) " +
 							"AND ( dba.AsientosCAB.cod_empresa = '"+empresa+"' ) "+
-							//"AND ( dba.AsientosCAB.periodo = "+periodo+" ) "+
 							"AND ( dba.asientoscab.TipoAsiento = '"+tipoasiento+"') "+
-							"AND (DBA.asientoscab.fecha BETWEEN '"+fechad+"' and '"+fechah+"') "
-							//"( dba.asientosdet.Cod_Empresa = DBA.PLANCTA.Cod_Empresa ) AND ( dba.asientosdet.Cod_Empresa = DBA.PLANAUXI.Cod_Empresa ) AND ( dba.asientosdet.Periodo = DBA.PLANAUXI.Periodo ) "+
-							//"AND ( dba.asientosdet.CodPlanCta = DBA.PLANAUXI.CodPlanCta ) AND ( dba.asientosdet.CodPlanAux = DBA.PLANAUXI.CodPlanAux ) AND ( dba.asientosdet.Periodo = DBA.PLANCTA.Periodo ) "+
-							//"AND ( dba.asientosdet.Periodo = DBA.asientoscab.Periodo ) AND ( dba.asientosdet.CodPlanCta = DBA.PLANCTA.CodPlanCta ) AND ( dba.asientoscab.Cod_Empresa = dba.asientosdet.Cod_Empresa ) "+
-							//"AND ( dba.asientoscab.NroTransac = dba.asientosdet.NroTransac ) AND ( dba.asientoscab.TipoAsiento = dba.tipoasiento.TipoAsiento ) AND ( dba.AsientosCAB.cod_empresa = '"+empresa+"' ) "+
-							//"AND ( dba.AsientosCAB.periodo = "+periodo+" ) AND ( dba.asientoscab.TipoAsiento = '"+tipoasiento+"') AND (DBA.asientoscab.fecha BETWEEN '"+fechad+"' and '"+fechah+"') "
+							"AND (DBA.asientoscab.fecha BETWEEN '"+fechad+"' and '"+fechah+"') "						
 		if(autorizado == 'SI')
 				string+="AND (DBA.asientoscab.autorizado = 'S') "
 		if(autorizado == 'NO')

@@ -109,34 +109,34 @@ function buscar(){
 			alert("No hay datos suficientes para generar el listado")		
 		} else {
 			$('.collapse').collapse('hide')
-			$('#lista').empty()
 			$.get("http://"+aux1[0]+":3000/api/v1/ordenpago/list/"+empresa+"/"+sucursal+"/"+tipoop+"/"+comprobante+"/"+tipoproveedor+"/"+proveedor+"/"+desde+"/"+hasta,
 			    function(data) {
 			    	if (data != null){
-			    		lista = null
-			    		console.log(data)
-			    		lista = data
-			    		$("#cabecera").show()
-			    		for (var i=1;i < cant_reg;i++){
-			    			var string = '<div class="row show-grid">'+
-			    							'<div style="text-align:center;" class="col-md-4 col-sm-2">'+
-							            		data.data[i].RazonSocial +
-							            	'</div>'+
-							            	'<div style="text-align:center;" class="col-md-2 col-sm-2">'+
-							            		data.data[i].Des_Sucursal +
-							            	'</div>'+
-							            	'<div style="text-align:center;" class="col-md-2 col-sm-2">'+
-							            		data.data[i].NroOP + '/' + data.data[i].des_tp_comp +
-							            	'</div>'+
-							            	'<div style="text-align:center;" class="col-md-2  col-sm-2">'+
-							            		data.data[i].Fecha +
-							            	'</div>'+
-							            	'<div style="text-align:center;" class="col-md-2 col-sm-2">'+
-							            		convertir_rever(data.data[i].TotalImporte) +
-							            	'</div>'+
-							            '</div>'
-							$('#lista').append(string)
-			    		}
+			    		$('#table-div').empty()
+			    		var tableta = '<table id="resultados" class="table table-striped table-hover table-bordered table-filter scroll" tyle="width:90%">'+
+							    		'<thead>'+
+							    			'<tr>'+
+							    				'<th>Proveedor</th>'+
+							    				'<th>Sucursal</th>'+
+							    				'<th>OP N&#176;</th>'+
+							    				'<th>Fecha</th>'+
+							    				'<th>Monto</th>'+
+							    			'</tr>'+
+							    		'</thead>'+
+							    		'<tbody></tbody>'+
+							    	'</table>'
+						$('#table-div').append(tableta)
+						var string=""
+		    			for (var i=0; i < data.data.length; i++) {
+		    				string+='<tr>'+
+									   '<td>'+data.data[i].RazonSocial+'</td>'+
+									   '<td>'+data.data[i].Des_Sucursal+'</td>'+
+									   '<td>'+data.data[i].NroOP + '/' + data.data[i].des_tp_comp+'</td>'+
+									   '<td>'+data.data[i].Fecha+'</td>'+
+									   '<td style="text-align: right;">'+convertir_rever(data.data[i].TotalImporte)+'</td>'+
+								    '</tr>'
+		    			}
+		    			$('#resultados tbody').html(string)
 			    	}
 			    }
 			);  

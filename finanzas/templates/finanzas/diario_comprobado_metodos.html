@@ -61,6 +61,19 @@ function SelectElement(value,name){
     element.value = value;
 }
 
+function addCommas(nStr)
+{
+	nStr += '';
+	x = nStr.split('.');
+	x1 = x[0];
+	x2 = x.length > 1 ? ',' + x[1] : '';
+	var rgx = /(\d+)(\d{3})/;
+	while (rgx.test(x1)) {
+		x1 = x1.replace(rgx, '$1' + '.' + '$2');
+	}
+	return x1 + x2;
+}
+
 
 function buscar(){
 	var empresa = $("[name=empresa]").val()
@@ -85,19 +98,19 @@ function buscar(){
 					    			if (parseInt(data.data[a].nroasiento) != parseInt(current_asiento)){
 					    					 if (total_debito > 0 || total_credito > 0 || total_debito_me > 0 || total_credito_me > 0){
 						    					 if (moneda == 'AM'){
-				    									string+='<tr><td colspan="6" style="text-align: right;"> TOTALES</td>'+
-				    											'<td style="text-align: right;">'+convertir_rever(total_debito)+'</td>'+
-				    											'<td style="text-align: right;">'+convertir_rever(total_credito)+'</td>'+
-				    											'<td style="text-align: right;">'+(total_debito_me)+'</td>'+
-				    											'<td style="text-align: right;">'+(total_credito_me)+'</td></tr>'
+				    									string+='<tr><td colspan="6" style="text-align: right;"><b>TOTALES</b></td>'+
+				    											'<td style="text-align: right;"><b>'+convertir_rever(total_debito)+'</b></td>'+
+				    											'<td style="text-align: right;"><b>'+convertir_rever(total_credito)+'</b></td>'+
+				    											'<td style="text-align: right;"><b>'+addCommas((Math.round(total_debito_me * 100) / 100).toString())+'</b></td>'+
+				    											'<td style="text-align: right;"><b>'+addCommas((Math.round(total_credito_me * 100) / 100).toString())+'</b></td></tr>'
 				    								} else if (moneda == 'LO') {
-				    									string+='<tr><td colspan="6" style="text-align: right;"> TOTALES</td>'+
-				    											'<td style="text-align: right;">'+convertir_rever(total_debito)+'</td>'+
-				    											'<td style="text-align: right;">'+convertir_rever(total_credito)+'</td></tr>'
+				    									string+='<tr><td colspan="6" style="text-align: right;"><b>TOTALES</b></td>'+
+				    											'<td style="text-align: right;"><b>'+convertir_rever(total_debito)+'</b></td>'+
+				    											'<td style="text-align: right;"><b>'+convertir_rever(total_credito)+'</b></td></tr>'
 				    								} else {
-				    									string+='<tr><td colspan="6" style="text-align: right;"> TOTALES</td>'+
-				    											'<td style="text-align: right;">'+(total_debito_me)+'</td>'+
-				    											'<td style="text-align: right;">'+(total_credito_me)+'</td></tr>'
+				    									string+='<tr><td colspan="6" style="text-align: right;"><b>TOTALES</td>'+
+				    											'<td style="text-align: right;"><b>'+addCommas((Math.round(total_debito_me * 100) / 100).toString())+'</b></td>'+
+				    											'<td style="text-align: right;"><b>'+addCommas((Math.round(total_credito_me * 100) / 100).toString())+'</b></td></tr>'
 				    								}
 				    							}
 					    					 string+='</table></div>'
@@ -114,9 +127,9 @@ function buscar(){
 					    								'</table>'+
 					    								'<table style="width:100%" class="table table-striped"><tr>'
 					    								if (moneda == 'AM'){
-					    									string+='<th>Sec.</th><th>Cuenta</th><th></th><th>Auxiliar</th><th></th><th>Concepto</th><th>Debe M.L.</th><th>Haber M.L.</th><th>Debe M.E.</th><th>Haber M.E.</th></tr>'
+					    									string+='<th style="width:3%">Sec.</th><th style="width:7%">Cuenta</th><th style="width:15%"></th><th style="width:7%">Auxiliar</th><th style="width:15%"></th><th style="width:19%">Concepto</th><th style="width:8%">Debe M.L.</th><th style="width:8%">Haber M.L.</th><th style="width:8%">Debe M.E.</th><th style="width:8%">Haber M.E.</th></tr>'
 					    								} else {
-					    									string+='<th>Sec.</th><th>Cuenta</th><th></th><th>Auxiliar</th><th></th><th>Concepto</th><th>Debe</th><th>Haber</th></tr>'
+					    									string+='<th style="width:3%">Sec.</th><th style="width:7%">Cuenta</th><th style="width:18%"></th><th style="width:7%">Auxiliar</th><th style="width:18%"></th><th style="width:27%">Concepto</th><th style="width:10%">Debe</th><th style="width:10%">Haber</th></tr>'
 					    								}
 					    								
 					    					total_debito = 0
@@ -144,14 +157,14 @@ function buscar(){
 				    									if (moneda == 'AM'){
 					    									string+='<th style="text-align: right;">'+convertir_rever(data.data[a].DEBITO)+'</th>'+
 					    											'<th style="text-align: right;">'+convertir_rever(data.data[a].CREDITO)+'</th>'+
-					    											'<th style="text-align: right;">'+(data.data[a].DEBITO_ME)+'</th>'+
-					    											'<th style="text-align: right;">'+(data.data[a].CREDITO_ME)+'</th>'
+					    											'<th style="text-align: right;">'+addCommas((Math.round(data.data[a].DEBITO_ME * 100) / 100).toString())+'</th>'+
+					    											'<th style="text-align: right;">'+addCommas((Math.round(data.data[a].CREDITO_ME * 100) / 100).toString())+'</th>'
 					    								} else if (moneda == 'LO') {
 					    									string+='<th style="text-align: right;">'+convertir_rever(data.data[a].DEBITO)+'</th>'+
 					    											'<th style="text-align: right;">'+convertir_rever(data.data[a].CREDITO)+'</th>'
 					    								} else {
-					    									string+='<th style="text-align: right;">'+(data.data[a].DEBITO_ME)+'</th>'+
-					    											'<th style="text-align: right;">'+(data.data[a].CREDITO_ME)+'</th>'
+					    									string+='<th style="text-align: right;">'+addCommas((Math.round(data.data[a].DEBITO_ME * 100) / 100).toString())+'</th>'+
+					    											'<th style="text-align: right;">'+addCommas((Math.round(data.data[a].CREDITO_ME * 100) / 100).toString())+'</th>'
 					    								}
 			    									'</tr>'
 					    			current_asiento = parseInt(data.data[a].nroasiento)

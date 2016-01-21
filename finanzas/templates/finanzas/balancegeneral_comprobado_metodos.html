@@ -60,6 +60,19 @@ function SelectElement(value,name){
     element.value = value;
 }
 
+function addCommas(nStr)
+{
+	nStr += '';
+	x = nStr.split('.');
+	x1 = x[0];
+	x2 = x.length > 1 ? ',' + x[1] : '';
+	var rgx = /(\d+)(\d{3})/;
+	while (rgx.test(x1)) {
+		x1 = x1.replace(rgx, '$1' + '.' + '$2');
+	}
+	return x1 + x2;
+}
+
 function buscar(){
 	var empresa = $("[name=empresa]").val()
 	var periodo = $("[name=periodo]").val()
@@ -120,10 +133,17 @@ function buscar(){
 		    		var string=""
 		    		for (var a=0; a < data.data.length; a++) {
 		    			if (incluir == "SI"){
-			    			total_debito+=parseInt(data.data[a].TOTAL_DEBITO)
-			    			total_credito+=parseInt(data.data[a].TOTAL_CREDITO)
-			    			total_saldo+=parseInt(data.data[a].SALDO)
-			    			total_saldo_anterior+=parseInt(data.data[a].SALDO_ANTERIOR)
+		    				if (moneda == 'local'){
+				    			total_debito+=parseInt(data.data[a].TOTAL_DEBITO)
+				    			total_credito+=parseInt(data.data[a].TOTAL_CREDITO)
+				    			total_saldo+=parseInt(data.data[a].SALDO)
+				    			total_saldo_anterior+=parseInt(data.data[a].SALDO_ANTERIOR)
+				    		} else {
+				    			total_debito+=parseFloat(data.data[a].TOTAL_DEBITO)
+				    			total_credito+=parseFloat(data.data[a].TOTAL_CREDITO)
+				    			total_saldo+=parseFloat(data.data[a].SALDO)
+				    			total_saldo_anterior+=parseFloat(data.data[a].SALDO_ANTERIOR)
+				    		}
 		    				if (data.data[a].CodPlanCta.length == 1){
 								string+='<tr>'+
 										   '<td></td>'+
@@ -143,39 +163,67 @@ function buscar(){
 									    '</tr>'+
 									    '<tr>'+
 										   '<td><b>'+data.data[a].CodPlanCta+'</b></td>'+
-										   '<td><b>'+data.data[a].Nombre+'</b></td>'+
-										   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO_ANTERIOR)+'</b></td>'+
-										   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_DEBITO)+'</b></td>'+
-										   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_CREDITO)+'</b></td>'+
-										   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'+
-									    '</tr>'
+										   '<td><b>'+data.data[a].Nombre+'</b></td>'
+									if (moneda == 'local'){
+									   string+='<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO_ANTERIOR)+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_DEBITO)+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_CREDITO)+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'
+									} else {
+										string+='<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].SALDO_ANTERIOR * 100) / 100).toString())+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].TOTAL_DEBITO * 100) / 100).toString())+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].TOTAL_CREDITO * 100) / 100).toString())+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString())+'</b></td>'
+									}
+							    string+='</tr>'
 							} else if (data.data[a].CodPlanCta.length == 2){
 								string+='<tr>'+
 									   '<td><b><u>'+data.data[a].CodPlanCta+'</u></b></td>'+
-									   '<td><b>&nbsp;&nbsp;&nbsp;<u>'+data.data[a].Nombre+'</u></b></td>'+
-									   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO_ANTERIOR)+'</b></td>'+
-									   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_DEBITO)+'</b></td>'+
-									   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_CREDITO)+'</b></td>'+
-									   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'+
-								    '</tr>'
+									   '<td><b>&nbsp;&nbsp;&nbsp;<u>'+data.data[a].Nombre+'</u></b></td>'
+								if (moneda == 'local'){
+									   string+='<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO_ANTERIOR)+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_DEBITO)+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_CREDITO)+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'
+									} else {
+										string+='<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].SALDO_ANTERIOR * 100) / 100).toString())+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].TOTAL_DEBITO * 100) / 100).toString())+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].TOTAL_CREDITO * 100) / 100).toString())+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString())+'</b></td>'
+									}
+							    string+='</tr>'
 							} else if (data.data[a].CodPlanCta.length == 4){
 						    	string+='<tr>'+
 										   '<td><b>'+data.data[a].CodPlanCta+'</b></td>'+
-										   '<td><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+data.data[a].Nombre+'</b></td>'+
-										   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO_ANTERIOR)+'</b></td>'+
-										   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_DEBITO)+'</b></td>'+
-										   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_CREDITO)+'</b></td>'+
-										   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'+
-									    '</tr>'
+										   '<td><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+data.data[a].Nombre+'</b></td>'
+									if (moneda == 'local'){
+									   string+='<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO_ANTERIOR)+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_DEBITO)+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_CREDITO)+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'
+									} else {
+										string+='<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].SALDO_ANTERIOR * 100) / 100).toString())+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].TOTAL_DEBITO * 100) / 100).toString())+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].TOTAL_CREDITO * 100) / 100).toString())+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString())+'</b></td>'
+									}
+							    string+='</tr>'
 			    			} else {
 			    				string+='<tr>'+
 									   '<td>'+data.data[a].CodPlanCta+'</td>'+
-									   '<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+data.data[a].Nombre+'</td>'+
-									   '<td style="text-align: right;">'+convertir_rever(data.data[a].SALDO_ANTERIOR)+'</td>'+
-									   '<td style="text-align: right;">'+convertir_rever(data.data[a].TOTAL_DEBITO)+'</td>'+
-									   '<td style="text-align: right;">'+convertir_rever(data.data[a].TOTAL_CREDITO)+'</td>'+
-									   '<td style="text-align: right;">'+convertir_rever(data.data[a].SALDO)+'</td>'+
-								    '</tr>'
+									   '<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+data.data[a].Nombre+'</td>'
+								if (moneda == 'local'){
+									   string+='<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO_ANTERIOR)+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_DEBITO)+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_CREDITO)+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'
+									} else {
+										string+='<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].SALDO_ANTERIOR * 100) / 100).toString())+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].TOTAL_DEBITO * 100) / 100).toString())+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].TOTAL_CREDITO * 100) / 100).toString())+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString())+'</b></td>'
+									}
+							    string+='</tr>'
 			    			}
 			    		} else {
 			    			if (data.data[a].SALDO != '0'){
@@ -202,39 +250,67 @@ function buscar(){
 										    '</tr>'+
 										    '<tr>'+
 											   '<td><b>'+data.data[a].CodPlanCta+'</b></td>'+
-											   '<td><b>'+data.data[a].Nombre+'</b></td>'+
-											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO_ANTERIOR)+'</b></td>'+
-											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_DEBITO)+'</b></td>'+
-											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_CREDITO)+'</b></td>'+
-											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'+
-										    '</tr>'
+											   '<td><b>'+data.data[a].Nombre+'</b></td>'
+											if (moneda == 'local'){
+											   string+='<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO_ANTERIOR)+'</b></td>'+
+													   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_DEBITO)+'</b></td>'+
+													   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_CREDITO)+'</b></td>'+
+													   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'
+											} else {
+												string+='<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].SALDO_ANTERIOR * 100) / 100).toString())+'</b></td>'+
+													   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].TOTAL_DEBITO * 100) / 100).toString())+'</b></td>'+
+													   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].TOTAL_CREDITO * 100) / 100).toString())+'</b></td>'+
+													   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString())+'</b></td>'
+											}
+							    string+='</tr>'
 								} else if (data.data[a].CodPlanCta.length == 2){
 									string+='<tr>'+
 										   '<td><b><u>'+data.data[a].CodPlanCta+'</u></b></td>'+
-										   '<td><b>&nbsp;&nbsp;&nbsp;<u>'+data.data[a].Nombre+'</u></b></td>'+
-										   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO_ANTERIOR)+'</b></td>'+
-										   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_DEBITO)+'</b></td>'+
-										   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_CREDITO)+'</b></td>'+
-										   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'+
-									    '</tr>'
+										   '<td><b>&nbsp;&nbsp;&nbsp;<u>'+data.data[a].Nombre+'</u></b></td>'
+									if (moneda == 'local'){
+									   string+='<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO_ANTERIOR)+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_DEBITO)+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_CREDITO)+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'
+									} else {
+										string+='<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].SALDO_ANTERIOR * 100) / 100).toString())+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].TOTAL_DEBITO * 100) / 100).toString())+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].TOTAL_CREDITO * 100) / 100).toString())+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString())+'</b></td>'
+									}
+							    string+='</tr>'
 								} else if (data.data[a].CodPlanCta.length == 4){
 							    	string+='<tr>'+
 											   '<td><b>'+data.data[a].CodPlanCta+'</b></td>'+
-											   '<td><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+data.data[a].Nombre+'</b></td>'+
-											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO_ANTERIOR)+'</b></td>'+
+											   '<td><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+data.data[a].Nombre+'</b></td>'
+									if (moneda == 'local'){
+									   string+='<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO_ANTERIOR)+'</b></td>'+
 											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_DEBITO)+'</b></td>'+
 											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_CREDITO)+'</b></td>'+
-											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'+
-										    '</tr>'
+											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'
+									} else {
+										string+='<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].SALDO_ANTERIOR * 100) / 100).toString())+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].TOTAL_DEBITO * 100) / 100).toString())+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].TOTAL_CREDITO * 100) / 100).toString())+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString())+'</b></td>'
+									}
+							    string+='</tr>'
 				    			} else {
 				    				string+='<tr>'+
 										   '<td>'+data.data[a].CodPlanCta+'</td>'+
-										   '<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+data.data[a].Nombre+'</td>'+
-										   '<td style="text-align: right;">'+convertir_rever(data.data[a].SALDO_ANTERIOR)+'</td>'+
-										   '<td style="text-align: right;">'+convertir_rever(data.data[a].TOTAL_DEBITO)+'</td>'+
-										   '<td style="text-align: right;">'+convertir_rever(data.data[a].TOTAL_CREDITO)+'</td>'+
-										   '<td style="text-align: right;">'+convertir_rever(data.data[a].SALDO)+'</td>'+
-									    '</tr>'
+										   '<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+data.data[a].Nombre+'</td>'
+									if (moneda == 'local'){
+									   string+='<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO_ANTERIOR)+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_DEBITO)+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].TOTAL_CREDITO)+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'
+									} else {
+										string+='<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].SALDO_ANTERIOR * 100) / 100).toString())+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].TOTAL_DEBITO * 100) / 100).toString())+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].TOTAL_CREDITO * 100) / 100).toString())+'</b></td>'+
+											   '<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString())+'</b></td>'
+									}
+							    string+='</tr>'
 				    			}
 			    			}
 		    			}
@@ -242,13 +318,20 @@ function buscar(){
 		    			
 		    		string+='<tr>'+
 							   '<td colspan="1"></td>'+
-							   '<td style="text-align: right;"><b>TOTALES</b></td>'+
-							   '<td style="text-align: right;">'+convertir_rever(total_saldo_anterior)+'</td>'+
-							   '<td style="text-align: right;">'+convertir_rever(total_debito)+'</td>'+
-							   '<td style="text-align: right;">'+convertir_rever(total_credito)+'</td>'+
-							   '<td style="text-align: right;">'+convertir_rever(total_saldo)+'</td>'+
-						    '</tr>'
-		    		
+							   '<td style="text-align: right;"><b>TOTALES</b></td>'
+					if (moneda == 'local'){
+						   string+='<td style="text-align: right;">'+convertir_rever(total_saldo_anterior)+'</td>'+
+								   '<td style="text-align: right;">'+convertir_rever(total_debito)+'</td>'+
+								   '<td style="text-align: right;">'+convertir_rever(total_credito)+'</td>'+
+								   '<td style="text-align: right;">'+convertir_rever(total_saldo)+'</td>'
+						} else {
+							string+='<td style="text-align: right;"><b>'+addCommas((Math.round(total_saldo_anterior * 100) / 100).toString())+'</b></td>'+
+								   '<td style="text-align: right;"><b>'+addCommas((Math.round(total_debito * 100) / 100).toString())+'</b></td>'+
+								   '<td style="text-align: right;"><b>'+addCommas((Math.round(total_credito * 100) / 100).toString())+'</b></td>'+
+								   '<td style="text-align: right;"><b>'+addCommas((Math.round(total_saldo * 100) / 100).toString())+'</b></td>'
+						}
+				    string+='</tr>'
+							   
 					$('#resultados tbody').html(string)
 		    	}
 		    }
