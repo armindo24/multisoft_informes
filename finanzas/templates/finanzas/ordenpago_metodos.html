@@ -31,32 +31,6 @@ function renewDatePickers() {
     $(".datepicker").datepicker({dateFormat: 'yy-mm-dd'});
 }
 
-function cargar(){
-	var a=1;
-	while(a < cant_reg){
-		var string = '<div class="row show-grid">'+
-						'<div style="text-align:center;" class="col-md-4 col-sm-2">'+
-		            		lista.data[parseInt(ult_reg)+parseInt(a)].RazonSocial +
-		            	'</div>'+
-		            	'<div style="text-align:center;" class="col-md-2 col-sm-2">'+
-		            		lista.data[parseInt(ult_reg)+parseInt(a)].Des_Sucursal +
-		            	'</div>'+
-		            	'<div style="text-align:center;" class="col-md-2 col-sm-2">'+
-		            		lista.data[parseInt(ult_reg)+parseInt(a)].NroOP + '/' + lista.data[parseInt(ult_reg)+parseInt(a)].des_tp_comp +
-		            	'</div>'+
-		            	'<div style="text-align:center;" class="col-md-2  col-sm-2">'+
-		            		lista.data[parseInt(ult_reg)+parseInt(a)].Fecha +
-		            	'</div>'+
-		            	'<div style="text-align:center;" class="col-md-2 col-sm-2">'+
-		            		convertir_rever(lista.data[parseInt(ult_reg)+parseInt(a)].TotalImporte) +
-		            	'</div>'+
-		            '</div>'
-		$('#lista').append(string)
-		a++;
-	}
-	ult_reg = parseInt(ult_reg)+parseInt(cant_reg)
-}
-
 $(renewDatePickers);
 $.datepicker.regional['es'] = {
 	closeText: 'Cerrar',

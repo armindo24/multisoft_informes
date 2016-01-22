@@ -1,0 +1,334 @@
+<style>
+
+</style>
+
+<script type="text/javascript">
+
+var aux1 = null
+var total_debito = 0
+var total_credito = 0
+var total_saldo = 0
+var ingreso = 0
+var egreso = 0
+ 
+$(document).ready(function() {
+	$('#page-wrapper').css('margin-left','0px');
+    $('#my-left-menu').toggle(0);
+	var url = window.location.href
+	
+	aux = url.toString().split("http://")
+	aux1 = aux[1].toString().split(":8000")
+	
+    $(".chosen-select").chosen({
+        disable_search_threshold: 0,
+        no_results_text: "Oops, nothing found!",
+        width: "200px",
+        allow_single_deselect: true
+     	});
+});
+
+function renewDatePickers() {
+    $('.datepicker').datepicker('destroy');
+    $(".datepicker").datepicker({dateFormat: 'yy-mm-dd'});
+}
+
+$(renewDatePickers);
+$.datepicker.regional['es'] = {
+	closeText: 'Cerrar',
+	prevText: '<Ant',
+	nextText: 'Sig>',
+	currentText: 'Hoy',
+	monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+	monthNamesShort: ['Ene','Feb','Mar','Abr', 'May','Jun','Jul','Ago','Sep', 'Oct','Nov','Dic'],
+	dateFormat: 'yy/mm/dd',
+	firstDay: 1,
+	isRTL: false,
+	showMonthAfterYear: false,
+	yearSuffix: ''
+};
+$.datepicker.setDefaults($.datepicker.regional["es"]);
+
+function remover(selectbox){
+    var i;
+    for(i=selectbox.options.length-1;i>=0;i--)
+    {
+        selectbox.remove(i);
+    }
+} 
+
+function SelectElement(value,name){    
+    var element = document.getElementsByName(name)[0];
+    element.value = value;
+}
+
+function addCommas(nStr)
+{
+	nStr += '';
+	x = nStr.split('.');
+	x1 = x[0];
+	x2 = x.length > 1 ? ',' + x[1] : '';
+	var rgx = /(\d+)(\d{3})/;
+	while (rgx.test(x1)) {
+		x1 = x1.replace(rgx, '$1' + '.' + '$2');
+	}
+	return x1 + x2;
+}
+
+
+function buscar(){
+	var empresa = $("[name=empresa]").val()
+	var periodo = $("[name=periodo]").val()
+	var cuentad = $("[name=cuentad]").val()
+	var cuentah = $("[name=cuentah]").val()
+	var mesd = $("[name=mesd]").val()
+	var mesh = $("[name=mesh]").val()
+	var nivel = $("[name=nivel]").val()
+	var moneda = document.getElementsByName("moneda")[0]
+	var incluir = document.getElementsByName("incluir")[0]
+	var aux = document.getElementsByName("auxiliar")[0]
+	
+	if(moneda.checked == true){
+		moneda = "extranjera"
+	  }else{
+		moneda = "local"
+	  }
+  	if(incluir.checked == true){
+		incluir = "SI"
+	  }else{
+		incluir = "NO"
+	  }
+	if(aux.checked == true){
+		aux = "SI"
+	  }else{
+		aux = "NO"
+	  }
+	if (nivel == "" || nivel == null || nivel == " " || nivel == '0')
+		nivel = 0
+	
+	if (periodo == "" || periodo == null || periodo == " "){
+		alert("No hay datos suficientes para generar el listado")
+	} else {
+		$('.collapse').collapse('hide')
+		$.get("http://"+aux1[0]+":3000/api/v1/balancegeneral/list/"+empresa+"/"+periodo+"/"+cuentad+"/"+cuentah+"/"+mesd+"/"+mesh+"/"+nivel+"/"+incluir+"/"+moneda+"/"+aux,
+		    function(data) {
+		    	if (data != null){
+		    		$('#table-div').empty()
+		    			var tableta = '<table id="resultados" class="table table-striped table-hover table-bordered table-filter scroll" tyle="width:90%">'+
+							    		'<thead>'+
+							    			'<tr>'+
+							    				'<th style="width:15%">CUENTA</th>'+
+												'<th>DESCRIPCI&#211;N</th>'+
+												'<th style="width:25%">SALDO</th>'+
+							    			'</tr>'+
+							    		'</thead>'+
+							    		'<tbody></tbody>'+
+							    	'</table>'
+					$('#table-div').append(tableta)
+		    		var string=""
+		    		for (var a=0; a < data.data.length; a++) {
+		    			if (data.data[a].Nombre=='INGRESOS'){
+		    				if (moneda == 'local'){
+		    					var ingreso = parseInt(data.data[a].SALDO)
+		    				} else {
+		    					var ingreso = parseFloat(data.data[a].SALDO)
+		    				}
+		    			}
+		    			if (data.data[a].Nombre=='EGRESOS'){
+		    				if (moneda == 'local'){
+		    					var egreso = parseInt(data.data[a].SALDO)
+	    					} else {
+		    					var egreso = parseFloat(data.data[a].SALDO)
+		    				}
+		    			}
+		    			if (moneda == 'local'){
+			    			total_debito+=parseInt(data.data[a].TOTAL_DEBITO)
+			    			total_credito+=parseInt(data.data[a].TOTAL_CREDITO)
+			    			total_saldo+=parseInt(data.data[a].SALDO)
+			    		} else {
+		    				total_debito+=parseFloat(data.data[a].TOTAL_DEBITO)
+			    			total_credito+=parseFloat(data.data[a].TOTAL_CREDITO)
+			    			total_saldo+=parseFloat(data.data[a].SALDO)
+	    				}
+		    			if (data.data[a].CodPlanCta.length == 1){
+								string+='<tr>'+
+										   '<td></td>'+
+										   '<td></td>'+
+										   '<td></td>'+
+									    '</tr>'
+									    +'<tr>'+
+										   '<td></td>'+
+										   '<td></td>'+
+										   '<td></td>'+
+									    '</tr>'+
+									    '<tr>'+
+										   '<td><b>'+data.data[a].CodPlanCta+'</b></td>'+
+										   '<td><b>'+data.data[a].Nombre+'</b></td>'
+								if (moneda == 'local'){
+										   string+='<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'
+								} else {
+						    				string+='<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString())+'</b></td>'
+			    				}
+							    string+='</tr>'
+					    } else if (data.data[a].CodPlanCta.length == 2){
+						    	string+='<tr>'+
+										   '<td><b><u>'+data.data[a].CodPlanCta+'</u></b></td>'+
+										   '<td><b>&nbsp;&nbsp;&nbsp;<u>'+data.data[a].Nombre+'</u></b></td>'
+								if (moneda == 'local'){
+										   string+='<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'
+								} else {
+						    				string+='<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString())+'</b></td>'
+			    				}
+							    string+='</tr>'
+					    } else if (data.data[a].CodPlanCta.length == 4){
+						    	string+='<tr>'+
+										   '<td><b>'+data.data[a].CodPlanCta+'</b></td>'+
+										   '<td><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+data.data[a].Nombre+'</b></td>'
+							   if (moneda == 'local'){
+										   string+='<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'
+								} else {
+						    				string+='<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString())+'</b></td>'
+			    				}
+							    string+='</tr>'
+					    } else if (data.data[a].CodPlanCta.length > 4 && data.data[a].CodPlanCta.length < 10){
+						    	string+='<tr>'+
+										   '<td>'+data.data[a].CodPlanCta+'</td>'+
+										   '<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+data.data[a].Nombre+'</td>'
+								if (moneda == 'local'){
+										   string+='<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'
+								} else {
+						    				string+='<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString())+'</b></td>'
+			    				}
+							    string+='</tr>'
+					    } else {
+					    	var new_codigo = data.data[a].CodPlanCta.toString().split('-')
+						    	string+='<tr>'+
+										   '<td></td>'+
+										   '<td style="font-size: 12px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+new_codigo[1]+" - "+data.data[a].Nombre+'</td>'
+							   if (moneda == 'local'){
+										   string+='<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'
+								} else {
+						    				string+='<td style="text-align: right;"><b>'+addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString())+'</b></td>'
+			    				}
+							    string+='</tr>'
+					    }
+				    }
+				    	string+='<tr>'+
+								   '<td></td>'+
+								   '<td><b>TOTALES</b></td>'
+						if (moneda == 'local'){
+								   string+='<td style="text-align: right;"><b>'+convertir_rever(total_saldo)+'</b></td>'
+						} else {
+						    	   string+='<td style="text-align: right;"><b>'+addCommas((Math.round(total_saldo * 100) / 100).toString())+'</b></td>'
+			    				}
+						 string+='</tr>'
+					string+='<tr>'
+						if (moneda == 'local'){
+							   string+='<td style="text-align: center;" colspan="4"><b>Resultado del Ejercicio: '+convertir_rever(ingreso-egreso)+'</b></td>'
+						} else {
+					    	   string+='<td style="text-align: center;" colspan="4"><b>Resultado del Ejercicio: '+addCommas((Math.round((ingreso-egreso) * 100) / 100).toString())+'</b></td>'
+	    				}
+						string+='</tr>'
+					$('#resultados tbody').html(string)
+					ingreso=0
+					egreso=0
+		    	}
+		    }
+		);  
+	}
+}
+
+function buscar_cuenta(){
+	$.get("http://"+aux1[0]+":3000/api/v1/cuenta/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('periodo')[0].value,
+	    function(data) 	{
+	    	if (data != null){
+	    		var select = document.getElementsByName("cuentad")[0]
+	    		var select1 = document.getElementsByName("cuentah")[0]
+	    		remover(select);
+	    		remover(select1);
+				for (var i=0;i < data.data.length;i++){
+					var option = document.createElement("option");
+					var option1 = document.createElement("option");
+					option.value = data.data[i].CodPlanCta;
+					option.text =data.data[i].Nombre;
+					option1.value = data.data[i].CodPlanCta;
+					option1.text =data.data[i].Nombre;
+					select.add(option);
+					select1.add(option1);
+				}
+				SelectElement(data.data[0].CodPlanCta,'cuentad')
+				SelectElement(data.data[0].CodPlanCta,'cuentah')
+	    	}
+	    }
+	);  
+	
+	$('.chosen-select').trigger('chosen:updated');   
+}
+
+function cambiar_anho(a){
+	var vector_desde = $('[name=fechad]').val().split('-')
+	var vector_hasta =$('[name=fechah]').val().split('-')
+	
+	$('[name=fechad]').val(a+'-'+vector_desde[1]+'-'+vector_desde[2])
+	$('[name=fechah]').val(a+'-'+vector_hasta[1]+'-'+vector_hasta[2])
+}
+
+window.onload = function() {
+	
+    $.get("http://"+aux1[0]+":3000/api/v1/empresa/select",
+		    function(data) {
+		    	if (data != null){
+		    		var select = document.getElementsByName("empresa")[0]
+		    		remover(select);
+					for (var i=0;i < data.data.length;i++){
+						var option = document.createElement("option");
+						option.value = data.data[i].Cod_Empresa;
+						option.text = data.data[i].Des_Empresa;
+						select.add(option);
+					}
+					SelectElement(data.data[0].Cod_Empresa,'empresa')
+					
+					$.get("http://"+aux1[0]+":3000/api/v1/cuenta/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('periodo')[0].value,
+					    function(data) 	{
+					    	if (data != null){
+					    		var select = document.getElementsByName("cuentad")[0]
+					    		var select1 = document.getElementsByName("cuentah")[0]
+					    		remover(select);
+					    		remover(select1);
+								for (var i=0;i < data.data.length;i++){
+									var option = document.createElement("option");
+									option.value = data.data[i].CodPlanCta;
+									option.text =data.data[i].Nombre;
+									select.add(option);
+									select1.add(option);
+								}
+								SelectElement(data.data[0].CodPlanCta,'cuentad')
+								SelectElement(data.data[0].CodPlanCta,'cuentah')
+					    	}
+					    }
+					);  
+					
+					$('.chosen-select').trigger('chosen:updated');
+		    	}
+		    }
+		); 
+	var today = new Date();
+	var dd = today.getDate();
+	var mm = today.getMonth()+1; //January is 0!
+	var yyyy = today.getFullYear();
+	
+	if(dd<10) {
+	    dd='0'+dd
+	} 
+	
+	if(mm<10) {
+	    mm='0'+mm
+	} 
+	
+	$('[name=periodo]').val(yyyy)
+	
+	today = yyyy+'-'+mm+'-'+dd; 
+	
+	$('[name=fechad]').val(today)
+	$('[name=fechah]').val(today)
+};
+</script>

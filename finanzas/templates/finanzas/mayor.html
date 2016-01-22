@@ -9,11 +9,11 @@
     <script src="/static/js/jquery.maskedinput.min.js"></script>
     <script src="/static/chosen_v1.4.2/chosen.jquery.js"></script>
 	<script src="/static/chosen_v1.4.2/docsupport/prism.js"></script> 
-	{% include 'finanzas/diario_comprobado_metodos.html' %}
+	{% include 'finanzas/mayor_metodos.html' %}
 {% endblock %}
 
 {% block header %}
-	Diario: 
+	Mayor de Cuentas: 
 {% endblock %}
 
 {% block content %}
@@ -28,44 +28,58 @@
 	            <div class="panel-body">
 					<div class="panel-group" id="archivo_accordion" style="margin-bottom: 0px;">
 						<div class="row show-grid">
-						   <div style="text-align:center;" class="col-md-6 col-sm-6///">
-						  		<th style="vertical-align: middle;">
+						   <div style="text-align:center;" class="col-md-6 col-sm-6">
+						   		<th style="vertical-align: middle;">
 									<b>
 										Empresa:
 									</b>
 								</th>
 								<td>
-									<select name="empresa" data-placeholder="Empresa..." onchange="buscar_comprobante();buscar_sucursal();" class="chosen-select" tabindex="2">
+									<select name="empresa" data-placeholder="Empresa..." onchange="" class="chosen-select" tabindex="2">
 						          	</select>
 								</td>
-							</div>
-							<!--div style="text-align:center;" class="col-md-4 col-sm-4">
-					   			<th style="vertical-align: middle;">
+						   </div>
+						    <div style="text-align:center;" class="col-md-6 col-sm-6">
+						   		<th style="vertical-align: middle;">
 									<b>
 										Per&#237;odo:
 									</b>
 								</th>
 								<td>
-									<input style="width:50px" type="text" onkeyup="cambiar_periodo(this.value);" name="periodo" >
+									<input style="width:50px" type="text" onkeyup="buscar_cuenta();cambiar_anho(this.value);" name="periodo" >
+									<a type="button" class="btn btn-xs btn-primary" onclick="buscar_cuenta();"><i class="fa fa-check"></i></a>
 								</td>
-							</div-->
-							<div style="text-align:center;" class="col-md-6 col-sm-6">
-						  		<th style="vertical-align: middle;">
-									<b>
-										Tipo Asiento:
-									</b>
-								</th>
-								<td>
-									<select name="tipoasiento" data-placeholder="Tipo..." class="chosen-select" tabindex="2">
-						          	</select>
-								</td>
-							</div>
+						   </div>
 						</div>
 						<div class="row show-grid">
 						   <div style="text-align:center;" class="col-md-6 col-sm-6">
 						   		<th style="vertical-align: middle;">
 									<b>
-										Desde:
+										Cta. desde:
+									</b>
+								</th>
+								<td>
+									<select name="cuentad" data-placeholder="Cuenta..." onchange="" class="chosen-select" tabindex="2">
+						          	</select>
+								</td>
+						   </div>
+						    <div style="text-align:center;" class="col-md-6 col-sm-6">
+						   		<th style="vertical-align: middle;">
+									<b>
+										Cta. hasta:
+									</b>
+								</th>
+								<td>
+									<select name="cuentah" data-placeholder="Cuenta..." onchange="" class="chosen-select" tabindex="2">
+						          	</select>
+								</td>
+						   </div>
+						</div>
+						<div class="row show-grid">
+						   <div style="text-align:center;" class="col-md-6 col-sm-6">
+						   		<th style="vertical-align: middle;">
+									<b>
+										Fecha Desde:
 									</b>
 								</th>
 								<td>
@@ -75,7 +89,7 @@
 						    <div style="text-align:center;" class="col-md-6 col-sm-6">
 						   		<th style="vertical-align: middle;">
 									<b>
-										Hasta:
+										Fecha Hasta:
 									</b>
 								</th>
 								<td>
@@ -86,34 +100,56 @@
 						<div class="row show-grid">
 						   <div style="text-align:center;" class="col-md-6 col-sm-6">
 						   		<th style="vertical-align: middle;">
-							   		<b>
-										Moneda:
+									<b>
+										Nivel:
 									</b>
 								</th>
 								<td>
-									<select name="moneda" data-placeholder="Tipo..." class="chosen-select" tabindex="2">
-							   			<option selected value="LO">LOCAL</option>
-							   			<option value="EX">EXTRANJERA</option>
-							   			<option value="AM">AMBAS</option>}
-						          	</select>
+									<input style="width:50px" type="text" value="0" onkeyup="" name="nivel" >
 								</td>
 						   </div>
 						    <div style="text-align:center;" class="col-md-6 col-sm-6">
 						   		<th style="vertical-align: middle;">
 									<b>
-										Asiento Autorizados:
+										Incluir cuentas con saldo cero:
 									</b>
 								</th>
 								<td>
-									<select name="autorizado" data-placeholder="Tipo..." class="chosen-select" tabindex="2">
-							   			<option selected value="TO">TODOS</option>
-							   			<option value="SI">SI</option>
-							   			<option value="NO">NO</option>}
-						          	</select>
+									<input style="width:50px" type="checkbox" onkeyup="" name="incluir" >
 								</td>
 						   </div>
+						</div>
+						<div class="row show-grid">
+						   <div style="text-align:center;" class="col-md-6 col-sm-6">
+						   		<th style="vertical-align: middle;">
+									<b>
+										Incluir cuentas auxiliares:
+									</b>
+								</th>
+								<td>
+									<input type="checkbox" value="0" onkeyup="" name="auxiliar" >
+								</td>
+						   </div>
+						    <div style="text-align:center;" class="col-md-6 col-sm-6">
+						    	<th style="vertical-align: middle;">
+									<b>
+										Moneda Extranjera:
+									</b>
+								</th>
+								<td>
+									<input type="checkbox" onkeyup="" name="moneda" >
+								</td>
+						   		<!--th style="vertical-align: middle;">
+									<b>
+										Incluir comprobaci&#243n:
+									</b>
+								</th>
+								<td>
+									<input style="width:50px" type="checkbox" onkeyup="" name="comprobacion" >
+								</td-->
+						   </div>
+						</div>
 					</div>
-				</div>
 				</div>
 	        </div>
 	        <div class="modal-footer">

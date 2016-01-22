@@ -70,20 +70,6 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 		if (proveedor == "NINGUNO" || proveedor == " ")
 			proveedor = ""
 		
-		console.log("SELECT "+ 
-				"Des_Sucursal,NroOP,des_tp_comp,date(Fecha) as Fecha,RazonSocial,cast(TotalImporte as decimal(20,0)) "+
-				"FROM "+
-					"DBA.OPCAB,DBA.EMPRESA,DBA.SUCURSAL,DBA.TPOCBTE,DBA.PROVEED "+
-				"WHERE "+ 
-					"DBA.OPCAB.Cod_Empresa = DBA.EMPRESA.Cod_Empresa AND DBA.SUCURSAL.Cod_Empresa = DBA.EMPRESA.Cod_Empresa AND "+  
-					"DBA.SUCURSAL.Cod_Sucursal = DBA.OPCAB.Cod_Sucursal AND DBA.TPOCBTE.Cod_Tp_Comp = DBA.OPCAB.Cod_Tp_Comp AND "+ 
-					"DBA.PROVEED.CodProv = DBA.OPCAB.CodProv AND DBA.PROVEED.Cod_Empresa = DBA.OPCAB.Cod_Empresa AND "+
-					"DBA.PROVEED.Cod_Empresa = DBA.EMPRESA.Cod_Empresa AND DBA.OPCAB.Anulado = 'N' AND "+
-					"cast(DBA.SUCURSAL.Cod_Sucursal as varchar(50)) like '%"+sucursal+"%' AND cast(DBA.EMPRESA.Cod_Empresa as varchar(50)) like '%"+empresa+"%' "+
-					"AND cast(DBA.OPCAB.TipoOP as varchar(50)) like '%"+tipoop+"%' AND cast(DBA.TPOCBTE.Cod_Tp_Comp as varchar(50)) like '%"+comprobante+"%' "+
-					"AND cast(DBA.PROVEED.TipoProv as varchar(50)) like '%"+tipoproveedor+"%' AND cast(DBA.PROVEED.CodProv as varchar(50)) like '%"+proveedor+"%' "+
-					"AND DBA.OPCAB.Fecha BETWEEN '"+desde+"' and '"+hasta+"'")
-				
 		conn.exec("SELECT "+ 
 						"Des_Sucursal,NroOP,des_tp_comp,date(Fecha) as Fecha,RazonSocial,cast(TotalImporte as decimal(20,0)) "+
 					"FROM "+
@@ -346,9 +332,10 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 							"AND ( dba.asientoscab.Cod_Empresa = dba.asientosdet.Cod_Empresa ) "+
 							"AND ( dba.asientoscab.NroTransac  = dba.asientosdet.NroTransac ) "+
 							"AND ( dba.asientoscab.TipoAsiento = dba.tipoasiento.TipoAsiento ) " +
-							"AND ( dba.AsientosCAB.cod_empresa = '"+empresa+"' ) "+
-							"AND ( dba.asientoscab.TipoAsiento = '"+tipoasiento+"') "+
-							"AND (DBA.asientoscab.fecha BETWEEN '"+fechad+"' and '"+fechah+"') "						
+							"AND ( dba.AsientosCAB.cod_empresa = '"+empresa+"' ) "
+							if (tipoasiento != 'NINGUNO')
+								string+="AND ( dba.asientoscab.TipoAsiento = '"+tipoasiento+"') "
+					string+="AND (DBA.asientoscab.fecha BETWEEN '"+fechad+"' and '"+fechah+"') "						
 		if(autorizado == 'SI')
 				string+="AND (DBA.asientoscab.autorizado = 'S') "
 		if(autorizado == 'NO')
@@ -375,6 +362,6 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 });
 
 /*
-
+select * from Vmayorctas where Cod_Empresa = 'BT' and Periodo = '2010' and fecha BETWEEN '2010-01-01' and '2010-01-31' and Tipoasiento = '01' and Codplancta >= '4'
 */
 
