@@ -349,19 +349,33 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 	});
 	
 	//tipo asiento select option
-	restapi.get('/api/v1/mayorcuenta/list/', function(req, res){
+	restapi.get('/api/v1/mayorcuenta/list/:empresa/:periodo/:fechad/:fechah/:tipoasiento/:cuentad/:cuentah', function(req, res){
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		
-		var string = "select "+
-					    "* "+ 
+		var empresa = req.params.empresa;
+		var periodo = req.params.periodo;
+		var tipoasiento = req.params.tipoasiento;
+		var fechad = req.params.fechad;
+		var fechah = req.params.fechah;
+		var cuentad = req.params.cuentad;
+		var cuentah = req.params.cuentah;
+		
+		var string = "select "+ 
+					    "Cod_empresa,Nrocompr,Nrotransac,NroAsiento,"+
+					    "Periodo,Autorizado,Codplancta,NOMBREPLANCTA,"+
+					    "Codplanctapad,tiposaldo,NOMBREPLANCTAPAD,"+
+					    "Fecha,ANHO,MES,Codmoneda,Tipoasiento,"+
+					    "Linea,Concepto,Dbcr,Origen,"+
+					    "cast(Importe as decimal(20,0)) as Importe,cast(Credito as decimal(20,0)) as Credito,"+
+					    "cast(Debito as decimal(20,0)) as Debito,cast(CreditoME as decimal(20,2)) as CreditoME,"+
+					    "cast(DebitoME as decimal(20,2)) as DebitoME,CodPlanAux "+
 					"from "+
-					    "Vmayorctas "+
-					"where "+
-					    "Cod_Empresa = 'BT' "+
-					    "and Periodo = '2010' "+
-					    "and fecha BETWEEN '2010-01-01' and '2010-01-31' "+
-					    "and Tipoasiento = '01' "+
-					    "and Codplancta >= '4' "
+					    "Vmayorctas where Cod_Empresa = '"+empresa+"' "+
+					    "and Periodo = '"+periodo+"' "+
+					    "and fecha BETWEEN '"+fechad+"' and '"+fechah+"' "+ 
+					    "and Tipoasiento = '"+tipoasiento+"' "+
+					    "and Codplancta >= '"+cuentad+"' "+ 
+					    "and Codplancta <= '"+cuentah+"' order by Codplancta" 
 		
 		conn.exec(string, function(err, row){
 			res.json({ data : row });
@@ -381,6 +395,72 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 });
 
 /*
-select * from Vmayorctas where Cod_Empresa = 'BT' and Periodo = '2010' and fecha BETWEEN '2010-01-01' and '2010-01-31' and Tipoasiento = '01' and Codplancta >= '4'
-*/
+--call DBA.Gen_Mayor_Cuentas('38643802125170840','BT','2011','2011-01-01','2011-01-31','S');
+
+SELECT DBA.TmpMayor.CodPlanCtaPad,   
+         DBA.TmpMayor.CodPlanCta,   
+         DBA.TmpMayor.CodPlanAux,   
+         DBA.TmpMayor.NombrePlanCta,   
+         DBA.TmpMayor.Fecha,   
+         DBA.TmpMayor.TipoRegistro,
+         DBA.TmpMayor.TipoAsiento,   
+         DBA.TmpMayor.TipoSaldo,   
+         DBA.TmpMayor.NroTransac,   
+         DBA.TmpMayor.NroCompr,   
+         DBA.TmpMayor.Autorizado,   
+         DBA.TmpMayor.Linea,   
+         DBA.TmpMayor.Concepto,   
+         DBA.TmpMayor.DbCr,   
+         DBA.TmpMayor.Origen,   
+         DBA.TmpMayor.NombrePlanCtaPad,   
+         DBA.TmpMayor.Cod_Empresa,   
+         DBA.TmpMayor.Mes,   
+         DBA.TmpMayor.CREDITO,   
+         DBA.TmpMayor.DEBITO,
+         DBA.TmpMayor.CREDITOME,   
+         DBA.TmpMayor.DEBITOME,
+         DBA.TmpMayor.SID
+FROM DBA.TmpMayor 
+WHERE TmpMayor.SID = '38643802125170840' 
+UNION
+SELECT pa.codplanctapad ,
+ 		vMC.CodPlanCta , 			
+		vMC.CodPlanAux ,             
+		pa.nombre as NombrePlanCta , 			
+		DATE (AC.Fecha),        
+		'A' AS TipoRegistro,
+		AC.TipoAsiento,
+		pa.TipoSaldo,
+		AC.NroTransac,
+      AC.NroCompr,
+      AC.Autorizado,
+      vMC.Linea,
+      vMC.Concepto,
+		vMC.DbCr,
+      AC.Origen,
+      NULL as NombrePlanCtaPad,
+      AC.Cod_Empresa,
+      month (AC.Fecha)      ,
+      ROUND (vMC.CREDITO, 0),   		 
+		ROUND (vMC.DEBITO, 0)  ,         
+		ROUND (vMC.CREDITOME, 2), 		 
+		ROUND (vMC.DEBITOME, 2)  		
+FROM  DBA.ASientosDet vMC force index (plancta_asientosdet), 				 
+      DBA.AsientosCAB AC force index (asientoscab),  				 
+	  DBA.PlanCta PA force index (plancta),  				 
+	  DBA.TipoAsiento t force index (tipoasiento)  			
+WHERE  vMC.Cod_Empresa    =  'BT' 			
+AND    vMC.Periodo        = '2011' 			
+AND    vMC.CodPlanCta     IN ('1101012')			
+AND    vMC.Cod_Empresa    =  pa.Cod_Empresa 			
+AND    vMC.Periodo        = pa.Periodo 			
+AND    vMC.CodPlanCta   = pa.CodPlanCta 			
+AND    AC.cod_Empresa = vMC.Cod_Empresa 			
+AND   ac.Nrotransac = vMC.NroTransac 			
+AND ac.TipoAsiento = t.tipoasiento 			
+and t.tpDef <> 'N' 			
+AND   Date  (AC.Fecha) >= DATE ('2011-01-01') 			
+AND   Date  (AC.Fecha)  <= DATE ('2011-01-31')  
+
+order by 16, 2, 5, 7, */
 
