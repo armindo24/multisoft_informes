@@ -98,55 +98,40 @@
 						   </div>
 						</div>
 						<div class="row show-grid">
-						   <div style="text-align:center;" class="col-md-6 col-sm-6">
+							<div style="text-align:center;" class="col-md-4 col-sm-4">
 						   		<th style="vertical-align: middle;">
 									<b>
-										Nivel:
+										Tipo Asiento:
 									</b>
 								</th>
 								<td>
-									<input style="width:50px" type="text" value="0" onkeyup="" name="nivel" >
+									<select name="tipoasiento" data-placeholder="Tipo..." class="chosen-select" tabindex="2">
+						          	</select>
 								</td>
 						   </div>
-						    <div style="text-align:center;" class="col-md-6 col-sm-6">
+						    <div style="text-align:center;" class="col-md-4 col-sm-4">
 						   		<th style="vertical-align: middle;">
 									<b>
-										Incluir cuentas con saldo cero:
+										Incluir cuentas sin movimientos:
 									</b>
 								</th>
 								<td>
 									<input style="width:50px" type="checkbox" onkeyup="" name="incluir" >
 								</td>
 						   </div>
-						</div>
-						<div class="row show-grid">
-						   <div style="text-align:center;" class="col-md-6 col-sm-6">
-						   		<th style="vertical-align: middle;">
-									<b>
-										Incluir cuentas auxiliares:
-									</b>
-								</th>
-								<td>
-									<input type="checkbox" value="0" onkeyup="" name="auxiliar" >
-								</td>
-						   </div>
-						    <div style="text-align:center;" class="col-md-6 col-sm-6">
+						    <div style="text-align:center;" class="col-md-4 col-sm-4">
 						    	<th style="vertical-align: middle;">
 									<b>
-										Moneda Extranjera:
+										Moneda:
 									</b>
 								</th>
 								<td>
-									<input type="checkbox" onkeyup="" name="moneda" >
+									<select name="moneda" data-placeholder="Tipo..." class="chosen-select" tabindex="2">
+							   			<option selected value="LO">LOCAL</option>
+							   			<option value="EX">EXTRANJERA</option>
+							   			<option value="AM">AMBAS</option>}
+						          	</select>
 								</td>
-						   		<!--th style="vertical-align: middle;">
-									<b>
-										Incluir comprobaci&#243n:
-									</b>
-								</th>
-								<td>
-									<input style="width:50px" type="checkbox" onkeyup="" name="comprobacion" >
-								</td-->
 						   </div>
 						</div>
 					</div>

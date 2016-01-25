@@ -346,8 +346,27 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 		conn.exec(string, function(err, row){
 			res.json({ data : row });
 		});
+	});
+	
+	//tipo asiento select option
+	restapi.get('/api/v1/mayorcuenta/list/', function(req, res){
+		res.setHeader('Access-Control-Allow-Origin', '*');
+		
+		var string = "select "+
+					    "* "+ 
+					"from "+
+					    "Vmayorctas "+
+					"where "+
+					    "Cod_Empresa = 'BT' "+
+					    "and Periodo = '2010' "+
+					    "and fecha BETWEEN '2010-01-01' and '2010-01-31' "+
+					    "and Tipoasiento = '01' "+
+					    "and Codplancta >= '4' "
+		
+		conn.exec(string, function(err, row){
+			res.json({ data : row });
+		});
 	});	
-
 
 	restapi.listen(3000);
 	restapi.use(function(req, res, next){

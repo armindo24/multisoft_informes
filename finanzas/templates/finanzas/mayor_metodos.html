@@ -307,7 +307,25 @@ window.onload = function() {
 					    }
 					);  
 					
-					$('.chosen-select').trigger('chosen:updated');
+					$.get("http://"+aux1[0]+":3000/api/v1/tipoasiento/select/",
+					    function(data) 	{
+					    	if (data != null){
+					    		var select = document.getElementsByName("tipoasiento")[0]
+					    		remover(select);
+					    		var option = document.createElement("option");
+								option.text = "NINGUNO";
+								select.add(option);
+								for (var i=0;i < data.data.length;i++){
+									var option = document.createElement("option");
+									option.value = data.data[i].TipoAsiento;
+									option.text =data.data[i].Descrip;
+									select.add(option);
+								}
+								SelectElement(data.data[0].TipoAsiento,'tipoasiento')
+								$('.chosen-select').trigger('chosen:updated');
+					    	}
+					    }
+					);  
 		    	}
 		    }
 		); 
