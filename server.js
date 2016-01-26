@@ -364,16 +364,17 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 					    "Cod_empresa,Nrocompr,Nrotransac,NroAsiento,"+
 					    "Periodo,Autorizado,Codplancta,NOMBREPLANCTA,"+
 					    "Codplanctapad,tiposaldo,NOMBREPLANCTAPAD,"+
-					    "Fecha,ANHO,MES,Codmoneda,Tipoasiento,"+
+					    "date(Fecha) as Fecha,ANHO,MES,Codmoneda,dba.TipoAsiento.TipoAsiento,dba.TipoAsiento.Abreviatura as abreasiento,"+
 					    "Linea,Concepto,Dbcr,Origen,"+
 					    "cast(Importe as decimal(20,0)) as Importe,cast(Credito as decimal(20,0)) as Credito,"+
 					    "cast(Debito as decimal(20,0)) as Debito,cast(CreditoME as decimal(20,2)) as CreditoME,"+
 					    "cast(DebitoME as decimal(20,2)) as DebitoME,CodPlanAux "+
 					"from "+
-					    "Vmayorctas where Cod_Empresa = '"+empresa+"' "+
+					    "dba.Tipoasiento, Vmayorctas where Cod_Empresa = '"+empresa+"' "+
 					    "and Periodo = '"+periodo+"' "+
+					    "and dba.TipoAsiento.TipoAsiento = DBA.Vmayorctas.Tipoasiento "+
 					    "and fecha BETWEEN '"+fechad+"' and '"+fechah+"' "+ 
-					    "and Tipoasiento = '"+tipoasiento+"' "+
+					    "and dba.TipoAsiento.TipoAsiento = '"+tipoasiento+"' "+
 					    "and Codplancta >= '"+cuentad+"' "+ 
 					    "and Codplancta <= '"+cuentah+"' order by Codplancta" 
 		
