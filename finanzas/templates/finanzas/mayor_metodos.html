@@ -107,57 +107,56 @@ function buscar(){
 		    		console.log(data)
 		    		$('#table-div').empty()
 		    		var string=""
-		    		var string2 = ""
-		    		var total_debe = 0
-		    		var total_haber = 0
-		    		var total_debeME = 0
-		    		var total_haberME = 0
+		    		//var string2 = ""
+		    		//var total_debe = 0
+		    		//var total_haber = 0
+		    		//var total_debeME = 0
+		    		//var total_haberME = 0
 		    		for (var a=0;a < data.data.length;a++){
-		    			total_debe+=parseInt(data.data[a].Debito)
-		    			total_haber+=parseInt(data.data[a].Credito)
-		    			total_debeME+=parseInt(data.data[a].DEBITO_ME)
-		    			total_haberME+=parseInt(data.data[a].CREDITO_ME)
+		    			//total_debe+=parseInt(data.data[a].Debito)
+		    			//total_haber+=parseInt(data.data[a].Credito)
+		    			//total_debeME+=parseInt(data.data[a].DEBITO_ME)
+		    			//total_haberME+=parseInt(data.data[a].CREDITO_ME)
 		    			
-		    			string2+='<tr>'+
-									'<td>'+data.data[a].Fecha+'</td>'+
-									'<td>'+data.data[a].abreasiento+'</td>'
-						if (data.data[a].Nrocompr == null){
-						   string2+='<td>&nbsp;</td>'
-						} else {
-						   string2+='<td>'+data.data[a].abreasiento+'</td>'
-						}
-						if (data.data[a].Autorizado == 'S'){
-						   string2+='<td>Si</td>'
-						} else {
-						   string2+='<td>No</td>'
-						}
-						   string2+='<td>'+data.data[a].Nrotransac+'</td>'+
-						   			'<td>'+data.data[a].Linea+'</td>'
-					   if (data.data[a].CodPlanAux == null){
-			   			   string2+='<td>&nbsp;</td>'
-					   } else {
-						   string2+='<td>'+data.data[a].CodPlanAux+'</td>'
-					   }
-						   string2+='<td>'+data.data[a].Concepto+'</td>'
-						if (moneda == 'AM'){
-						   string2+='<th style="text-align: right;">'+convertir_rever(data.data[a].Debito)+'</th>'+
-									'<th style="text-align: right;">'+convertir_rever(data.data[a].Credito)+'</th>'+
-									'<th style="text-align: right;">'+addCommas((Math.round(data.data[a].DEBITO_ME * 100) / 100).toString())+'</th>'+
-									'<th style="text-align: right;">'+addCommas((Math.round(data.data[a].CREDITO_ME * 100) / 100).toString())+'</th>'
-						} else if (moneda == 'LO') {
-						   string2+='<th style="text-align: right;">'+convertir_rever(data.data[a].Debito)+'</th>'+
-							  	    '<th style="text-align: right;">'+convertir_rever(data.data[a].Credito)+'</th>'
-						  if (data.data[a].Credito == 0){
-						   string2+='<th style="text-align: right;">'+convertir_rever(data.data[a].Debito)+'</th>'
-						  } else {
-						   string2+='<th style="text-align: right;">'+convertir_rever(data.data[a].Credito)+'</th>'
-						  }
-						} else {
-						  string2+='<th style="text-align: right;">'+addCommas((Math.round(data.data[a].DEBITO_ME * 100) / 100).toString())+'</th>'+
-							       '<th style="text-align: right;">'+addCommas((Math.round(data.data[a].CREDITO_ME * 100) / 100).toString())+'</th>'
-						}		
-						string2+='</tr>'
-			    			
+		    			//string2+='<tr>'+
+						//			'<td>'+data.data[a].Fecha+'</td>'+
+						//			'<td>'+data.data[a].abreasiento+'</td>'
+						//if (data.data[a].Nrocompr == null){
+						//   string2+='<td>&nbsp;</td>'
+						//} else {
+						//   string2+='<td>'+data.data[a].abreasiento+'</td>'
+						//}
+						//if (data.data[a].Autorizado == 'S'){
+						//   string2+='<td>Si</td>'
+						//} else {
+						//   string2+='<td>No</td>'
+						//}
+						//   string2+='<td>'+data.data[a].Nrotransac+'</td>'+
+						//   			'<td>'+data.data[a].Linea+'</td>'
+					   	//if (data.data[a].CodPlanAux == null){
+			   			//   string2+='<td>&nbsp;</td>'
+					   	//} else {
+						//   string2+='<td>'+data.data[a].CodPlanAux+'</td>'
+					   	//}
+						//   string2+='<td>'+data.data[a].Concepto+'</td>'
+						//if (moneda == 'AM'){
+						//   string2+='<th style="text-align: right;">'+convertir_rever(data.data[a].Debito)+'</th>'+
+						//			'<th style="text-align: right;">'+convertir_rever(data.data[a].Credito)+'</th>'+
+						//			'<th style="text-align: right;">'+addCommas((Math.round(data.data[a].DEBITO_ME * 100) / 100).toString())+'</th>'+
+						//			'<th style="text-align: right;">'+addCommas((Math.round(data.data[a].CREDITO_ME * 100) / 100).toString())+'</th>'
+						//} else if (moneda == 'LO') {
+						//   string2+='<th style="text-align: right;">'+convertir_rever(data.data[a].Debito)+'</th>'+
+						//	  	    '<th style="text-align: right;">'+convertir_rever(data.data[a].Credito)+'</th>'
+						//  if (data.data[a].Credito == 0){
+						//   string2+='<th style="text-align: right;">'+convertir_rever(data.data[a].Debito)+'</th>'
+						//  } else {
+						//   string2+='<th style="text-align: right;">'+convertir_rever(data.data[a].Credito)+'</th>'
+						//  }
+						//} else {
+						//  string2+='<th style="text-align: right;">'+addCommas((Math.round(data.data[a].DEBITO_ME * 100) / 100).toString())+'</th>'+
+						//	       '<th style="text-align: right;">'+addCommas((Math.round(data.data[a].CREDITO_ME * 100) / 100).toString())+'</th>'
+						//}		
+						//string2+='</tr>'
 			    			if (parseInt(data.data[a].Codplanctapad) != parseInt(pad)){
 			    				string+='<div id="pad-'+data.data[a].Codplanctapad+'"><hr size="50" style="height: 0px;margin-top: 0px;margin-bottom: 0px;border-top-width: 5px;padding-bottom: 5px;">'+
 			    						 	 '<b>' + data.data[a].Codplanctapad + '&nbsp;&nbsp;&nbsp;&nbsp;' + data.data[a].NOMBREPLANCTAPAD + "</b>" +
@@ -198,30 +197,30 @@ function buscar(){
 												'</thead>'+
 											'</table>'
 										'</div>'
-								cuenta = parseInt(data.data[a].Codplancta)
 								$('#pad-'+data.data[a].Codplanctapad).append(string1); 
-								string2+= '<tr>'
-								if (moneda == 'AM'){
+								cuenta = parseInt(data.data[a].Codplancta)
+								//string2+= '<tr>'
+								//if (moneda == 'AM'){
 								  
-								} else if (moneda == 'LO') {
-									string2+='<th colspan="8" style="text-align: right;">Total de la Cuenta '+data.data[a].NOMBREPLANCTA +'</th>'+
-								   			'<th style="text-align: right;">'+convertir_rever(total_debe)+'</th>'+
-							  	    		'<th style="text-align: right;">'+convertir_rever(total_haber)+'</th>'
-							  	    if (data.data[a].tiposaldo == "D"){
-							  	    	string2+='<th style="text-align: right;">'+convertir_rever(total_debe-total_haber)+'</th>'
-							  	    } else {
-							  	    	string2+='<th style="text-align: right;">'+convertir_rever(total_haber-total_debe)+'</th>'
-							  	    }
-								} else {
-									
-								}
-								string2+='</tr>'
-			    				$('#tabla-'+cuenta+' tbody').html(string2)
-			    				string2 = ""
-			    				total_debe = 0
-					    		total_haber = 0
-					    		total_debeME = 0
-					    		total_haberME = 0
+								//} else if (moneda == 'LO') {
+								//	string2+='<th colspan="8" style="text-align: right;">Total de la Cuenta '+data.data[a].NOMBREPLANCTA +'</th>'+
+							    //  			'<th style="text-align: right;">'+convertir_rever(total_debe)+'</th>'+
+							  	//    		'<th style="text-align: right;">'+convertir_rever(total_haber)+'</th>'
+							  	//   if (data.data[a].tiposaldo == "D"){
+							  	//    	string2+='<th style="text-align: right;">'+convertir_rever(total_debe-total_haber)+'</th>'
+							  	//    } else {
+							  	//    	string2+='<th style="text-align: right;">'+convertir_rever(total_haber-total_debe)+'</th>'
+							  	//    }
+								//} else {
+								//	
+								//}
+								//string2+='</tr>'
+			    				//$('#tabla-'+cuenta+' tbody').html(string2)
+			    				//string2 = ""
+			    				//total_debe = 0
+					    		//total_haber = 0
+					    		//total_debeME = 0
+					    		//total_haberME = 0
 							}
 	    			}
 	    			pad = 0

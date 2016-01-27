@@ -397,72 +397,30 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 });
 
 /*
---call DBA.Gen_Mayor_Cuentas('38643802125170840','BT','2011','2011-01-01','2011-01-31','S');
-
-SELECT DBA.TmpMayor.CodPlanCtaPad,   
-         DBA.TmpMayor.CodPlanCta,   
-         DBA.TmpMayor.CodPlanAux,   
-         DBA.TmpMayor.NombrePlanCta,   
-         DBA.TmpMayor.Fecha,   
-         DBA.TmpMayor.TipoRegistro,
-         DBA.TmpMayor.TipoAsiento,   
-         DBA.TmpMayor.TipoSaldo,   
-         DBA.TmpMayor.NroTransac,   
-         DBA.TmpMayor.NroCompr,   
-         DBA.TmpMayor.Autorizado,   
-         DBA.TmpMayor.Linea,   
-         DBA.TmpMayor.Concepto,   
-         DBA.TmpMayor.DbCr,   
-         DBA.TmpMayor.Origen,   
-         DBA.TmpMayor.NombrePlanCtaPad,   
-         DBA.TmpMayor.Cod_Empresa,   
-         DBA.TmpMayor.Mes,   
-         DBA.TmpMayor.CREDITO,   
-         DBA.TmpMayor.DEBITO,
-         DBA.TmpMayor.CREDITOME,   
-         DBA.TmpMayor.DEBITOME,
-         DBA.TmpMayor.SID
-FROM DBA.TmpMayor 
-WHERE TmpMayor.SID = '38643802125170840' 
-UNION
-SELECT pa.codplanctapad ,
- 		vMC.CodPlanCta , 			
-		vMC.CodPlanAux ,             
-		pa.nombre as NombrePlanCta , 			
-		DATE (AC.Fecha),        
-		'A' AS TipoRegistro,
-		AC.TipoAsiento,
-		pa.TipoSaldo,
-		AC.NroTransac,
-      AC.NroCompr,
-      AC.Autorizado,
-      vMC.Linea,
-      vMC.Concepto,
-		vMC.DbCr,
-      AC.Origen,
-      NULL as NombrePlanCtaPad,
-      AC.Cod_Empresa,
-      month (AC.Fecha)      ,
-      ROUND (vMC.CREDITO, 0),   		 
-		ROUND (vMC.DEBITO, 0)  ,         
-		ROUND (vMC.CREDITOME, 2), 		 
-		ROUND (vMC.DEBITOME, 2)  		
-FROM  DBA.ASientosDet vMC force index (plancta_asientosdet), 				 
-      DBA.AsientosCAB AC force index (asientoscab),  				 
-	  DBA.PlanCta PA force index (plancta),  				 
-	  DBA.TipoAsiento t force index (tipoasiento)  			
-WHERE  vMC.Cod_Empresa    =  'BT' 			
-AND    vMC.Periodo        = '2011' 			
-AND    vMC.CodPlanCta     IN ('1101012')			
-AND    vMC.Cod_Empresa    =  pa.Cod_Empresa 			
-AND    vMC.Periodo        = pa.Periodo 			
-AND    vMC.CodPlanCta   = pa.CodPlanCta 			
-AND    AC.cod_Empresa = vMC.Cod_Empresa 			
-AND   ac.Nrotransac = vMC.NroTransac 			
-AND ac.TipoAsiento = t.tipoasiento 			
-and t.tpDef <> 'N' 			
-AND   Date  (AC.Fecha) >= DATE ('2011-01-01') 			
-AND   Date  (AC.Fecha)  <= DATE ('2011-01-31')  
-
-order by 16, 2, 5, 7, */
+select 
+    dba.Asientosdet.Codplancta,
+    plancta_a.Nombre as NOMBREPLANCTA,
+    plancta_a.Codplanctapad,
+    dba.f_get_CuentaName (plancta_a.cod_empresa, plancta_a.periodo, plancta_a.codplanctapad ) as NOMBREPLANCTAPAD
+from
+    dba.Asientoscab force index (asientoscab),
+    dba.Asientosdet force index (plancta_asientosdet),
+    dba.TipoAsiento force index (tipoasiento),
+    dba.Plancta as plancta_a
+ where
+    dba.Asientoscab.Cod_empresa = dba.Asientosdet.Cod_empresa and
+    dba.Asientoscab.Nrotransac = dba.Asientosdet.Nrotransac and
+    dba.ASIENTOSCAB.Periodo = dba.ASIENTOSDET.Periodo and
+    dba.Asientosdet.Cod_empresa = plancta_a.Cod_empresa and
+    dba.Asientosdet.Periodo = plancta_a.Periodo and
+    dba.Asientosdet.Codplancta = plancta_a.Codplancta and
+    dba.AsientosCab.TipoAsiento = dba.TipoAsiento.TipoAsiento and
+    dba.TipoAsiento.TpDef not in( 'N') AND 
+    dba.ASIENTOSCAB.Cod_Empresa = 'BT' and
+    dba.ASIENTOSCAB.Periodo = '2011' AND
+    dba.ASIENTOSCAB.Fecha BETWEEN '2011-01-01' and '2011-01-05' AND 
+    plancta_a.CodPlanCta >= '1101001' and
+    plancta_a.CodPlanCta <= '1101012'  
+    --AND dba.TipoAsiento.TipoAsiento = '01'
+group by dba.Asientosdet.Codplancta,NOMBREPLANCTA,plancta_a.Codplanctapad,NOMBREPLANCTAPAD*/
 
