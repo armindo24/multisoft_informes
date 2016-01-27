@@ -373,10 +373,11 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 					    "dba.Tipoasiento, Vmayorctas where Cod_Empresa = '"+empresa+"' "+
 					    "and Periodo = '"+periodo+"' "+
 					    "and dba.TipoAsiento.TipoAsiento = DBA.Vmayorctas.Tipoasiento "+
-					    "and fecha BETWEEN '"+fechad+"' and '"+fechah+"' "+ 
-					    "and dba.TipoAsiento.TipoAsiento = '"+tipoasiento+"' "+
-					    "and Codplancta >= '"+cuentad+"' "+ 
-					    "and Codplancta <= '"+cuentah+"' order by Codplancta" 
+					    "and fecha BETWEEN '"+fechad+"' and '"+fechah+"' "
+					    if (tipoasiento != 'NINGUNO')
+					    	string+="and dba.TipoAsiento.TipoAsiento = '"+tipoasiento+"' "
+		    	string+="and Codplancta >= '"+cuentad+"' "+ 
+					    "and Codplancta <= '"+cuentah+"' order by Codplancta,Fecha" 
 		
 		conn.exec(string, function(err, row){
 			res.json({ data : row });
