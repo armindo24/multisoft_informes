@@ -359,8 +359,6 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 		var fechah = req.params.fechah;
 		var cuenta = req.params.cuenta;
 		
-		console.log(cuenta)
-		
 		var string1 = "select dba.Asientoscab.Cod_empresa,dba.Asientoscab.Nrocompr,dba.Asientoscab.Nrotransac,"+
 					    "dba.Asientoscab.NroAsiento,dba.Asientoscab.Periodo, dba.Asientoscab.Autorizado,"+
 					    "dba.Asientosdet.Codplancta,plancta_a.Nombre as NOMBREPLANCTA,plancta_a.Codplanctapad,"+
@@ -424,14 +422,10 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 						res.json([{dato1 : data1},{ dato2 : data2 }])
 					});
 		});
-		
-		
-						
-		//res.json([{ dato1 : data1 },{ dato2 : data2 }]);
 	});	
 	
 	//cabecera de movimientos de cuenta libro mayor
-	restapi.get('/api/v1/mayorcuenta/cab/:empresa/:periodo/:fechad/:fechah/:tipoasiento/:cuentad/:cuentah', function(req, res){
+	restapi.get('/api/v1/mayorcuenta/cab/:empresa/:periodo/:fechad/:fechah/:tipoasiento/:cuentad/:cuentah/:incluir', function(req, res){
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		
 		var empresa = req.params.empresa;
@@ -441,38 +435,154 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 		var fechah = req.params.fechah;
 		var cuentad = req.params.cuentad;
 		var cuentah = req.params.cuentah;
+		var incluir = req.params.incluir;
 		
-		var string = "select "+
-					    "dba.Asientosdet.Codplancta,"+
-					    "plancta_a.Nombre as NOMBREPLANCTA,"+
-					    "plancta_a.Codplanctapad,"+
-					    "dba.f_get_CuentaName (plancta_a.cod_empresa, plancta_a.periodo, plancta_a.codplanctapad ) as NOMBREPLANCTAPAD "+
-					"from "+
-					    "dba.Asientoscab,"+
-					    "dba.Asientosdet,"+
-					    "dba.TipoAsiento,"+
-					    "dba.Plancta as plancta_a "+
-					"where "+
-					    "dba.Asientoscab.Cod_empresa = dba.Asientosdet.Cod_empresa "+
-					    "and dba.Asientoscab.Nrotransac = dba.Asientosdet.Nrotransac "+
-					    "and dba.ASIENTOSCAB.Periodo = dba.ASIENTOSDET.Periodo "+
-					    "and dba.Asientosdet.Cod_empresa = plancta_a.Cod_empresa "+
-					    "and dba.Asientosdet.Periodo = plancta_a.Periodo "+
-					    "and dba.Asientosdet.Codplancta = plancta_a.Codplancta "+
-					    "and dba.AsientosCab.TipoAsiento = dba.TipoAsiento.TipoAsiento "+
-					    "and dba.TipoAsiento.TpDef not in( 'N') "+
-					    "AND dba.ASIENTOSCAB.Cod_Empresa = '"+empresa+"' "+
-					    "and dba.ASIENTOSCAB.Periodo = '"+periodo+"' "+
-					    "AND dba.ASIENTOSCAB.Fecha BETWEEN '"+fechad+"' and '"+fechah+"' "+
-					    "AND plancta_a.CodPlanCta >= '"+cuentad+"' "+
-					    "and plancta_a.CodPlanCta <= '"+cuentah+"' "
-					    if (tipoasiento != 'NINGUNO')
-					    	string+="AND dba.TipoAsiento.TipoAsiento = '"+tipoasiento+"' "
-	    	string+="group by dba.Asientosdet.Codplancta,NOMBREPLANCTA,plancta_a.Codplanctapad,NOMBREPLANCTAPAD order by dba.Asientosdet.Codplancta" 
+		if (incluir == "NO"){
 		
-		conn.exec(string, function(err, row){
-			res.json({ data : row });
-		});
+			var string = "select "+
+						    "dba.Asientosdet.Codplancta,"+
+						    "plancta_a.Nombre as NOMBREPLANCTA,"+
+						    "plancta_a.Codplanctapad,"+
+						    "dba.f_get_CuentaName (plancta_a.cod_empresa, plancta_a.periodo, plancta_a.codplanctapad ) as NOMBREPLANCTAPAD "+
+						"from "+
+						    "dba.Asientoscab,"+
+						    "dba.Asientosdet,"+
+						    "dba.TipoAsiento,"+
+						    "dba.Plancta as plancta_a "+
+						"where "+
+						    "dba.Asientoscab.Cod_empresa = dba.Asientosdet.Cod_empresa "+
+						    "and dba.Asientoscab.Nrotransac = dba.Asientosdet.Nrotransac "+
+						    "and dba.ASIENTOSCAB.Periodo = dba.ASIENTOSDET.Periodo "+
+						    "and dba.Asientosdet.Cod_empresa = plancta_a.Cod_empresa "+
+						    "and dba.Asientosdet.Periodo = plancta_a.Periodo "+
+						    "and dba.Asientosdet.Codplancta = plancta_a.Codplancta "+
+						    "and dba.AsientosCab.TipoAsiento = dba.TipoAsiento.TipoAsiento "+
+						    "and dba.TipoAsiento.TpDef not in( 'N') "+
+						    "AND dba.ASIENTOSCAB.Cod_Empresa = '"+empresa+"' "+
+						    "and dba.ASIENTOSCAB.Periodo = '"+periodo+"' "+
+						    "AND dba.ASIENTOSCAB.Fecha BETWEEN '"+fechad+"' and '"+fechah+"' "+
+						    "AND plancta_a.CodPlanCta >= '"+cuentad+"' "+
+						    "and plancta_a.CodPlanCta <= '"+cuentah+"' "
+						    if (tipoasiento != 'NINGUNO')
+						    	string+="AND dba.TipoAsiento.TipoAsiento = '"+tipoasiento+"' "
+					    	string+="group by dba.Asientosdet.Codplancta,NOMBREPLANCTA,plancta_a.Codplanctapad,NOMBREPLANCTAPAD order by dba.Asientosdet.Codplancta"
+			conn.exec(string, function(err, row){
+				data1 = row
+				var string1 = "select "+
+								    "plancta_a.Codplanctapad,"+
+								    "dba.f_get_CuentaName (plancta_a.cod_empresa, plancta_a.periodo, plancta_a.codplanctapad ) as NOMBREPLANCTAPAD "+
+								"from "+
+								    "dba.Asientoscab,"+
+								    "dba.Asientosdet,"+
+								    "dba.TipoAsiento,"+
+								    "dba.Plancta as plancta_a "+
+								"where "+
+								    "dba.Asientoscab.Cod_empresa = dba.Asientosdet.Cod_empresa "+
+								    "and dba.Asientoscab.Nrotransac = dba.Asientosdet.Nrotransac "+
+								    "and dba.ASIENTOSCAB.Periodo = dba.ASIENTOSDET.Periodo "+
+								    "and dba.Asientosdet.Cod_empresa = plancta_a.Cod_empresa "+
+								    "and dba.Asientosdet.Periodo = plancta_a.Periodo "+
+								    "and dba.Asientosdet.Codplancta = plancta_a.Codplancta "+
+								    "and dba.AsientosCab.TipoAsiento = dba.TipoAsiento.TipoAsiento "+
+								    "and dba.TipoAsiento.TpDef not in( 'N') "+
+								    "AND dba.ASIENTOSCAB.Cod_Empresa = '"+empresa+"' "+
+								    "and dba.ASIENTOSCAB.Periodo = '"+periodo+"' "+
+								    "AND dba.ASIENTOSCAB.Fecha BETWEEN '"+fechad+"' and '"+fechah+"' "+
+								    "AND plancta_a.CodPlanCta >= '"+cuentad+"' "+
+								    "and plancta_a.CodPlanCta <= '"+cuentah+"' "
+								    if (tipoasiento != 'NINGUNO')
+								    	string1+="AND dba.TipoAsiento.TipoAsiento = '"+tipoasiento+"' "
+						string1+="group by NOMBREPLANCTAPAD,plancta_a.Codplanctapad order by plancta_a.Codplanctapad" 
+				conn.exec(string1, function(err, row){
+						data2 = row	
+					res.json([{ data1 : data1 },{ data2 : data2 }]);
+				});
+			});
+		} else {
+			var string = "select "+
+							    "dba.Asientosdet.Codplancta,"+
+							    "plancta_a.Nombre as NOMBREPLANCTA,"+
+							    "plancta_a.Codplanctapad,"+
+							    "dba.f_get_CuentaName (plancta_a.cod_empresa, plancta_a.periodo, plancta_a.codplanctapad ) as NOMBREPLANCTAPAD "+
+							"from "+
+							    "dba.Asientoscab,"+
+							    "dba.Asientosdet,"+
+							    "dba.TipoAsiento,"+
+							    "dba.Plancta as plancta_a "+
+							"where "+
+							    "dba.Asientoscab.Cod_empresa = dba.Asientosdet.Cod_empresa "+
+							    "and dba.Asientoscab.Nrotransac = dba.Asientosdet.Nrotransac "+
+							    "and dba.ASIENTOSCAB.Periodo = dba.ASIENTOSDET.Periodo "+
+							    "and dba.Asientosdet.Cod_empresa = plancta_a.Cod_empresa "+
+							    "and dba.Asientosdet.Periodo = plancta_a.Periodo "+
+							    "and dba.Asientosdet.Codplancta = plancta_a.Codplancta "+
+							    "and dba.AsientosCab.TipoAsiento = dba.TipoAsiento.TipoAsiento "+
+							    "and dba.TipoAsiento.TpDef not in( 'N') "+
+							    "AND dba.ASIENTOSCAB.Cod_Empresa = '"+empresa+"' "+
+							    "and dba.ASIENTOSCAB.Periodo = '"+periodo+"' "+
+							    "AND dba.ASIENTOSCAB.Fecha BETWEEN '"+fechad+"' and '"+fechah+"' "+
+							    "AND plancta_a.CodPlanCta >= '"+cuentad+"' "+
+							    "and plancta_a.CodPlanCta <= '"+cuentah+"' "
+							    if (tipoasiento != 'NINGUNO')
+							    	string+="AND dba.TipoAsiento.TipoAsiento = '"+tipoasiento+"' "
+						    	string+="UNION select "+
+								    "plancta_a.CodPlanCta,"+
+								    "plancta_a.Nombre as NOMBREPLANCTA,"+
+								    "plancta_a.Codplanctapad,"+
+								    "dba.f_get_CuentaName (plancta_a.cod_empresa, plancta_a.periodo, plancta_a.codplanctapad ) as NOMBREPLANCTAPAD "+ 
+								"from "+
+								    "dba.Plancta as plancta_a "+
+								"WHERE "+
+								    "plancta_a.Cod_Empresa = '"+empresa+"' "+
+								    "and plancta_A.Periodo = '"+periodo+"' "+
+								    "AND plancta_a.CodPlanCta >= '"+cuentad+"' "+
+								    "and plancta_a.CodPlanCta <= '"+cuentah+"' "+
+								"order by Codplancta"
+					conn.exec(string, function(err, row){
+					data1 = row
+					var string1 = "select "+
+									    "plancta_a.Codplanctapad,"+
+									    "dba.f_get_CuentaName (plancta_a.cod_empresa, plancta_a.periodo, plancta_a.codplanctapad ) as NOMBREPLANCTAPAD "+
+									"from "+
+									    "dba.Asientoscab,"+
+									    "dba.Asientosdet,"+
+									    "dba.TipoAsiento,"+
+									    "dba.Plancta as plancta_a "+
+									"where "+
+									    "dba.Asientoscab.Cod_empresa = dba.Asientosdet.Cod_empresa "+
+									    "and dba.Asientoscab.Nrotransac = dba.Asientosdet.Nrotransac "+
+									    "and dba.ASIENTOSCAB.Periodo = dba.ASIENTOSDET.Periodo "+
+									    "and dba.Asientosdet.Cod_empresa = plancta_a.Cod_empresa "+
+									    "and dba.Asientosdet.Periodo = plancta_a.Periodo "+
+									    "and dba.Asientosdet.Codplancta = plancta_a.Codplancta "+
+									    "and dba.AsientosCab.TipoAsiento = dba.TipoAsiento.TipoAsiento "+
+									    "and dba.TipoAsiento.TpDef not in( 'N') "+
+									    "AND dba.ASIENTOSCAB.Cod_Empresa = '"+empresa+"' "+
+									    "and dba.ASIENTOSCAB.Periodo = '"+periodo+"' "+
+									    "AND dba.ASIENTOSCAB.Fecha BETWEEN '"+fechad+"' and '"+fechah+"' "+
+									    "AND plancta_a.CodPlanCta >= '"+cuentad+"' "+
+									    "and plancta_a.CodPlanCta <= '"+cuentah+"' "
+									    if (tipoasiento != 'NINGUNO')
+									    	string1+="AND dba.TipoAsiento.TipoAsiento = '"+tipoasiento+"' "
+							string1+="group by NOMBREPLANCTAPAD,plancta_a.Codplanctapad " 
+							string1+="UNION select "+
+									    "plancta_a.Codplanctapad,"+
+									    "dba.f_get_CuentaName (plancta_a.cod_empresa, plancta_a.periodo, plancta_a.codplanctapad ) as NOMBREPLANCTAPAD "+ 
+									"from "+
+									    "dba.Plancta as plancta_a "+ 
+									"WHERE "+
+									    "plancta_a.Cod_Empresa = '"+empresa+"' "+
+									    "and plancta_A.Periodo = '"+periodo+"' "+
+									    "AND plancta_a.CodPlanCta >= '"+cuentad+"' "+
+									    "and plancta_a.CodPlanCta <= '"+cuentah+"' "+
+									"group by NOMBREPLANCTAPAD,plancta_a.Codplanctapad "+
+									"order by Codplanctapad"
+					conn.exec(string1, function(err, row){
+							data2 = row	
+						res.json([{ data1 : data1 },{ data2 : data2 }]);
+					});
+					});
+		}
 	});	
 	
 
