@@ -348,8 +348,90 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 		});
 	});
 	
-	//tipo asiento select option
-	restapi.get('/api/v1/mayorcuenta/list/:empresa/:periodo/:fechad/:fechah/:tipoasiento/:cuentad/:cuentah', function(req, res){
+	//detalle de movimientos de cuenta libro mayor
+	restapi.get('/api/v1/mayorcuenta/det/:empresa/:periodo/:fechad/:fechah/:tipoasiento/:cuenta', function(req, res){
+		res.setHeader('Access-Control-Allow-Origin', '*');
+		
+		var empresa = req.params.empresa;
+		var periodo = req.params.periodo;
+		var tipoasiento = req.params.tipoasiento;
+		var fechad = req.params.fechad;
+		var fechah = req.params.fechah;
+		var cuenta = req.params.cuenta;
+		
+		console.log(cuenta)
+		
+		var string1 = "select dba.Asientoscab.Cod_empresa,dba.Asientoscab.Nrocompr,dba.Asientoscab.Nrotransac,"+
+					    "dba.Asientoscab.NroAsiento,dba.Asientoscab.Periodo, dba.Asientoscab.Autorizado,"+
+					    "dba.Asientosdet.Codplancta,plancta_a.Nombre as NOMBREPLANCTA,plancta_a.Codplanctapad,"+
+					    "plancta_a.tiposaldo,dba.f_get_CuentaName (plancta_a.cod_empresa, plancta_a.periodo, plancta_a.codplanctapad ) as NOMBREPLANCTAPAD,"+
+					    "date(dba.Asientoscab.Fecha) as Fecha,YEAR(dba.Asientoscab.Fecha) as ANHO,MONTH(dba.Asientoscab.Fecha) as MES,"+
+					    "dba.Asientoscab.Codmoneda,dba.Asientoscab.Tipoasiento,dba.TipoAsiento.Abreviatura,"+
+					    "dba.Asientosdet.Linea,dba.Asientosdet.Concepto,dba.Asientosdet.Dbcr,"+
+					    "dba.Asientoscab.Origen,dba.Asientosdet.Importe,"+
+					    "cast(dba.Asientosdet.Credito as decimal(20,0)) as Credito,"+
+					    "cast(dba.Asientosdet.Debito as decimal(20,0)) as Debito,"+
+					    "cast(dba.Asientosdet.CreditoME as decimal(20,2)) as CreditoME,"+
+					    "cast(dba.Asientosdet.DebitoME as decimal(20,2)) as DebitoME,"+
+					    "dba.Asientosdet.CodPlanAux "+
+				     "from "+
+				      	"dba.Asientoscab,dba.Asientosdet,dba.TipoAsiento,dba.Plancta as plancta_a "+
+					 "where "+
+					    "dba.Asientoscab.Cod_empresa = dba.Asientosdet.Cod_empresa "+
+					    "and dba.Asientoscab.Nrotransac = dba.Asientosdet.Nrotransac "+
+					    "and dba.Asientoscab.Periodo = dba.Asientosdet.Periodo "+
+					    "and dba.Asientosdet.Cod_empresa = plancta_a.Cod_empresa "+
+					    "and dba.Asientosdet.Periodo = plancta_a.Periodo "+
+					    "and dba.Asientosdet.Codplancta = plancta_a.Codplancta "+
+					    "and dba.AsientosCab.TipoAsiento = dba.TipoAsiento.TipoAsiento "+
+					    "and dba.TipoAsiento.TpDef not in( 'N') "+
+					    "and dba.Asientoscab.Cod_empresa = '"+empresa+"' "+
+					    "and dba.Asientoscab.Periodo = '"+periodo+"' "+
+					    "and dba.Asientoscab.Fecha BETWEEN '"+fechad+"' and '"+fechah+"' "+
+					    "and dba.Asientosdet.Codplancta = '"+cuenta+"' "
+				    if (tipoasiento != 'NINGUNO')
+				    	string1+="AND dba.TipoAsiento.TipoAsiento = '"+tipoasiento+"' "
+	    	string1+="order by dba.Asientosdet.Codplancta,Fecha" 
+		
+		conn.exec(string1, function(err, row){
+			data1 = row
+			var string2 = "select dba.Asientosdet.CodPlanCta,plancta_a.TipoSaldo," +
+								"cast(sum(dba.Asientosdet.Credito) as decimal(20,0)) as Credito,"+
+							    "cast(sum(dba.Asientosdet.Debito) as decimal(20,0)) as Debito,"+
+							    "cast(sum(dba.Asientosdet.CreditoME) as decimal(20,2)) as CreditoME,"+
+							    "cast(sum(dba.Asientosdet.DebitoME) as decimal(20,2)) as DebitoME "+
+						     "from "+
+						      	"dba.Asientoscab,dba.Asientosdet,dba.TipoAsiento,dba.Plancta as plancta_a "+
+							 "where "+
+							    "dba.Asientoscab.Cod_empresa = dba.Asientosdet.Cod_empresa "+
+							    "and dba.Asientoscab.Nrotransac = dba.Asientosdet.Nrotransac "+
+							    "and dba.Asientoscab.Periodo = dba.Asientosdet.Periodo "+
+							    "and dba.Asientosdet.Cod_empresa = plancta_a.Cod_empresa "+
+							    "and dba.Asientosdet.Periodo = plancta_a.Periodo "+
+							    "and dba.Asientosdet.Codplancta = plancta_a.Codplancta "+
+							    "and dba.AsientosCab.TipoAsiento = dba.TipoAsiento.TipoAsiento "+
+							    "and dba.TipoAsiento.TpDef not in( 'N') "+
+							    "and dba.Asientoscab.Cod_empresa = '"+empresa+"' "+
+							    "and dba.Asientoscab.Periodo = '"+periodo+"' "+
+							    "and dba.Asientoscab.Fecha BETWEEN '"+periodo+"-01-01' and dateadd(dd,-1,'"+fechad+"') "+
+							    "and dba.Asientosdet.Codplancta = '"+cuenta+"' "
+						    if (tipoasiento != 'NINGUNO')
+						    	string2+="AND dba.TipoAsiento.TipoAsiento = '"+tipoasiento+"' "
+						string2+="group by dba.Asientosdet.CodPlanCta,plancta_a.TipoSaldo " 
+					
+					conn.exec(string2, function(err, row){
+						data2 = row
+						res.json([{dato1 : data1},{ dato2 : data2 }])
+					});
+		});
+		
+		
+						
+		//res.json([{ dato1 : data1 },{ dato2 : data2 }]);
+	});	
+	
+	//cabecera de movimientos de cuenta libro mayor
+	restapi.get('/api/v1/mayorcuenta/cab/:empresa/:periodo/:fechad/:fechah/:tipoasiento/:cuentad/:cuentah', function(req, res){
 		res.setHeader('Access-Control-Allow-Origin', '*');
 		
 		var empresa = req.params.empresa;
@@ -360,29 +442,39 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 		var cuentad = req.params.cuentad;
 		var cuentah = req.params.cuentah;
 		
-		var string = "select "+ 
-					    "Cod_empresa,Nrocompr,Nrotransac,NroAsiento,"+
-					    "Periodo,Autorizado,Codplancta,NOMBREPLANCTA,"+
-					    "Codplanctapad,tiposaldo,NOMBREPLANCTAPAD,"+
-					    "date(Fecha) as Fecha,ANHO,MES,Codmoneda,dba.TipoAsiento.TipoAsiento,dba.TipoAsiento.Abreviatura as abreasiento,"+
-					    "Linea,Concepto,Dbcr,Origen,"+
-					    "cast(Importe as decimal(20,0)) as Importe,cast(Credito as decimal(20,0)) as Credito,"+
-					    "cast(Debito as decimal(20,0)) as Debito,cast(CreditoME as decimal(20,2)) as CreditoME,"+
-					    "cast(DebitoME as decimal(20,2)) as DebitoME,CodPlanAux "+
+		var string = "select "+
+					    "dba.Asientosdet.Codplancta,"+
+					    "plancta_a.Nombre as NOMBREPLANCTA,"+
+					    "plancta_a.Codplanctapad,"+
+					    "dba.f_get_CuentaName (plancta_a.cod_empresa, plancta_a.periodo, plancta_a.codplanctapad ) as NOMBREPLANCTAPAD "+
 					"from "+
-					    "dba.Tipoasiento, Vmayorctas where Cod_Empresa = '"+empresa+"' "+
-					    "and Periodo = '"+periodo+"' "+
-					    "and dba.TipoAsiento.TipoAsiento = DBA.Vmayorctas.Tipoasiento "+
-					    "and fecha BETWEEN '"+fechad+"' and '"+fechah+"' "
+					    "dba.Asientoscab,"+
+					    "dba.Asientosdet,"+
+					    "dba.TipoAsiento,"+
+					    "dba.Plancta as plancta_a "+
+					"where "+
+					    "dba.Asientoscab.Cod_empresa = dba.Asientosdet.Cod_empresa "+
+					    "and dba.Asientoscab.Nrotransac = dba.Asientosdet.Nrotransac "+
+					    "and dba.ASIENTOSCAB.Periodo = dba.ASIENTOSDET.Periodo "+
+					    "and dba.Asientosdet.Cod_empresa = plancta_a.Cod_empresa "+
+					    "and dba.Asientosdet.Periodo = plancta_a.Periodo "+
+					    "and dba.Asientosdet.Codplancta = plancta_a.Codplancta "+
+					    "and dba.AsientosCab.TipoAsiento = dba.TipoAsiento.TipoAsiento "+
+					    "and dba.TipoAsiento.TpDef not in( 'N') "+
+					    "AND dba.ASIENTOSCAB.Cod_Empresa = '"+empresa+"' "+
+					    "and dba.ASIENTOSCAB.Periodo = '"+periodo+"' "+
+					    "AND dba.ASIENTOSCAB.Fecha BETWEEN '"+fechad+"' and '"+fechah+"' "+
+					    "AND plancta_a.CodPlanCta >= '"+cuentad+"' "+
+					    "and plancta_a.CodPlanCta <= '"+cuentah+"' "
 					    if (tipoasiento != 'NINGUNO')
-					    	string+="and dba.TipoAsiento.TipoAsiento = '"+tipoasiento+"' "
-		    	string+="and Codplancta >= '"+cuentad+"' "+ 
-					    "and Codplancta <= '"+cuentah+"' order by Codplancta,Fecha" 
+					    	string+="AND dba.TipoAsiento.TipoAsiento = '"+tipoasiento+"' "
+	    	string+="group by dba.Asientosdet.Codplancta,NOMBREPLANCTA,plancta_a.Codplanctapad,NOMBREPLANCTAPAD order by dba.Asientosdet.Codplancta" 
 		
 		conn.exec(string, function(err, row){
 			res.json({ data : row });
 		});
 	});	
+	
 
 	restapi.listen(3000);
 	restapi.use(function(req, res, next){
@@ -397,30 +489,5 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 });
 
 /*
-select 
-    dba.Asientosdet.Codplancta,
-    plancta_a.Nombre as NOMBREPLANCTA,
-    plancta_a.Codplanctapad,
-    dba.f_get_CuentaName (plancta_a.cod_empresa, plancta_a.periodo, plancta_a.codplanctapad ) as NOMBREPLANCTAPAD
-from
-    dba.Asientoscab force index (asientoscab),
-    dba.Asientosdet force index (plancta_asientosdet),
-    dba.TipoAsiento force index (tipoasiento),
-    dba.Plancta as plancta_a
- where
-    dba.Asientoscab.Cod_empresa = dba.Asientosdet.Cod_empresa and
-    dba.Asientoscab.Nrotransac = dba.Asientosdet.Nrotransac and
-    dba.ASIENTOSCAB.Periodo = dba.ASIENTOSDET.Periodo and
-    dba.Asientosdet.Cod_empresa = plancta_a.Cod_empresa and
-    dba.Asientosdet.Periodo = plancta_a.Periodo and
-    dba.Asientosdet.Codplancta = plancta_a.Codplancta and
-    dba.AsientosCab.TipoAsiento = dba.TipoAsiento.TipoAsiento and
-    dba.TipoAsiento.TpDef not in( 'N') AND 
-    dba.ASIENTOSCAB.Cod_Empresa = 'BT' and
-    dba.ASIENTOSCAB.Periodo = '2011' AND
-    dba.ASIENTOSCAB.Fecha BETWEEN '2011-01-01' and '2011-01-05' AND 
-    plancta_a.CodPlanCta >= '1101001' and
-    plancta_a.CodPlanCta <= '1101012'  
-    --AND dba.TipoAsiento.TipoAsiento = '01'
-group by dba.Asientosdet.Codplancta,NOMBREPLANCTA,plancta_a.Codplanctapad,NOMBREPLANCTAPAD*/
+*/
 

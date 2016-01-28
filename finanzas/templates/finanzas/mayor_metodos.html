@@ -7,7 +7,7 @@
 var aux1 = null
 var pad = 0
 var cuenta = 0
- 
+
 $(document).ready(function() {
 	$('#page-wrapper').css('margin-left','0px');
     $('#my-left-menu').toggle(0);
@@ -74,6 +74,64 @@ function addCommas(nStr)
 function checkTime(i) {
         return (i < 10) ? "0" + i : i;
     }
+    
+function cargar_detalle(a,empresa,periodo,fechad,fechah,moneda,tipoasiento){
+	$.get("http://"+aux1[0]+":3000/api/v1/mayorcuenta/det/"+empresa+"/"+periodo+"/"+fechad+"/"+fechah+"/"+tipoasiento+"/"+a,
+		    function(datos) 	{
+			    	if (datos != null){
+			    		console.log(datos)
+			    		var string2 = ""
+			    		if (datos[1].dato2.length > 0){
+			    			if (moneda == 'AM'){
+			    				string2='<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th>'+
+										'<th style="text-align: right;">'+convertir_rever(datos[1].dato2[0].Debito)+'</th>'+
+										'<th style="text-align: right;">'+convertir_rever(datos[1].dato2[0].Credito)+'</th>'
+								if (datos[1].dato2[0].TipoSaldo == "D"){
+									string2+='<th style="text-align: right;">'+convertir_rever(parseInt(datos[1].dato2[0].Debito)-parseInt(datos[1].dato2[0].Credito))+'</th>'
+								} else {
+									string2+='<th style="text-align: right;">'+convertir_rever(parseInt(datos[1].dato2[0].Credito)-parseInt(datos[1].dato2[0].Debito))+'</th>'
+								}
+								string2+='<th style="text-align: right;">'+addCommas((Math.round(datos[1].dato2[0].DebitoME * 100) / 100).toString())+'</th>'+
+										'<th style="text-align: right;">'+addCommas((Math.round(datos[1].dato2[0].CreditoME * 100) / 100).toString())+'</th>'
+								if (datos[1].dato2[0].TipoSaldo == "D"){
+									string2+='<th style="text-align: right;">'+addCommas((Math.round((parseFloat(datos[1].dato2[0].DebitoME)-parseFloat(datos[1].dato2[0].CreditoME)) * 100) / 100).toString())+'</th></tr>'
+								} else {
+									string2+='<th style="text-align: right;">'+addCommas((Math.round((parseFloat(datos[1].dato2[0].CreditoME)-parseFloat(datos[1].dato2[0].DebitoME)) * 100) / 100).toString())+'</th></tr>'
+								}
+			    			} else if (moneda == 'LO') {
+								string2='<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th>'+
+										'<th style="text-align: right;">'+convertir_rever(datos[1].dato2[0].Debito)+'</th>'+
+										'<th style="text-align: right;">'+convertir_rever(datos[1].dato2[0].Credito)+'</th>'
+								if (datos[1].dato2[0].TipoSaldo == "D"){
+									string2+='<th style="text-align: right;">'+convertir_rever(parseInt(datos[1].dato2[0].Debito)-parseInt(datos[1].dato2[0].Credito))+'</th></tr>'
+								} else {
+									string2+='<th style="text-align: right;">'+convertir_rever(parseInt(datos[1].dato2[0].Credito)-parseInt(datos[1].dato2[0].Debito))+'</th></tr>'
+								}
+							} else {
+								string2='<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th>'+
+										'<th style="text-align: right;">'+addCommas((Math.round(datos[1].dato2[0].DebitoME * 100) / 100).toString())+'</th>'+
+										'<th style="text-align: right;">'+addCommas((Math.round(datos[1].dato2[0].CreditoME * 100) / 100).toString())+'</th>'
+								if (datos[1].dato2[0].TipoSaldo == "D"){
+									string2+='<th style="text-align: right;">'+addCommas((Math.round((parseFloat(datos[1].dato2[0].DebitoME)-parseFloat(datos[1].dato2[0].CreditoME)) * 100) / 100).toString())+'</th></tr>'
+								} else {
+									string2+='<th style="text-align: right;">'+addCommas((Math.round((parseFloat(datos[1].dato2[0].CreditoME)-parseFloat(datos[1].dato2[0].DebitoME)) * 100) / 100).toString())+'</th></tr>'
+								}
+							}
+			    		} else {
+			    			if (moneda == 'AM'){
+			    				string2='<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th></tr>' 
+			    			} else if (moneda == 'LO') {
+								string2='<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th></tr>'
+							} else {
+								string2='<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th></tr>'  
+							} 
+			    		}
+			    		//alert(a)
+			    		$('#tabla-'+a+' tbody').html(string2)
+			   		}
+			}
+		);
+}
 
 function buscar(){
 	var empresa = $("[name=empresa]").val()
@@ -101,62 +159,13 @@ function buscar(){
 		alert("No hay datos suficientes para generar el listado")
 	} else {
 		$('.collapse').collapse('hide')
-		$.get("http://"+aux1[0]+":3000/api/v1/mayorcuenta/list/"+empresa+"/"+periodo+"/"+fechad+"/"+fechah+"/"+tipoasiento+"/"+cuentad+"/"+cuentah,
+		$.get("http://"+aux1[0]+":3000/api/v1/mayorcuenta/cab/"+empresa+"/"+periodo+"/"+fechad+"/"+fechah+"/"+tipoasiento+"/"+cuentad+"/"+cuentah,
 		    function(data) {
 		    	if (data != null){
 		    		console.log(data)
 		    		$('#table-div').empty()
 		    		var string=""
-		    		//var string2 = ""
-		    		//var total_debe = 0
-		    		//var total_haber = 0
-		    		//var total_debeME = 0
-		    		//var total_haberME = 0
 		    		for (var a=0;a < data.data.length;a++){
-		    			//total_debe+=parseInt(data.data[a].Debito)
-		    			//total_haber+=parseInt(data.data[a].Credito)
-		    			//total_debeME+=parseInt(data.data[a].DEBITO_ME)
-		    			//total_haberME+=parseInt(data.data[a].CREDITO_ME)
-		    			
-		    			//string2+='<tr>'+
-						//			'<td>'+data.data[a].Fecha+'</td>'+
-						//			'<td>'+data.data[a].abreasiento+'</td>'
-						//if (data.data[a].Nrocompr == null){
-						//   string2+='<td>&nbsp;</td>'
-						//} else {
-						//   string2+='<td>'+data.data[a].abreasiento+'</td>'
-						//}
-						//if (data.data[a].Autorizado == 'S'){
-						//   string2+='<td>Si</td>'
-						//} else {
-						//   string2+='<td>No</td>'
-						//}
-						//   string2+='<td>'+data.data[a].Nrotransac+'</td>'+
-						//   			'<td>'+data.data[a].Linea+'</td>'
-					   	//if (data.data[a].CodPlanAux == null){
-			   			//   string2+='<td>&nbsp;</td>'
-					   	//} else {
-						//   string2+='<td>'+data.data[a].CodPlanAux+'</td>'
-					   	//}
-						//   string2+='<td>'+data.data[a].Concepto+'</td>'
-						//if (moneda == 'AM'){
-						//   string2+='<th style="text-align: right;">'+convertir_rever(data.data[a].Debito)+'</th>'+
-						//			'<th style="text-align: right;">'+convertir_rever(data.data[a].Credito)+'</th>'+
-						//			'<th style="text-align: right;">'+addCommas((Math.round(data.data[a].DEBITO_ME * 100) / 100).toString())+'</th>'+
-						//			'<th style="text-align: right;">'+addCommas((Math.round(data.data[a].CREDITO_ME * 100) / 100).toString())+'</th>'
-						//} else if (moneda == 'LO') {
-						//   string2+='<th style="text-align: right;">'+convertir_rever(data.data[a].Debito)+'</th>'+
-						//	  	    '<th style="text-align: right;">'+convertir_rever(data.data[a].Credito)+'</th>'
-						//  if (data.data[a].Credito == 0){
-						//   string2+='<th style="text-align: right;">'+convertir_rever(data.data[a].Debito)+'</th>'
-						//  } else {
-						//   string2+='<th style="text-align: right;">'+convertir_rever(data.data[a].Credito)+'</th>'
-						//  }
-						//} else {
-						//  string2+='<th style="text-align: right;">'+addCommas((Math.round(data.data[a].DEBITO_ME * 100) / 100).toString())+'</th>'+
-						//	       '<th style="text-align: right;">'+addCommas((Math.round(data.data[a].CREDITO_ME * 100) / 100).toString())+'</th>'
-						//}		
-						//string2+='</tr>'
 			    			if (parseInt(data.data[a].Codplanctapad) != parseInt(pad)){
 			    				string+='<div id="pad-'+data.data[a].Codplanctapad+'"><hr size="50" style="height: 0px;margin-top: 0px;margin-bottom: 0px;border-top-width: 5px;padding-bottom: 5px;">'+
 			    						 	 '<b>' + data.data[a].Codplanctapad + '&nbsp;&nbsp;&nbsp;&nbsp;' + data.data[a].NOMBREPLANCTAPAD + "</b>" +
@@ -182,7 +191,7 @@ function buscar(){
 												if (moneda == 'AM'){
 												string1+='<th style="width:8%">Debe M.L.</th>'+
 														 '<th style="width:8%">Haber M.L.</th>'+
-														 '<th style="width:8%">Saldo M.L.</th>'
+														 '<th style="width:8%">Saldo M.L.</th>'+
 														 '<th style="width:8%">Debe M.E.</th>'+
 														 '<th style="width:8%">Haber M.E.</th>'+
 														 '<th style="width:8%">Saldo M.E.</th>'
@@ -199,30 +208,181 @@ function buscar(){
 										'</div>'
 								$('#pad-'+data.data[a].Codplanctapad).append(string1); 
 								cuenta = parseInt(data.data[a].Codplancta)
-								//string2+= '<tr>'
-								//if (moneda == 'AM'){
-								  
-								//} else if (moneda == 'LO') {
-								//	string2+='<th colspan="8" style="text-align: right;">Total de la Cuenta '+data.data[a].NOMBREPLANCTA +'</th>'+
-							    //  			'<th style="text-align: right;">'+convertir_rever(total_debe)+'</th>'+
-							  	//    		'<th style="text-align: right;">'+convertir_rever(total_haber)+'</th>'
-							  	//   if (data.data[a].tiposaldo == "D"){
-							  	//    	string2+='<th style="text-align: right;">'+convertir_rever(total_debe-total_haber)+'</th>'
-							  	//    } else {
-							  	//    	string2+='<th style="text-align: right;">'+convertir_rever(total_haber-total_debe)+'</th>'
-							  	//    }
-								//} else {
-								//	
-								//}
-								//string2+='</tr>'
-			    				//$('#tabla-'+cuenta+' tbody').html(string2)
-			    				//string2 = ""
-			    				//total_debe = 0
-					    		//total_haber = 0
-					    		//total_debeME = 0
-					    		//total_haberME = 0
-							}
-	    			}
+								
+								cargar_detalle(data.data[a].Codplancta,empresa,periodo,fechad,fechah,moneda,tipoasiento)
+								
+								/*var vector_fecha = fechad.split('-')
+								
+								if ((vector_fecha[1]+'-'+vector_fecha[2]) == "01-01"){
+								
+									if (moneda == 'AM'){
+						    				string2='<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th></tr>' 
+						    			} else if (moneda == 'LO') {
+											string2='<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th></tr>'
+										} else {
+											string2='<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th></tr>'  
+										} 
+											//$('#tabla-'+cuenta+' tbody').html(string2)
+											//string2=""
+								} else {
+									alert(cuenta+"aaa1")
+						    		$.get("http://"+aux1[0]+":3000/api/v1/mayorcuenta/sal/"+empresa+"/"+periodo+"/"+fechad+"/"+tipoasiento+"/"+cuenta,
+									    function(dati) 	{
+									    	if (dati.data.length > 0){
+									    		console.log(dati)
+									    		if (moneda == 'AM'){
+								    				string2='<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th></tr>' 
+								    			} else if (moneda == 'LO') {
+													string2='<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th>'+
+															'<th style="text-align: right;">'+convertir_rever(dati.data[0].Credito)+'</th>'+
+															'<th style="text-align: right;">'+convertir_rever(dati.data[0].Debito)+'</th>'
+													if (dati.data[0].TipoSaldo == "D"){
+														string2+='<th style="text-align: right;">'+convertir_rever(parseInt(dati.data[0].Debito)-parseInt(dati.data[0].Credito))+'</th></tr>'
+													} else {
+														string2+='<th style="text-align: right;">'+convertir_rever(parseInt(dati.data[0].Credito)-parseInt(dati.data[0].Debito))+'</th></tr>'
+													}
+													$('#string_table').val(string2)
+													$('#total_debe').val(dati.data[0].Debito)
+										    		$('#total_haber').val(dati.data[0].Credito)
+										    		$('#total_debeME').val(dati.data[0].DebitoME)
+										    		$('#total_haberME').val(dati.data[0].CreditoME)
+												} else {
+													string2='<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th></tr>'  
+												}
+												
+					    						alert(dati.data[0].CodPlanCta+"aaa2")
+												$.get("http://"+aux1[0]+":3000/api/v1/mayorcuenta/det/"+empresa+"/"+periodo+"/"+fechad+"/"+fechah+"/"+tipoasiento+"/"+dati.data[0].CodPlanCta,
+												    function(dato) 	{
+													    	if (dato != null){
+													    		console.log(dato)
+													    		
+													    		var total_debe = parseInt($('#total_debe').val())
+									    						var total_haber = parseInt($('#total_haber').val())
+										    					var total_debeME = parseFloat($('#total_debeME').val())
+										    					var total_haberME = parseFloat($('#total_haberME').val())
+										    					
+										    					string2 = ""
+										    					
+													    		for (var a=0;a < dato.data.length;a++){
+													    			
+													    			total_debe+=parseInt(dato.data[a].Debito)
+													    			total_haber+=parseInt(dato.data[a].Credito)
+													    			total_debeME+=parseFloat(dato.data[a].DebitoME)
+													    			total_haberME+=parseFloat(dato.data[a].CreditoME)
+													    			
+														    		string2+='<tr>'+
+																				'<td>'+dato.data[a].Fecha+'</td>'+
+																				'<td>'+dato.data[a].Abreviatura+'</td>'
+																	if (dato.data[a].Nrocompr == null){
+																	   string2+='<td>&nbsp;</td>'
+																	} else {
+																	   string2+='<td>'+dato.data[a].Nrocompr+'</td>'
+																	}
+																	if (dato.data[a].Autorizado == 'S'){
+																	   string2+='<td>Si</td>'
+																	} else {
+																	   string2+='<td>No</td>'
+																	}
+																	   string2+='<td>'+dato.data[a].Nrotransac+'</td>'+
+																	   			'<td>'+dato.data[a].Linea+'</td>'
+																   	if (dato.data[a].CodPlanAux == null){
+														   			   string2+='<td>&nbsp;</td>'
+																   	} else {
+																	   string2+='<td>'+dato.data[a].CodPlanAux+'</td>'
+																   	}
+																	   string2+='<td>'+dato.data[a].Concepto+'</td>'
+																	if (moneda == 'AM'){
+																	   string2+='<th style="text-align: right;">'+convertir_rever(dato.data[a].Debito)+'</th>'+
+																		  	    '<th style="text-align: right;">'+convertir_rever(dato.data[a].Credito)+'</th>'
+																    	if (dato.data[a].tiposaldo == "D"){
+																	  		string2+='<th style="text-align: right;">'+convertir_rever(total_debe-total_haber)+'</th>'
+																		} else {
+																	   		string2+='<th style="text-align: right;">'+convertir_rever(total_haber-total_debe)+'</th>'
+																		}
+																		
+																	   string2+='<th style="text-align: right;">'+addCommas((Math.round(dato.data[a].DebitoME * 100) / 100).toString())+'</th>'+
+																			     '<th style="text-align: right;">'+addCommas((Math.round(dato.data[a].CreditoME * 100) / 100).toString())+'</th>'
+																		if (dato.data[a].tiposaldo == "D"){
+																	  		string2+='<th style="text-align: right;">'+addCommas((Math.round((total_debeME-total_haberME) * 100) / 100).toString())+'</th>'
+																		} else {
+																	   		string2+='<th style="text-align: right;">'+addCommas((Math.round((total_haberME-total_debeME) * 100) / 100).toString())+'</th>'
+																		}
+																	} else if (moneda == 'LO') {
+																	   string2+='<th style="text-align: right;">'+convertir_rever(dato.data[a].Debito)+'</th>'+
+																		  	    '<th style="text-align: right;">'+convertir_rever(dato.data[a].Credito)+'</th>'
+																    	if (dato.data[a].tiposaldo == "D"){
+																	  		string2+='<th style="text-align: right;">'+convertir_rever(total_debe-total_haber)+'</th>'
+																		} else {
+																	   		string2+='<th style="text-align: right;">'+convertir_rever(total_haber-total_debe)+'</th>'
+																		}
+																	} else {
+																		string2+='<th style="text-align: right;">'+addCommas((Math.round(dato.data[a].DebitoME * 100) / 100).toString())+'</th>'+
+																			     '<th style="text-align: right;">'+addCommas((Math.round(dato.data[a].CreditoME * 100) / 100).toString())+'</th>'
+																		if (dato.data[a].tiposaldo == "D"){
+																	  		string2+='<th style="text-align: right;">'+addCommas((Math.round((total_debeME-total_haberME) * 100) / 100).toString())+'</th>'
+																		} else {
+																	   		string2+='<th style="text-align: right;">'+addCommas((Math.round((total_haberME-total_debeME) * 100) / 100).toString())+'</th>'
+																		}
+																	}		
+																	string2+='</tr>'
+																	//$('#string_table').val(string2)
+																}
+																
+																
+																string2+= '<tr>'
+																if (moneda == 'AM'){
+																  string2+='<th colspan="8" style="text-align: right;">Total de la Cuenta '+dato.data[0].NOMBREPLANCTA +'</th>'+
+															      			'<th style="text-align: right;">'+convertir_rever(total_debe)+'</th>'+
+															  	    		'<th style="text-align: right;">'+convertir_rever(total_haber)+'</th>'
+															  	   if (dato.data[0].tiposaldo == "D"){
+															  	    	string2+='<th style="text-align: right;">'+convertir_rever(total_debe-total_haber)+'</th>'
+															  	    } else {
+															  	    	string2+='<th style="text-align: right;">'+convertir_rever(total_haber-total_debe)+'</th>'
+															  	    }
+														  	      string2+='<th style="text-align: right;">'+addCommas((Math.round(total_debeME * 100) / 100).toString())+'</th>'+
+															  	    		'<th style="text-align: right;">'+addCommas((Math.round(total_haberME * 100) / 100).toString())+'</th>'
+															  	   if (dato.data[0].tiposaldo == "D"){
+															  	    	string2+='<th style="text-align: right;">'+addCommas((Math.round((total_debeME-total_haberME) * 100) / 100).toString())+'</th>'
+															  	    } else {
+															  	    	string2+='<th style="text-align: right;">'+addCommas((Math.round((total_haberME-total_debeME) * 100) / 100).toString())+'</th>'
+															  	    }			
+																} else if (moneda == 'LO') {
+																   string2+='<th colspan="8" style="text-align: right;">Total de la Cuenta '+dato.data[0].NOMBREPLANCTA +'</th>'+
+															      			'<th style="text-align: right;">'+convertir_rever(total_debe)+'</th>'+
+															  	    		'<th style="text-align: right;">'+convertir_rever(total_haber)+'</th>'
+															  	   if (dato.data[0].tiposaldo == "D"){
+															  	    	string2+='<th style="text-align: right;">'+convertir_rever(total_debe-total_haber)+'</th>'
+															  	    } else {
+															  	    	string2+='<th style="text-align: right;">'+convertir_rever(total_haber-total_debe)+'</th>'
+															  	    }
+																} else {
+																	string2+='<th colspan="8" style="text-align: right;">Total de la Cuenta '+dato.data[0].NOMBREPLANCTA +'</th>'+
+															      			'<th style="text-align: right;">'+addCommas((Math.round(total_debeME * 100) / 100).toString())+'</th>'+
+															  	    		'<th style="text-align: right;">'+addCommas((Math.round(total_haberME * 100) / 100).toString())+'</th>'
+															  	   if (dato.data[0].tiposaldo == "D"){
+															  	    	string2+='<th style="text-align: right;">'+addCommas((Math.round((total_debeME-total_haberME) * 100) / 100).toString())+'</th>'
+															  	    } else {
+															  	    	string2+='<th style="text-align: right;">'+addCommas((Math.round((total_haberME-total_debeME) * 100) / 100).toString())+'</th>'
+															  	    }												
+																}
+																string2+='</tr>'
+																																
+																$('#tabla-'+dato.data[0].Codplancta+' tbody').html($('#string_table').val()+string2)
+																//$('#string_table').val("")
+									    						//$('#total_debe').val("0")
+													    		//$('#total_haber').val("0")
+													    		//$('#total_debeME').val("0")
+													    		//$('#total_haberME').val("0")
+													    	}
+											    		}
+													); 
+												
+											} 
+									    }
+									); 
+					    		}
+							*/}
+	    			}			
 	    			pad = 0
 	    			cuenta = 0
 		    	}
