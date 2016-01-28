@@ -303,36 +303,53 @@ function cargar_detalle(cuenta,empresa,periodo,fechad,fechah,moneda,tipoasiento,
 							  string2+='<th colspan="8" style="text-align: right;">Total del periodo de la Cuenta '+nombre+'</th>'+
 						      			'<th style="text-align: right;">'+convertir_rever(total_debito_periodo)+'</th>'+
 						  	    		'<th style="text-align: right;">'+convertir_rever(total_credito_periodo)+'</th>'
-						  	   if (datos[1].dato2[0].tiposaldo == "D"){
-						  	    	string2+='<th style="text-align: right;">'+convertir_rever(total_debito_periodo-total_credito_periodo)+'</th>'
-						  	    } else {
-						  	    	string2+='<th style="text-align: right;">'+convertir_rever(total_credito_periodo-total_debito_periodo)+'</th>'
-						  	    }
+						  	   if (datos[1].dato2[0] == null){
+					  	    		string2+='<th style="text-align: right;">0</th>'
+						  	   } else {
+							  	   	if (datos[1].dato2[0].tiposaldo == "D"){
+							  	    	string2+='<th style="text-align: right;">'+convertir_rever(total_debito_periodo-total_credito_periodo)+'</th>'
+							  	    } else {
+							  	    	string2+='<th style="text-align: right;">'+convertir_rever(total_credito_periodo-total_debito_periodo)+'</th>'
+							  	    }
+							  	}
 					  	      string2+='<th style="text-align: right;">'+addCommas((Math.round(total_debitoME_periodo * 100) / 100).toString())+'</th>'+
 						  	    		'<th style="text-align: right;">'+addCommas((Math.round(total_creditoME_periodo * 100) / 100).toString())+'</th>'
-						  	   if (datos[1].dato2[0].tiposaldo == "D"){
-						  	    	string2+='<th style="text-align: right;">'+addCommas((Math.round((total_debitoME_periodo-total_creditoME_periodo) * 100) / 100).toString())+'</th>'
-						  	    } else {
-						  	    	string2+='<th style="text-align: right;">'+addCommas((Math.round((total_creditoME_periodo-total_debitoME_periodo) * 100) / 100).toString())+'</th>'
-						  	    }			
+						  	   
+						  	   if (datos[1].dato2[0] == null){
+						  	    		string2+='<th style="text-align: right;">0</th>'
+						  	   } else {
+									if (datos[1].dato2[0].tiposaldo == "D"){
+						  	    		string2+='<th style="text-align: right;">'+addCommas((Math.round((total_debitoME_periodo-total_creditoME_periodo) * 100) / 100).toString())+'</th>'
+							  	    } else {
+							  	    	string2+='<th style="text-align: right;">'+addCommas((Math.round((total_creditoME_periodo-total_debitoME_periodo) * 100) / 100).toString())+'</th>'
+							  	    }							  	   
+						  	   }
 							} else if (moneda == 'LO') {
 							   string2+='<th colspan="8" style="text-align: right;">Total del periodo de la Cuenta '+nombre+'</th>'+
 						      			'<th style="text-align: right;">'+convertir_rever(total_debito_periodo)+'</th>'+
 						  	    		'<th style="text-align: right;">'+convertir_rever(total_credito_periodo)+'</th>'
-						  	   if (datos[1].dato2[0].tiposaldo == "D"){
-						  	    	string2+='<th style="text-align: right;">'+convertir_rever(total_debito_periodo-total_credito_periodo)+'</th>'
-						  	    } else {
-						  	    	string2+='<th style="text-align: right;">'+convertir_rever(total_credito_periodo-total_debito_periodo)+'</th>'
-						  	    }
+						  	    if (datos[1].dato2[0] == null){
+					  	    		string2+='<th style="text-align: right;">0</th>'
+						  	   } else {
+							  	    if (datos[1].dato2[0].tiposaldo == "D"){
+							  	    	string2+='<th style="text-align: right;">'+convertir_rever(total_debito_periodo-total_credito_periodo)+'</th>'
+							  	    } else {
+							  	    	string2+='<th style="text-align: right;">'+convertir_rever(total_credito_periodo-total_debito_periodo)+'</th>'
+							  	    }
+							   }
 							} else {
 								string2+='<th colspan="8" style="text-align: right;">Total del periodo de la Cuenta '+nombre+'</th>'+
 						      			'<th style="text-align: right;">'+addCommas((Math.round(total_debitoME_periodo * 100) / 100).toString())+'</th>'+
 						  	    		'<th style="text-align: right;">'+addCommas((Math.round(total_creditoME_periodo * 100) / 100).toString())+'</th>'
-						  	   if (datos[1].dato2[0].tiposaldo == "D"){
-						  	    	string2+='<th style="text-align: right;">'+addCommas((Math.round((total_debitoME_periodo-total_creditoME_periodo) * 100) / 100).toString())+'</th>'
-						  	    } else {
-						  	    	string2+='<th style="text-align: right;">'+addCommas((Math.round((total_creditoME_periodo-total_debitoME_periodo) * 100) / 100).toString())+'</th>'
-						  	    }												
+						  	    if (datos[1].dato2[0] == null){
+					  	    		string2+='<th style="text-align: right;">0</th>'
+						  	   	} else {
+							  	   if (datos[1].dato2[0].tiposaldo == "D"){
+							  	    	string2+='<th style="text-align: right;">'+addCommas((Math.round((total_debitoME_periodo-total_creditoME_periodo) * 100) / 100).toString())+'</th>'
+							  	    } else {
+							  	    	string2+='<th style="text-align: right;">'+addCommas((Math.round((total_creditoME_periodo-total_debitoME_periodo) * 100) / 100).toString())+'</th>'
+							  	    }	
+							  	}											
 							}
 							string2+='</tr>'
 							string2+= '<tr>'
@@ -347,29 +364,41 @@ function cargar_detalle(cuenta,empresa,periodo,fechad,fechah,moneda,tipoasiento,
 						  	    }
 					  	      string2+='<th style="text-align: right;">'+addCommas((Math.round(total_debitoME * 100) / 100).toString())+'</th>'+
 						  	    		'<th style="text-align: right;">'+addCommas((Math.round(total_creditoME * 100) / 100).toString())+'</th>'
-						  	   if (datos[1].dato2[0].tiposaldo == "D"){
-						  	    	string2+='<th style="text-align: right;">'+addCommas((Math.round((total_debitoME-total_creditoME) * 100) / 100).toString())+'</th>'
-						  	    } else {
-						  	    	string2+='<th style="text-align: right;">'+addCommas((Math.round((total_creditoME-total_debitoME) * 100) / 100).toString())+'</th>'
-						  	    }			
+						  	    if (datos[1].dato2[0] == null){
+					  	    		string2+='<th style="text-align: right;">0</th>'
+						  	   } else {
+							  	   if (datos[1].dato2[0].tiposaldo == "D"){
+							  	    	string2+='<th style="text-align: right;">'+addCommas((Math.round((total_debitoME-total_creditoME) * 100) / 100).toString())+'</th>'
+							  	    } else {
+							  	    	string2+='<th style="text-align: right;">'+addCommas((Math.round((total_creditoME-total_debitoME) * 100) / 100).toString())+'</th>'
+							  	    }	
+							  	}		
 							} else if (moneda == 'LO') {
 							   string2+='<th colspan="8" style="text-align: right;">Total de la Cuenta '+nombre+'</th>'+
 						      			'<th style="text-align: right;">'+convertir_rever(total_debito)+'</th>'+
 						  	    		'<th style="text-align: right;">'+convertir_rever(total_credito)+'</th>'
+						  	    if (datos[1].dato2[0] == null){
+					  	    		string2+='<th style="text-align: right;">0</th>'
+						  	   } else {
 						  	   if (datos[1].dato2[0].tiposaldo == "D"){
-						  	    	string2+='<th style="text-align: right;">'+convertir_rever(total_debito-total_credito)+'</th>'
-						  	    } else {
-						  	    	string2+='<th style="text-align: right;">'+convertir_rever(total_credito-total_debito)+'</th>'
-						  	    }
+							  	    	string2+='<th style="text-align: right;">'+convertir_rever(total_debito-total_credito)+'</th>'
+							  	    } else {
+							  	    	string2+='<th style="text-align: right;">'+convertir_rever(total_credito-total_debito)+'</th>'
+							  	    }
+							  	}
 							} else {
 								string2+='<th colspan="8" style="text-align: right;">Total de la Cuenta '+nombre+'</th>'+
 						      			'<th style="text-align: right;">'+addCommas((Math.round(total_debitoME * 100) / 100).toString())+'</th>'+
 						  	    		'<th style="text-align: right;">'+addCommas((Math.round(total_creditoME * 100) / 100).toString())+'</th>'
-						  	   if (datos[1].dato2[0].tiposaldo == "D"){
-						  	    	string2+='<th style="text-align: right;">'+addCommas((Math.round((total_debitoME-total_creditoME) * 100) / 100).toString())+'</th>'
+						  	     if (datos[1].dato2[0] == null){
+					  	    		string2+='<th style="text-align: right;">0</th>'
 						  	    } else {
-						  	    	string2+='<th style="text-align: right;">'+addCommas((Math.round((total_creditoME-total_debitoME) * 100) / 100).toString())+'</th>'
-						  	    }												
+							  	    if (datos[1].dato2[0].tiposaldo == "D"){
+							  	    	string2+='<th style="text-align: right;">'+addCommas((Math.round((total_debitoME-total_creditoME) * 100) / 100).toString())+'</th>'
+							  	    } else {
+							  	    	string2+='<th style="text-align: right;">'+addCommas((Math.round((total_creditoME-total_debitoME) * 100) / 100).toString())+'</th>'
+							  	    }	
+							  	 }											
 							}
 							string2+='</tr>'
 			    		}
