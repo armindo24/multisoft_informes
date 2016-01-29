@@ -373,7 +373,7 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 					    "cast(dba.Asientosdet.DebitoME as decimal(20,2)) as DebitoME,"+
 					    "dba.Asientosdet.CodPlanAux "+
 				     "from "+
-				      	"dba.Asientoscab,dba.Asientosdet,dba.TipoAsiento,dba.Plancta as plancta_a "+
+				      	"dba.Asientoscab,dba.Asientosdet,dba.TipoAsiento,(select * from DBA.PLANCTA where Imputable = 'S' union select * from dba.PLANCTA where Auxiliar = 'S') as plancta_a "+
 					 "where "+
 					    "dba.Asientoscab.Cod_empresa = dba.Asientosdet.Cod_empresa "+
 					    "and dba.Asientoscab.Nrotransac = dba.Asientosdet.Nrotransac "+
@@ -399,7 +399,7 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 							    "cast(sum(dba.Asientosdet.CreditoME) as decimal(20,2)) as CreditoME,"+
 							    "cast(sum(dba.Asientosdet.DebitoME) as decimal(20,2)) as DebitoME "+
 						     "from "+
-						      	"dba.Asientoscab,dba.Asientosdet,dba.TipoAsiento,dba.Plancta as plancta_a "+
+						      	"dba.Asientoscab,dba.Asientosdet,dba.TipoAsiento,(select * from DBA.PLANCTA where Imputable = 'S' union select * from dba.PLANCTA where Auxiliar = 'S') as plancta_a "+
 							 "where "+
 							    "dba.Asientoscab.Cod_empresa = dba.Asientosdet.Cod_empresa "+
 							    "and dba.Asientoscab.Nrotransac = dba.Asientosdet.Nrotransac "+
@@ -448,7 +448,7 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 						    "dba.Asientoscab,"+
 						    "dba.Asientosdet,"+
 						    "dba.TipoAsiento,"+
-						    "dba.Plancta as plancta_a "+
+						    "(select * from DBA.PLANCTA where Imputable = 'S' union select * from dba.PLANCTA where Auxiliar = 'S') as plancta_a "+
 						"where "+
 						    "dba.Asientoscab.Cod_empresa = dba.Asientosdet.Cod_empresa "+
 						    "and dba.Asientoscab.Nrotransac = dba.Asientosdet.Nrotransac "+
@@ -475,7 +475,7 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 								    "dba.Asientoscab,"+
 								    "dba.Asientosdet,"+
 								    "dba.TipoAsiento,"+
-								    "dba.Plancta as plancta_a "+
+								    "(select * from DBA.PLANCTA where Imputable = 'S' union select * from dba.PLANCTA where Auxiliar = 'S') as plancta_a "+
 								"where "+
 								    "dba.Asientoscab.Cod_empresa = dba.Asientosdet.Cod_empresa "+
 								    "and dba.Asientoscab.Nrotransac = dba.Asientosdet.Nrotransac "+
@@ -493,7 +493,7 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 								    if (tipoasiento != 'NINGUNO')
 								    	string1+="AND dba.TipoAsiento.TipoAsiento = '"+tipoasiento+"' "
 						string1+="group by NOMBREPLANCTAPAD,plancta_a.Codplanctapad order by plancta_a.Codplanctapad" 
-				conn.exec(string1, function(err, row){
+					conn.exec(string1, function(err, row){
 						data2 = row	
 					res.json([{ data1 : data1 },{ data2 : data2 }]);
 				});
@@ -508,7 +508,7 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 							    "dba.Asientoscab,"+
 							    "dba.Asientosdet,"+
 							    "dba.TipoAsiento,"+
-							    "dba.Plancta as plancta_a "+
+							    "(select * from DBA.PLANCTA where Imputable = 'S' union select * from dba.PLANCTA where Auxiliar = 'S') as plancta_a "+
 							"where "+
 							    "dba.Asientoscab.Cod_empresa = dba.Asientosdet.Cod_empresa "+
 							    "and dba.Asientoscab.Nrotransac = dba.Asientosdet.Nrotransac "+
@@ -521,7 +521,7 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 							    "AND dba.ASIENTOSCAB.Cod_Empresa = '"+empresa+"' "+
 							    "and dba.ASIENTOSCAB.Periodo = '"+periodo+"' "+
 							    "AND dba.ASIENTOSCAB.Fecha BETWEEN '"+fechad+"' and '"+fechah+"' "+
-							    "AND plancta_a.CodPlanCta >= '"+cuentad+"' "+
+							    "AND plancta_a.CodPlanCta >= '"+cuentad+"' " +
 							    "and plancta_a.CodPlanCta <= '"+cuentah+"' "
 							    if (tipoasiento != 'NINGUNO')
 							    	string+="AND dba.TipoAsiento.TipoAsiento = '"+tipoasiento+"' "
@@ -531,13 +531,14 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 								    "plancta_a.Codplanctapad,"+
 								    "dba.f_get_CuentaName (plancta_a.cod_empresa, plancta_a.periodo, plancta_a.codplanctapad ) as NOMBREPLANCTAPAD "+ 
 								"from "+
-								    "dba.Plancta as plancta_a "+
+								    "(select * from DBA.PLANCTA where Imputable = 'S' union select * from dba.PLANCTA where Auxiliar = 'S') as plancta_a "+
 								"WHERE "+
 								    "plancta_a.Cod_Empresa = '"+empresa+"' "+
 								    "and plancta_A.Periodo = '"+periodo+"' "+
 								    "AND plancta_a.CodPlanCta >= '"+cuentad+"' "+
-								    "and plancta_a.CodPlanCta <= '"+cuentah+"' "+
+								    "and plancta_a.CodPlanCta <= '"+cuentah+"' " +
 								"order by Codplancta"
+					console.log(string)
 					conn.exec(string, function(err, row){
 					data1 = row
 					var string1 = "select "+
@@ -547,7 +548,7 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 									    "dba.Asientoscab,"+
 									    "dba.Asientosdet,"+
 									    "dba.TipoAsiento,"+
-									    "dba.Plancta as plancta_a "+
+									    "(select * from DBA.PLANCTA where Imputable = 'S' union select * from dba.PLANCTA where Auxiliar = 'S') as plancta_a "+
 									"where "+
 									    "dba.Asientoscab.Cod_empresa = dba.Asientosdet.Cod_empresa "+
 									    "and dba.Asientoscab.Nrotransac = dba.Asientosdet.Nrotransac "+
@@ -569,7 +570,7 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 									    "plancta_a.Codplanctapad,"+
 									    "dba.f_get_CuentaName (plancta_a.cod_empresa, plancta_a.periodo, plancta_a.codplanctapad ) as NOMBREPLANCTAPAD "+ 
 									"from "+
-									    "dba.Plancta as plancta_a "+ 
+									    "(select * from DBA.PLANCTA where Imputable = 'S' union select * from dba.PLANCTA where Auxiliar = 'S') as plancta_a "+ 
 									"WHERE "+
 									    "plancta_a.Cod_Empresa = '"+empresa+"' "+
 									    "and plancta_A.Periodo = '"+periodo+"' "+

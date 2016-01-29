@@ -1,14 +1,14 @@
 {% extends 'admin/base_site.html'%}
-
+{% load staticfiles %}
 {% block extrahead %}
-	<link rel="stylesheet" href="/static/css/jquery-ui.css"> 
-    <link rel="stylesheet" href="/static/chosen_v1.4.2/chosen.css">
-    <link rel="stylesheet" href="/static/chosen_v1.4.2/docsupport/prism.css">
-    <script src="/static/js/jquery-ui.js"></script>
-    <script src="/static/js/puntos-decimales.js"></script>
-    <script src="/static/js/jquery.maskedinput.min.js"></script>
-    <script src="/static/chosen_v1.4.2/chosen.jquery.js"></script>
-	<script src="/static/chosen_v1.4.2/docsupport/prism.js"></script> 
+	<link rel="stylesheet" href={% static 'css/jquery-ui.css' %}> 
+    <link rel="stylesheet" href={% static 'chosen_v1.4.2/chosen.css' %}>
+    <link rel="stylesheet" href={% static 'chosen_v1.4.2/docsupport/prism.css' %}>
+    <script src={% static 'js/jquery-ui.js' %}></script>
+    <script src={% static 'js/puntos-decimales.js' %}></script>
+    <script src={% static 'js/jquery.maskedinput.min.js' %}></script>
+    <script src={% static 'chosen_v1.4.2/chosen.jquery.js' %}></script>
+	<script src={% static 'chosen_v1.4.2/docsupport/prism.js' %}></script>
 	{% include 'finanzas/ordenpago_metodos.html' %}
 {% endblock %}
 
