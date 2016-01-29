@@ -17,10 +17,10 @@
 					<a href="#"> Balances <span class="fa arrow"></span></a>
 						<ul class="nav nav-second-level">
 							<li>
-								<a href="/finanzas/diario_comprobado/"> General y Estado de Resultado </a>
+								<a href="/finanzas/balancegeneral/"> General y Estado de Resultado </a>
 						    </li>
 							<li>
-								<a href="/finanzas/mayor/"> Comprobado </a>
+								<a href="/finanzas/balancegeneral_comprobado/"> Comprobado </a>
 						    </li>
 						</ul>
 				</li>
@@ -31,10 +31,13 @@
 								<a href="/finanzas/diario_comprobado/"> Diario </a>
 						    </li>
 							<li>
-								<a href="/finanzas/mayor/"> Mayor de Cuentas </a>
+								<a href="/finanzas/mayor_cuentas/"> Mayor de Cuentas </a>
 						    </li>
 						</ul>
 				</li>
+				<li>
+					<a href="/finanzas/ordenpago/"> &#211;rdenes de Pago </a>
+			    </li>
 		    {% endif %}
 			{% if  request.session.modulo_seleccionado == "Admin"  %}
 			<li>
