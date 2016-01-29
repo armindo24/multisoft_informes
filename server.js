@@ -198,7 +198,7 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 						"END) as 'SALDO' "
 		}
 		string+="FROM "+
-					"DBA.CONTROL,DBA.PLANAUXI,DBA.PLANCTADBA.AcumAuxi "+
+					"DBA.CONTROL,DBA.PLANAUXI,DBA.PLANCTA,DBA.AcumAuxi "+
 				"WHERE "+
 					"(DBA.Control.Cod_Empresa = DBA.PLANAUXI.Cod_Empresa) AND (DBA.Control.Periodo = DBA.PLANAUXI.Periodo) AND "+
 					"(DBA.PLANAUXI.CodPlanCta = DBA.PLANCTA.CodPlanCta) AND (DBA.PLANAUXI.Cod_Empresa = DBA.AcumAuxi.Cod_Empresa) AND "+
@@ -219,7 +219,6 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 		}
 		string+="ORDER BY 1, 2"
 		}	
-				
 		conn.exec(string, function(err, row){
 			res.json({ data : row });
 		});
@@ -294,7 +293,6 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 							string+="AND (DBA.PLANCTA.Nivel <= "+nivel+") "
 				string+="AND DBA.PLANCTA.cod_empresa = '"+empresa+"' "+
 							"ORDER BY DBA.PLANCTA.CodPlanCta"
-                                                                    
 		conn.exec(string, function(err, row){
 			res.json({ data : row });
 		});
@@ -538,7 +536,6 @@ var cstr = { Host : 'localhost:2638', Server : 'integrado',
 								    "AND plancta_a.CodPlanCta >= '"+cuentad+"' "+
 								    "and plancta_a.CodPlanCta <= '"+cuentah+"' " +
 								"order by Codplancta"
-					console.log(string)
 					conn.exec(string, function(err, row){
 					data1 = row
 					var string1 = "select "+
