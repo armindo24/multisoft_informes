@@ -12,7 +12,7 @@ from __future__ import unicode_literals
 from django.db import models
 
 
-class 09062011Clientes(models.Model):
+class Clientes(models.Model):
     cod_empresa = models.CharField(max_length=2)
     cod_cliente = models.CharField(max_length=8)
     cliente_padre = models.CharField(max_length=8, blank=True, null=True)
