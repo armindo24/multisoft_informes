@@ -6,8 +6,7 @@ var dbConfig = config.get('sybase.dbConfig');
 var client = sqlanywhere.createConnection();
 
 client.connect(dbConfig, function (err) {
-    //if (err) throw err;
-    console.log(err);
+    if (err) throw err;
     console.log('Conectado a:', dbConfig);
 });
 

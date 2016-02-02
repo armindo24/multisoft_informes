@@ -4,6 +4,12 @@
  * Module dependencies.
  */
 
+var config = require('config');
+var shell = require('shelljs');
+var configScript = config.get('sybase.configScript');
+console.log(configScript);
+shell.exec('source ' + configScript);
+
 var app = require('../app');
 var debug = require('debug')('multisoft:server');
 var http = require('http');
@@ -11,9 +17,15 @@ var http = require('http');
 /**
  * Get port from environment and store in Express.
  */
-
+//console.log(process.env)
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
+
+process.on( 'SIGINT', function() {
+  console.log( "\nGracefully shutting down from SIGINT (Ctrl-C)" );
+  // some other closing procedures go here
+  process.exit(0);
+})
 
 /**
  * Create HTTP server.

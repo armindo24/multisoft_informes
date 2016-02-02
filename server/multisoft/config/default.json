@@ -6,6 +6,7 @@
       "UserID": "dba",
       "Password": "ownnetmasterkey",
       "DatabaseName": "integrado"
-    }
+    },
+    "configScript": "/Applications/SQLAnywhere12/System/bin64/sa_config.sh"
   }
 }
