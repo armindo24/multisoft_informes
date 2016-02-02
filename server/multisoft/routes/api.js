@@ -1,6 +1,6 @@
 var express = require('express');
-var conn = require('../db.js');
 var router = express.Router();
+var Empresa = require('../models/empresa');
 
 router.use(function (req, res, next) {
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -8,12 +8,12 @@ router.use(function (req, res, next) {
 });
 
 router.get('/empresa/select', function (req, res, next) {
-    res.json({data: req.params, test: conn.test()});
+    res.json({data: Empresa.test()});
 });
 
 //comprobantes select option
 router.get('/comprobante/select/:empresa', function (req, res, next) {
-    res.json({data: req.params});
+    res.json({data: Empresa.comprobante(req.params.empresa)});
 });
 
 //proveedores select option
