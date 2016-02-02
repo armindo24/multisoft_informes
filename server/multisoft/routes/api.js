@@ -4,6 +4,9 @@ var Empresa = require('../models/empresa');
 var Comprobante = require('../models/comprobante');
 var Proveedor = require('../models/proveedor');
 var Sucursal = require('../models/sucursal');
+var OrdenPago = require('../models/ordenpago');
+var CuentaContable = require('../models/cuentacontable');
+var Balance = require('../models/balance');
 var conn = require('../db');
 
 router.use(function (req, res, next) {
@@ -51,17 +54,23 @@ router.get('/ordenpago/list/:empresa/:sucursal/:tipoop/:comprobante/:tipoproveed
 
 //cuentas select option
 router.get('/cuenta/select/:empresa/:periodo', function (req, res, next) {
-    res.json({data: req.params});
+    CuentaContable.all(req.params,function (result){
+        res.json({data: result});
+    });
 });
 
 //list balance general
 router.get('/balancegeneral/list/:empresa/:periodo/:cuentad/:cuentah/:mesd/:mesh/:nivel/:saldo/:moneda/:aux', function (req, res, next) {
-    res.json({data: req.params});
+    Balance.general(req.params,function (result){
+        res.json({data: result});
+    });
 });
 
 //list balance comprobado
 router.get('/balancecomprobado/list/:empresa/:periodo/:periodoant/:mes/:mesant/:nivel/:moneda', function (req, res, next) {
-    res.json({data: req.params});
+     Balance.comprobado(req.params,function (result){
+        res.json({data: result});
+    });
 });
 
 //tipo asiento select option

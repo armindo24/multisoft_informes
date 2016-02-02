@@ -16,7 +16,7 @@ OrdenPago.all = function (params,cb) {
                 "DBA.OPCAB,DBA.EMPRESA,DBA.SUCURSAL,DBA.TPOCBTE,DBA.PROVEED "+
             "WHERE "+
                 "DBA.OPCAB.Cod_Empresa = DBA.EMPRESA.Cod_Empresa AND DBA.SUCURSAL.Cod_Empresa = DBA.EMPRESA.Cod_Empresa AND "+
-                "DBA.SUCURSAL.Cod_Sucursal = DBA.OPCAB.Cod_Sucursal AND DBA.TPOCBTE.Cod_Tp_Comp = DBA.OPCAB.Cod_Tp_Comp AND "+
+                "DBA.SUCURSAL.Cod_Sucursal = DBA.OPCAB.Cod_Sucursal AND DBA.TPOCBTE.Cod_Empresa = DBA.OPCAB.Cod_Empresa AND DBA.TPOCBTE.Cod_Tp_Comp = DBA.OPCAB.Cod_Tp_Comp AND "+
                 "DBA.PROVEED.CodProv = DBA.OPCAB.CodProv AND DBA.PROVEED.Cod_Empresa = DBA.OPCAB.Cod_Empresa AND "+
                 "DBA.PROVEED.Cod_Empresa = DBA.EMPRESA.Cod_Empresa AND DBA.OPCAB.Anulado = 'N' AND "+
                 "cast(DBA.SUCURSAL.Cod_Sucursal as varchar(50)) like '%"+sucursal+"%' AND cast(DBA.EMPRESA.Cod_Empresa as varchar(50)) like '%"+params.empresa+"%' "+
@@ -28,4 +28,4 @@ OrdenPago.all = function (params,cb) {
     });
 };
 
-module.exports = Sucursal;
+module.exports = OrdenPago;
