@@ -1,11 +1,14 @@
 var sqlanywhere = require('sqlanywhere');
-var settings = require('./config/local');
+var config = require('config');
+
+var dbConfig = config.get('sybase.dbConfig');
+
 var client = sqlanywhere.createConnection();
 
-client.connect(settings.cstr, function (err) {
+client.connect(dbConfig, function (err) {
     //if (err) throw err;
     console.log(err);
-    console.log('Conectado a:', settings.cstr.Server);
+    console.log('Conectado a:', dbConfig);
 });
 
 client.discon = function () {

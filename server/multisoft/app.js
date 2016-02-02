@@ -4,6 +4,7 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var config = require('config');
 
 var db = require('./db');
 
@@ -12,6 +13,9 @@ var users = require('./routes/users');
 var api = require('./routes/api');
 
 var app = express();
+
+console.log(process.env.DYLD_LIBRARY_PATH);
+console.log(process.env.LD_LIBRARY_PATH);
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
