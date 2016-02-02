@@ -5,27 +5,7 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
-var sqlanywhere = require('sqlanywhere');
-var conn = sqlanywhere.createConnection();
-
-var cstr = {
-    Host: '192.168.51.139:2638', Server: 'integrado',
-    UserID: 'dba', Password: 'ownnetmasterkey', DatabaseName: 'integrado'
-};
-
-conn.connect(cstr, function (err) {
-    console.log("conectado");
-
-    conn.exec("select Cod_Empresa,Des_Empresa from dba.EMPRESA", function (err, row) {
-        if (err) {
-            console.log("error");
-            console.log(err);
-        } else {
-            console.log("bien");
-            console.log(row);
-        }
-    });
-});
+var db = require('./db');
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
@@ -45,6 +25,7 @@ app.use(bodyParser.urlencoded({extended: false}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Register routes
 app.use('/', routes);
 app.use('/users', users);
 app.use('/api/v1', api);

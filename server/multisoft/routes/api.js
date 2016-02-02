@@ -1,4 +1,5 @@
 var express = require('express');
+var conn = require('../db.js');
 var router = express.Router();
 
 router.use(function (req, res, next) {
@@ -7,7 +8,7 @@ router.use(function (req, res, next) {
 });
 
 router.get('/empresa/select', function (req, res, next) {
-    res.json({data: req.params});
+    res.json({data: req.params, test: conn.test()});
 });
 
 //comprobantes select option
