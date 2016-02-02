@@ -2,6 +2,8 @@ var express = require('express');
 var router = express.Router();
 var Empresa = require('../models/empresa');
 var Comprobante = require('../models/comprobante');
+var Proveedor = require('../models/proveedor');
+var Sucursal = require('../models/sucursal');
 var conn = require('../db');
 
 router.use(function (req, res, next) {
@@ -25,17 +27,26 @@ router.get('/comprobante/select/:empresa', function (req, res, next) {
 
 //proveedores select option
 router.get('/proveedor/select/:empresa/:tipo', function (req, res, next) {
-    res.json({data: req.params});
+    var empresa = req.params.empresa;
+    var tipo = req.params.tipo;
+    Proveedor.all(empresa,tipo,function (result){
+        res.json({data: result});
+    });
 });
 
 //sucursales select option
 router.get('/sucursal/select/:empresa', function (req, res, next) {
-    res.json({data: req.params});
+    var empresa = req.params.empresa;
+    Sucursal.all(empresa,function (result){
+        res.json({data: result});
+    });
 });
 
 //list orden de pago
 router.get('/ordenpago/list/:empresa/:sucursal/:tipoop/:comprobante/:tipoproveedor/:proveedor/:desde/:hasta', function (req, res, next) {
-    res.json({data: req.params});
+    OrdenPago.all(req.params,function (result){
+        res.json({data: result});
+    });
 });
 
 //cuentas select option
