@@ -1,0 +1,11 @@
+{
+  "sybase": {
+    "dbConfig": {
+      "Host": "localhost:2638",
+      "Server": "integrado",
+      "UserID": "dba",
+      "Password": "ownnetmasterkey",
+      "DatabaseName": "integrado"
+    }
+  }
+}
