@@ -145,6 +145,7 @@ Balance.comprobado = function (params,cb) {
     if (params.nivel > 0)
         string+="AND (DBA.PLANCTA.Nivel <= "+params.nivel+") "
     string+="AND DBA.PLANCTA.cod_empresa = '"+params.empresa+"' ORDER BY DBA.PLANCTA.CodPlanCta"
+
     conn.exec(string, function(err, row){
         if (err) throw err;
         cb(row);
