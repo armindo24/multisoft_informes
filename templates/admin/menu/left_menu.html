@@ -12,6 +12,33 @@
 					<a href="/ventas/ranking/articulos/"> Ranking de Art&#237;culos Vendidos </a>
 			    </li>
 		    {% endif %}
+			{% if  request.session.modulo_seleccionado == "Finanzas"  %}
+				<li>
+					<a href="#"> Balances <span class="fa arrow"></span></a>
+						<ul class="nav nav-second-level">
+							<li>
+								<a href="/finanzas/balancegeneral/"> General y Estado de Resultado </a>
+						    </li>
+							<li>
+								<a href="/finanzas/balancegeneral_comprobado/"> Comprobado </a>
+						    </li>
+						</ul>
+				</li>
+				<li>
+					<a href="#"> Libros <span class="fa arrow"></span></a>
+						<ul class="nav nav-second-level">
+							<li>
+								<a href="/finanzas/diario_comprobado/"> Diario </a>
+						    </li>
+							<li>
+								<a href="/finanzas/mayor_cuentas/"> Mayor de Cuentas </a>
+						    </li>
+						</ul>
+				</li>
+				<li>
+					<a href="/finanzas/ordenpago/"> &#211;rdenes de Pago </a>
+			    </li>
+		    {% endif %}
 			{% if  request.session.modulo_seleccionado == "Admin"  %}
 			<li>
 				<a href="/admin/auth/"> Usuarios </a>
