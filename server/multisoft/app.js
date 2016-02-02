@@ -14,8 +14,17 @@ var api = require('./routes/api');
 
 var app = express();
 
-console.log(process.env.DYLD_LIBRARY_PATH);
-console.log(process.env.LD_LIBRARY_PATH);
+if (process.env.hasOwnProperty('DYLD_LIBRARY_PATH')) {
+    console.log(process.env.DYLD_LIBRARY_PATH);
+} else {
+    console.log('Warning: DYLD_LIBRARY_PATH no esta definido.');
+}
+
+if (process.env.hasOwnProperty('LD_LIBRARY_PATH')) {
+    console.log(process.env.LD_LIBRARY_PATH);
+} else {
+    console.log('Warning: LD_LIBRARY_PATH no esta definido.');
+}
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
