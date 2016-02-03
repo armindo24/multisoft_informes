@@ -9,6 +9,8 @@ var CuentaContable = require('../models/cuentacontable');
 var Balance = require('../models/balance');
 var TipoAsiento = require('../models/tipoasiento');
 var Diario = require('../models/diario');
+var Mayor = require('../models/mayor');
+
 var conn = require('../db');
 
 router.use(function (req, res, next) {
@@ -85,14 +87,18 @@ router.get('/diariocomprobado/list/:empresa/:tipoasiento/:fechad/:fechah/:autori
     });
 });
 
-//detalle de movimientos de cuenta libro mayor
-router.get('/mayorcuenta/det/:empresa/:periodo/:fechad/:fechah/:tipoasiento/:cuenta', function (req, res, next) {
-    res.json({data: req.params});
-});
-
 //cabecera de movimientos de cuenta libro mayor
 router.get('/mayorcuenta/cab/:empresa/:periodo/:fechad/:fechah/:tipoasiento/:cuentad/:cuentah/:incluir', function (req, res, next) {
-    res.json({data: req.params});
+    Mayor.cuentas(req.params,function (result){
+        res.json(result);
+    });
+});
+
+//detalle de movimientos de cuenta libro mayor
+router.get('/mayorcuenta/det/:empresa/:periodo/:fechad/:fechah/:tipoasiento/:cuenta', function (req, res, next) {
+    Mayor.cuentasdetalle(req.params,function (result){
+        res.json(result);
+    });
 });
 
 module.exports = router;

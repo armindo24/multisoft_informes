@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.management import create_permissions
+from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.loading import  get_models, get_app
 #from django.db.models.loading import get_apps, get_models
@@ -24,3 +25,8 @@ class CustomPermissions(models.Model):
     
 def update_custom_permissions():
     create_permissions(get_app("custom_permissions"), get_models(), 2)
+
+
+class ClienteEmpresa(models.Models):
+    user = models.ForeignKey(User)
+    empresa = models.CharField(max_length=30)
