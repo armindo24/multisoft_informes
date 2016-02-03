@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.contrib.auth.management import create_permissions
+from django.contrib.auth.models import User
 from django.db import models
+from django.db.models.loading import  get_models, get_app
 #from django.db.models.loading import get_apps, get_models
 
 
@@ -8,11 +10,11 @@ from django.db import models
 permissions_list = (("entrar_finanzas", "Finanzas"),
                    ("entrar_ventas", "Ventas"),
                    ("entrar_admin", "Admin"),
-                   ("informe_balancegeneral", "Balance General"),
-                   ("informe_balancegeneralcomprobado", "Balance General Comprobado"),
-                   ("informe_diario", "Libro Diario"),
-                   ("informe_mayorcuenta", "Libro Mayor de Cuenta"),
-                   ("informe_ordenpago", "Ordenes de Pago"),
+                  # ("informe_balancegeneral", "Balance General"),
+                  # ("informe_balancegeneralcomprobado", "Balance General Comprobado"),
+                  # ("informe_diario", "Libro Diario"),
+                  # ("informe_mayorcuenta", "Libro Mayor de Cuenta"),
+                  # ("informe_ordenpago", "Ordenes de Pago"),
                    )
 
 
@@ -21,5 +23,10 @@ class CustomPermissions(models.Model):
         permissions = permissions_list
     
     
-#---------------------------------------------- def update_custom_permissions():
-    # create_permissions(get_apps("custom_permissions"), get_models(), 2 if settings.DEBUG else 0)
+def update_custom_permissions():
+    create_permissions(get_app("custom_permissions"), get_models(), 2)
+
+
+class ClienteEmpresa(models.Models):
+    user = models.ForeignKey(User)
+    empresa = models.CharField(max_length=30)

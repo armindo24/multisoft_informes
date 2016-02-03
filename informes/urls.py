@@ -17,12 +17,9 @@ from django.conf.urls import include, url, patterns
 from django.contrib import admin
 from django.views.generic.base import TemplateView
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
-import autocomplete_light
 
-autocomplete_light.autodiscover()
-
-handler500 = 'medital.views.server_error'
-handler404 = 'medital.views.custom_404'
+handler500 = 'informes.views.server_error'
+handler404 = 'informes.views.custom_404'
 
 urlpatterns = patterns('',
                        
@@ -39,7 +36,6 @@ urlpatterns = patterns('',
         name="password_change"), 
     (r'^accounts/password_change/done/$', 
         'django.contrib.auth.views.password_change_done'),
-     url(r'autocomplete/', include('autocomplete_light.urls')),
      url(r'^finanzas/', include("finanzas.urls", namespace="finanzas")),
 )
 
