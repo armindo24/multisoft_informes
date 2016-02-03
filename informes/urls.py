@@ -36,7 +36,8 @@ urlpatterns = patterns('',
         name="password_change"), 
     (r'^accounts/password_change/done/$', 
         'django.contrib.auth.views.password_change_done'),
-     url(r'^finanzas/', include("finanzas.urls", namespace="finanzas")),
+    url(r'^finanzas/', include("finanzas.urls", namespace="finanzas")),
+    url(r'^custom_permissions/', include("custom_permissions.urls", namespace="custom_permissions")),
 )
 
 urlpatterns += staticfiles_urlpatterns()

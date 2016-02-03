@@ -27,6 +27,6 @@ def update_custom_permissions():
     create_permissions(get_app("custom_permissions"), get_models(), 2)
 
 
-class ClienteEmpresa(models.Models):
+class ClienteEmpresa(models.Model):
     user = models.ForeignKey(User)
     empresa = models.CharField(max_length=30)
