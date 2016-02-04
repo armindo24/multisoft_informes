@@ -7,3 +7,5 @@ def asignar_empresa_usuario(request):
     users = User.objects.all()
     return render_to_response('custom_permissions/asignar_empresa_usuario.html',
                               {'usuarios':users}, context_instance=RequestContext(request))
+    
+    
