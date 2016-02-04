@@ -1,0 +1,26 @@
+{% extends 'admin/base_site.html'%}
+{% load staticfiles %}
+{% block extrahead %}
+	<link rel="stylesheet" href={% static 'css/jquery-ui.css' %}> 
+    <link rel="stylesheet" href={% static 'chosen_v1.4.2/chosen.css' %}>
+    <link rel="stylesheet" href={% static 'chosen_v1.4.2/docsupport/prism.css' %}>
+    <script src={% static 'js/jquery-ui.js' %}></script>
+    <script src={% static 'js/puntos-decimales.js' %}></script>
+    <script src={% static 'js/jquery.maskedinput.min.js' %}></script>
+    <script src={% static 'chosen_v1.4.2/chosen.jquery.js' %}></script>
+	<script src={% static 'chosen_v1.4.2/docsupport/prism.js' %}></script>
+	{% include 'custom_permissions/asignar_empresa_usuario_metodos.html' %}
+{% endblock %}
+
+{% block header %}
+	Asinación de Empresas:
+{% endblock %}
+
+{% block content %}
+    <select data-placeholder="Usuario..." name="usuario" onchange="this.form.submit();" class="chosen-select" tabindex="2">
+        <option selected></option>
+        {% for usuario in usuarios %}
+            <option value="{{ usaurio.id }}">{{ usuario.username }}</option>
+        {% endfor %}
+    </select>
+{% endblock %}

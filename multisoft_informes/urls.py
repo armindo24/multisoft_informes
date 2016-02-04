@@ -1,4 +1,4 @@
-"""informes URL Configuration
+"""multisoft_informes URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/1.8/topics/http/urls/
@@ -18,25 +18,26 @@ from django.contrib import admin
 from django.views.generic.base import TemplateView
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
-handler500 = 'informes.views.server_error'
-handler404 = 'informes.views.custom_404'
+handler500 = 'multisoft_informes.views.server_error'
+handler404 = 'multisoft_informes.views.custom_404'
 
 urlpatterns = patterns('',
                        
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^accounts/login/$',   'informes.views.login'),
-    url(r'^accounts/auth/$',   'informes.views.auth_view'),
-    url(r'^accounts/logout/$',   'informes.views.logout'),
-    url(r'^accounts/loggedin/$',   'informes.views.loggedin'),
-    url(r'^accounts/invalid/$',   'informes.views.invalid_login'),
-    url(r'^accounts/menu/$',   'informes.views.menu'),
+    url(r'^accounts/login/$',   'multisoft_informes.views.login'),
+    url(r'^accounts/auth/$',   'multisoft_informes.views.auth_view'),
+    url(r'^accounts/logout/$',   'multisoft_informes.views.logout'),
+    url(r'^accounts/loggedin/$',   'multisoft_informes.views.loggedin'),
+    url(r'^accounts/invalid/$',   'multisoft_informes.views.invalid_login'),
+    url(r'^accounts/menu/$',   'multisoft_informes.views.menu'),
     url(r'^accounts/password_change/$', 
         'django.contrib.auth.views.password_change', 
         {'post_change_redirect' : '/accounts/password_change/done/'}, 
         name="password_change"), 
     (r'^accounts/password_change/done/$', 
         'django.contrib.auth.views.password_change_done'),
-     url(r'^finanzas/', include("finanzas.urls", namespace="finanzas")),
+    url(r'^finanzas/', include("finanzas.urls", namespace="finanzas")),
+    url(r'^custom_permissions/', include("custom_permissions.urls", namespace="custom_permissions")),
 )
 
 urlpatterns += staticfiles_urlpatterns()
