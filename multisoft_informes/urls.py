@@ -17,6 +17,9 @@ from django.conf.urls import include, url, patterns
 from django.contrib import admin
 from django.views.generic.base import TemplateView
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from dajaxice.core import dajaxice_autodiscover, dajaxice_config
+
+dajaxice_autodiscover()
 
 handler500 = 'multisoft_informes.views.server_error'
 handler404 = 'multisoft_informes.views.custom_404'
@@ -24,6 +27,7 @@ handler404 = 'multisoft_informes.views.custom_404'
 urlpatterns = patterns('',
                        
     url(r'^admin/', include(admin.site.urls)),
+    url(dajaxice_config.dajaxice_url, include('dajaxice.urls')),
     url(r'^accounts/login/$',   'multisoft_informes.views.login'),
     url(r'^accounts/auth/$',   'multisoft_informes.views.auth_view'),
     url(r'^accounts/logout/$',   'multisoft_informes.views.logout'),

@@ -18,17 +18,26 @@ router.use(function (req, res, next) {
     next();
 });
 
+//empresas select option
 router.get('/empresa/select', function (req, res, next) {
    Empresa.all(function (result){
        res.json({data: result});
    });
 });
 
-//comprobantes select option
-router.get('/comprobante/select/:empresa', function (req, res, next) {
-    Comprobante.empresa(req.params,function (result){
-        res.json({data: result});
-    });
+//empresas select option notin
+router.get('/empresa/notin/select/:empresas', function (req, res, next) {
+     console.log(req.params.empresas)
+     Empresa.notin(req.params,function (result){
+         res.json({data: result});
+     });
+});
+
+//empresas select option in
+router.get('/empresa/in/select/:empresas', function (req, res, next) {
+     Empresa.in(req.params,function (result){
+         res.json({data: result});
+     });
 });
 
 //proveedores select option
@@ -40,7 +49,7 @@ router.get('/proveedor/select/:empresa/:tipo', function (req, res, next) {
 
 //sucursales select option
 router.get('/sucursal/select/:empresa', function (req, res, next) {
-    Sucursal.all(eq.params,function (result){
+    Sucursal.all(req.params,function (result){
         res.json({data: result});
     });
 });
