@@ -117,13 +117,19 @@ router.post('/clientes/post/lista/', function (req, res, next) {
 });
 
 router.get('/empresas/:empresa/clientes', function (req, res, next) {
-    Empresa.clientes(req.params.empresa, function (result) {
+    Empresa.clientes(req.params.empresa, req.query, function (result) {
         res.json({data: result});
     });
 });
 
 router.get('/clientes/tipos', function (req, res, next) {
     Cliente.tipos(function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/empresas/:empresa/comprobantes/tipos', function (req, res, next) {
+    Comprobante.empresa(req.params, function (result) {
         res.json({data: result});
     });
 });
