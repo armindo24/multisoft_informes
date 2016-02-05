@@ -76,7 +76,7 @@ function checkTime(i) {
     }
     
 function cargar_detalle(cuenta,empresa,periodo,fechad,fechah,moneda,tipoasiento,nombre){
-	$.get("http://"+aux1[0]+":3000/api/v1/mayorcuenta/det/"+empresa+"/"+periodo+"/"+fechad+"/"+fechah+"/"+tipoasiento+"/"+cuenta,
+	$.ajax("http://"+aux1[0]+":3000/api/v1/mayorcuenta/det/"+empresa+"/"+periodo+"/"+fechad+"/"+fechah+"/"+tipoasiento+"/"+cuenta,{method:'GET', contentType:'application/json', async: false,}).done(
 		    function(datos) 	{
 			    	if (datos != null){
 			    		var string2 = ""
@@ -259,7 +259,7 @@ function cargar_detalle(cuenta,empresa,periodo,fechad,fechah,moneda,tipoasiento,
 						  	    }												
 							}
 							string2+='</tr>'
-							
+							//alert(datos[0].dato1[0].NOMBREPLANCTA)
 				    		string2+= '<tr>'
 							if (moneda == 'AM'){
 							  string2+='<th colspan="8" style="text-align: right;">Total de la Cuenta '+datos[0].dato1[0].NOMBREPLANCTA +'</th>'+
@@ -479,7 +479,6 @@ function buscar(){
 										'</table>'
 									'</div>'
 							}
-							
 							setTimeout('cargar_detalle('+data[0].data1[x].Codplancta+',"'+empresa+'",'+periodo+',"'+fechad+'","'+fechah+'","'+moneda+'","'+tipoasiento+'","'+ data[0].data1[x].NOMBREPLANCTA +'")', 1000*(x+1));
 							
     					}
