@@ -10,6 +10,7 @@ var Balance = require('../models/balance');
 var TipoAsiento = require('../models/tipoasiento');
 var Diario = require('../models/diario');
 var Mayor = require('../models/mayor');
+var Cliente = require('../models/cliente');
 
 var conn = require('../db');
 
@@ -112,6 +113,24 @@ router.get('/mayorcuenta/det/:empresa/:periodo/:fechad/:fechah/:tipoasiento/:cue
 router.post('/clientes/post/lista/', function (req, res, next) {
     console.log(req.body);
     res.json({data: 'funciona'});
+});
+
+router.get('/empresas/:empresa/clientes', function (req, res, next) {
+    Empresa.clientes(req.params.empresa, req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/clientes/tipos', function (req, res, next) {
+    Cliente.tipos(function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/empresas/:empresa/comprobantes/tipos', function (req, res, next) {
+    Comprobante.empresa(req.params, function (result) {
+        res.json({data: result});
+    });
 });
 
 module.exports = router;

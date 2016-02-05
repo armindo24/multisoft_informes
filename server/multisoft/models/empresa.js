@@ -23,4 +23,17 @@ Empresa.inin = function (body,cb) {
     });
 };
 
+Empresa.clientes = function (empresa, query, cb) {
+    var sql = "select Cod_Cliente, Razon_Social, Cod_Tp_Cliente from dba.Clientes WHERE Cod_Empresa = ?";
+    var sql_params = [empresa];
+    if (query.tipo) {
+        sql += " AND Cod_Tp_Cliente = ?";
+        sql_params.push(query.tipo);
+    }
+    conn.exec(sql, sql_params, function (err, row) {
+        if (err) throw err;
+        cb(row);
+    });
+};
+
 module.exports = Empresa;
