@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.management import create_permissions
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Permission
 from django.db import models
 
 permissions_list = (("entrar_finanzas", "Finanzas"),
@@ -18,5 +18,7 @@ class CustomPermissions(models.Model):
         permissions = permissions_list
     
 class UsuarioEmpresa(models.Model):
+    class Meta:
+        permissions = (("entrar_asignacion","Asignacion de Empresas"),)
     user = models.ForeignKey(User)
     empresa = models.CharField(max_length=30)

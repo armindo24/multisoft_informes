@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import permission_required
 
 @permission_required('custom_permissions.informe_ordenpago')
 def ordenpago(request):
-    return render_to_response('finanzas/ordenpago.html', {}, context_instance=RequestContext(request))
+    return render_to_response('finanzas/ordenpago.html', {'user':request.user.id}, context_instance=RequestContext(request))
 
 @permission_required('custom_permissions.informe_balancegeneral')
 def balancegeneral(request):
