@@ -118,7 +118,7 @@ function buscar(){
 }
 
 function buscar_comprobante(){
-	$.get("http://"+aux1[0]+":3000/api/v1/comprobante/select/"+document.getElementsByName('empresa')[0].value,
+	$.get("http://"+aux1[0]+":3000/api/v1/empresas/"+document.getElementsByName('empresa')[0].value+"/comprobantes/tipos",
 	    function(data) {
 	    	if (data != null){
 	    		var select = document.getElementsByName("comprobante")[0]
@@ -225,8 +225,8 @@ function permisos_empresas(data){
                      select.add(option);
                  }
                  SelectElement(data.data[0].Cod_Empresa,'empresa')
-                                 
-                 $.get("http://"+aux1[0]+":3000/api/v1/comprobante/select/"+document.getElementsByName('empresa')[0].value,
+                 
+                 $.get("http://"+aux1[0]+":3000/api/v1/empresas/"+document.getElementsByName('empresa')[0].value+"/comprobantes/tipos",
                      function(data)  {
                          if (data != null){
                              var select = document.getElementsByName("comprobante")[0]

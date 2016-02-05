@@ -10,19 +10,19 @@ def ordenpago(request):
 
 @permission_required('custom_permissions.informe_balancegeneral')
 def balancegeneral(request):
-    return render_to_response('finanzas/balancegeneral.html', {}, context_instance=RequestContext(request))
+    return render_to_response('finanzas/balancegeneral.html', {'user':request.user.id}, context_instance=RequestContext(request))
 
 @permission_required('custom_permissions.informe_balancegeneralcomprobado')
 def balancegeneral_comprobado(request):
-    return render_to_response('finanzas/balancegeneral_comprobado.html', {}, context_instance=RequestContext(request))
+    return render_to_response('finanzas/balancegeneral_comprobado.html', {'user':request.user.id}, context_instance=RequestContext(request))
 
 @permission_required('custom_permissions.informe_diario')
 def diario_comprobado(request):
-    return render_to_response('finanzas/diario_comprobado.html', {}, context_instance=RequestContext(request))
+    return render_to_response('finanzas/diario_comprobado.html', {'user':request.user.id}, context_instance=RequestContext(request))
 
 @permission_required('custom_permissions.informe_mayorcuenta')
 def mayor_cuentas(request):
-    return render_to_response('finanzas/mayor_cuentas.html', {}, context_instance=RequestContext(request))
+    return render_to_response('finanzas/mayor_cuentas.html', {'user':request.user.id}, context_instance=RequestContext(request))
 
 # TODO: Add permission
 # @permission_required('custom_permissions.informe_mayorcuenta')

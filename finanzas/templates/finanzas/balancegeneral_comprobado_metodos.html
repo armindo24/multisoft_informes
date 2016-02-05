@@ -334,10 +334,10 @@
                           '<td colspan="1"></td>' +
                           '<td style="text-align: right;"><b>TOTALES</b></td>'
                   if (moneda == 'local') {
-                    string += '<td style="text-align: right;">' + convertir_rever(total_saldo_anterior) + '</td>' +
-                            '<td style="text-align: right;">' + convertir_rever(total_debito) + '</td>' +
-                            '<td style="text-align: right;">' + convertir_rever(total_credito) + '</td>' +
-                            '<td style="text-align: right;">' + convertir_rever(total_saldo) + '</td>'
+                    string += '<td style="text-align: right;"><b>' + convertir_rever(total_saldo_anterior) + '</b></td>' +
+                            '<td style="text-align: right;"><b>' + convertir_rever(total_debito) + '</b></td>' +
+                            '<td style="text-align: right;"><b>' + convertir_rever(total_credito) + '</b></td>' +
+                            '<td style="text-align: right;"><b>' + convertir_rever(total_saldo) + '</b></td>'
                   } else {
                     string += '<td style="text-align: right;"><b>' + addCommas((Math.round(total_saldo_anterior * 100) / 100).toString()) + '</b></td>' +
                             '<td style="text-align: right;"><b>' + addCommas((Math.round(total_debito * 100) / 100).toString()) + '</b></td>' +
@@ -380,45 +380,10 @@
     $('.chosen-select').trigger('chosen:updated');
   }
 
-  window.onload = function () {
+window.onload = function () {
+        
+   Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario':'{{user}}'});
 
-    $.get("http://" + aux1[0] + ":3000/api/v1/empresa/select",
-            function (data) {
-              if (data != null) {
-                var select = document.getElementsByName("empresa")[0]
-                remover(select);
-                for (var i = 0; i < data.data.length; i++) {
-                  var option = document.createElement("option");
-                  option.value = data.data[i].Cod_Empresa;
-                  option.text = data.data[i].Des_Empresa;
-                  select.add(option);
-                }
-                SelectElement(data.data[0].Cod_Empresa, 'empresa')
-
-                /*$.get("http://"+aux1[0]+":3000/api/v1/cuenta/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('periodo')[0].value,
-                 function(data) 	{
-                 if (data != null){
-                 var select = document.getElementsByName("cuentad")[0]
-                 var select1 = document.getElementsByName("cuentah")[0]
-                 remover(select);
-                 remover(select1);
-                 for (var i=0;i < data.data.length;i++){
-                 var option = document.createElement("option");
-                 option.value = data.data[i].CodPlanCta;
-                 option.text =data.data[i].Nombre;
-                 select.add(option);
-                 select1.add(option);
-                 }
-                 SelectElement(data.data[0].CodPlanCta,'cuentad')
-                 SelectElement(data.data[0].CodPlanCta,'cuentah')
-                 }
-                 }
-                 );*/
-
-                $('.chosen-select').trigger('chosen:updated');
-              }
-            }
-    );
     var today = new Date();
     var dd = today.getDate();
     var mm = today.getMonth() + 1; //January is 0!
@@ -436,4 +401,32 @@
 
     $('[name=periodo]').val(today)
   };
+  
+function permisos_empresas(data){
+    if(data.length > 0){
+        console.log('Hay datos');
+        var vector = [] 
+        for (var a=0; a<data.length; a++){
+            vector.push("'"+data[a].empresa+"'")
+        }
+        var str = JSON.stringify({empresas: vector});
+        $.ajax("http://"+aux1[0]+":3000/api/v1/empresa/inin/select",{method:'POST', contentType:'application/json', data: str}).done(
+        function(data) {
+            if (data != null){
+                var select = document.getElementsByName("empresa")[0]
+                remover(select);
+                for (var i = 0; i < data.data.length; i++) {
+                  var option = document.createElement("option");
+                  option.value = data.data[i].Cod_Empresa;
+                  option.text = data.data[i].Des_Empresa;
+                  select.add(option);
+                }
+                SelectElement(data.data[0].Cod_Empresa, 'empresa')
+
+                $('.chosen-select').trigger('chosen:updated');
+              }
+            }
+        );
+    }
+}
 </script>
