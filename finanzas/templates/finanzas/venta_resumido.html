@@ -21,10 +21,30 @@
   <h1>HolaMundo</h1>
   <label>Empresa:</label>
   <select name="empresa" data-placeholder="Empresa..." onchange="" class="chosen-select" tabindex="2"></select><br>
-  <label>Cliente:</label>
-  <select name="cliente" data-placeholder="Cliente..." onchange="" class="chosen-select" tabindex="2"></select><br>
   <label>Tipo Cliente:</label>
   <select name="tipo_cliente" data-placeholder="Tipo..." onchange="" class="chosen-select" tabindex="2"></select><br>
+  <label>Cliente:</label>
+  <select name="cliente" data-placeholder="Cliente..." onchange="" class="chosen-select" tabindex="2"></select><br>
+  <label>Grupo:</label>
+  <select name="grupo" data-placeholder="Grupo..." onchange="" class="chosen-select" tabindex="2"></select><br>
+  <label>Vendedor:</label>
+  <select name="vendedor" data-placeholder="Vendedor..." onchange="" class="chosen-select" tabindex="2"></select><br>
+  <label>Moneda:</label>
+  <select name="moneda" data-placeholder="Moneda..." onchange="" class="chosen-select" tabindex="2">
+    <option value="01">Local</option>
+    <option value="02">Extranjera</option>
+  </select><br>
+
+  <label>Desde:</label>
+  <input id="fechad" type="text" class="datepicker" name="fechad"/>
+
+  <label>Hasta:</label>
+  <input id="fechah" type="text" class="datepicker" name="fechah"/>
+
+
+  <label>Tipo de Comprobante:</label>
+  <select name="tipo_comprobante" data-placeholder="Tipo..." onchange="" class="chosen-select" tabindex="2"></select>
+  <br>
   <br>
   Query
   <pre id="preview">
@@ -37,9 +57,23 @@
 {% block extra_foot %}
   <script>
     $(document).ready(function () {
+      var query = {};
+      var $preview = $('#preview');
       var api = u.getApiUrl();
 
-      var query = {};
+      var today = new Date();
+      var $datepicker = $('.datepicker');
+
+      $datepicker.datepicker({
+        onSelect: function (dateText, inst) {
+          query[inst.id] = dateText;
+          $preview.text(JSON.stringify(query));
+        }
+      });
+
+      u.translate();
+      $datepicker.datepicker("setDate", today);
+
 
       $(".chosen-select").chosen({
         disable_search_threshold: 0,
@@ -52,14 +86,26 @@
         var select = $(this);
         var select_name = select.attr('name');
         query[select_name] = select.val();
-        //console.log(query);
-        $('#preview').text(JSON.stringify(query));
+        $preview.text(JSON.stringify(query));
       });
 
       $('[name=empresa]').on('change', function (ev, params) {
         console.log('select empresa');
-        $.get(api + 'empresas/' + query.empresa + '/clientes').done(function (d) {
-          u.createSelect('cliente', d, 'Cod_Cliente', 'Razon_Social');
+        $.get(api + 'empresas/' + query.empresa + '/clientes', {tipo: ''}).done(function (d) {
+          u.createSelect('cliente', d, 'Cod_Cliente', 'Razon_Social', true);
+          $('.chosen-select').trigger('chosen:updated');
+        });
+        $.get(api + 'empresas/' + query.empresa + '/comprobantes/tipos').done(function (d) {
+          u.createSelect('tipo_comprobante', d, 'Cod_Tp_Comp', 'des_tp_comp', true);
+          $('.chosen-select').trigger('chosen:updated');
+        });
+      });
+
+      $('[name=tipo_cliente]').on('change', function (ev, params) {
+        console.log('select tipo');
+        console.log(query);
+        $.get(api + 'empresas/' + query.empresa + '/clientes', {tipo: query.tipo_cliente}).done(function (d) {
+          u.createSelect('cliente', d, 'Cod_Cliente', 'Razon_Social', true);
           $('.chosen-select').trigger('chosen:updated');
         });
       });
@@ -71,10 +117,9 @@
       });
 
       $.get(api + 'clientes/tipos/').done(function (d) {
-        u.createSelect('tipo_cliente', d, 'Cod_Tp_Cliente', 'Des_Tp_Cliente');
+        u.createSelect('tipo_cliente', d, 'Cod_Tp_Cliente', 'Des_Tp_Cliente', true);
         $('.chosen-select').trigger('chosen:updated');
       });
-
     });
   </script>
 {% endblock %}

@@ -25,18 +25,27 @@ u.initSelect = function (opt) {
     });
 };
 
-u.createSelect = function (selectName, data, op_val, op_text) {
+
+//TODO: check default behavior
+u.createSelect = function (selectName, data, op_val, op_text, ninguno) {
     var select = u.eByName(selectName)[0];
     u.remover(select);
     console.log(data.data.length);
     if (data.data.length > 0) {
+        if (ninguno) {
+            var option = document.createElement("option");
+            option.value = '';
+            option.text = 'Vacio';
+            select.add(option);
+        }
+
         for (var i = 0; i < data.data.length; i++) {
             var option = document.createElement("option");
             option.value = data.data[i][op_val];
             option.text = data.data[i][op_text];
             select.add(option);
         }
-        u.SelectElement(data.data[0][op_val], selectName);
+        u.SelectElement(ninguno ? '' : data.data[0][op_val], selectName);
     } else {
         console.log('vacio');
     }
@@ -64,4 +73,22 @@ u.addCommas = function (nStr) {
         x1 = x1.replace(rgx, '$1' + '.' + '$2');
     }
     return x1 + x2;
+};
+
+var spanish = {
+    closeText: 'Cerrar',
+    prevText: '<Ant',
+    nextText: 'Sig>',
+    currentText: 'Hoy',
+    monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+    monthNamesShort: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+    dateFormat: 'yy/mm/dd',
+    firstDay: 1,
+    isRTL: false,
+    showMonthAfterYear: false,
+    yearSuffix: ''
+};
+
+u.translate = function () {
+    $.datepicker.setDefaults(spanish);
 };
