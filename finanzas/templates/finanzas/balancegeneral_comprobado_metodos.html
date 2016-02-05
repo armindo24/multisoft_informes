@@ -13,17 +13,20 @@
   var pruebaPost = function () {
     var dat = {query: [1, 2, 3, 4], exclude: ['1', '2', '3']};
     var str = JSON.stringify(dat);
+    var api = 'http://localhost:3000/api/v1/';
     console.log(str);
-    $.post({
+    $.ajax({
       url: api + 'clientes/post/lista/',
+      method: 'POST',
       data: str,
-      contentType: 'application/json',
+      contentType: 'application/json'
     }).done(function (msg) {
       console.log(msg);
     });
   };
 
   $(document).ready(function () {
+    pruebaPost();
     $('#page-wrapper').css('margin-left', '0px');
     $('#my-left-menu').toggle(0);
     var url = window.location.href
