@@ -32,4 +32,11 @@ Empresa.in = function (params,cb) {
     });
 };
 
+Empresa.clientes = function (empresa, cb) {
+    conn.exec("select Cod_Cliente, Razon_Social from dba.Clientes WHERE Cod_Empresa = ?", [empresa], function (err, row) {
+        if (err) throw err;
+        cb(row);
+    });
+};
+
 module.exports = Empresa;
