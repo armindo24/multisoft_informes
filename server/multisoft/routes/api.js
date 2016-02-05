@@ -26,16 +26,15 @@ router.get('/empresa/select', function (req, res, next) {
 });
 
 //empresas select option notin
-router.get('/empresa/notin/select/:empresas', function (req, res, next) {
-    console.log(req.params.empresas)
-    Empresa.notin(req.params, function (result) {
+router.post('/empresa/notin/select/', function (req, res, next) {
+    Empresa.notin(req.body, function (result) {
         res.json({data: result});
     });
 });
 
 //empresas select option in
-router.get('/empresa/in/select/:empresas', function (req, res, next) {
-    Empresa.in(req.params, function (result) {
+router.post('/empresa/inin/select/', function (req, res, next) {
+    Empresa.inin(req.body, function (result) {
         res.json({data: result});
     });
 });
