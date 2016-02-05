@@ -1,0 +1,80 @@
+{% extends 'admin/base_site.html' %}
+{% load staticfiles %}
+{% block extrahead %}
+  <link rel="stylesheet" href={% static 'css/jquery-ui.css' %}>
+  <link rel="stylesheet" href={% static 'chosen_v1.4.2/chosen.css' %}>
+  <link rel="stylesheet" href={% static 'chosen_v1.4.2/docsupport/prism.css' %}>
+  <script src={% static 'js/jquery-ui.js' %}></script>
+  <script src={% static 'js/puntos-decimales.js' %}></script>
+  <script src={% static 'js/jquery.maskedinput.min.js' %}></script>
+  <script src={% static 'chosen_v1.4.2/chosen.jquery.js' %}></script>
+  <script src={% static 'chosen_v1.4.2/docsupport/prism.js' %}></script>
+  <script src="{% static 'js/utils.js' %}"></script>
+  {#  {% include 'finanzas/balancegeneral_metodos.html' %}#}
+{% endblock %}
+
+{% block header %}
+  Balance General:
+{% endblock %}
+
+{% block content %}
+  <h1>HolaMundo</h1>
+  <label>Empresa:</label>
+  <select name="empresa" data-placeholder="Empresa..." onchange="" class="chosen-select" tabindex="2"></select><br>
+  <label>Cliente:</label>
+  <select name="cliente" data-placeholder="Cliente..." onchange="" class="chosen-select" tabindex="2"></select><br>
+  <label>Tipo Cliente:</label>
+  <select name="tipo_cliente" data-placeholder="Tipo..." onchange="" class="chosen-select" tabindex="2"></select><br>
+  <br>
+  Query
+  <pre id="preview">
+    <p>Empresa: </p>
+  </pre>
+  <br>
+
+{% endblock %}
+
+{% block extra_foot %}
+  <script>
+    $(document).ready(function () {
+      var api = u.getApiUrl();
+
+      var query = {};
+
+      $(".chosen-select").chosen({
+        disable_search_threshold: 0,
+        no_results_text: "No hay resultados disponibles.",
+        width: "200px",
+        allow_single_deselect: true
+      });
+
+      $('.chosen-select').on('change chosen:updated', function (evt, params) {
+        var select = $(this);
+        var select_name = select.attr('name');
+        query[select_name] = select.val();
+        //console.log(query);
+        $('#preview').text(JSON.stringify(query));
+      });
+
+      $('[name=empresa]').on('change', function (ev, params) {
+        console.log('select empresa');
+        $.get(api + 'empresas/' + query.empresa + '/clientes').done(function (d) {
+          u.createSelect('cliente', d, 'Cod_Cliente', 'Razon_Social');
+          $('.chosen-select').trigger('chosen:updated');
+        });
+      });
+
+
+      $.get(api + 'empresa/select/').done(function (d) {
+        u.createSelect('empresa', d, 'Cod_Empresa', 'Des_Empresa');
+        $('.chosen-select').trigger('chosen:updated');
+      });
+
+      $.get(api + 'clientes/tipos/').done(function (d) {
+        u.createSelect('tipo_cliente', d, 'Cod_Tp_Cliente', 'Des_Tp_Cliente');
+        $('.chosen-select').trigger('chosen:updated');
+      });
+
+    });
+  </script>
+{% endblock %}
