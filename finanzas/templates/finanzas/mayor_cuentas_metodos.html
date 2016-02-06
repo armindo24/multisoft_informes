@@ -76,7 +76,7 @@ function checkTime(i) {
     }
     
 function cargar_detalle(cuenta,empresa,periodo,fechad,fechah,moneda,tipoasiento,nombre){
-	$.get("http://"+aux1[0]+":3000/api/v1/mayorcuenta/det/"+empresa+"/"+periodo+"/"+fechad+"/"+fechah+"/"+tipoasiento+"/"+cuenta,
+	$.ajax("http://"+aux1[0]+":3000/api/v1/mayorcuenta/det/"+empresa+"/"+periodo+"/"+fechad+"/"+fechah+"/"+tipoasiento+"/"+cuenta,{method:'GET', contentType:'application/json', async: false,}).done(
 		    function(datos) 	{
 			    	if (datos != null){
 			    		var string2 = ""
@@ -259,7 +259,7 @@ function cargar_detalle(cuenta,empresa,periodo,fechad,fechah,moneda,tipoasiento,
 						  	    }												
 							}
 							string2+='</tr>'
-							
+							//alert(datos[0].dato1[0].NOMBREPLANCTA)
 				    		string2+= '<tr>'
 							if (moneda == 'AM'){
 							  string2+='<th colspan="8" style="text-align: right;">Total de la Cuenta '+datos[0].dato1[0].NOMBREPLANCTA +'</th>'+
@@ -479,7 +479,6 @@ function buscar(){
 										'</table>'
 									'</div>'
 							}
-							
 							setTimeout('cargar_detalle('+data[0].data1[x].Codplancta+',"'+empresa+'",'+periodo+',"'+fechad+'","'+fechah+'","'+moneda+'","'+tipoasiento+'","'+ data[0].data1[x].NOMBREPLANCTA +'")', 1000*(x+1));
 							
     					}
@@ -529,62 +528,8 @@ function cambiar_anho(a){
 }
 
 window.onload = function() {
-	
-    $.get("http://"+aux1[0]+":3000/api/v1/empresa/select",
-		    function(data) {
-		    	if (data != null){
-		    		var select = document.getElementsByName("empresa")[0]
-		    		remover(select);
-					for (var i=0;i < data.data.length;i++){
-						var option = document.createElement("option");
-						option.value = data.data[i].Cod_Empresa;
-						option.text = data.data[i].Des_Empresa;
-						select.add(option);
-					}
-					SelectElement(data.data[0].Cod_Empresa,'empresa')
-					
-					$.get("http://"+aux1[0]+":3000/api/v1/cuenta/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('periodo')[0].value,
-					    function(data) 	{
-					    	if (data != null){
-					    		var select = document.getElementsByName("cuentad")[0]
-					    		var select1 = document.getElementsByName("cuentah")[0]
-					    		remover(select);
-					    		remover(select1);
-								for (var i=0;i < data.data.length;i++){
-									var option = document.createElement("option");
-									option.value = data.data[i].CodPlanCta;
-									option.text =data.data[i].Nombre;
-									select.add(option);
-									select1.add(option);
-								}
-								SelectElement(data.data[0].CodPlanCta,'cuentad')
-								SelectElement(data.data[0].CodPlanCta,'cuentah')
-					    	}
-					    }
-					);  
-					
-					$.get("http://"+aux1[0]+":3000/api/v1/tipoasiento/select/",
-					    function(data) 	{
-					    	if (data != null){
-					    		var select = document.getElementsByName("tipoasiento")[0]
-					    		remover(select);
-					    		var option = document.createElement("option");
-								option.text = "NINGUNO";
-								select.add(option);
-								for (var i=0;i < data.data.length;i++){
-									var option = document.createElement("option");
-									option.value = data.data[i].TipoAsiento;
-									option.text =data.data[i].Descrip;
-									select.add(option);
-								}
-								SelectElement(data.data[0].TipoAsiento,'tipoasiento')
-								$('.chosen-select').trigger('chosen:updated');
-					    	}
-					    }
-					);  
-		    	}
-		    }
-		); 
+    Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario':'{{user}}'});
+
 	var today = new Date();
 	var dd = today.getDate();
 	var mm = today.getMonth()+1; //January is 0!
@@ -605,5 +550,71 @@ window.onload = function() {
 	$('[name=fechad]').val(today)
 	$('[name=fechah]').val(today)
 };
+
+function permisos_empresas(data){
+    if(data.length > 0){
+        console.log('Hay datos');
+        var vector = [] 
+        for (var a=0; a<data.length; a++){
+            vector.push("'"+data[a].empresa+"'")
+        }
+        var str = JSON.stringify({empresas: vector});
+        $.ajax("http://"+aux1[0]+":3000/api/v1/empresa/inin/select",{method:'POST', contentType:'application/json', data: str}).done(
+        function(data) {
+            if (data != null){
+               var select = document.getElementsByName("empresa")[0]
+               remover(select);
+                for (var i=0;i < data.data.length;i++){
+                    var option = document.createElement("option");
+                    option.value = data.data[i].Cod_Empresa;
+                    option.text = data.data[i].Des_Empresa;
+                    select.add(option);
+                }
+                SelectElement(data.data[0].Cod_Empresa,'empresa')
+                
+                $.get("http://"+aux1[0]+":3000/api/v1/cuenta/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('periodo')[0].value,
+                    function(data)  {
+                        if (data != null){
+                            var select = document.getElementsByName("cuentad")[0]
+                            var select1 = document.getElementsByName("cuentah")[0]
+                            remover(select);
+                            remover(select1);
+                            for (var i=0;i < data.data.length;i++){
+                                var option = document.createElement("option");
+                                option.value = data.data[i].CodPlanCta;
+                                option.text =data.data[i].Nombre;
+                                select.add(option);
+                                select1.add(option);
+                            }
+                            SelectElement(data.data[0].CodPlanCta,'cuentad')
+                            SelectElement(data.data[0].CodPlanCta,'cuentah')
+                        }
+                    }
+                );  
+                
+                $.get("http://"+aux1[0]+":3000/api/v1/tipoasiento/select/",
+                    function(data)  {
+                        if (data != null){
+                            var select = document.getElementsByName("tipoasiento")[0]
+                            remover(select);
+                            var option = document.createElement("option");
+                            option.text = "NINGUNO";
+                            select.add(option);
+                            for (var i=0;i < data.data.length;i++){
+                                var option = document.createElement("option");
+                                option.value = data.data[i].TipoAsiento;
+                                option.text =data.data[i].Descrip;
+                                select.add(option);
+                            }
+                            SelectElement(data.data[0].TipoAsiento,'tipoasiento')
+                            $('.chosen-select').trigger('chosen:updated');
+                        }
+                    }
+                );  
+                }
+            }
+        );
+    }
+} 
 </script>
 

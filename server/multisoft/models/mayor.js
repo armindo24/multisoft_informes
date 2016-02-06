@@ -105,6 +105,7 @@ Mayor.cuentasdetalle = function (params,cb) {
     if (params.tipoasiento != 'NINGUNO')
         string1+="AND dba.TipoAsiento.TipoAsiento = '"+params.tipoasiento+"' "
     string1+="order by dba.Asientosdet.Codplancta,Fecha"
+    console.log(string1)
     conn.exec(string1, function(err, row){
         data1 = row
         var string2 = "select dba.Asientosdet.CodPlanCta,plancta_a.TipoSaldo,cast(sum(dba.Asientosdet.Credito) as decimal(20,0)) as Credito,"+

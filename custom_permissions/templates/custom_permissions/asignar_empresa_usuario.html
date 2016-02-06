@@ -27,9 +27,12 @@
     
     <div>
         <div style="width:50%" id="table">
-    
         </div>
-        <a id="addanother-button" class="btn btn-success" onclick="addanother();"><i class="fa fa-plus-square"></i></a>
+        <div style="width:50%; padding-top: 10px;padding-bottom: 10px; text-align: right;">
+            <a id="addanother-button" class="btn btn-primary" onclick="addanother();"><i class="fa fa-plus-square"></i></a>
+        </div>
+        <a id="save-button" class="btn btn-success" onclick="save();"> Guardar <i class="fa fa-floppy-o"></i></a>
+        <a id="cancel-button" class="btn btn-danger" href="/custom_permissions/asignar_empresa_usuario/"> Cancelar <i class="fa fa-times"></i></a>
     </div>
     
 <div id="modalEmpresas" class="modal fade bs-example-modal-sm" tabindex="-1" data-backdrop="static" data-keyboard="false" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="false">
@@ -55,5 +58,5 @@
         </div>
     </div>
 </div>
-
+<imput type="hidden" id="current_value">
 {% endblock %}

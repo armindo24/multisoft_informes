@@ -118,7 +118,7 @@ function buscar(){
 }
 
 function buscar_comprobante(){
-	$.get("http://"+aux1[0]+":3000/api/v1/comprobante/select/"+document.getElementsByName('empresa')[0].value,
+	$.get("http://"+aux1[0]+":3000/api/v1/empresas/"+document.getElementsByName('empresa')[0].value+"/comprobantes/tipos",
 	    function(data) {
 	    	if (data != null){
 	    		var select = document.getElementsByName("comprobante")[0]
@@ -184,81 +184,8 @@ function buscar_sucursal(){
 }
 
 window.onload = function() {
-	
-    $.get("http://"+aux1[0]+":3000/api/v1/empresa/select",
-		    function(data) {
-		    	if (data != null){
-		    		var select = document.getElementsByName("empresa")[0]
-		    		remover(select);
-					for (var i=0;i < data.data.length;i++){
-						var option = document.createElement("option");
-						option.value = data.data[i].Cod_Empresa;
-						option.text = data.data[i].Des_Empresa;
-						select.add(option);
-					}
-					SelectElement(data.data[0].Cod_Empresa,'empresa')
-									
-					$.get("http://"+aux1[0]+":3000/api/v1/comprobante/select/"+document.getElementsByName('empresa')[0].value,
-					    function(data) 	{
-					    	if (data != null){
-					    		var select = document.getElementsByName("comprobante")[0]
-					    		remover(select);
-					    		var option = document.createElement("option");
-								option.text = "NINGUNO";
-								select.add(option);
-								for (var i=0;i < data.data.length;i++){
-									var option = document.createElement("option");
-									option.value = data.data[i].Cod_Tp_Comp;
-									option.text =data.data[i].des_tp_comp;
-									select.add(option);
-								}
-								SelectElement(data.data[0].Cod_Tp_Comp,'comprobante')
-					    	}
-					    }
-					);  
-					
-					$.get("http://"+aux1[0]+":3000/api/v1/proveedor/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('tipoproveedor')[0].value,
-					    function(data) {
-					    	if (data != null){
-					    		var select = document.getElementsByName("proveedor")[0]
-					    		remover(select);
-					    		var option = document.createElement("option");
-								option.text = "NINGUNO";
-								select.add(option);
-								for (var i=0;i < data.data.length;i++){
-									var option = document.createElement("option");
-									option.value = data.data[i].CodProv;
-									option.text =data.data[i].RazonSocial;
-									select.add(option);
-								}
-								SelectElement(data.data[0].CodProv,'proveedor')
-					    	}
-					    }
-					);  
-					
-					$.get("http://"+aux1[0]+":3000/api/v1/sucursal/select/"+document.getElementsByName('empresa')[0].value,
-					    function(data) 	{
-					    	if (data != null){
-					    		var select = document.getElementsByName("sucursal")[0]
-					    		remover(select);
-					    		var option = document.createElement("option");
-								option.text = "NINGUNA";
-								select.add(option);
-								for (var i=0;i < data.data.length;i++){
-									var option = document.createElement("option");
-									option.value = data.data[i].Cod_Sucursal;
-									option.text =data.data[i].Des_Sucursal;
-									select.add(option);
-								}
-								SelectElement(data.data[0].Cod_Sucursal,'sucursal')
-								$('.chosen-select').trigger('chosen:updated');
-
-					    	}
-					    }
-					);  
-		    	}
-		    }
-		); 
+    Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario':'{{user}}'});
+    
 	var today = new Date();
 	var dd = today.getDate();
 	var mm = today.getMonth()+1; //January is 0!
@@ -277,4 +204,89 @@ window.onload = function() {
 	$('[name=fechad]').val(today)
 	$('[name=fechah]').val(today)
 };
+
+function permisos_empresas(data){
+    if(data.length > 0){
+        console.log('Hay datos');
+        var vector = [] 
+        for (var a=0; a<data.length; a++){
+            vector.push("'"+data[a].empresa+"'")
+        }
+        var str = JSON.stringify({empresas: vector});
+        $.ajax("http://"+aux1[0]+":3000/api/v1/empresa/inin/select",{method:'POST', contentType:'application/json', data: str}).done(
+        function(data) {
+            if (data != null){
+            var select = document.getElementsByName("empresa")[0]
+                 remover(select);
+                 for (var i=0;i < data.data.length;i++){
+                     var option = document.createElement("option");
+                     option.value = data.data[i].Cod_Empresa;
+                     option.text = data.data[i].Des_Empresa;
+                     select.add(option);
+                 }
+                 SelectElement(data.data[0].Cod_Empresa,'empresa')
+                 
+                 $.get("http://"+aux1[0]+":3000/api/v1/empresas/"+document.getElementsByName('empresa')[0].value+"/comprobantes/tipos",
+                     function(data)  {
+                         if (data != null){
+                             var select = document.getElementsByName("comprobante")[0]
+                             remover(select);
+                             var option = document.createElement("option");
+                             option.text = "NINGUNO";
+                             select.add(option);
+                             for (var i=0;i < data.data.length;i++){
+                                 var option = document.createElement("option");
+                                 option.value = data.data[i].Cod_Tp_Comp;
+                                 option.text =data.data[i].des_tp_comp;
+                                 select.add(option);
+                             }
+                             SelectElement(data.data[0].Cod_Tp_Comp,'comprobante')
+                         }
+                     }
+                 );  
+                 
+                 $.get("http://"+aux1[0]+":3000/api/v1/proveedor/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('tipoproveedor')[0].value,
+                     function(data) {
+                         if (data != null){
+                             var select = document.getElementsByName("proveedor")[0]
+                             remover(select);
+                             var option = document.createElement("option");
+                             option.text = "NINGUNO";
+                             select.add(option);
+                             for (var i=0;i < data.data.length;i++){
+                                 var option = document.createElement("option");
+                                 option.value = data.data[i].CodProv;
+                                 option.text =data.data[i].RazonSocial;
+                                 select.add(option);
+                             }
+                             SelectElement(data.data[0].CodProv,'proveedor')
+                         }
+                     }
+                 );  
+                 
+                 $.get("http://"+aux1[0]+":3000/api/v1/sucursal/select/"+document.getElementsByName('empresa')[0].value,
+                     function(data)  {
+                         if (data != null){
+                             var select = document.getElementsByName("sucursal")[0]
+                             remover(select);
+                             var option = document.createElement("option");
+                             option.text = "NINGUNA";
+                             select.add(option);
+                             for (var i=0;i < data.data.length;i++){
+                                 var option = document.createElement("option");
+                                 option.value = data.data[i].Cod_Sucursal;
+                                 option.text =data.data[i].Des_Sucursal;
+                                 select.add(option);
+                             }
+                             SelectElement(data.data[0].Cod_Sucursal,'sucursal')
+                             $('.chosen-select').trigger('chosen:updated');
+
+                         }
+                     }
+                 );  
+             }
+         }
+     ); 
+    }
+}
 </script>
