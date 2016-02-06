@@ -11,6 +11,7 @@ var TipoAsiento = require('../models/tipoasiento');
 var Diario = require('../models/diario');
 var Mayor = require('../models/mayor');
 var Cliente = require('../models/cliente');
+var Informe = require('../models/Informe');
 
 var conn = require('../db');
 
@@ -130,6 +131,13 @@ router.get('/clientes/tipos', function (req, res, next) {
 
 router.get('/empresas/:empresa/comprobantes/tipos', function (req, res, next) {
     Comprobante.empresa(req.params, function (result) {
+        res.json({data: result});
+    });
+});
+
+// Informe ventas resumido por comprobante
+router.get('/informe/ventas', function (req, res, next) {
+    Informe.all(req.params, function (result) {
         res.json({data: result});
     });
 });
