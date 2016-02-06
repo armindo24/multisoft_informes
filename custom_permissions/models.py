@@ -11,6 +11,7 @@ permissions_list = (("entrar_finanzas", "Finanzas"),
                     #--------------------------- ("informe_diario", "Libro Diario"),
                     #------------- ("informe_mayorcuenta", "Libro Mayor de Cuenta"),
                     #--------------------- ("informe_ordenpago", "Ordenes de Pago"),
+                    #("informe_mayorcuentaauxiliar", "Libro Mayor de Auxiliares"),
                    )
 
 class CustomPermissions(models.Model):

@@ -8,4 +8,5 @@ urlpatterns = patterns('',
     url(r'^diario_comprobado/$',  'finanzas.views.diario_comprobado', name="diario_comprobado"),
     url(r'^mayor_cuentas/$',  'finanzas.views.mayor_cuentas', name="mayor_cuentas"),
     url(r'^venta_resumido/$',  'finanzas.views.venta_resumido', name="venta_resumido"),
+    url(r'^mayor_cuentas_auxiliar/$',  'finanzas.views.mayor_cuentasauxiliar', name="mayor_cuentasauxiliar"),
 )

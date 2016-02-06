@@ -24,6 +24,10 @@ def diario_comprobado(request):
 def mayor_cuentas(request):
     return render_to_response('finanzas/mayor_cuentas.html', {'user':request.user.id}, context_instance=RequestContext(request))
 
+@permission_required('custom_permissions.informe_mayorcuentaauxiliar')
+def mayor_cuentasauxiliar(request):
+    return render_to_response('finanzas/mayor_cuentas_auxiliares.html', {'user':request.user.id}, context_instance=RequestContext(request))
+
 # TODO: Add permission
 # @permission_required('custom_permissions.informe_mayorcuenta')
 def venta_resumido(request):

@@ -11,7 +11,7 @@ var TipoAsiento = require('../models/tipoasiento');
 var Diario = require('../models/diario');
 var Mayor = require('../models/mayor');
 var Cliente = require('../models/cliente');
-var Informe = require('../models/Informe');
+var Informe = require('../models/informe');
 
 var conn = require('../db');
 
@@ -65,6 +65,13 @@ router.get('/ordenpago/list/:empresa/:sucursal/:tipoop/:comprobante/:tipoproveed
 //cuentas select option
 router.get('/cuenta/select/:empresa/:periodo', function (req, res, next) {
     CuentaContable.all(req.params, function (result) {
+        res.json({data: result});
+    });
+});
+
+//cuentas select option
+router.get('/cuentaauxi/select/:empresa/:periodo', function (req, res, next) {
+    CuentaContable.aux(req.params, function (result) {
         res.json({data: result});
     });
 });
