@@ -581,10 +581,13 @@ function permisos_empresas(data){
                             remover(select1);
                             for (var i=0;i < data.data.length;i++){
                                 var option = document.createElement("option");
+                                var option1 = document.createElement("option");
                                 option.value = data.data[i].CodPlanCta;
                                 option.text =data.data[i].Nombre;
+                                option1.value = data.data[i].CodPlanCta;
+                                option1.text =data.data[i].Nombre;
                                 select.add(option);
-                                select1.add(option);
+                                select1.add(option1);
                             }
                             SelectElement(data.data[0].CodPlanCta,'cuentad')
                             SelectElement(data.data[0].CodPlanCta,'cuentah')
