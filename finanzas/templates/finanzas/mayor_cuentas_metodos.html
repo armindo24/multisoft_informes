@@ -440,9 +440,8 @@ function buscar(){
 		    	if (data != null){
 		    		console.log(data)
 		    		$('#table-div').empty()
-		    		var string=""
 		    		for (var e=0;e < data[1].data2.length;e++ ){
-		    			string+='<div id="pad-'+data[1].data2[e].Codplanctapad+'"><hr size="50" style="height: 0px;margin-top: 0px;margin-bottom: 0px;border-top-width: 5px;padding-bottom: 5px;">'+
+		    			var string='<div id="pad-'+data[1].data2[e].Codplanctapad+'"><hr size="50" style="height: 0px;margin-top: 0px;margin-bottom: 0px;border-top-width: 5px;padding-bottom: 5px;">'+
 	    						 	 '<b>' + data[1].data2[e].Codplanctapad + '&nbsp;&nbsp;&nbsp;&nbsp;' + data[1].data2[e].NOMBREPLANCTAPAD + "</b>" +
     						 	 '</div>'
     					for (var x=0;x < data[0].data1.length;x++){
@@ -480,6 +479,7 @@ function buscar(){
 									'</div>'
 							}
 							setTimeout('cargar_detalle('+data[0].data1[x].Codplancta+',"'+empresa+'",'+periodo+',"'+fechad+'","'+fechah+'","'+moneda+'","'+tipoasiento+'","'+ data[0].data1[x].NOMBREPLANCTA +'")', 1000*(x+1));
+							//cargar_detalle('+data[0].data1[x].Codplancta+',"'+empresa+'",'+periodo+',"'+fechad+'","'+fechah+'","'+moneda+'","'+tipoasiento+'","'+ data[0].data1[x].NOMBREPLANCTA +'")
 							
     					}
     					$('#table-div').append(string);

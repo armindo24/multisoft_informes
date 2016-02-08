@@ -175,7 +175,116 @@ Mayor.cuentasaux = function (params,cb) {
                 cb([{ data1 : data1 },{ data2 : data2 }]);
             });
         });
+    } else {
+        var string ="SELECT DBA.PLANAUXI.CodPlanCta,DBA.PLANCTA.Nombre as Cuenta,DBA.PLANAUXI.CodPlanAux,DBA.PLANAUXI.Nombre as Auxiliar "+
+                    "FROM DBA.PLANAUXI,DBA.PLANCTA,DBA.ASIENTOSCAB,DBA.ASIENTOSDET,DBA.TIPOASIENTO WHERE "+
+                    "DBA.PLANAUXI.Cod_Empresa = DBA.ASIENTOSDET.Cod_Empresa and DBA.PLANAUXI.Periodo = DBA.ASIENTOSDET.Periodo and DBA.PLANAUXI.CodPlanAux = DBA.ASIENTOSDET.CodPlanAux "+
+                    "and DBA.PLANCTA.CodPlanCta = DBA.ASIENTOSDET.CodPlanCta and DBA.PLANAUXI.Cod_Empresa = DBA.ASIENTOSCAB.Cod_Empresa and DBA.PLANAUXI.Periodo = DBA.ASIENTOSCAB.Periodo "+
+                    "and DBA.PLANCTA.Cod_Empresa = DBA.ASIENTOSDET.Cod_Empresa and DBA.PLANCTA.Periodo = DBA.ASIENTOSDET.Periodo and DBA.PLANCTA.CodPlanCta = DBA.ASIENTOSDET.CodPlanCta "+
+                    "and DBA.PLANCTA.Cod_Empresa = DBA.ASIENTOSCAB.Cod_Empresa and DBA.PLANCTA.Periodo = DBA.ASIENTOSCAB.Periodo and DBA.PLANCTA.Cod_Empresa = DBA.PLANAUXI.Cod_Empresa "+
+                    "and DBA.PLANCTA.Periodo = DBA.PLANAUXI.Periodo and DBA.PLANCTA.CodPlanCta = DBA.PLANAUXI.CodPlanCta and DBA.ASIENTOSCAB.Cod_Empresa = DBA.ASIENTOSDET.Cod_Empresa "+
+                    "and DBA.ASIENTOSCAB.Periodo = DBA.ASIENTOSDET.Periodo and DBA.ASIENTOSCAB.NroTransac = DBA.ASIENTOSDET.NroTransac "+
+                    "and DBA.ASIENTOSCAB.TipoAsiento = DBA.TIPOASIENTO.TipoAsiento and DBA.TIPOASIENTO.TpDef not in( 'N') "+
+                    "and DBA.PLANAUXI.PERIODO = '"+params.periodo+"' and DBA.PLANAUXI.Imputable = 'S' and DBA.PLANAUXI.Cod_Empresa = '"+params.empresa+"' "+
+                    "and DBA.PLANAUXI.CodPlanCta >= '"+params.cuentad+"' and DBA.PLANAUXI.CodPlanCta <= '"+params.cuentah+"' ";
+                    if (params.cuentaad != 'NINGUNA' && params.cuentaah != 'NINGUNA')
+                        string+="and DBA.PLANAUXI.CodPlanAux >= '"+params.cuentaad+"' and DBA.PLANAUXI.CodPlanAux <= '"+params.cuentaah+"' "; 
+                    string+="and DBA.ASIENTOSCAB.Fecha BETWEEN '"+params.fechad+"' and '"+params.fechah+"' ";
+                    if (params.tipoasiento != 'NINGUNO')
+                        string+="AND dba.ASIENTOSCAB.TipoAsiento = '"+params.tipoasiento+"' ";
+                    //string+="GROUP BY DBA.PLANAUXI.CodPlanCta,Cuenta,DBA.PLANAUXI.CodPlanAux,Auxiliar ORDER BY DBA.PLANAUXI.CodPlanCta,DBA.PLANAUXI.CodPlanAux";
+                    string+="union SELECT DBA.PLANAUXI.CodPlanCta,DBA.PLANCTA.Nombre as Cuenta,DBA.PLANAUXI.CodPlanAux,DBA.PLANAUXI.Nombre as Auxiliar "+
+                            "FROM DBA.PLANAUXI,DBA.PLANCTA WHERE DBA.PLANCTA.Cod_Empresa = DBA.PLANAUXI.Cod_Empresa and DBA.PLANCTA.Periodo = DBA.PLANAUXI.Periodo "+
+                            "and DBA.PLANCTA.CodPlanCta = DBA.PLANAUXI.CodPlanCta and DBA.PLANAUXI.PERIODO = '"+params.periodo+"' and DBA.PLANAUXI.Imputable = 'S' "+
+                            "and DBA.PLANAUXI.Cod_Empresa = '"+params.empresa+"' and DBA.PLANAUXI.CodPlanCta >= '"+params.cuentad+"' and DBA.PLANAUXI.CodPlanCta <= '"+params.cuentah+"' ";
+                    if (params.cuentaad != 'NINGUNA' && params.cuentaah != 'NINGUNA')
+                        string+="and DBA.PLANAUXI.CodPlanAux >= '"+params.cuentaad+"' and DBA.PLANAUXI.CodPlanAux <= '"+params.cuentaah+"' "; 
+                    string+="GROUP BY DBA.PLANAUXI.CodPlanCta,Cuenta,DBA.PLANAUXI.CodPlanAux,Auxiliar ORDER BY CodPlanCta,CodPlanAux";
+        console.log(string)
+        conn.exec(string, function(err, row){
+            data1 = row
+            var string1 = "SELECT DBA.PLANAUXI.CodPlanCta,DBA.PLANCTA.Nombre as Cuenta "+
+                            "FROM DBA.PLANAUXI,DBA.PLANCTA,DBA.ASIENTOSCAB,DBA.ASIENTOSDET,DBA.TIPOASIENTO WHERE "+
+                            "DBA.PLANAUXI.Cod_Empresa = DBA.ASIENTOSDET.Cod_Empresa and DBA.PLANAUXI.Periodo = DBA.ASIENTOSDET.Periodo and DBA.PLANAUXI.CodPlanAux = DBA.ASIENTOSDET.CodPlanAux "+
+                            "and DBA.PLANCTA.CodPlanCta = DBA.ASIENTOSDET.CodPlanCta and DBA.PLANAUXI.Cod_Empresa = DBA.ASIENTOSCAB.Cod_Empresa and DBA.PLANAUXI.Periodo = DBA.ASIENTOSCAB.Periodo "+
+                            "and DBA.PLANCTA.Cod_Empresa = DBA.ASIENTOSDET.Cod_Empresa and DBA.PLANCTA.Periodo = DBA.ASIENTOSDET.Periodo and DBA.PLANCTA.CodPlanCta = DBA.ASIENTOSDET.CodPlanCta "+
+                            "and DBA.PLANCTA.Cod_Empresa = DBA.ASIENTOSCAB.Cod_Empresa and DBA.PLANCTA.Periodo = DBA.ASIENTOSCAB.Periodo and DBA.PLANCTA.Cod_Empresa = DBA.PLANAUXI.Cod_Empresa "+
+                            "and DBA.PLANCTA.Periodo = DBA.PLANAUXI.Periodo and DBA.PLANCTA.CodPlanCta = DBA.PLANAUXI.CodPlanCta and DBA.ASIENTOSCAB.Cod_Empresa = DBA.ASIENTOSDET.Cod_Empresa "+
+                            "and DBA.ASIENTOSCAB.Periodo = DBA.ASIENTOSDET.Periodo and DBA.ASIENTOSCAB.NroTransac = DBA.ASIENTOSDET.NroTransac "+
+                            "and DBA.ASIENTOSCAB.TipoAsiento = DBA.TIPOASIENTO.TipoAsiento and DBA.TIPOASIENTO.TpDef not in( 'N') "+
+                            "and DBA.PLANAUXI.PERIODO = '"+params.periodo+"' and DBA.PLANAUXI.Imputable = 'S' and DBA.PLANAUXI.Cod_Empresa = '"+params.empresa+"' "+
+                            "and DBA.PLANAUXI.CodPlanCta >= '"+params.cuentad+"' and DBA.PLANAUXI.CodPlanCta <= '"+params.cuentah+"' ";
+                            if (params.cuentaad != 'NINGUNA' && params.cuentaah != 'NINGUNA')
+                                string1+="and DBA.PLANAUXI.CodPlanAux >= '"+params.cuentaad+"' and DBA.PLANAUXI.CodPlanAux <= '"+params.cuentaah+"' "; 
+                            string1+="and DBA.ASIENTOSCAB.Fecha BETWEEN '"+params.fechad+"' and '"+params.fechah+"' ";
+                            if (params.tipoasiento != 'NINGUNO')
+                                string1+="AND dba.ASIENTOSCAB.TipoAsiento = '"+params.tipoasiento+"' ";
+                            //string1+="GROUP BY DBA.PLANAUXI.CodPlanCta,Cuenta ORDER BY DBA.PLANAUXI.CodPlanCta";
+                            string1+="union SELECT DBA.PLANAUXI.CodPlanCta,DBA.PLANCTA.Nombre as Cuenta "+
+                                    "FROM DBA.PLANAUXI,DBA.PLANCTA WHERE DBA.PLANCTA.Cod_Empresa = DBA.PLANAUXI.Cod_Empresa and DBA.PLANCTA.Periodo = DBA.PLANAUXI.Periodo "+
+                                    "and DBA.PLANCTA.CodPlanCta = DBA.PLANAUXI.CodPlanCta and DBA.PLANAUXI.PERIODO = '"+params.periodo+"' and DBA.PLANAUXI.Imputable = 'S' "+
+                                    "and DBA.PLANAUXI.Cod_Empresa = '"+params.empresa+"' and DBA.PLANAUXI.CodPlanCta >= '"+params.cuentad+"' and DBA.PLANAUXI.CodPlanCta <= '"+params.cuentah+"' ";
+                            if (params.cuentaad != 'NINGUNA' && params.cuentaah != 'NINGUNA')
+                                string1+="and DBA.PLANAUXI.CodPlanAux >= '"+params.cuentaad+"' and DBA.PLANAUXI.CodPlanAux <= '"+params.cuentaah+"' "; 
+                            string1+="GROUP BY DBA.PLANAUXI.CodPlanCta,Cuenta ORDER BY CodPlanCta";
+            console.log(string1)
+            conn.exec(string1, function(err, row){
+                data2 = row;
+                if (err) throw err;
+                cb([{ data1 : data1 },{ data2 : data2 }]);
+            });
+        });
     }
+};
+
+Mayor.cuentasdetalleaux = function (params,cb) {
+    var string = "SELECT DBA.ASIENTOSCAB.Cod_Empresa,DBA.ASIENTOSCAB.NroCompr,DBA.ASIENTOSCAB.NroTransac,DBA.PLANAUXI.CodPlanAux,"+
+                 "DBA.PLANAUXI.Nombre as Auxiliar,DBA.PLANCTA.TipoSaldo,DBA.PLANAUXI.CodPlanCta,DBA.PLANCTA.Nombre as Cuenta,"+
+                 "date(DBA.ASIENTOSCAB.Fecha) as Fecha,YEAR(dba.Asientoscab.Fecha) as ANHO,MONTH(dba.Asientoscab.Fecha) as MES,"+
+                 "DBA.Asientoscab.Codmoneda,DBA.Asientoscab.Tipoasiento,DBA.TipoAsiento.Abreviatura,DBA.Asientosdet.Linea,"+
+                 "DBA.Asientosdet.Concepto,DBA.Asientosdet.Dbcr,DBA.Asientoscab.Origen,DBA.Asientosdet.Importe,"+
+                 "cast(dba.Asientosdet.Credito as decimal(20,0)) as Credito,cast(dba.Asientosdet.Debito as decimal(20,0)) as Debito,"+
+                 "cast(dba.Asientosdet.CreditoME as decimal(20,2)) as CreditoME,cast(dba.Asientosdet.DebitoME as decimal(20,2)) as DebitoME "+    
+                 "FROM DBA.PLANAUXI,DBA.PLANCTA,DBA.ASIENTOSCAB,DBA.ASIENTOSDET,DBA.TIPOASIENTO WHERE "+ 
+                 "DBA.PLANAUXI.Cod_Empresa = DBA.ASIENTOSDET.Cod_Empresa and DBA.PLANAUXI.Periodo = DBA.ASIENTOSDET.Periodo "+ 
+                 "and DBA.PLANAUXI.CodPlanAux = DBA.ASIENTOSDET.CodPlanAux and DBA.PLANCTA.CodPlanCta = DBA.ASIENTOSDET.CodPlanCta "+ 
+                 "and DBA.PLANAUXI.Cod_Empresa = DBA.ASIENTOSCAB.Cod_Empresa and DBA.PLANAUXI.Periodo = DBA.ASIENTOSCAB.Periodo "+
+                 "and DBA.PLANCTA.Cod_Empresa = DBA.ASIENTOSDET.Cod_Empresa and DBA.PLANCTA.Periodo = DBA.ASIENTOSDET.Periodo "+ 
+                 "and DBA.PLANCTA.CodPlanCta = DBA.ASIENTOSDET.CodPlanCta and DBA.PLANCTA.Cod_Empresa = DBA.ASIENTOSCAB.Cod_Empresa "+ 
+                 "and DBA.PLANCTA.Periodo = DBA.ASIENTOSCAB.Periodo and DBA.PLANCTA.Cod_Empresa = DBA.PLANAUXI.Cod_Empresa "+
+                 "and DBA.PLANCTA.Periodo = DBA.PLANAUXI.Periodo and DBA.PLANCTA.CodPlanCta = DBA.PLANAUXI.CodPlanCta "+
+                 "and DBA.ASIENTOSCAB.Cod_Empresa = DBA.ASIENTOSDET.Cod_Empresa and DBA.ASIENTOSCAB.Periodo = DBA.ASIENTOSDET.Periodo "+ 
+                 "and DBA.ASIENTOSCAB.NroTransac = DBA.ASIENTOSDET.NroTransac and DBA.ASIENTOSCAB.TipoAsiento = DBA.TIPOASIENTO.TipoAsiento "+ 
+                 "and DBA.TIPOASIENTO.TpDef not in( 'N') ";
+                 if (params.tipoasiento != 'NINGUNO')
+                    string+="AND dba.ASIENTOSCAB.TipoAsiento = '"+params.tipoasiento+"' ";
+                 string+="and DBA.PLANAUXI.PERIODO = '"+params.periodo+"' and DBA.PLANAUXI.Imputable = 'S' and DBA.PLANAUXI.Cod_Empresa = '"+params.empresa+"' "+
+                 "and DBA.PLANAUXI.CodPlanAux = '"+params.cuenta+"' and DBA.ASIENTOSCAB.Fecha BETWEEN '"+params.fechad+"' and '"+params.fechah+"' "+
+                 "ORDER BY DBA.PLANAUXI.CodPlanAux ";
+    console.log(string)
+    conn.exec(string, function(err, row){
+        data1 = row
+        var string1 = "SELECT DBA.PLANAUXI.CodPlanAux,DBA.PLANCTA.TipoSaldo,cast(sum(dba.Asientosdet.Credito) as decimal(20,0)) as Credito,"+
+                      "cast(sum(dba.Asientosdet.Debito) as decimal(20,0)) as Debito,cast(sum(dba.Asientosdet.CreditoME) as decimal(20,2)) as CreditoME,"+
+                      "cast(sum(dba.Asientosdet.DebitoME) as decimal(20,2)) as DebitoME FROM DBA.PLANAUXI,DBA.PLANCTA,DBA.ASIENTOSCAB,DBA.ASIENTOSDET,DBA.TIPOASIENTO "+ 
+                      "WHERE DBA.PLANAUXI.Cod_Empresa = DBA.ASIENTOSDET.Cod_Empresa and DBA.PLANAUXI.Periodo = DBA.ASIENTOSDET.Periodo and DBA.PLANAUXI.CodPlanAux = DBA.ASIENTOSDET.CodPlanAux "+ 
+                      "and DBA.PLANCTA.CodPlanCta = DBA.ASIENTOSDET.CodPlanCta and DBA.PLANAUXI.Cod_Empresa = DBA.ASIENTOSCAB.Cod_Empresa and DBA.PLANAUXI.Periodo = DBA.ASIENTOSCAB.Periodo "+ 
+                      "and DBA.PLANCTA.Cod_Empresa = DBA.ASIENTOSDET.Cod_Empresa and DBA.PLANCTA.Periodo = DBA.ASIENTOSDET.Periodo and DBA.PLANCTA.CodPlanCta = DBA.ASIENTOSDET.CodPlanCta "+ 
+                      "and DBA.PLANCTA.Cod_Empresa = DBA.ASIENTOSCAB.Cod_Empresa and DBA.PLANCTA.Periodo = DBA.ASIENTOSCAB.Periodo and DBA.PLANCTA.Cod_Empresa = DBA.PLANAUXI.Cod_Empresa "+ 
+                      "and DBA.PLANCTA.Periodo = DBA.PLANAUXI.Periodo and DBA.PLANCTA.CodPlanCta = DBA.PLANAUXI.CodPlanCta and DBA.ASIENTOSCAB.Cod_Empresa = DBA.ASIENTOSDET.Cod_Empresa "+ 
+                      "and DBA.ASIENTOSCAB.Periodo = DBA.ASIENTOSDET.Periodo and DBA.ASIENTOSCAB.NroTransac = DBA.ASIENTOSDET.NroTransac and DBA.ASIENTOSCAB.TipoAsiento = DBA.TIPOASIENTO.TipoAsiento "+ 
+                      "and DBA.TIPOASIENTO.TpDef not in( 'N') ";
+                      if (params.tipoasiento != 'NINGUNO')
+                          string1+="AND dba.ASIENTOSCAB.TipoAsiento = '"+params.tipoasiento+"' ";
+                      string1+="and DBA.PLANAUXI.PERIODO = '"+params.periodo+"' and DBA.PLANAUXI.Imputable = 'S' and DBA.PLANAUXI.Cod_Empresa = '"+params.empresa+"' and DBA.PLANAUXI.CodPlanAux = '"+params.cuenta+"' "+ 
+                               "and DBA.ASIENTOSCAB.Fecha BETWEEN '"+params.periodo+"-01-01' and dateadd(dd,-1,'"+params.fechad+"') GROUP BY DBA.PLANAUXI.CodPlanAux,DBA.PLANCTA.TipoSaldo ORDER BY DBA.PLANAUXI.CodPlanAux";
+        console.log(string1)
+        conn.exec(string1, function(err, row){
+            data2 = row;
+            cb([{ dato1 : data1 },{ dato2 : data2 }]);
+        });
+    });
+
 };
 
 module.exports = Mayor;
