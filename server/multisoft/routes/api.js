@@ -149,7 +149,7 @@ router.get('/empresas/:empresa/comprobantes/tipos', function (req, res, next) {
 });
 
 // Informe ventas resumido por comprobante
-router.get('/informe/ventas', function (req, res, next) {
+router.get('/empresas/:empresa/informes/ventas_resumido', function (req, res, next) {
     Informe.all(req.params, function (result) {
         res.json({data: result});
     });
