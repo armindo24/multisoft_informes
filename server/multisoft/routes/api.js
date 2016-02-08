@@ -118,6 +118,13 @@ router.get('/mayorcuenta/det/:empresa/:periodo/:fechad/:fechah/:tipoasiento/:cue
     });
 });
 
+//cabecera de movimientos de cuenta libro mayor aux
+router.get('/mayorcuentaaux/cab/:empresa/:periodo/:fechad/:fechah/:tipoasiento/:cuentad/:cuentah/:incluir/:cuentaad/:cuentaah', function (req, res, next) {
+    Mayor.cuentasaux(req.params, function (result) {
+        res.json(result);
+    });
+});
+
 router.post('/clientes/post/lista/', function (req, res, next) {
     console.log(req.body);
     res.json({data: 'funciona'});
