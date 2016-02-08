@@ -52,19 +52,51 @@
   </pre>
   <br>
 
+  <button class="btn btn-info" onclick="getInforme()">Filtrar</button>
+
+  <div id="cabecera">
+  </div>
+  <div id="resultados">
+    <table class="table">
+      <thead>
+      <tr>
+        <th>Nro</th>
+        <th>Cliente</th>
+        <th>RUC</th>
+        <th>Fecha</th>
+        <th>Factor Cambio</th>
+        <th>IVA</th>
+        <th>Gravado</th>
+        <th>Exento</th>
+        <th>Total Descuentos</th>
+        <th>Total</th>
+      </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+
 {% endblock %}
 
 {% block extra_foot %}
   <script>
+    var query = {};
+    var api = u.getApiUrl();
+    var $resultados = $('#resultados');
+    var $tbody = $resultados.find("tbody");
+    var $preview = $('#preview');
+    var $header = $('#cabecera');
+
     $(document).ready(function () {
-      var query = {};
-      var $preview = $('#preview');
-      var api = u.getApiUrl();
+      $resultados.hide();
+
 
       var today = new Date();
       var $datepicker = $('.datepicker');
 
       $datepicker.datepicker({
+        dateFormat: 'yy-mm-dd',
         onSelect: function (dateText, inst) {
           query[inst.id] = dateText;
           $preview.text(JSON.stringify(query));
@@ -121,5 +153,34 @@
         $('.chosen-select').trigger('chosen:updated');
       });
     });
+
+    function getInforme() {
+      var row = null;
+      var rows = [];
+      console.log("informe", query);
+      $header.html("<h3>Desde " + query.fechad + " hasta " + query.fechah + "</h3>");
+
+      $.get(api + 'empresas/' + query.empresa + '/informes/ventas_resumido', query).done(function (d) {
+        console.log(d);
+        for (var i = 0; i < d.data.length; i++) {
+          row = d.data[i];
+          rows[i] = "<tr>" +
+                  "<td>" + row.comp_numero + "</td>" +
+                  "<td>" + row.cod_cliente + " " + row.razon_social + "</td>" +
+                  "<td>" + row.ruc + "</td>" +
+                  "<td>" + row.fecha + "</td>" +
+                  "<td>" + u.addCommas(row.fact_cambio) + "</td>" +
+                  "<td>" + u.addCommas(row.total_iva) + "</td>" +
+                  "<td>" + u.addCommas(row.to_gravado) + "</td>" +
+                  "<td>" + u.addCommas(row.to_exento) + "</td>" +
+                  "<td>" + u.addCommas(row.totaldescuento) + "</td>" +
+                  "<td>" + u.addCommas(row.totaldescuento) + "</td>" +
+                  "</tr>";
+        }
+        $tbody.empty();
+        $tbody.html(rows.join(''));
+        $resultados.show();
+      });
+    }
   </script>
 {% endblock %}
