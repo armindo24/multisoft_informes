@@ -7,6 +7,11 @@ var u = {
     }
 };
 
+u.hideNav = function () {
+    $('#page-wrapper').css('margin-left', '0px');
+    $('#my-left-menu').toggle(0);
+};
+
 u.getApiUrl = function () {
     var url = window.location;
     return 'http://' + url.hostname + ':' + u.api.port + u.api.path;
