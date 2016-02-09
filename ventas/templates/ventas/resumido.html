@@ -92,8 +92,9 @@
     var $footer = $('#pie');
 
     $(document).ready(function () {
+      $('#page-wrapper').css('margin-left', '0px');
+      $('#my-left-menu').toggle(0);
       $resultados.hide();
-
 
       var today = new Date();
       var $datepicker = $('.datepicker');
