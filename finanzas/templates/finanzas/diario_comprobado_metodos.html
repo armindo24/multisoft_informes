@@ -89,7 +89,7 @@
                 console.log(data)
                 var string = ""
                 for (var a = 0; a < data.data.length; a++) {
-                  if (parseInt(data.data[a].nroasiento) != parseInt(current_asiento)) {
+                  if (parseInt(data.data[a].NroTransac) != parseInt(current_asiento)) {
                     if (total_debito > 0 || total_credito > 0 || total_debito_me > 0 || total_credito_me > 0) {
                       if (moneda == 'AM') {
                         string += '<tr><td colspan="6" style="text-align: right;"><b>TOTALES</b></td>' +
@@ -165,7 +165,7 @@
                             '<th style="text-align: right;">' + addCommas((Math.round(data.data[a].CREDITO_ME * 100) / 100).toString()) + '</th>'
                   }
                   '</tr>'
-                  current_asiento = parseInt(data.data[a].nroasiento)
+                  current_asiento = parseInt(data.data[a].NroTransac)
 
                 }
                 $('#table-div').append(string);
