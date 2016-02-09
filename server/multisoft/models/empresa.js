@@ -30,6 +30,11 @@ Empresa.clientes = function (empresa, query, cb) {
         sql += " AND Cod_Tp_Cliente = ?";
         sql_params.push(query.tipo);
     }
+    if (query.sucursal) {
+        sql += " AND Cod_Sucursal = ?";
+        sql_params.push(query.sucursal);
+    }
+
     if (query.cliente) {
         console.log(query);
         sql += " AND Razon_Social LIKE '" + query.cliente + "%'";

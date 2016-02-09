@@ -24,6 +24,11 @@ Informe.all = function (params, filters, cb) {
         args.push(filters.cliente);
     }
 
+    if (filters.sucursal) {
+        where += " and (dba.vtacab.cod_sucursal = ?)";
+        args.push(filters.sucursal);
+    }
+
     if (filters.tipo_comprobante) {
         where += " and (dba.vtacab.cod_tp_comp = ?)";
         args.push(filters.tipo_comprobante);

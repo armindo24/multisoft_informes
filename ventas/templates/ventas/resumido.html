@@ -24,9 +24,9 @@
 {% block content %}
   {#  <select class="js-data-example-ajax" style="width: 50%;"></select>#}
 
-{#  <br>#}
-{#  Query#}
-{#  <pre id="preview"><p></p></pre><br>#}
+    <br>
+    Query
+    <pre id="preview"><p></p></pre><br>
 
   <div class="panel-group" id="accordion">
     <div class="panel panel-default">
@@ -38,10 +38,19 @@
           <div class="panel-group text-center" id="archivo_accordion" style="margin-bottom: 0px;">
 
             <div class="row show-grid">
-              <div class="col-sm-6">
+              <div class="col-sm-12">
                 <th><b>Empresa:</b></th>
                 <td><select name="empresa" data-placeholder="Empresa..." onchange="" class="chosen-select"
                             tabindex="2"></select></td>
+              </div>
+            </div>
+            <div class="row show-grid">
+              <div class="col-sm-6">
+                <th><b>Sucursal:</b></th>
+                <td>
+                  <select name="sucursal" data-placeholder="Sucursal..." onchange="" class="chosen-select"
+                          tabindex="2"></select>
+                </td>
               </div>
               <div class="col-sm-6">
                 <th><b>Moneda:</b></th>
@@ -215,6 +224,12 @@
           u.createSelect('cliente', d, 'Cod_Cliente', 'Razon_Social', true);
           $('.chosen-select').trigger('chosen:updated');
         });
+
+        $.get(api + '/sucursal/select/' + query.empresa).done(function (d) {
+          u.createSelect('sucursal', d, 'Cod_Sucursal', 'Des_Sucursal');
+          $('.chosen-select').trigger('chosen:updated');
+        });
+
         $.get(api + 'empresas/' + query.empresa + '/comprobantes/tipos').done(function (d) {
           u.createSelect('tipo_comprobante', d, 'Cod_Tp_Comp', 'des_tp_comp', true);
           $('.chosen-select').trigger('chosen:updated');
