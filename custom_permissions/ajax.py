@@ -8,23 +8,24 @@ import json
 from custom_permissions.models import UsuarioEmpresa
 from django.core import serializers
 
-@dajaxice_register
-def get_permisos_empresa(request,usuario):
-    permisos_cargados = UsuarioEmpresa.objects.filter(user_id=usuario)
-    if permisos_cargados:
-        datos=[]
-        for permiso in permisos_cargados:
-            dato = {
-                    'empresa' : permiso.empresa,
-                    }
-            datos.append(dato)
-        return json.dumps(datos)
-    else: 
-        return json.dumps('')
-    
 
 @dajaxice_register
-def save_permisos_empresa(request,usuario,empresas):
+def get_permisos_empresa(request, usuario):
+    permisos_cargados = UsuarioEmpresa.objects.filter(user_id=usuario)
+    if permisos_cargados:
+        datos = []
+        for permiso in permisos_cargados:
+            dato = {
+                'empresa': permiso.empresa,
+            }
+            datos.append(dato)
+        return json.dumps(datos)
+    else:
+        return json.dumps('')
+
+
+@dajaxice_register
+def save_permisos_empresa(request, usuario, empresas):
     UsuarioEmpresa.objects.filter(user_id=usuario).delete()
     try:
         for empresa in empresas:
@@ -33,6 +34,5 @@ def save_permisos_empresa(request,usuario,empresas):
             usuarioempresa.empresa = empresa
             usuarioempresa.save()
         return json.dumps("sucess")
-    except :  
+    except:
         return json.dumps("fail")
-    

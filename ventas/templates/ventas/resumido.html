@@ -24,9 +24,9 @@
 {% block content %}
   {#  <select class="js-data-example-ajax" style="width: 50%;"></select>#}
 
-  <br>
-  Query
-  <pre id="preview"><p></p></pre><br>
+{#  <br>#}
+{#  Query#}
+{#  <pre id="preview"><p></p></pre><br>#}
 
   <div class="panel-group" id="accordion">
     <div class="panel panel-default">
@@ -236,7 +236,7 @@
       {#        $('.chosen-select').trigger('chosen:updated');#}
       {#      });#}
 
-      Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario': '{{user}}'});
+      Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario': '{{user.id}}'});
 
 
       $.get(api + 'clientes/tipos/').done(function (d) {
@@ -303,11 +303,11 @@
           vector.push("'" + data[a].empresa + "'")
         }
         var str = JSON.stringify({empresas: vector});
-        $.ajax("http://" + aux1[0] + ":3000/api/v1/empresa/inin/select", {
+        $.ajax(api + "empresa/inin/select", {
           method: 'POST',
           contentType: 'application/json',
           data: str
-        }).done(function (data) {
+        }).done(function (d) {
                   u.createSelect('empresa', d, 'Cod_Empresa', 'Des_Empresa');
                   $('.chosen-select').trigger('chosen:updated');
                 }
