@@ -76,6 +76,13 @@ router.get('/cuentaauxi/select/:empresa/:periodo', function (req, res, next) {
     });
 });
 
+//cuentas select option
+router.get('/cuentaauxi/query', function (req, res, next) {
+    CuentaContable.auxquery(req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
 //list balance general
 router.get('/balancegeneral/list/:empresa/:periodo/:cuentad/:cuentah/:mesd/:mesh/:nivel/:saldo/:moneda/:aux', function (req, res, next) {
     Balance.general(req.params, function (result) {
