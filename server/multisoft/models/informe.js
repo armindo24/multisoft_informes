@@ -15,7 +15,7 @@ Informe.all = function (params, filters, cb) {
         "dba.vtacab.cod_sucursal, cast(dba.vtacab.totaldescuento as decimal(20,2)), dba.vtacab.nroservicio, dba.vtacab.anulado, " +
         "dba.clientes.cat_iva, dba.clientes.ruc";
     var from = "dba.VtaCab, dba.Clientes, dba.TpoCbte";
-    var where = "(dba.vtacab.cod_empresa = ?)"
+    var where = "(dba.vtacab.anulado != 'S') and (dba.vtacab.cod_empresa = ?)"
     var args = [params.empresa];
     var join = "( dba.vtacab.cod_empresa = dba.clientes.cod_empresa ) and ( dba.vtacab.cod_cliente = dba.clientes.cod_cliente ) and ( dba.vtacab.cod_empresa =dba.tpocbte.cod_empresa ) and ( dba.vtacab.cod_tp_comp = dba.tpocbte.cod_tp_comp )";
 

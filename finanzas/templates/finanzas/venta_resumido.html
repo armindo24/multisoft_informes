@@ -74,6 +74,8 @@
       </thead>
       <tbody>
       </tbody>
+      <tfoot id="pie">
+      </tfoot>
     </table>
   </div>
 
@@ -87,6 +89,7 @@
     var $tbody = $resultados.find("tbody");
     var $preview = $('#preview');
     var $header = $('#cabecera');
+    var $footer = $('#pie');
 
     $(document).ready(function () {
       $resultados.hide();
@@ -105,7 +108,6 @@
 
       u.translate();
       $datepicker.datepicker("setDate", today);
-
 
       $(".chosen-select").chosen({
         disable_search_threshold: 0,
@@ -155,15 +157,25 @@
     });
 
     function getInforme() {
-      var row = null;
+      var row, i = null;
       var rows = [];
+      var floats = ['total_iva', 'to_gravado', 'to_exento', 'totaldescuento'];
+      var grav, total_global, total = 0;
+
       console.log("informe", query);
       $header.html("<h3>Desde " + query.fechad + " hasta " + query.fechah + "</h3>");
 
       $.get(api + 'empresas/' + query.empresa + '/informes/ventas_resumido', query).done(function (d) {
         console.log(d);
-        for (var i = 0; i < d.data.length; i++) {
+        total_global = 0.0;
+        for (i = 0; i < d.data.length; i++) {
           row = d.data[i];
+          for (var j = 0; j < floats.length; j++) {
+            {#            console.log(floats[j]);#}
+            row[floats[j]] = parseFloat(row[floats[j]]);
+          }
+
+          grav = row.to_gravado - row.total_iva;
           rows[i] = "<tr>" +
                   "<td>" + row.comp_numero + "</td>" +
                   "<td>" + row.cod_cliente + " " + row.razon_social + "</td>" +
@@ -171,14 +183,22 @@
                   "<td>" + row.fecha + "</td>" +
                   "<td>" + u.addCommas(row.fact_cambio) + "</td>" +
                   "<td>" + u.addCommas(row.total_iva) + "</td>" +
-                  "<td>" + u.addCommas(row.to_gravado) + "</td>" +
+                  "<td>" + u.addCommas(grav) + "</td>" +
                   "<td>" + u.addCommas(row.to_exento) + "</td>" +
                   "<td>" + u.addCommas(row.totaldescuento) + "</td>" +
-                  "<td>" + u.addCommas(row.totaldescuento) + "</td>" +
+                  "<td>" + u.addCommas(row.to_gravado) + "</td>" +
                   "</tr>";
+          total_global += parseFloat(row.to_gravado);
+          console.log(total_global);
         }
         $tbody.empty();
         $tbody.html(rows.join(''));
+        $footer.html("<tfoot>" +
+                "<tr>" +
+                "<td>Total</td>" +
+                "<td>" + u.addCommas(total_global) + "</td>" +
+                "</tr>" +
+                "</tfoot>");
         $resultados.show();
       });
     }
