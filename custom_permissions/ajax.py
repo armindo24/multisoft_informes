@@ -1,7 +1,7 @@
 '''
 Created on 3 de feb. de 2016
 
-@author: luke
+@author: lukee
 '''
 from dajaxice.decorators import dajaxice_register
 import json
