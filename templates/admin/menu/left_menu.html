@@ -6,7 +6,7 @@
 			</li>
 			{% if  request.session.modulo_seleccionado == "Ventas"  %}
 				<li>
-					<a href="/ventas/comprobante/resumido/"> Ventas por Comprobante - Resumido </a>
+					<a href="{% url 'ventas:resumido' %}"> Ventas por Comprobante - Resumido </a>
 			    </li>
 			    <li>
 					<a href="/ventas/ranking/articulos/"> Ranking de Art&#237;culos Vendidos </a>

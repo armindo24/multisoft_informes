@@ -63,7 +63,8 @@ u.SelectElement = function (value, name) {
     element.value = value;
 };
 
-u.addCommas = function (nStr) {
+u.addCommas = function (num) {
+    var nStr = (Math.round(num * 100) / 100).toString()
     nStr += '';
     var x = nStr.split('.');
     var x1 = x[0];
