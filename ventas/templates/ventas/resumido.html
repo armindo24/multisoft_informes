@@ -11,6 +11,7 @@
   <script src="{% static 'select2/js/select2.full.min.js' %}"></script>
   <script src={% static 'chosen_v1.4.2/chosen.jquery.js' %}></script>
   <script src={% static 'chosen_v1.4.2/docsupport/prism.js' %}></script>
+  <script src={% static 'dajaxice/dajaxice.core.js' %}></script>
   <script src="{% static 'js/utils.js' %}"></script>
   {#  {% include 'finanzas/balancegeneral_metodos.html' %}#}
 {% endblock %}
@@ -21,7 +22,7 @@
 
 
 {% block content %}
-{#  <select class="js-data-example-ajax" style="width: 50%;"></select>#}
+  {#  <select class="js-data-example-ajax" style="width: 50%;"></select>#}
 
   <br>
   Query
@@ -230,10 +231,13 @@
       });
 
 
-      $.get(api + 'empresa/select/').done(function (d) {
-        u.createSelect('empresa', d, 'Cod_Empresa', 'Des_Empresa');
-        $('.chosen-select').trigger('chosen:updated');
-      });
+      {#      $.get(api + 'empresa/select/').done(function (d) {#}
+      {#        u.createSelect('empresa', d, 'Cod_Empresa', 'Des_Empresa');#}
+      {#        $('.chosen-select').trigger('chosen:updated');#}
+      {#      });#}
+
+      Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario': '{{user}}'});
+
 
       $.get(api + 'clientes/tipos/').done(function (d) {
         u.createSelect('tipo_cliente', d, 'Cod_Tp_Cliente', 'Des_Tp_Cliente', true);
@@ -290,6 +294,25 @@
                 "");
         $resultados.show();
       });
+    }
+
+    function permisos_empresas(data) {
+      if (data.length > 0) {
+        var vector = []
+        for (var a = 0; a < data.length; a++) {
+          vector.push("'" + data[a].empresa + "'")
+        }
+        var str = JSON.stringify({empresas: vector});
+        $.ajax("http://" + aux1[0] + ":3000/api/v1/empresa/inin/select", {
+          method: 'POST',
+          contentType: 'application/json',
+          data: str
+        }).done(function (data) {
+                  u.createSelect('empresa', d, 'Cod_Empresa', 'Des_Empresa');
+                  $('.chosen-select').trigger('chosen:updated');
+                }
+        );
+      }
     }
   </script>
 {% endblock %}
