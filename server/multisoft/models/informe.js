@@ -5,7 +5,7 @@ var Informe = {};
 Informe.all = function (params, filters, cb) {
     console.log(params);
     console.log(filters);
-    conn.exec("SET ROWCOUNT 15"); //TODO: solucionar resultados muy grandes
+    conn.exec("SET ROWCOUNT 100"); //TODO: solucionar resultados muy grandes
 
     var select = "dba.vtacab.cod_tp_comp, dba.vtacab.comp_numero, dba.vtacab.cod_cliente, " +
         "dba.f_get_AsoAbreviatura(dba.vtacab.cod_empresa, dba.vtacab.cod_cliente, 'V') as razon_social, " +
@@ -40,9 +40,19 @@ Informe.all = function (params, filters, cb) {
         args.push(filters.fechah);
     }
 
+
     var sql = util.format("SELECT %s FROM %s WHERE %s and %s", select, from, where, join);
+    if (filters.order) {
+        if (filters.order == "cod_tp_comp") {
+            sql += " ORDER BY dba.vtacab.Cod_Tp_Comp";
+        } else if (filters.order == "cod_cliente") {
+            sql += " ORDER BY dba.vtacab.cod_cliente";
+        }
+    }
+
     console.log(sql);
     console.log(args);
+
     conn.exec(sql, args, function (err, r) {
         if (err) throw err;
         cb(r);
