@@ -1,17 +1,18 @@
 var Dajaxice = {
-
-    custom_permissions: {
-
-        get_permisos_empresa: function (callback_function, argv, callback_args, custom_settings) {
-            return Dajaxice.call('custom_permissions.get_permisos_empresa', 'POST', callback_function, argv, callback_args, custom_settings);
-        },
-        save_permisos_empresa: function (callback_function, argv, callback_args, custom_settings) {
-            return Dajaxice.call('custom_permissions.save_permisos_empresa', 'POST', callback_function, argv, callback_args, custom_settings);
-        }
-
-    },
-
-    get_cookie: function (name) {
+        
+        custom_permissions: {
+            
+            get_permisos_empresa: function(callback_function, argv, custom_settings){
+                return Dajaxice.call('custom_permissions.get_permisos_empresa', 'POST', callback_function, argv, custom_settings);
+            },
+            save_permisos_empresa: function(callback_function, argv, custom_settings){
+                return Dajaxice.call('custom_permissions.save_permisos_empresa', 'POST', callback_function, argv, custom_settings);
+            },
+            
+        },      
+                
+    get_cookie: function(name)
+    {
         var cookieValue = null;
         if (document.cookie && document.cookie != '') {
             var cookies = document.cookie.split(';');
@@ -27,7 +28,8 @@ var Dajaxice = {
         return cookieValue;
     },
 
-    call: function (dajaxice_function, method, dajaxice_callback, argv, callback_args, custom_settings) {
+    call: function(dajaxice_function, method, dajaxice_callback, argv, custom_settings)
+    {
         var custom_settings = custom_settings || {},
             error_callback = Dajaxice.get_setting('default_exception_callback');
 
@@ -59,7 +61,7 @@ var Dajaxice = {
                     catch (exception) {
                         response = this.responseText;
                     }
-                    dajaxice_callback(response, callback_args);
+                    dajaxice_callback(response);
                 }
             }
         }
