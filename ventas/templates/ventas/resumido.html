@@ -14,7 +14,6 @@
   <script src={% static 'chosen_v1.4.2/docsupport/prism.js' %}></script>
   <script src={% static 'dajaxice/dajaxice.core.js' %}></script>
   <script src="{% static 'js/utils.js' %}"></script>
-  {#  {% include 'finanzas/balancegeneral_metodos.html' %}#}
 {% endblock %}
 
 {% block header %}
@@ -23,7 +22,12 @@
 
 
 {% block content %}
-  {#  <select class="js-data-example-ajax" style="width: 50%;"></select>#}
+
+  <label>Agrupar por:</label>
+  <select name="order" data-placeholder="Agrupar..." onchange="" class="chosen-select" tabindex="2">
+    <option value="cod_tp_comp">Comprobante</option>
+    <option value="cod_cliente">Cliente</option>
+  </select>
 
   <br>
   Query
@@ -227,7 +231,8 @@
     });
 
     function getInforme() {
-      var group_field = 'des_tp_comp';
+      var mappings = {'cod_cliente': 'razon_social', 'cod_tp_comp': 'des_tp_comp'};
+      var group_field = mappings[query.order];
       var row, i = null;
       var rows = [];
       var floats = ['total_iva', 'to_gravado', 'to_exento', 'totaldescuento'];
