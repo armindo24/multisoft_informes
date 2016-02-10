@@ -25,9 +25,9 @@
 {% block content %}
   {#  <select class="js-data-example-ajax" style="width: 50%;"></select>#}
 
-    <br>
-    Query
-    <pre id="preview"><p></p></pre><br>
+  <br>
+  Query
+  <pre id="preview"><p></p></pre><br>
 
   <div class="panel-group" id="accordion">
     <div class="panel panel-default">
@@ -145,47 +145,7 @@
     var $preview = $('#preview');
     var $header = $('#cabecera');
 
-    {#    function formatRepo(repo) {#}
-    {#      if (repo.loading) return "Cargando...";#}
-    {#      return repo.text;#}
-    {#    }#}
-    {##}
-    {#    function formatRepoSelection(repo) {#}
-    {#      console.log("reposelect", repo);#}
-    {#      return '<b>' + repo.Cod_Cliente + '</b>';#}
-    {#    }#}
-
     $(document).ready(function () {
-
-      {#      $(".js-data-example-ajax").select2({#}
-      {#        ajax: {#}
-      {#          url: api + 'empresas/10/clientes',#}
-      {#          dataType: 'json',#}
-      {#          delay: 250,#}
-      {#          data: function (params) {#}
-      {#            return {#}
-      {#              cliente: params.term#}
-      {#            };#}
-      {#          },#}
-      {#          processResults: function (data, params) {#}
-      {#            var data = data.data;#}
-      {#            var r;#}
-      {#            for (var i = 0; i < data.length; i++) {#}
-      {#              r = data[i];#}
-      {#              r.id = r.Cod_Cliente;#}
-      {#            }#}
-      {#            console.log(data);#}
-      {#            return {#}
-      {#              results: data#}
-      {#            }#}
-      {#          },#}
-      {#          cache: true#}
-      {#        },#}
-      {#        minimumInputLength: 1,#}
-      {#        templateResult: function(res){#}
-      {#          return res.Razon_Social;#}
-      {#        }#}
-      {#      });#}
 
       u.hideNav();
       $resultados.hide();
@@ -246,13 +206,11 @@
         });
       });
 
-
-      {#      $.get(api + 'empresa/select/').done(function (d) {#}
-      {#        u.createSelect('empresa', d, 'Cod_Empresa', 'Des_Empresa');#}
-      {#        $('.chosen-select').trigger('chosen:updated');#}
-      {#      });#}
-
-      Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario': '{{user.id}}'});
+      u.get_empresas({{ user.id }}, function (d) {
+        u.createSelect('empresa', d, 'Cod_Empresa', 'Des_Empresa');
+        $('.chosen-select').trigger('chosen:updated');
+        $('[name=empresa]').trigger('change');
+      });
 
 
       $.get(api + 'clientes/tipos/').done(function (d) {
@@ -310,25 +268,6 @@
                 "");
         $resultados.show();
       });
-    }
-
-    function permisos_empresas(data) {
-      if (data.length > 0) {
-        var vector = []
-        for (var a = 0; a < data.length; a++) {
-          vector.push("'" + data[a].empresa + "'")
-        }
-        var str = JSON.stringify({empresas: vector});
-        $.ajax(api + "empresa/inin/select", {
-          method: 'POST',
-          contentType: 'application/json',
-          data: str
-        }).done(function (d) {
-                  u.createSelect('empresa', d, 'Cod_Empresa', 'Des_Empresa');
-                  $('.chosen-select').trigger('chosen:updated');
-                }
-        );
-      }
     }
   </script>
 {% endblock %}
