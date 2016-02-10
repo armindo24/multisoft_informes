@@ -1,13 +1,7 @@
-'''
-Created on 3 de feb. de 2016
-
-@author: lukee
-'''
 from dajaxice.decorators import dajaxice_register
 import json
 from custom_permissions.models import UsuarioEmpresa
 from django.core import serializers
-
 
 @dajaxice_register
 def get_permisos_empresa(request, usuario):

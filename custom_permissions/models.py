@@ -21,6 +21,6 @@ class CustomPermissions(models.Model):
     
 class UsuarioEmpresa(models.Model):
     class Meta:
-        permissions = (("entrar_asignacion","Asignacion de Empresas"),)
+        permissions = (("entrar_asignacion", "Asignacion de Empresas"),)
     user = models.ForeignKey(User)
     empresa = models.CharField(max_length=30)
