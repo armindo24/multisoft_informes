@@ -13,11 +13,12 @@ Informe.all = function (params, filters, cb) {
         "cast(dba.vtacab.total_iva as decimal(20,2)), dba.tpocbte.des_tp_comp, cast(dba.vtacab.fact_cambio as decimal(20,2)), " +
         "dba.vtacab.tipo_iva, dba.tpocbte.tp_def, dba.tpocbte.tpomvto, dba.vtacab.cod_empresa, dba.vtacab.codmoneda, " +
         "dba.vtacab.cod_sucursal, cast(dba.vtacab.totaldescuento as decimal(20,2)), dba.vtacab.nroservicio, dba.vtacab.anulado, " +
-        "dba.clientes.cat_iva, dba.clientes.ruc";
-    var from = "dba.VtaCab, dba.Clientes, dba.TpoCbte";
+        "dba.clientes.cat_iva, dba.clientes.ruc, dba.vendedor.des_vendedor";
+    var from = "dba.VtaCab, dba.Clientes, dba.TpoCbte, dba.Vendedor";
     var where = "(dba.vtacab.anulado != 'S') and (dba.vtacab.cod_empresa = ?)"
     var args = [params.empresa];
-    var join = "( dba.vtacab.cod_empresa = dba.clientes.cod_empresa ) and ( dba.vtacab.cod_cliente = dba.clientes.cod_cliente ) and ( dba.vtacab.cod_empresa =dba.tpocbte.cod_empresa ) and ( dba.vtacab.cod_tp_comp = dba.tpocbte.cod_tp_comp )";
+    var join = "( dba.vtacab.cod_empresa = dba.clientes.cod_empresa ) and ( dba.vtacab.cod_cliente = dba.clientes.cod_cliente ) and ( dba.vtacab.cod_empresa =dba.tpocbte.cod_empresa ) and ( dba.vtacab.cod_tp_comp = dba.tpocbte.cod_tp_comp )" +
+        " and (dba.vtacab.cod_vendedor = dba.vendedor.cod_vendedor)";
 
     if (filters.cliente) {
         where += " and (dba.vtacab.cod_cliente = ?)";
@@ -47,6 +48,8 @@ Informe.all = function (params, filters, cb) {
             sql += " ORDER BY dba.vtacab.Cod_Tp_Comp";
         } else if (filters.order == "cod_cliente") {
             sql += " ORDER BY dba.vtacab.cod_cliente";
+        } else if (filters.order == "cod_vendedor") {
+            sql += " ORDER BY dba.vtacab.cod_vendedor";
         }
     }
 

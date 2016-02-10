@@ -23,11 +23,6 @@
 
 {% block content %}
 
-  <label>Agrupar por:</label>
-  <select name="order" data-placeholder="Agrupar..." onchange="" class="chosen-select" tabindex="2">
-    <option value="cod_tp_comp">Comprobante</option>
-    <option value="cod_cliente">Cliente</option>
-  </select>
 
   <br>
   Query
@@ -42,6 +37,16 @@
         <div class="panel-body">
           <div class="panel-group text-center" id="archivo_accordion" style="margin-bottom: 0px;">
 
+            <div class="row show-grid">
+              <div class="col-sm-12">
+                <th><b>Agrupar por:</b></th>
+                <td><select name="order" data-placeholder="Agrupar..." onchange="" class="chosen-select" tabindex="2">
+                  <option value="cod_tp_comp">Comprobante</option>
+                  <option value="cod_cliente">Cliente</option>
+                  <option value="cod_vendedor">Vendedor</option>
+                </select></td>
+              </div>
+            </div>
             <div class="row show-grid">
               <div class="col-sm-12">
                 <th><b>Empresa:</b></th>
@@ -231,7 +236,7 @@
     });
 
     function getInforme() {
-      var mappings = {'cod_cliente': 'razon_social', 'cod_tp_comp': 'des_tp_comp'};
+      var mappings = {'cod_cliente': 'razon_social', 'cod_tp_comp': 'des_tp_comp', 'cod_vendedor': 'des_vendedor'};
       var group_field = mappings[query.order];
       var row, i = null;
       var rows = [];
@@ -273,17 +278,16 @@
                     "</tr>");
             total_global += parseFloat(row.to_gravado);
           }
+          createTable(rows, group, total_global);
         } else {
           console.log("no hay resultados");
-          {#          $tbody.html("<tr><td colspan='10'>No hay resultados</td></tr>");#}
+          createTable(["<tr><td colspan='10'>No hay resultados</td></tr>"], "No hay resultados", 0.0);
         }
-        createTable(rows, group, total_global);
         $results.show();
       });
     }
 
     function createTable(rows, group, total_global) {
-      console.log("creartabla", group);
       var $newTable = $emptyTable.clone();
       var $header = $newTable.find('.result-header');
       var $tbody = $newTable.find('tbody');
