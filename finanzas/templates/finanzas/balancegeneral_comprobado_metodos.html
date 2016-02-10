@@ -158,9 +158,13 @@
                                 '<td></td>' +
                                 '<td></td>' +
                                 '<td></td>' +
-                                '</tr>' +
-                                '<tr>' +
-                                '<td><b>' + data.data[a].CodPlanCta + '</b></td>' +
+                                '</tr>' 
+                                if (data.data[a].SALDO < 0) {
+                                        string+='<tr class="danger" >'
+                                    } else {
+                                        string+='<tr>'
+                                    }
+                               string+='<td><b>' + data.data[a].CodPlanCta + '</b></td>' +
                                 '<td><b>' + data.data[a].Nombre + '</b></td>'
                         if (moneda == 'local') {
                           string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO_ANTERIOR) + '</b></td>' +
@@ -175,9 +179,13 @@
                         }
                         string += '</tr>'
                       } else if (data.data[a].CodPlanCta.length == 2) {
-                        string += '<tr>' +
-                                '<td><b><u>' + data.data[a].CodPlanCta + '</u></b></td>' +
-                                '<td><b>&nbsp;&nbsp;&nbsp;<u>' + data.data[a].Nombre + '</u></b></td>'
+                            if (data.data[a].SALDO < 0) {
+                                string+='<tr class="danger" >'
+                            } else {
+                                string+='<tr>'
+                            }
+                            string+='<td><b><u>' + data.data[a].CodPlanCta + '</u></b></td>' +
+                            '<td><b>&nbsp;&nbsp;&nbsp;<u>' + data.data[a].Nombre + '</u></b></td>'
                         if (moneda == 'local') {
                           string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO_ANTERIOR) + '</b></td>' +
                                   '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].TOTAL_DEBITO) + '</b></td>' +
@@ -191,8 +199,12 @@
                         }
                         string += '</tr>'
                       } else if (data.data[a].CodPlanCta.length == 4) {
-                        string += '<tr>' +
-                                '<td><b>' + data.data[a].CodPlanCta + '</b></td>' +
+                            if (data.data[a].SALDO < 0) {
+                                string+='<tr class="danger" >'
+                            } else {
+                                string+='<tr>'
+                            }
+                            string+='<td><b>' + data.data[a].CodPlanCta + '</b></td>' +
                                 '<td><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + data.data[a].Nombre + '</b></td>'
                         if (moneda == 'local') {
                           string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO_ANTERIOR) + '</b></td>' +
@@ -207,8 +219,12 @@
                         }
                         string += '</tr>'
                       } else {
-                        string += '<tr>' +
-                                '<td>' + data.data[a].CodPlanCta + '</td>' +
+                            if (data.data[a].SALDO < 0) {
+                                string+='<tr class="danger" >'
+                            } else {
+                                string+='<tr>'
+                            }
+                                string+='<td>' + data.data[a].CodPlanCta + '</td>' +
                                 '<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + data.data[a].Nombre + '</td>'
                         if (moneda == 'local') {
                           string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO_ANTERIOR) + '</b></td>' +
@@ -245,9 +261,13 @@
                                   '<td></td>' +
                                   '<td></td>' +
                                   '<td></td>' +
-                                  '</tr>' +
-                                  '<tr>' +
-                                  '<td><b>' + data.data[a].CodPlanCta + '</b></td>' +
+                                  '</tr>' 
+                            if (data.data[a].SALDO < 0) {
+                                string+='<tr class="danger" >'
+                            } else {
+                                string+='<tr>'
+                            }
+                          string+='<td><b>' + data.data[a].CodPlanCta + '</b></td>' +
                                   '<td><b>' + data.data[a].Nombre + '</b></td>'
                           if (moneda == 'local') {
                             string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO_ANTERIOR) + '</b></td>' +
@@ -262,8 +282,12 @@
                           }
                           string += '</tr>'
                         } else if (data.data[a].CodPlanCta.length == 2) {
-                          string += '<tr>' +
-                                  '<td><b><u>' + data.data[a].CodPlanCta + '</u></b></td>' +
+                          if (data.data[a].SALDO < 0) {
+                                string+='<tr class="danger" >'
+                            } else {
+                                string+='<tr>'
+                            }
+                                  string +='<td><b><u>' + data.data[a].CodPlanCta + '</u></b></td>' +
                                   '<td><b>&nbsp;&nbsp;&nbsp;<u>' + data.data[a].Nombre + '</u></b></td>'
                           if (moneda == 'local') {
                             string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO_ANTERIOR) + '</b></td>' +
@@ -278,8 +302,12 @@
                           }
                           string += '</tr>'
                         } else if (data.data[a].CodPlanCta.length == 4) {
-                          string += '<tr>' +
-                                  '<td><b>' + data.data[a].CodPlanCta + '</b></td>' +
+                          if (data.data[a].SALDO < 0) {
+                                string+='<tr class="danger" >'
+                            } else {
+                                string+='<tr>'
+                            }
+                                  string+='<td><b>' + data.data[a].CodPlanCta + '</b></td>' +
                                   '<td><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + data.data[a].Nombre + '</b></td>'
                           if (moneda == 'local') {
                             string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO_ANTERIOR) + '</b></td>' +
@@ -294,8 +322,12 @@
                           }
                           string += '</tr>'
                         } else {
-                          string += '<tr>' +
-                                  '<td>' + data.data[a].CodPlanCta + '</td>' +
+                          if (data.data[a].SALDO < 0) {
+                                string+='<tr class="danger" >'
+                            } else {
+                                string+='<tr>'
+                            }
+                                   string+='<td>' + data.data[a].CodPlanCta + '</td>' +
                                   '<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + data.data[a].Nombre + '</td>'
                           if (moneda == 'local') {
                             string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO_ANTERIOR) + '</b></td>' +
@@ -314,8 +346,12 @@
                     }
                   }
 
-                  string += '<tr>' +
-                          '<td colspan="1"></td>' +
+                  if (total_saldo < 0) {
+                            string+='<tr class="danger" >'
+                        } else {
+                            string+='<tr>'
+                        }
+                          string+='<td colspan="1"></td>' +
                           '<td style="text-align: right;"><b>TOTALES</b></td>'
                   if (moneda == 'local') {
                     string += '<td style="text-align: right;"><b>' + convertir_rever(total_saldo_anterior) + '</b></td>' +
