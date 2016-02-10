@@ -5,6 +5,7 @@
   <link rel="stylesheet" href={% static 'chosen_v1.4.2/chosen.css' %}>
   <link rel="stylesheet" href={% static 'chosen_v1.4.2/docsupport/prism.css' %}>
   <link rel="stylesheet" href="{% static 'select2/css/select2.min.css' %}">
+  <link rel="stylesheet" href="{% static 'styles.css' %}">
   <script src={% static 'js/jquery-ui.js' %}></script>
   <script src={% static 'js/puntos-decimales.js' %}></script>
   <script src={% static 'js/jquery.maskedinput.min.js' %}></script>
@@ -120,12 +121,12 @@
         <th>Cliente</th>
         <th>RUC</th>
         <th>Fecha</th>
-        <th>Factor Cambio</th>
-        <th>IVA</th>
-        <th>Gravado</th>
-        <th>Exento</th>
-        <th>Total Descuentos</th>
-        <th>Total</th>
+        <th class="price-label">Factor Cambio</th>
+        <th class="price-label">IVA</th>
+        <th class="price-label">Gravado</th>
+        <th class="price-label">Exento</th>
+        <th class="price-label">Total Descuentos</th>
+        <th class="price-label">Total</th>
       </tr>
       </thead>
       <tbody>
@@ -289,12 +290,12 @@
                   "<td>" + row.cod_cliente + " " + row.razon_social + "</td>" +
                   "<td>" + row.ruc + "</td>" +
                   "<td>" + row.fecha + "</td>" +
-                  "<td>" + u.addCommas(row.fact_cambio) + "</td>" +
-                  "<td>" + u.addCommas(row.total_iva) + "</td>" +
-                  "<td>" + u.addCommas(grav) + "</td>" +
-                  "<td>" + u.addCommas(row.to_exento) + "</td>" +
-                  "<td>" + u.addCommas(row.totaldescuento) + "</td>" +
-                  "<td>" + u.addCommas(row.to_gravado) + "</td>" +
+                  "<td class='price-value'>" + u.addCommas(row.fact_cambio) + "</td>" +
+                  "<td class='price-value'>" + u.addCommas(row.total_iva) + "</td>" +
+                  "<td class='price-value'>" + u.addCommas(grav) + "</td>" +
+                  "<td class='price-value'>" + u.addCommas(row.to_exento) + "</td>" +
+                  "<td class='price-value'>" + u.addCommas(row.totaldescuento) + "</td>" +
+                  "<td class='price-value'>" + u.addCommas(row.to_gravado) + "</td>" +
                   "</tr>";
           total_global += parseFloat(row.to_gravado);
           console.log(total_global);
@@ -304,7 +305,7 @@
         $tbody.append("" +
                 "<tr>" +
                 "<td colspan='9'><b>Total</b></td>" +
-                "<td><b>" + u.addCommas(total_global) + "</b></td>" +
+                "<td class='price-value'><b>" + u.addCommas(total_global) + "</b></td>" +
                 "</tr>" +
                 "");
         $resultados.show();
