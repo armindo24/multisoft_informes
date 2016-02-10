@@ -98,3 +98,26 @@ var spanish = {
 u.translate = function () {
     $.datepicker.setDefaults(spanish);
 };
+
+var permisos_empresas = function (data, args) {
+    if (data.length > 0) {
+        var vector = []
+        for (var a = 0; a < data.length; a++) {
+            vector.push("'" + data[a].empresa + "'")
+        }
+        var str = JSON.stringify({empresas: vector});
+        $.ajax(api + "empresa/inin/select", {
+            method: 'POST',
+            contentType: 'application/json',
+            data: str
+        }).done(function (d) {
+                if (args.cb) args.cb(d);
+            }
+        );
+    }
+};
+
+u.get_empresas = function (user_id, cb) {
+    console.log("getempresas");
+    Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario': user_id}, {'cb': cb});
+};
