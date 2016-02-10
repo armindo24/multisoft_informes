@@ -64,14 +64,14 @@ function SelectElement(value,name){
 function addCommas(nStr)
 {
 	nStr += '';
-	x = nStr.split('.');
-	x1 = x[0];
-	x2 = x.length > 1 ? ',' + x[1] : '';
-	var rgx = /(\d+)(\d{3})/;
-	while (rgx.test(x1)) {
-		x1 = x1.replace(rgx, '$1' + '.' + '$2');
-	}
-	return x1 + x2;
+    x = nStr.split('.');
+    x1 = x[0];
+    x2 = x.length > 1 ? ',' + x[1] : '';
+    var rgx = /(\d+)(\d{3})/;
+    while (rgx.test(x1)) {
+        x1 = x1.replace(rgx, '$1' + '.' + '$2');
+    }
+    return x1 + x2;
 }
 
 
@@ -160,9 +160,13 @@ function buscar(){
 										   '<td></td>'+
 										   '<td></td>'+
 										   '<td></td>'+
-									    '</tr>'+
-									    '<tr>'+
-										   '<td><b>'+data.data[a].CodPlanCta+'</b></td>'+
+									    '</tr>'
+								   if (data.data[a].SALDO < 0) {
+									    string+='<tr class="danger" >'
+									} else {
+									    string+='<tr>'
+									}
+								   string+='<td><b>'+data.data[a].CodPlanCta+'</b></td>'+
 										   '<td><b>'+data.data[a].Nombre+'</b></td>'
 								if (moneda == 'local'){
 										   string+='<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'
@@ -171,8 +175,12 @@ function buscar(){
 			    				}
 							    string+='</tr>'
 					    } else if (data.data[a].CodPlanCta.length == 2){
-						    	string+='<tr>'+
-										   '<td><b><u>'+data.data[a].CodPlanCta+'</u></b></td>'+
+						    	if (data.data[a].SALDO < 0) {
+                                        string+='<tr class="danger" >'
+                                    } else {
+                                        string+='<tr>'
+                                    }
+								   string+='<td><b><u>'+data.data[a].CodPlanCta+'</u></b></td>'+
 										   '<td><b>&nbsp;&nbsp;&nbsp;<u>'+data.data[a].Nombre+'</u></b></td>'
 								if (moneda == 'local'){
 										   string+='<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'
@@ -181,8 +189,12 @@ function buscar(){
 			    				}
 							    string+='</tr>'
 					    } else if (data.data[a].CodPlanCta.length == 4){
-						    	string+='<tr>'+
-										   '<td><b>'+data.data[a].CodPlanCta+'</b></td>'+
+						    	if (data.data[a].SALDO < 0) {
+                                        string+='<tr class="danger" >'
+                                    } else {
+                                        string+='<tr>'
+                                    }
+								   string+='<td><b>'+data.data[a].CodPlanCta+'</b></td>'+
 										   '<td><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+data.data[a].Nombre+'</b></td>'
 							   if (moneda == 'local'){
 										   string+='<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'
@@ -191,8 +203,12 @@ function buscar(){
 			    				}
 							    string+='</tr>'
 					    } else if (data.data[a].CodPlanCta.length > 4 && data.data[a].CodPlanCta.length < 10){
-						    	string+='<tr>'+
-										   '<td>'+data.data[a].CodPlanCta+'</td>'+
+						    	if (data.data[a].SALDO < 0) {
+                                        string+='<tr class="danger" >'
+                                    } else {
+                                        string+='<tr>'
+                                    }
+								   string+='<td>'+data.data[a].CodPlanCta+'</td>'+
 										   '<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+data.data[a].Nombre+'</td>'
 								if (moneda == 'local'){
 										   string+='<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'
@@ -202,8 +218,12 @@ function buscar(){
 							    string+='</tr>'
 					    } else {
 					    	var new_codigo = data.data[a].CodPlanCta.toString().split('-')
-						    	string+='<tr>'+
-										   '<td></td>'+
+						    	if (data.data[a].SALDO < 0) {
+                                        string+='<tr class="danger" >'
+                                    } else {
+                                        string+='<tr>'
+                                    }
+								   string+='<td></td>'+
 										   '<td style="font-size: 12px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+new_codigo[1]+" - "+data.data[a].Nombre+'</td>'
 							   if (moneda == 'local'){
 										   string+='<td style="text-align: right;"><b>'+convertir_rever(data.data[a].SALDO)+'</b></td>'
@@ -213,8 +233,12 @@ function buscar(){
 							    string+='</tr>'
 					    }
 				    }
-				    	string+='<tr>'+
-								   '<td></td>'+
+				    	if (total_saldo < 0) {
+                            string+='<tr class="danger" >'
+                        } else {
+                            string+='<tr>'
+                        }
+						   string+='<td></td>'+
 								   '<td><b>TOTALES</b></td>'
 						if (moneda == 'local'){
 								   string+='<td style="text-align: right;"><b>'+convertir_rever(total_saldo)+'</b></td>'
@@ -222,9 +246,19 @@ function buscar(){
 						    	   string+='<td style="text-align: right;"><b>'+addCommas((Math.round(total_saldo * 100) / 100).toString())+'</b></td>'
 			    				}
 						 string+='</tr>'
-					string+='<tr>'
+					if (ingreso-egreso < 0) {
+                            string+='<tr class="danger" >'
+                        } else {
+                            string+='<tr>'
+                        }
 						if (moneda == 'local'){
-							   string+='<td style="text-align: center;" colspan="4"><b>Resultado del Ejercicio: '+convertir_rever(ingreso-egreso)+'</b></td>'
+						      alert(ingreso)
+						      alert(egreso)
+						       if (ingreso == null && egreso == null){
+						          string+='<td style="text-align: center;" colspan="4"><b>Resultado del Ejercicio: 0</b></td>'    
+						       } else {
+							      string+='<td style="text-align: center;" colspan="4"><b>Resultado del Ejercicio: '+convertir_rever(ingreso-egreso)+'</b></td>'
+							   }  
 						} else {
 					    	   string+='<td style="text-align: center;" colspan="4"><b>Resultado del Ejercicio: '+addCommas((Math.round((ingreso-egreso) * 100) / 100).toString())+'</b></td>'
 	    				}
