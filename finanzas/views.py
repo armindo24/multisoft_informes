@@ -31,3 +31,7 @@ def mayor_cuentasauxiliar(request):
 #TODO: Requerir permiso
 def extracto_cuentas_banco(request):
     return render_to_response('finanzas/extracto_cuentas_banco.html', {'user': request.user.id}, context_instance=RequestContext(request))
+
+@permission_required('custom_permissions.informe_centrocostos')
+def centro_costos(request):
+    return render_to_response('finanzas/centro_costos.html', {'user':request.user.id}, context_instance=RequestContext(request))

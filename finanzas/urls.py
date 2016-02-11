@@ -8,5 +8,6 @@ urlpatterns = patterns('',
     url(r'^diario_comprobado/$',  'finanzas.views.diario_comprobado', name="diario_comprobado"),
     url(r'^mayor_cuentas/$',  'finanzas.views.mayor_cuentas', name="mayor_cuentas"),
     url(r'^mayor_cuentas_auxiliar/$',  'finanzas.views.mayor_cuentasauxiliar', name="mayor_cuentasauxiliar"),
-    url(r'^extracto_cuentas_banco/$', views.extracto_cuentas_banco, name='extracto_cuentas_banco')
+    url(r'^extracto_cuentas_banco/$', views.extracto_cuentas_banco, name='extracto_cuentas_banco'),
+    url(r'^centro_costos/$',  'finanzas.views.centro_costos', name="centro_costos"),
 )
