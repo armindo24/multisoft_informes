@@ -57,6 +57,26 @@
         </div>
       </div>
     </div>
+    <div class="panel-footer">
+      <a type="button" class="btn btn-primary" onclick="getInforme()">Filtrar <i class="fa fa-search"></i></a>
+    </div>
+  </div>
+  <div class="results">
+    <div class="result-group">
+      <div class="result-header"></div>
+      <table class="table table-striped table-hover table-bordered table-filter scroll">
+        <thead>
+        <tr>
+          <th>Observacion</th>
+          <th># Deposito</th>
+          <th>Fecha</th>
+          <th class="price-label">Total</th>
+        </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
   </div>
 {% endblock %}
 
@@ -68,7 +88,7 @@
     var $preview = $('#preview');
 
     var $results = $('.results');
-    var $emptyTable = $('.result-group').clone();
+    var $emptyTable = $('.result-group');
 
     $(document).ready(function () {
       u.hideNav();
@@ -128,7 +148,51 @@
         u.createSelect('empresa', d, 'Cod_Empresa', 'Des_Empresa');
         $('.chosen-select').trigger('chosen:updated');
       });
-
     });
+
+    var getInforme = function () {
+      var row, i = null;
+      var rows = [];
+      var floats = ['tot_efectivo'];
+      $results.hide();
+      $results.empty();
+      $.get(api + 'empresas/' + query.empresa + '/informes/deposito', query).done(function (d) {
+        if (d.data.length > 0) {
+          for (i = 0; i < d.data.length; i++) {
+            row = d.data[i];
+
+            for (var j = 0; j < floats.length; j++) {
+              row[floats[j]] = parseFloat(row[floats[j]]);
+            }
+
+            rows.push("<tr>" +
+                    "<td>" + row.observ + "</td>" +
+                    "<td>" + row.nrodeposito + "</td>" +
+                    "<td>" + row.fecha + "</td>" +
+                    "<td class='price-value'>" + u.addCommas(row.tot_efectivo) + "</td>" +
+                    "</tr>");
+          }
+          createTable(rows, "Deposito", d.aggregates[0].total);
+          $results.show();
+        }
+      });
+    };
+
+    function createTable(rows, group, total_global) {
+      var $newTable = $emptyTable;
+      var $header = $newTable.find('.result-header');
+      var $tbody = $newTable.find('tbody');
+
+      $header.html('<h3>' + group + '</h3>');
+      $tbody.html(rows.join(''));
+      $tbody.append("" +
+              "<tr>" +
+              "<td colspan='3'><b>Total</b></td>" +
+              "<td class='price-value'><b>" + u.addCommas(total_global) + "</b></td>" +
+              "</tr>" +
+              "");
+      $results.append($newTable);
+    }
+
   </script>
 {% endblock %}
