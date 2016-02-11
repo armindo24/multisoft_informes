@@ -13,6 +13,7 @@ var Mayor = require('../models/mayor');
 var Cliente = require('../models/cliente');
 var Informe = require('../models/informe');
 var Grupo = require('../models/grupo');
+var ExtractoCuenta = require('../models/extractoCuenta');
 
 var conn = require('../db');
 
@@ -178,6 +179,12 @@ router.get('/empresas/:empresa/comprobantes/tipos', function (req, res, next) {
 // Informe ventas resumido por comprobante
 router.get('/empresas/:empresa/informes/ventas_resumido', function (req, res, next) {
     Informe.all(req.params, req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/empresas/:empresa/informes/deposito/:cuenta', function (req, res, next) {
+    ExtractoCuenta.depositos(req.params, req.query, function (result) {
         res.json({data: result});
     });
 });
