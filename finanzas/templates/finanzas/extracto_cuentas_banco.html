@@ -61,6 +61,13 @@
       <a type="button" class="btn btn-primary" onclick="getInforme()">Filtrar <i class="fa fa-search"></i></a>
     </div>
   </div>
+
+  <ul class="nav nav-pills">
+    <li role="presentation" class="active" id="deposito"><a href="#">Deposito</a></li>
+    <li role="presentation" id="extraccion"><a href="#">Extraccion</a></li>
+    <li role="presentation" id="extracto"><a href="#">Extracto</a></li>
+  </ul>
+
   <div class="results">
     <div class="result-group">
       <div class="result-header"></div>
@@ -82,7 +89,9 @@
 
 {% block extra_foot %}
   <script>
-    var query = {};
+    var query = {
+      tab: 'deposito'
+    };
 
     var api = u.getApiUrl();
     var $preview = $('#preview');
@@ -103,6 +112,14 @@
           query[inst.id] = dateText;
           $preview.text(JSON.stringify(query));
         }
+      });
+
+      $(".nav.nav-pills li").on("click", function (e) {
+        $(".nav.nav-pills li.active").removeClass("active");
+        $(this).addClass('active');
+        query.tab = this.id;
+        $preview.text(JSON.stringify(query));
+        getInforme();
       });
 
       u.translate();
@@ -172,7 +189,7 @@
                     "<td class='price-value'>" + u.addCommas(row.tot_efectivo) + "</td>" +
                     "</tr>");
           }
-          createTable(rows, "Deposito", d.aggregates[0].total);
+          createTable(rows, query.tab, d.aggregates[0].total);
           $results.show();
         }
       });
@@ -183,7 +200,7 @@
       var $header = $newTable.find('.result-header');
       var $tbody = $newTable.find('tbody');
 
-      $header.html('<h3>' + group + '</h3>');
+      $header.html('<h3 class="text-capitalize">' + group + '</h3>');
       $tbody.html(rows.join(''));
       $tbody.append("" +
               "<tr>" +
