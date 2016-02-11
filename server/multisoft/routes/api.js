@@ -157,6 +157,12 @@ router.get('/empresas/:empresa/bancos', function (req, res, next) {
     });
 });
 
+router.get('/empresas/:empresa/cuentas/:banco', function (req, res, next) {
+    Empresa.cuentas(req.params, req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
 router.get('/clientes/tipos', function (req, res, next) {
     Cliente.tipos(function (result) {
         res.json({data: result});

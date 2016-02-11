@@ -48,10 +48,20 @@ Empresa.clientes = function (empresa, query, cb) {
 };
 
 Empresa.bancos = function (params, query, cb) {
-    var sql = "select b.codbanco, b.descrip from cuentabancaria c join bancos b on b.codbanco = c.codbanco where Cod_Empresa = ?"
+    var sql = "select b.codbanco, b.descrip from dba.cuentabancaria c join dba.bancos b on b.codbanco = c.codbanco where Cod_Empresa = ?"
     var sql_params = [params.empresa];
     conn.exec(sql, sql_params, function (err, row) {
         if (err) throw err;
+        cb(row);
+    });
+};
+
+
+Empresa.cuentas = function (params, query, cb) {
+    var sql = "select c.cuentabanco, c.nombre from dba.cuentabancaria c where c.codbanco = ? and c.cod_empresa = ?";
+    var sql_params = [params.banco, params.empresa];
+    conn.exec(sql, sql_params, function (err, row) {
+        if (err) throw  err;
         cb(row);
     });
 };
