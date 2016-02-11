@@ -1,5 +1,8 @@
-<style>
-
+<style>       
+.span3 {  
+    height: 500px !important;
+    overflow: scroll;
+}
 </style>
 
 <script type="text/javascript">
@@ -686,5 +689,50 @@ function permisos_empresas(data){
         );
     }
 } 
+
+function search_cuenta(b){
+    console.log(b)
+    $('#fromcall').val(b) 
+    $("#modalCuentas").modal("show");
+    $('#tableCuentas tbody').empty(); 
+}
+
+function filtro_cuenta(){
+    var filtros = null
+    if ($('[name=codigo]').val() == "CO") {
+        filtros = JSON.stringify({codigo: $('[name=filtro]').val()});
+    } else {
+       filtros = JSON.stringify({nombre: $('[name=filtro]').val()}); 
+    }
+    
+    $.ajax("http://"+aux1[0]+":3000/api/v1/cuentaauxi/query/"+$('[name=periodo]').val()+"/"+$('[name=empresa]').val()+"/"+$('[name=cuentad]').val()+"/"+$('[name=cuentah]').val(),{method:'POST', contentType:'application/json', data: filtros}).done(
+        function(data) {
+            if (data != null){
+                console.log(data)
+                for (var i=0;i < data.data.length;i++){
+                    var string = '<tr id="cuenta-row-'+data.data[i].CodPlanAux+'">'+
+                                    '<td class="codigo">'+data.data[i].CodPlanAux+'</td>'+
+                                    '<td class="nombre">'+data.data[i].Nombre+'</td>'+
+                                    '<td class="padre">'+data.data[i].CodPlanCta+'</td>'+
+                                    '<td><a class="btn btn-success btn-sm" onclick="cargar_cuenta(&quot;'+data.data[i].CodPlanAux+'&quot;)" title="Selecionar"><i class="fa fa-check"></i></td>'+
+                                 '</tr>';
+                    $('#tableCuentas tbody').html(string);
+                }
+            }
+        }
+    );
+}
+
+function cargar_cuenta(a){
+    $("#modalCuentas").modal("hide");
+    console.log($('#fromcall').val())
+    if ($('#fromcall').val() == "cuentaad_name"){
+        $('[name=cuentaad]').val($('#cuenta-row-'+a).children('.codigo').text());
+        $('[name=cuentaad_name]').val($('#cuenta-row-'+a).children('.codigo').text()+' - '+$('#cuenta-row-'+a).children('.nombre').text());
+    } else {
+        $('[name=cuentaah]').val($('#cuenta-row-'+a).children('.codigo').text());
+        $('[name=cuentaah_name]').val($('#cuenta-row-'+a).children('.codigo').text()+' - '+$('#cuenta-row-'+a).children('.nombre').text());
+    }
+}
 </script>
 

@@ -78,8 +78,8 @@ router.get('/cuentaauxi/select/:empresa/:periodo', function (req, res, next) {
 });
 
 //cuentas select option
-router.get('/cuentaauxi/query', function (req, res, next) {
-    CuentaContable.auxquery(req.query, function (result) {
+router.post('/cuentaauxi/query/:periodo/:empresa/:cuentad/:cuentah', function (req, res, next) {
+    CuentaContable.auxquery(req.params,req.body, function (result) {
         res.json({data: result});
     });
 });
