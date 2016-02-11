@@ -27,3 +27,7 @@ def mayor_cuentas(request):
 @permission_required('custom_permissions.informe_mayorcuentaauxiliar')
 def mayor_cuentasauxiliar(request):
     return render_to_response('finanzas/mayor_cuentas_auxiliares.html', {'user':request.user.id}, context_instance=RequestContext(request))
+
+@permission_required('custom_permissions.informe_centrocostos')
+def centro_costos(request):
+    return render_to_response('finanzas/centro_costos.html', {'user':request.user.id}, context_instance=RequestContext(request))

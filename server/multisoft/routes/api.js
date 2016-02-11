@@ -13,6 +13,7 @@ var Mayor = require('../models/mayor');
 var Cliente = require('../models/cliente');
 var Informe = require('../models/informe');
 var Grupo = require('../models/grupo');
+var CentroCostos = require('../models/centrocostos');
 
 var conn = require('../db');
 
@@ -163,7 +164,7 @@ router.get('/empresas/:empresa/comprobantes/tipos', function (req, res, next) {
     });
 });
 
-// Informe ventas resumido por comprobante
+// Informe ventas resumido y detallado
 router.get('/empresas/:empresa/informes/ventas_resumido', function (req, res, next) {
     Informe.all(req.params, req.query, function (result) {
         res.json({data: result});
@@ -172,6 +173,13 @@ router.get('/empresas/:empresa/informes/ventas_resumido', function (req, res, ne
 
 router.get('/grupos', function (req, res, next) {
     Grupo.all(function (result) {
+        res.json({data: result});
+    });
+});
+
+// Informe ventas resumido por comprobante
+router.get('/centrocostos/list/:empresa/:periodo/:cuentad/:cuentah/:cuentaad/:cuentaah/:mesd/:mesh/:nivel', function (req, res, next) {
+    CentroCostos.all(req.params, function (result) {
         res.json({data: result});
     });
 });

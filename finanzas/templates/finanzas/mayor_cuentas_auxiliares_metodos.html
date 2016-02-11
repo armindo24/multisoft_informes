@@ -708,16 +708,16 @@ function filtro_cuenta(){
     $.ajax("http://"+aux1[0]+":3000/api/v1/cuentaauxi/query/"+$('[name=periodo]').val()+"/"+$('[name=empresa]').val()+"/"+$('[name=cuentad]').val()+"/"+$('[name=cuentah]').val(),{method:'POST', contentType:'application/json', data: filtros}).done(
         function(data) {
             if (data != null){
-                console.log(data)
+                var string = "";
                 for (var i=0;i < data.data.length;i++){
-                    var string = '<tr id="cuenta-row-'+data.data[i].CodPlanAux+'">'+
+                        string+= '<tr id="cuenta-row-'+data.data[i].CodPlanAux+'">'+
                                     '<td class="codigo">'+data.data[i].CodPlanAux+'</td>'+
                                     '<td class="nombre">'+data.data[i].Nombre+'</td>'+
                                     '<td class="padre">'+data.data[i].CodPlanCta+'</td>'+
                                     '<td><a class="btn btn-success btn-sm" onclick="cargar_cuenta(&quot;'+data.data[i].CodPlanAux+'&quot;)" title="Selecionar"><i class="fa fa-check"></i></td>'+
                                  '</tr>';
-                    $('#tableCuentas tbody').html(string);
                 }
+                $('#tableCuentas tbody').html(string);
             }
         }
     );

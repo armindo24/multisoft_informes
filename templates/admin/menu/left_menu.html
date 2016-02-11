@@ -6,7 +6,7 @@
 			</li>
 			{% if  request.session.modulo_seleccionado == "Ventas"  %}
 				<li>
-					<a href="{% url 'ventas:resumido' %}"> Ventas por Comprobante - Resumido </a>
+					<a href="{% url 'ventas:resumido' %}"> Ventas - Resumido y Detallado </a>
 			    </li>
 			    <li>
 					<a href="/ventas/ranking/articulos/"> Ranking de Art&#237;culos Vendidos </a>
@@ -17,10 +17,10 @@
 					<a href="#"> Balances <span class="fa arrow"></span></a>
 						<ul class="nav nav-second-level">
 							<li>
-								<a href="/finanzas/balancegeneral/"> General y Estado de Resultado </a>
+								<a href="{% url 'finanzas:balancegeneral' %}"> General y Estado de Resultado </a>
 						    </li>
 							<li>
-								<a href="/finanzas/balancegeneral_comprobado/"> Comprobado </a>
+								<a href="{% url 'finanzas:balancegeneral_comprobado' %}"> Comprobado </a>
 						    </li>
 						</ul>
 				</li>
@@ -28,26 +28,29 @@
 					<a href="#"> Libros <span class="fa arrow"></span></a>
 						<ul class="nav nav-second-level">
 							<li>
-								<a href="/finanzas/diario_comprobado/"> Diario </a>
+								<a href="{% url 'finanzas:diario_comprobado' %}"> Diario </a>
 						    </li>
 							<li>
-								<a href="/finanzas/mayor_cuentas/"> Mayor de Cuentas </a>
+								<a href="{% url 'finanzas:mayor_cuentas' %}"> Mayor de Cuentas </a>
 						    </li>
 						    <li>
-                                <a href="/finanzas/mayor_cuentas_auxiliar/"> Mayor de Cuentas Auxiliares</a>
+                                <a href="{% url 'finanzas:mayor_cuentasauxiliar' %}"> Mayor de Cuentas Auxiliares</a>
                             </li>
 						</ul>
 				</li>
 				<li>
-					<a href="/finanzas/ordenpago/"> &#211;rdenes de Pago </a>
+					<a href="{% url 'finanzas:ordenpago' %}"> &#211;rdenes de Pago </a>
 			    </li>
+			    <li>
+                    <a href="{% url 'finanzas:centro_costos' %}"> Centro de Costos </a>
+                </li>
 		    {% endif %}
 			{% if  request.session.modulo_seleccionado == "Admin"  %}
 			<li>
 				<a href="/admin/auth/"> Usuarios </a>
 			</li>
 			<li>
-                <a href="/custom_permissions/asignar_empresa_usuario/"> Asignación de Empresas </a>
+                <a href="{% url 'custom_permissions:asignar_empresa_usuario' %}"> Asignación de Empresas </a>
             </li>
 			{% endif %}
     	</ul>
