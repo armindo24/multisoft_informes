@@ -62,15 +62,22 @@ donde.focus()
 }	
 
 function convertir_rever(str){
-	str=str+""
-	if(str == ""){
-	//return '0,00'
-	return ""
-	}
-	var vector=str.split(".")
-	var parte_entera=vector[0]
+    var negativo = false;
+    
+    if (parseInt(str) < 0){
+        negativo = true;
+        str = parseInt(str)*-1
+    }
+    
+    str=str+""
+    if(str == ""){
+    //return '0,00'
+    return ""
+    }
+    var vector=str.split(".")
+    var parte_entera=vector[0]
 
-	//var parte_decimal=(vector[1] == "" || vector[1] == null)? "00":((vector[1].length==1)? vector[1]+"0" : vector[1])
+    //var parte_decimal=(vector[1] == "" || vector[1] == null)? "00":((vector[1].length==1)? vector[1]+"0" : vector[1])
    var cont=0
    var nuevo=""
    for(var i=parte_entera.length-1; i>=0;i--){
@@ -83,10 +90,14 @@ function convertir_rever(str){
     cont++;
    }
  
- //return (nuevo+","+parte_decimal)
-  return (nuevo)
+  if (negativo == true) {
+      return ("-"+nuevo)
+  } else {
+      return (nuevo)
+  }
  
 }
+
 function convertir(str) {
 	str=str+""
 	if(str == "" ){

@@ -16,11 +16,27 @@ CuentaContable.aux = function (params,cb) {
     });
 };
 
-CuentaContable.auxquery = function (query,cb) {
-    conn.exec("select top 30 DBA.PLANAUXI.CodPlanAux as id,"+
-              "(cast(DBA.PLANAUXI.CodPlanAux as varchar)+'/'+cast(DBA.PLANAUXI.CodPlanCta as varchar)+' - '+Nombre) as nombre  "+
-              "from DBA.PLANAUXI where Cod_Empresa = '"+query.empresa+"' and PERIODO = "+query.periodo+" and nombre like '"+query.texto+"%'"+
-              "ORDER BY DBA.PLANAUXI.CodPlanAux", function(err, row){
+CuentaContable.auxquery = function (params,query,cb) {
+    if (query.nombre == null)
+        query.nombre = ""
+    if (query.codigo == null)
+        query.codigo = ""
+    console.log("select * from dba.PLANAUXI "+
+                "where periodo = '"+params.periodo+"' "+
+                "and Cod_Empresa = '"+params.empresa+"' "+
+                "and Imputable = 'S' "+
+                "and dba.PLANAUXI.CodPlanCta >= '"+params.cuentad+"' "+
+                "and dba.PLANAUXI.CodPlanCta <= '"+params.cuentah+"' "+
+                "and dba.PLANAUXI.Nombre like '%"+query.nombre+"%' "+
+                "and dba.PLANAUXI.CodPlanAux like '%"+query.codigo+"%'")
+    conn.exec("select * from dba.PLANAUXI "+
+                "where periodo = '"+params.periodo+"' "+
+                "and Cod_Empresa = '"+params.empresa+"' "+
+                "and Imputable = 'S' "+
+                "and dba.PLANAUXI.CodPlanCta >= '"+params.cuentad+"' "+
+                "and dba.PLANAUXI.CodPlanCta <= '"+params.cuentah+"' "+
+                "and dba.PLANAUXI.Nombre like '%"+query.nombre+"%' "+
+                "and dba.PLANAUXI.CodPlanAux like '%"+query.codigo+"%'", function(err, row){
         if (err) throw err;
         cb(row);
     });
