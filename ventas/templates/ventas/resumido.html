@@ -147,6 +147,7 @@
 
 {% block extra_foot %}
   <script>
+    //TODO: chequear ajax innecesarios!
     var query = {
       order: 'comprobante'
     };
@@ -183,7 +184,7 @@
         allow_single_deselect: true
       });
 
-      $('.chosen-select').on('change chosen:updated', function (evt, params) {
+      $('.chosen-select').on('change', function (evt, params) {
         var select = $(this);
         var select_name = select.attr('name');
         query[select_name] = select.val();
@@ -220,7 +221,6 @@
       u.get_empresas({{ user.id }}, function (d) {
         u.createSelect('empresa', d, 'Cod_Empresa', 'Des_Empresa');
         $('.chosen-select').trigger('chosen:updated');
-        $('[name=empresa]').trigger('change');
       });
 
 

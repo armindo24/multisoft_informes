@@ -51,6 +51,7 @@ u.createSelect = function (selectName, data, op_val, op_text, ninguno) {
             select.add(option);
         }
         u.SelectElement(ninguno ? '' : data.data[0][op_val], selectName);
+        $('[name=' + selectName + ']').trigger('change');
     } else {
         console.log('vacio');
     }
