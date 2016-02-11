@@ -26,4 +26,8 @@ def mayor_cuentas(request):
 
 @permission_required('custom_permissions.informe_mayorcuentaauxiliar')
 def mayor_cuentasauxiliar(request):
-    return render_to_response('finanzas/mayor_cuentas_auxiliares.html', {'user':request.user.id}, context_instance=RequestContext(request))
+    return render_to_response('finanzas/mayor_cuentas_auxiliares.html', {'user': request.user.id}, context_instance=RequestContext(request))
+
+#TODO: Requerir permiso
+def extracto_cuentas_banco(request):
+    return render_to_response('finanzas/extracto_cuentas_banco.html', {'user': request.user.id}, context_instance=RequestContext(request))
