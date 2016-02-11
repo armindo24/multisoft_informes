@@ -79,7 +79,7 @@ router.get('/cuentaauxi/select/:empresa/:periodo', function (req, res, next) {
 
 //cuentas select option
 router.post('/cuentaauxi/query/:periodo/:empresa/:cuentad/:cuentah', function (req, res, next) {
-    CuentaContable.auxquery(req.params,req.body, function (result) {
+    CuentaContable.auxquery(req.params, req.body, function (result) {
         res.json({data: result});
     });
 });
@@ -147,6 +147,12 @@ router.post('/clientes/post/lista/', function (req, res, next) {
 
 router.get('/empresas/:empresa/clientes', function (req, res, next) {
     Empresa.clientes(req.params.empresa, req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/empresas/:empresa/bancos', function (req, res, next) {
+    Empresa.bancos(req.params, req.query, function (result) {
         res.json({data: result});
     });
 });

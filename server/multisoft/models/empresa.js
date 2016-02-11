@@ -47,4 +47,13 @@ Empresa.clientes = function (empresa, query, cb) {
     });
 };
 
+Empresa.bancos = function (params, query, cb) {
+    var sql = "select b.codbanco, b.descrip from cuentabancaria c join bancos b on b.codbanco = c.codbanco where Cod_Empresa = ?"
+    var sql_params = [params.empresa];
+    conn.exec(sql, sql_params, function (err, row) {
+        if (err) throw err;
+        cb(row);
+    });
+};
+
 module.exports = Empresa;
