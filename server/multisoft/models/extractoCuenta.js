@@ -29,6 +29,29 @@ ExtractoCuenta.depositos = function (params, query, cb) {
     conn.exec(sql, sql_params, function (err, row) {
         if (err) throw err;
         conn.exec(tot_sql, sql_params, function (err, aggr) {
+            if (err) throw err;
+            cb(row, aggr);
+        });
+    });
+};
+
+ExtractoCuenta.extracciones = function (params, query, cb) {
+    console.log(params);
+    console.log(query);
+    var columns = "date(e.fecha) as fecha, e.codbanco, e.extraccionnro, e.beneficiario, e.importe, e.observ";
+    var table = "dba.extcuenta e";
+    var cond = "e.cod_empresa = ? and e.cuentabanco = ? and e.codbanco = ? and fecha between ? and ?";
+    var order = "fecha";
+    var sql = util.format("SELECT %s FROM %s WHERE %s ORDER BY %s", columns, table, cond, order);
+    var tot_sql = util.format("SELECT sum(e.importe) as total FROM %s WHERE %s", table, cond);
+    var sql_params = [params.empresa, query.cuenta, query.banco, query.fechad, query.fechah];
+    console.log(sql);
+    console.log(sql_params);
+    console.log(tot_sql);
+    conn.exec(sql, sql_params, function (err, row) {
+        if (err) throw err;
+        conn.exec(tot_sql, sql_params, function (err, aggr) {
+            if (err) throw err;
             cb(row, aggr);
         });
     });

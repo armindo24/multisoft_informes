@@ -183,8 +183,14 @@ router.get('/empresas/:empresa/informes/ventas_resumido', function (req, res, ne
     });
 });
 
-router.get('/empresas/:empresa/informes/deposito/', function (req, res, next) {
+router.get('/empresas/:empresa/informes/deposito', function (req, res, next) {
     ExtractoCuenta.depositos(req.params, req.query, function (result, aggregates) {
+        res.json({data: result, aggregates: aggregates});
+    });
+});
+
+router.get('/empresas/:empresa/informes/extraccion', function (req, res, next) {
+    ExtractoCuenta.extracciones(req.params, req.query, function (result, aggregates) {
         res.json({data: result, aggregates: aggregates});
     });
 });
