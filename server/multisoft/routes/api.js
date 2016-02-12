@@ -191,8 +191,8 @@ router.get('/empresas/:empresa/informes/deposito', function (req, res, next) {
 });
 
 router.get('/empresas/:empresa/informes/extraccion', function (req, res, next) {
-    ExtractoCuenta.extracciones(req.params, req.query, function (result, aggregates) {
-        res.json({data: result, aggregates: aggregates});
+    ExtractoCuenta.extracciones(req.params, req.query, function (result) {
+        res.json({data: result});
     });
 });
 
