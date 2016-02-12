@@ -188,9 +188,13 @@
               } else {
                 var saldo_anterior = 0;
               }
-              console.log(saldo_anterior);
+              var saldo_actual = saldo_anterior;
+{#              rows.push("<tr><td colspan='7'>Saldo Anterior:</td><td>" + saldo_anterior + "</td></tr>");#}
               for (i = 0; i < d.data.length; i++) {
                 row = d.data[i];
+                tot_credito += parseFloat(row.tot_credito);
+                tot_debito += parseFloat(row.tot_debito);
+                saldo_actual += (tot_credito) - (tot_debito);
                 rows.push("<tr>" +
                         "<td>" + row.fechaacreditacion.split(' ')[0] + "</td>" +
                         "<td>" + row.observ + "</td>" +
@@ -200,8 +204,6 @@
                         "<td class='price-value'>" + u.addCommas(row.tot_credito) + "</td>" +
                         "<td class='price-value'>" + (row.tot_debito > 0 ? "-" : "") + u.addCommas(row.tot_debito) + "</td>" +
                         "</tr>");
-                tot_credito += parseFloat(row.tot_credito);
-                tot_debito += parseFloat(row.tot_debito);
               }
 
               var cols = [
