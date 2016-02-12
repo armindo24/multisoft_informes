@@ -202,6 +202,12 @@ router.get('/empresas/:empresa/informes/saldo', function (req, res, next) {
     });
 });
 
+router.get('/empresas/:empresa/informes/extracto', function (req, res, next) {
+    ExtractoCuenta.detallado(req.params, req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
 router.get('/grupos', function (req, res, next) {
     Grupo.all(function (result) {
         res.json({data: result});

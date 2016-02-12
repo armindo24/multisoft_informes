@@ -211,6 +211,13 @@
             $results.show();
           }
         });
+      } else if (query.tab == 'extracto') {
+        console.log("extracto");
+        $.get(api + 'empresas/' + query.empresa + '/informes/saldo', query).done(function (d) {
+          var cred = parseFloat(d.data[0].total);
+          var deb = parseFloat(d.data[1].total);
+          var saldo_anterior = cred - deb;
+        });
       }
     };
 
