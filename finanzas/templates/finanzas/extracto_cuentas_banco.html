@@ -74,10 +74,6 @@
       <table class="table table-striped table-hover table-bordered table-filter scroll">
         <thead>
         <tr>
-          <th>Observacion</th>
-          <th># Deposito</th>
-          <th>Fecha</th>
-          <th class="price-label">Total</th>
         </tr>
         </thead>
         <tbody>
@@ -190,7 +186,11 @@
                       "<td class='price-value'>" + u.addCommas(row.tot_efectivo) + "</td>" +
                       "</tr>");
             }
-            createTable(rows, query.tab, d.aggregates[0].total);
+            var cols = [{title: 'Observacion'}, {title: '# Deposito'}, {title: 'Fecha'}, {
+              title: 'Total',
+              classname: 'price-label'
+            }];
+            createTable(rows, query.tab, d.aggregates[0].total, cols);
             $results.show();
           }
         });
@@ -201,36 +201,78 @@
               row = d.data[i];
 
               rows.push("<tr>" +
-                      "<td>" + row.beneficiario + ": " + row.observ + "</td>" +
+                      "<td>" + row.beneficiario + "</td>" +
+                      "<td>" + row.observ + "</td>" +
                       "<td>" + row.extraccionnro + "</td>" +
                       "<td>" + row.fecha + "</td>" +
                       "<td class='price-value'>" + u.addCommas(row.importe) + "</td>" +
                       "</tr>");
             }
-            createTable(rows, query.tab, d.aggregates[0].total);
+            var cols = [{title: 'Beneficiario'}, {title: 'Observacion'}, {title: '# Extraccion'}, {title: 'Fecha'}, {
+              title: 'Total',
+              classname: 'price-label'
+            }];
+            createTable(rows, query.tab, d.aggregates[0].total, cols);
             $results.show();
           }
         });
       } else if (query.tab == 'extracto') {
         console.log("extracto");
         $.get(api + 'empresas/' + query.empresa + '/informes/saldo', query).done(function (d) {
-          var cred = parseFloat(d.data[0].total);
-          var deb = parseFloat(d.data[1].total);
-          var saldo_anterior = cred - deb;
+          {#          var cred = parseFloat(d.data[0].total);#}
+          {#          var deb = parseFloat(d.data[1].total);#}
+          {#          var saldo_anterior = cred - deb;#}
+          $.get(api + 'empresas/' + query.empresa + '/informes/extracto', query).done(function (d) {
+            if (d.data.length > 0) {
+              for (i = 0; i < d.data.length; i++) {
+                row = d.data[i];
+                rows.push("<tr>" +
+                        "<td>" + row.fecha.split(' ')[0] + "</td>" +
+                        "<td>" + row.nrodeposito + "</td>" +
+                        "<td>" + (row.nrocheque ? row.nrocheque : '-') + "</td>" +
+                        (row.Tipo == 'D' ?
+                        "<td class='price-value'>" + u.addCommas(row.Total) + "</td><td class='price-value'>0</td>" :
+                        "<td class='price-value'>0</td><td class='price-value'>-" + u.addCommas(row.Total) + "</td>") +
+                        "</tr>");
+              }
+              var cols = [
+                {title: 'Fecha'},
+                {title: 'Deposito'},
+                {title: 'Cheque'},
+                {title: 'Credito', classname: 'price-label'},
+                {title: 'Debito', classname: 'price-label'}
+              ];
+              createTable(rows, query.tab, 0.0, cols);
+              $results.show();
+            }
+          });
         });
       }
     };
 
-    function createTable(rows, group, total_global) {
+    function createTable(rows, group, total_global, cols) {
       var $newTable = $emptyTable;
       var $header = $newTable.find('.result-header');
       var $tbody = $newTable.find('tbody');
+      var $thead = $newTable.find('thead tr');
+      var col = null;
+      var columns = [];
+
+      for (var i = 0; i < cols.length; i++) {
+        col = cols[i];
+        if (col.classname) {
+          columns.push("<th class='" + col.classname + "'>" + col.title + "</th>");
+        } else {
+          columns.push("<th>" + col.title + "</th>");
+        }
+      }
 
       $header.html('<h3 class="text-capitalize">' + group + '</h3>');
+      $thead.html(columns.join(''));
       $tbody.html(rows.join(''));
       $tbody.append("" +
               "<tr>" +
-              "<td colspan='3'><b>Total</b></td>" +
+              "<td colspan='" + (cols.length - 1) + "'><b>Total</b></td>" +
               "<td class='price-value'><b>" + u.addCommas(total_global) + "</b></td>" +
               "</tr>" +
               "");
