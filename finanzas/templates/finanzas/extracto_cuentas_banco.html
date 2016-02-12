@@ -22,43 +22,51 @@
 
 
 {% block content %}
-  <br>
-  Query
-  <pre id="preview"><p></p></pre><br>
+{#  <br>#}
+{#  Query#}
+{#  <pre id="preview"><p></p></pre><br>#}
 
-  <div class="panel panel-default">
-    <div class="panel-header">
-      <h4 class="panel-heading">Filtros</h4>
-    </div>
-    <div class="panel-body">
-      <label>Empresa:</label>
-      <select name="empresa" data-placeholder="Empresa..." class="chosen-select"
-              tabindex="2"></select>
+  <div class="panel-group" id="accordion">
+    <div class="panel panel-default">
+      <div class="panel-heading" data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
+        <h4 class="panel-title">Filtros</h4>
+      </div>
+      <div id="collapseOne" class="panel-collapse collapse">
+        <div class="panel-body">
+          <div class="panel-group text-center" id="archivo_accordion" style="margin-bottom: 0px;">
 
-      <label>Sucursal:</label>
-      <select name="sucursal" data-placeholder="Sucursal..." class="chosen-select"></select>
-      <br>
+            <center>
+              <table style="width: auto;" class="table table-striped table-hover table-bordered table-filter scroll">
+                <tr>
+                  <th> Empresa:</th>
+                  <td><select name="empresa" data-placeholder="Empresa..." class="chosen-select"
+                              tabindex="2"></select></td>
 
-      <label>Banco:</label>
-      <select name="banco" data-placeholder="Banco..." class="chosen-select"></select>
+                  <th>Sucursal:</th>
+                  <td><select name="sucursal" data-placeholder="Sucursal..." class="chosen-select"></select></td>
+                </tr>
+                <tr>
+                  <th>Banco:</th>
+                  <td><select name="banco" data-placeholder="Banco..." class="chosen-select"></select></td>
 
-      <br>
-      <label>Cuenta:</label>
-      <select name="cuenta" data-placeholder="Cuenta..." class="chosen-select"></select>
+                  <th>Cuenta:</th>
+                  <td><select name="cuenta" data-placeholder="Cuenta..." class="chosen-select"></select></td>
+                </tr>
 
-      <div class="row show-grid">
-        <div class="col-sm-6">
-          <th><b>Desde:</b></th>
-          <td><input id="fechad" type="text" class="datepicker" name="fechad"/></td>
-        </div>
-        <div class="col-sm-6">
-          <th><b>Hasta:</b></th>
-          <td><input id="fechah" type="text" class="datepicker" name="fechah"/></td>
+                <tr>
+                  <th>Desde:</th>
+                  <td><input id="fechad" type="text" class="datepicker" name="fechad"/></td>
+                  <th>Hasta:</th>
+                  <td><input id="fechah" type="text" class="datepicker" name="fechah"/></td>
+                </tr>
+              </table>
+            </center>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="panel-footer">
-      <a type="button" class="btn btn-primary" onclick="getInforme()">Filtrar <i class="fa fa-search"></i></a>
+      <div class="modal-footer">
+        <a type="button" class="btn btn-primary" onclick="getInforme()">Filtrar <i class="fa fa-search"></i></a>
+      </div>
     </div>
   </div>
 
