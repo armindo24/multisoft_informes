@@ -13,7 +13,7 @@ var Mayor = require('../models/mayor');
 var Cliente = require('../models/cliente');
 var Informe = require('../models/informe');
 var Grupo = require('../models/grupo');
-var CentroCostos = require('../models/centrocostos');
+var CentroCostos = require('../models/informe');
 var ExtractoCuenta = require('../models/extractoCuenta');
 
 var conn = require('../db');
@@ -193,6 +193,12 @@ router.get('/empresas/:empresa/informes/deposito', function (req, res, next) {
 router.get('/empresas/:empresa/informes/extraccion', function (req, res, next) {
     ExtractoCuenta.extracciones(req.params, req.query, function (result, aggregates) {
         res.json({data: result, aggregates: aggregates});
+    });
+});
+
+router.get('/empresas/:empresa/informes/saldo', function (req, res, next) {
+    ExtractoCuenta.saldoAnterior(req.params, req.query, function (result) {
+        res.json({data: result});
     });
 });
 
