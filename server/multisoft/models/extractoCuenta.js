@@ -142,7 +142,22 @@ ExtractoCuenta.saldoAnterior = function (params, query, cb) {
         "select sum(e.importe) from dba.extcuenta e " +
         "where e.codbanco = ? and e.Cod_Empresa = ? and e.cuentabanco = ? and e.fecha between '1901-01-01' and ? and e.anulado = 'N' and e.estado = 'A'";
 
-    var sql_params = [query.banco, params.empresa, query.cuenta, query.fechad];
+    var fecha = new Date(query.fechad);
+    var dd = fecha.getDate();
+    var mm = fecha.getMonth() + 1; //January is 0!
+    var yyyy = fecha.getFullYear();
+
+    if (dd < 10) {
+        dd = '0' + dd
+    }
+
+    if (mm < 10) {
+        mm = '0' + mm
+    }
+
+    fecha = yyyy + '-' + mm + '-' + dd;
+    console.log(fecha);
+    var sql_params = [query.banco, params.empresa, query.cuenta, fecha];
     conn.exec(sql, sql_params.concat(sql_params), function (err, row) {
         if (err) throw err;
         cb(row);

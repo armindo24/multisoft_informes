@@ -22,9 +22,9 @@
 
 
 {% block content %}
-{#  <br>#}
-{#  Query#}
-{#  <pre id="preview"><p></p></pre><br>#}
+  {#  <br>#}
+  {#  Query#}
+  {#  <pre id="preview"><p></p></pre><br>#}
 
   <div class="panel-group" id="accordion">
     <div class="panel panel-default">
@@ -182,32 +182,40 @@
           var tot_debito = 0.0;
           var tot_credito = 0.0;
           if (query.tab == "extracto") {
-            for (i = 0; i < d.data.length; i++) {
-              row = d.data[i];
-              rows.push("<tr>" +
-                      "<td>" + row.fechaacreditacion.split(' ')[0] + "</td>" +
-                      "<td>" + row.observ + "</td>" +
-                      "<td>" + row.nrodeposito + "</td>" +
-                      "<td>" + (row.nrocheque ? row.nrocheque : "-") + "</td>" +
-                      "<td>" + (row.nroplanilla ? row.nroplanilla : "-") + "</td>" +
-                      "<td class='price-value'>" + u.addCommas(row.tot_credito) + "</td>" +
-                      "<td class='price-value'>" + (row.tot_debito > 0 ? "-" : "") + u.addCommas(row.tot_debito) + "</td>" +
-                      "</tr>");
-              tot_credito += parseFloat(row.tot_credito);
-              tot_debito += parseFloat(row.tot_debito);
-            }
+            $.get(api + 'empresas/' + query.empresa + '/informes/saldo', query).done(function (saldo) {
+              if (saldo.data.length > 0) {
+                var saldo_anterior = parseFloat(saldo.data[1].total) - parseFloat(saldo.data[0].total);
+              } else {
+                var saldo_anterior = 0;
+              }
+              console.log(saldo_anterior);
+              for (i = 0; i < d.data.length; i++) {
+                row = d.data[i];
+                rows.push("<tr>" +
+                        "<td>" + row.fechaacreditacion.split(' ')[0] + "</td>" +
+                        "<td>" + row.observ + "</td>" +
+                        "<td>" + row.nrodeposito + "</td>" +
+                        "<td>" + (row.nrocheque ? row.nrocheque : "-") + "</td>" +
+                        "<td>" + (row.nroplanilla ? row.nroplanilla : "-") + "</td>" +
+                        "<td class='price-value'>" + u.addCommas(row.tot_credito) + "</td>" +
+                        "<td class='price-value'>" + (row.tot_debito > 0 ? "-" : "") + u.addCommas(row.tot_debito) + "</td>" +
+                        "</tr>");
+                tot_credito += parseFloat(row.tot_credito);
+                tot_debito += parseFloat(row.tot_debito);
+              }
 
-            var cols = [
-              {title: 'Fecha'},
-              {title: 'Observacion'},
-              {title: 'Deposito'},
-              {title: 'Cheque'},
-              {title: 'Planilla'},
-              {title: 'Credito', classname: 'price-label'},
-              {title: 'Debito', classname: 'price-label'}
-            ];
-            createTable(rows, query.tab, [tot_credito, tot_debito], cols);
-            $results.show();
+              var cols = [
+                {title: 'Fecha'},
+                {title: 'Observacion'},
+                {title: 'Deposito'},
+                {title: 'Cheque'},
+                {title: 'Planilla'},
+                {title: 'Credito', classname: 'price-label'},
+                {title: 'Debito', classname: 'price-label'}
+              ];
+              createTable(rows, query.tab, [tot_credito, tot_debito], cols);
+              $results.show();
+            });
           } else if (query.tab == 'deposito') {
             for (i = 0; i < d.data.length; i++) {
               row = d.data[i];
