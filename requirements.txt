@@ -1,5 +1,7 @@
 Django==1.8.8
 django-admin-bootstrapped==2.5.7
 django-autocomplete-light==2.3.3
+django-dajaxice==0.7
+psycopg2==2.6.1
 six==1.10.0
 wheel==0.26.0
