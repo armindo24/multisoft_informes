@@ -218,6 +218,8 @@
         var item = null;
         var items = [];
         var modal = $(this);
+        var table = modal.find('tbody');
+        table.empty();
 
         modal.find('#comprobanteModal').text(cabecera.comp_numero);
         modal.find('#tipoModal').text(cabecera.cod_tp_comp);
@@ -228,7 +230,6 @@
         modal.find('#ivaModal').text(u.addCommas(cabecera.total_iva));
         modal.find('#descuentoModal').text(u.addCommas(cabecera.totaldescuento));
         modal.find('#netoModal').text(u.addCommas(cabecera.to_gravado));
-
 
         $.get(api + 'empresas/' + cabecera.cod_empresa + '/ventas/' + cabecera.comp_numero).done(function (d) {
           //modal.find('.modal-title').text('Comprobante ' + cabecera.comp_numero);
@@ -255,7 +256,7 @@
                   "<td class='price-value'><strong>" + u.addCommas(cabecera.to_gravado) + "</strong></td>" +
                   "</tr>";
           items.push(summary);
-          modal.find('tbody').html(items.join(''));
+          table.html(items.join(''));
         });
       });
 
