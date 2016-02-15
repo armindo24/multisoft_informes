@@ -1,0 +1,79 @@
+var conn = require('../db');
+var util = require('util');
+var Ventas = {};
+
+Ventas.all = function (params, filters, cb) {
+    conn.exec("SET ROWCOUNT 100"); //TODO: solucionar resultados muy grandes
+
+    var select = "dba.vtacab.cod_tp_comp, dba.vtacab.comp_numero, dba.vtacab.cod_cliente, " +
+        "dba.f_get_AsoAbreviatura(dba.vtacab.cod_empresa, dba.vtacab.cod_cliente, 'V') as razon_social, " +
+        "date(dba.vtacab.fha_cbte) as fecha, dba.vtacab.cod_usuario, cast(dba.vtacab.to_exento as decimal(20,2)), cast(dba.vtacab.to_gravado as decimal(20,2)), " +
+        "cast(dba.vtacab.total_iva as decimal(20,2)), dba.tpocbte.des_tp_comp, cast(dba.vtacab.fact_cambio as decimal(20,2)), " +
+        "dba.vtacab.tipo_iva, dba.tpocbte.tp_def, dba.tpocbte.tpomvto, dba.vtacab.cod_empresa, dba.vtacab.codmoneda, " +
+        "dba.vtacab.cod_sucursal, cast(dba.vtacab.totaldescuento as decimal(20,2)), dba.vtacab.nroservicio, dba.vtacab.anulado, " +
+        "dba.clientes.cat_iva, dba.clientes.ruc, dba.vendedor.des_vendedor";
+    var from = "dba.VtaCab, dba.Clientes, dba.TpoCbte, dba.Vendedor";
+    var where = "(dba.vtacab.anulado != 'S') and (dba.vtacab.cod_empresa = ?)"
+    var args = [params.empresa];
+    var join = "( dba.vtacab.cod_empresa = dba.clientes.cod_empresa ) and ( dba.vtacab.cod_cliente = dba.clientes.cod_cliente ) and ( dba.vtacab.cod_empresa =dba.tpocbte.cod_empresa ) and ( dba.vtacab.cod_tp_comp = dba.tpocbte.cod_tp_comp )" +
+        " and (dba.vtacab.cod_vendedor = dba.vendedor.cod_vendedor)";
+
+    if (filters.cliente) {
+        where += " and (dba.vtacab.cod_cliente = ?)";
+        args.push(filters.cliente);
+    }
+
+    if (filters.sucursal) {
+        where += " and (dba.vtacab.cod_sucursal = ?)";
+        args.push(filters.sucursal);
+    }
+
+    if (filters.tipo_comprobante) {
+        where += " and (dba.vtacab.cod_tp_comp = ?)";
+        args.push(filters.tipo_comprobante);
+    }
+
+    if (filters.fechad && filters.fechah) {
+        where += " and (dba.vtacab.fha_cbte BETWEEN ? and ?)";
+        args.push(filters.fechad);
+        args.push(filters.fechah);
+    }
+
+
+    var sql = util.format("SELECT %s FROM %s WHERE %s and %s", select, from, where, join);
+    if (filters.order) {
+        if (filters.order == "cod_tp_comp") {
+            sql += " ORDER BY dba.vtacab.Cod_Tp_Comp";
+        } else if (filters.order == "cod_cliente") {
+            sql += " ORDER BY dba.vtacab.cod_cliente";
+        } else if (filters.order == "cod_vendedor") {
+            sql += " ORDER BY dba.vtacab.cod_vendedor";
+        }
+    }
+
+    console.log(sql);
+    console.log(args);
+
+    conn.exec(sql, args, function (err, r) {
+        if (err) throw err;
+        cb(r);
+    });
+};
+
+Ventas.detalle = function (params, filter, cb) {
+    console.log(params);
+    console.log(filter);
+
+    var sql = "SELECT d.Cod_Deposito, d.Cod_Articulo, d.Descrip, d.lista_prec, d.Cantidad, d.Pr_Unit, d.Descuento, d.total_neto, d.linea" +
+        " FROM dba.VTACAB c" +
+        " JOIN dba.VTADET d on d.Comp_Numero = c.Comp_Numero and d.cod_empresa = c.cod_empresa" +
+        " WHERE c.comp_numero = ? AND c.Cod_Empresa = ?";
+    var sql_params = [params.comprobante, params.empresa];
+
+    conn.exec(sql, sql_params, function (err, row) {
+        if (err) throw err;
+        cb(row);
+    });
+};
+
+module.exports = Ventas;
