@@ -7,6 +7,7 @@ Ventas.all = function (params, filters, cb) {
 
     var select = "dba.vtacab.cod_tp_comp, dba.vtacab.comp_numero, dba.vtacab.cod_cliente, " +
         "dba.f_get_AsoAbreviatura(dba.vtacab.cod_empresa, dba.vtacab.cod_cliente, 'V') as razon_social, " +
+        "dba.vtacab.razon_social as cliente," +
         "date(dba.vtacab.fha_cbte) as fecha, dba.vtacab.cod_usuario, cast(dba.vtacab.to_exento as decimal(20,2)), cast(dba.vtacab.to_gravado as decimal(20,2)), " +
         "cast(dba.vtacab.total_iva as decimal(20,2)), dba.tpocbte.des_tp_comp, cast(dba.vtacab.fact_cambio as decimal(20,2)), " +
         "dba.vtacab.tipo_iva, dba.tpocbte.tp_def, dba.tpocbte.tpomvto, dba.vtacab.cod_empresa, dba.vtacab.codmoneda, " +
@@ -64,7 +65,7 @@ Ventas.detalle = function (params, filter, cb) {
     console.log(params);
     console.log(filter);
 
-    var sql = "SELECT d.Cod_Deposito, d.Cod_Articulo, d.Descrip, d.lista_prec, d.Cantidad, d.Pr_Unit, d.Descuento, d.total_neto, d.linea" +
+    var sql = "SELECT d.cod_deposito, d.cod_articulo, d.descrip, d.lista_prec, d.cantidad, d.pr_unit, d.descuento, d.total_neto, d.linea" +
         " FROM dba.VTACAB c" +
         " JOIN dba.VTADET d on d.Comp_Numero = c.Comp_Numero and d.cod_empresa = c.cod_empresa" +
         " WHERE c.comp_numero = ? AND c.Cod_Empresa = ?";

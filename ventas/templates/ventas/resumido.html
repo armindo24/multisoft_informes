@@ -110,11 +110,86 @@
           <th class="price-label">Exento</th>
           <th class="price-label">Total Descuentos</th>
           <th class="price-label">Total</th>
+          <th class="text-center">Detalle</th>
         </tr>
         </thead>
         <tbody>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <div class="modal fade" id="ventaModal" tabindex="-1" role="dialog" aria-labelledby="ventaModal">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                  aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="ventaModalLabel">Detalle de Venta</h4>
+        </div>
+        <div class="modal-body">
+          <div class="well well-sm">
+            <dl class="dl-horizontal">
+              <div class="row">
+                <div class="col-md-6">
+                  <dt>Comprobante</dt>
+                  <dd id="comprobanteModal"></dd>
+                </div>
+                <div class="col-md-6">
+                  <dt>Tipo</dt>
+                  <dd id="tipoModal"></dd>
+                </div>
+                <div class="col-md-6">
+                  <dt>Cliente</dt>
+                  <dd id="clienteModal"></dd>
+                </div>
+                <div class="col-md-6">
+                  <dt>Fecha</dt>
+                  <dd id="fechaModal"></dd>
+                </div>
+              </div>
+            </dl>
+          </div>
+          <table id="detailTableModal" class="table">
+            <thead>
+            <tr>
+              <th>Dep.</th>
+              <th>Art.</th>
+              <th>Descripcion</th>
+              <th>Lista</th>
+              <th class="text-center">Cant.</th>
+              <th class="price-label">Pr. Unit.</th>
+              <th class="price-label">% Dcto.</th>
+              <th class="price-label">Total</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="well well-sm text-center">
+          <div class="row">
+            <div class="col-sm-3">
+              <dt>Bruto</dt>
+              <dd id="brutoModal"></dd>
+            </div>
+            <div class="col-sm-3">
+              <dt>IVA</dt>
+              <dd id="ivaModal"></dd>
+            </div>
+            <div class="col-sm-3">
+              <dt>Dcto.</dt>
+              <dd id="descuentoModal"></dd>
+            </div>
+            <div class="col-sm-3">
+              <dt>Neto</dt>
+              <dd id="netoModal"></dd>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -126,6 +201,9 @@
     var query = {
       order: 'cod_tp_comp'
     };
+
+    var current = {};
+
     var api = u.getApiUrl();
     var $preview = $('#preview');
 
@@ -133,6 +211,53 @@
     var $emptyTable = $('.result-group').clone();
 
     $(document).ready(function () {
+
+      $('#ventaModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var cabecera = button.data('cabecera');
+        var item = null;
+        var items = [];
+        var modal = $(this);
+
+        modal.find('#comprobanteModal').text(cabecera.comp_numero);
+        modal.find('#tipoModal').text(cabecera.cod_tp_comp);
+        modal.find('#clienteModal').text(cabecera.cod_cliente + " " + cabecera.razon_social);
+        modal.find('#fechaModal').text(cabecera.fecha);
+
+        modal.find('#brutoModal').text(u.addCommas(cabecera.to_gravado));
+        modal.find('#ivaModal').text(u.addCommas(cabecera.total_iva));
+        modal.find('#descuentoModal').text(u.addCommas(cabecera.totaldescuento));
+        modal.find('#netoModal').text(u.addCommas(cabecera.to_gravado));
+
+
+        $.get(api + 'empresas/' + cabecera.cod_empresa + '/ventas/' + cabecera.comp_numero).done(function (d) {
+          //modal.find('.modal-title').text('Comprobante ' + cabecera.comp_numero);
+          var totCant = 0.0;
+          for (var i = 0; i < d.data.length; i++) {
+            item = d.data[i];
+            items.push("<tr>" +
+                    "<td>" + item.cod_deposito + "</td>" +
+                    "<td>" + item.cod_articulo + "</td>" +
+                    "<td>" + item.descrip + "</td>" +
+                    "<td>" + item.lista_prec + "</td>" +
+                    "<td class='text-center'>" + u.addCommas(item.cantidad) + "</td>" +
+                    "<td class='price-value'>" + u.addCommas(item.pr_unit) + "</td>" +
+                    "<td class='price-value'>" + u.addCommas(item.descuento) + "</td>" +
+                    "<td class='price-value'>" + u.addCommas(item.total_neto) + "</td>" +
+                    "</tr>");
+            totCant += parseFloat(item.cantidad);
+          }
+          var summary =
+                  "<tr>" +
+                  "<td colspan='4'></td>" +
+                  "<td class='text-center'><strong>" + totCant + "</strong></td>" +
+                  "<td colspan='2'></td>" +
+                  "<td class='price-value'><strong>" + u.addCommas(cabecera.to_gravado) + "</strong></td>" +
+                  "</tr>";
+          items.push(summary);
+          modal.find('tbody').html(items.join(''));
+        });
+      });
 
       u.hideNav();
       $results.hide();
@@ -251,6 +376,10 @@
                     "<td class='price-value'>" + u.addCommas(row.to_exento) + "</td>" +
                     "<td class='price-value'>" + u.addCommas(row.totaldescuento) + "</td>" +
                     "<td class='price-value'>" + u.addCommas(row.to_gravado) + "</td>" +
+                    "<td class='text-center'>" +
+                    "<a class='btn btn-primary' data-toggle='modal' data-target='#ventaModal' " +
+                    "data-cabecera='" + JSON.stringify(row) + "'>" +
+                    "<i class='fa fa-search-plus'></i></a></td>" +
                     "</tr>");
             total_global += parseFloat(row.to_gravado);
           }
@@ -277,6 +406,13 @@
               "</tr>" +
               "");
       $results.append($newTable);
+    }
+
+    function createSubTable(rows, group, table, parent) {
+      var $table = table;
+      var $tbody = $table.find('tbody');
+
+      $tbody.html(rows.join(''));
     }
   </script>
 {% endblock %}
