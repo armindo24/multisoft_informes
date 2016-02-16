@@ -31,12 +31,12 @@
       <th># Compr.</th>
       <th>Cliente</th>
       <th>RUC</th>
-      <th>Fecha</th>
+      <th class="text-center">Fecha</th>
       <th class="price-label">IVA</th>
       <th class="price-label">Gravado</th>
       <th class="price-label">Descuento</th>
       <th class="price-label">Total</th>
-      <th>Detalle</th>
+      <th class="text-center">Detalle</th>
     </tr>
     </thead>
   </table>
@@ -265,7 +265,7 @@
           var summary =
                   "<tr>" +
                   "<td colspan='4'></td>" +
-                  "<td class='text-center'><strong>" + totCant + "</strong></td>" +
+                  "<td class='text-center'><strong>" + u.addCommas(totCant) + "</strong></td>" +
                   "<td colspan='2'></td>" +
                   "<td class='price-value'><strong>" + u.addCommas(cabecera.to_gravado) + "</strong></td>" +
                   "</tr>";
@@ -366,55 +366,58 @@
         return $.fn.dataTable.render.number('.', ',', 2).display(gravado);
       };
 
-      var table = $('#example');
-    .
-      DataTable({
-                language: u.spanish_dt,
-                ajax: {
-                  url: api + 'empresas/' + query.empresa + '/informes/ventas_resumido',
-                  data: query
-                },
-                columnDefs: [
-                  {className: "price-value", targets: "price-label"},
-                  {render: $.fn.dataTable.render.number('.', ',', 2), targets: "price-label"}
-                ],
-                columns: [
-                  {data: 'comp_numero'},
-                  {data: 'razon_social'},
-                  {data: 'ruc'},
-                  {data: 'fecha'},
-                  {data: 'total_iva'},
-                  {data: null, render: calcGravado},
-                  {data: 'totaldescuento'},
-                  {data: 'to_gravado'},
-                  {
-                    data: null,
-                    render: function (d, t, r) {
-                      return "<a class='btn btn-primary' data-toggle='modal' data-target='#ventaModal' " +
-                              "data-cabecera='" + JSON.stringify(r) + "'>" +
-                              "<i class='fa fa-search-plus'></i></a>";
+      if (!$.fn.DataTable.isDataTable('#example')) {
+        $('#example').DataTable({
+                  language: u.spanish_dt,
+                  ajax: {
+                    url: api + 'empresas/' + query.empresa + '/informes/ventas_resumido',
+                    data: query
+                  },
+                  columnDefs: [
+                    {className: "price-value", targets: "price-label"},
+                    {render: $.fn.dataTable.render.number('.', ',', 2), targets: "price-label"},
+                    {className: "text-center", targets: "text-center"}
+                  ],
+                  columns: [
+                    {data: 'comp_numero'},
+                    {data: 'razon_social'},
+                    {data: 'ruc'},
+                    {data: 'fecha'},
+                    {data: 'total_iva'},
+                    {data: null, render: calcGravado},
+                    {data: 'totaldescuento'},
+                    {data: 'to_gravado'},
+                    {
+                      data: null,
+                      render: function (d, t, r) {
+                        return "<a class='btn btn-primary' data-toggle='modal' data-target='#ventaModal' " +
+                                "data-cabecera='" + JSON.stringify(r) + "'>" +
+                                "<i class='fa fa-search-plus'></i></a>";
+                      }
                     }
-                  }
-                ],
-                searching: false,
-                ordering: false,
-                drawCallback: function (settings) {
-                  var api = this.api();
-                  var rows = api.rows({page: 'current'}).nodes();
-                  var last = null;
-                  var colCount = table.columns().header().length;
+                  ],
+                  searching: false,
+                  ordering: false,
+                  drawCallback: function (settings) {
+                    var api = this.api();
+                    var rows = api.rows({page: 'current'}).nodes();
+                    var last = null;
+                    var colCount = api.columns().header().length;
 
-                  api.column(2, {page: 'current'}).data().each(function (group, i) {
-                    if (last !== group) {
-                      $(rows).eq(i).before(
-                              '<tr class="group"><td colspan="' + colCount + '">' + group + '</td></tr>'
-                      );
-                      last = group;
-                    }
-                  });
+                    api.column(2, {page: 'current'}).data().each(function (group, i) {
+                      if (last !== group) {
+                        $(rows).eq(i).before(
+                                '<tr class="group"><td colspan="' + colCount + '">' + group + '</td></tr>'
+                        );
+                        last = group;
+                      }
+                    });
+                  }
                 }
-              }
-      );
+        );
+      } else {
+        reload();
+      }
 
       $.get(api + 'empresas/' + query.empresa + '/informes/ventas_resumido', query).done(function (d) {
         if (d.data.length > 0) {
@@ -482,6 +485,11 @@
       var $tbody = $table.find('tbody');
 
       $tbody.html(rows.join(''));
+    }
+
+    function reload() {
+      console.log("reload");
+      $('#example').DataTable().ajax.url(api + 'empresas/' + query.empresa + '/informes/ventas_resumido').load();
     }
   </script>
 {% endblock %}
