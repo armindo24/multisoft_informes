@@ -8,9 +8,6 @@
 				<li>
 					<a href="{% url 'ventas:resumido' %}"> Ventas - Resumido y Detallado </a>
 			    </li>
-			    <li>
-					<a href="/ventas/ranking/articulos/"> Ranking de Art&#237;culos Vendidos </a>
-			    </li>
 		    {% endif %}
 			{% if  request.session.modulo_seleccionado == "Finanzas"  %}
 				<li>
@@ -43,6 +40,9 @@
 			    </li>
 			    <li>
                     <a href="{% url 'finanzas:centro_costos' %}"> Centro de Costos </a>
+                </li>
+                <li>
+                    <a href="{% url 'finanzas:extracto_cuentas_banco' %}"> Extracto Cuenta Bancaria </a>
                 </li>
 		    {% endif %}
 			{% if  request.session.modulo_seleccionado == "Admin"  %}
