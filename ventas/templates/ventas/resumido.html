@@ -326,7 +326,7 @@
 
 
       $.get(api + 'clientes/tipos/').done(function (d) {
-        u.createSelect('tipo_cliente', d, 'Cod_Tp_Cliente', 'Des_Tp_Cliente', true);
+        u.createSelect('tipo_cliente', d, 'Cod_Tp_Cliente', 'Des_Tp_Cliente', false);
         $('.chosen-select').trigger('chosen:updated');
       });
 
@@ -337,7 +337,7 @@
     });
 
     function getInforme() {
-      $('.collapse').collapse('hide')
+      $('.collapse').collapse('hide');
       var mappings = {'cod_cliente': 'razon_social', 'cod_tp_comp': 'des_tp_comp', 'cod_vendedor': 'des_vendedor'};
       var group_field = mappings[query.order];
       var row, i = null;
