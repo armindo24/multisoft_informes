@@ -280,11 +280,6 @@
       $('.collapse').collapse('hide');
       var mappings = {'cod_cliente': 'razon_social', 'cod_tp_comp': 'des_tp_comp', 'cod_vendedor': 'des_vendedor'};
       var group_field = mappings[query.order];
-      var row, i = null;
-      var rows = [];
-      var floats = ['total_iva', 'to_gravado', 'to_exento', 'totaldescuento'];
-      var grav, total_global, total = 0;
-      var group = null;
 
       var calcGravado = function (data, type, row) {
         var gravado = parseFloat(row.to_gravado) - parseFloat(row.total_iva);
@@ -400,11 +395,6 @@
 
     function footerSum(row, data, start, end, display) {
       var api = this.api(), data;
-      console.log(row);
-      console.log(data);
-      console.log(start);
-      console.log(end);
-      console.log(display);
 
       // Remove the formatting to get integer data for summation
       var parseVal = function (i) {
