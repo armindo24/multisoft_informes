@@ -293,9 +293,8 @@
       });
 
       $('[name=empresa]').on('change', function (ev, params) {
-        console.log('select empresa');
-        $.get(api + 'empresas/' + query.empresa + '/clientes', {tipo: ''}).done(function (d) {
-          u.createSelect('cliente', d, 'Cod_Cliente', 'Razon_Social', true);
+        $.get(api + 'clientes/tipos/').done(function (d) {
+          u.createSelect('tipo_cliente', d, 'Cod_Tp_Cliente', 'Des_Tp_Cliente', false);
           $('.chosen-select').trigger('chosen:updated');
         });
 
@@ -311,7 +310,7 @@
       });
 
       $('[name=tipo_cliente]').on('change', function (ev, params) {
-        console.log('select tipo');
+        console.log('select tipo', query.tipo_cliente);
         console.log(query);
         $.get(api + 'empresas/' + query.empresa + '/clientes', {tipo: query.tipo_cliente}).done(function (d) {
           u.createSelect('cliente', d, 'Cod_Cliente', 'Razon_Social', true);
@@ -321,12 +320,6 @@
 
       u.get_empresas({{ user.id }}, function (d) {
         u.createSelect('empresa', d, 'Cod_Empresa', 'Des_Empresa');
-        $('.chosen-select').trigger('chosen:updated');
-      });
-
-
-      $.get(api + 'clientes/tipos/').done(function (d) {
-        u.createSelect('tipo_cliente', d, 'Cod_Tp_Cliente', 'Des_Tp_Cliente', false);
         $('.chosen-select').trigger('chosen:updated');
       });
 
