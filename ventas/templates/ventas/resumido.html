@@ -285,7 +285,6 @@
       var floats = ['total_iva', 'to_gravado', 'to_exento', 'totaldescuento'];
       var grav, total_global, total = 0;
       var group = null;
-      $results.hide();
 
       var calcGravado = function (data, type, row) {
         var gravado = parseFloat(row.to_gravado) - parseFloat(row.total_iva);
@@ -341,11 +340,14 @@
             });
           },
         });
+        $results.show();
       } else {
-        $('#example').DataTable().ajax.url(api + 'empresas/' + query.empresa + '/informes/ventas_resumido').load();
+        $results.hide();
+        $('#example').DataTable().ajax.url(api + 'empresas/' + query.empresa + '/informes/ventas_resumido')
+                .load(function () {
+                  $results.show();
+                });
       }
-
-      $results.show();
     }
 
     function showModal(event) {
