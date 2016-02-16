@@ -149,10 +149,17 @@ function buscar(){
 		    		$('#table-div').append(string)    
 		    		
 		    		var string1 = "";
+		    		var total_row = cols.length
 		    		for (var a=0; a<accounts.length; a++){
 		    		    string1+='<tr><td>'+accounts[a]+'</td>'
+		    		    var total_row = accounts.length
                         for (var b=1; b<cols.length; b++){
-                            string1+='<td style="text-align: right;" class="'+accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('')+' '+cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('')+'" id="'+accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('')+'-'+cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('')+'"></td>'
+                            if (a == (total_row-1)){
+                                alert('aaa')
+                                string1+='<th style="text-align: right;" class="'+accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('')+' '+cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('')+'" id="'+accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('')+'-'+cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('')+'"></th>'
+                            } else {
+                                string1+='<td style="text-align: right;" class="'+accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('')+' '+cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('')+'" id="'+accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('')+'-'+cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('')+'"></td>'
+                            }
                         }
                         string1+='</tr>';
                     }
