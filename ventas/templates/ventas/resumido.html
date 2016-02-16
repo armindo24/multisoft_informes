@@ -106,6 +106,9 @@
         <th class="price-label">Gravado</th>
         <th class="price-label">Descuento</th>
         <th class="price-label">Total</th>
+        <th class="grouping">Comprobante</th>
+        <th class="grouping">Cliente</th>
+        <th class="grouping">Vendedor</th>
       </tr>
       </thead>
       <tfoot>
@@ -296,7 +299,8 @@
           columnDefs: [
             {className: "price-value", targets: "price-label"},
             {render: $.fn.dataTable.render.number('.', ',', 2), targets: "price-label"},
-            {className: "text-center", targets: "text-center"}
+            {className: "text-center", targets: "text-center"},
+            {visible: false, targets: "grouping"}
           ],
           columns: [
             {
@@ -315,6 +319,9 @@
             {data: null, render: calcGravado},
             {data: 'totaldescuento'},
             {data: 'to_gravado'},
+            {data: 'cod_tp_comp', name: 'cod_tp_comp'},
+            {data: 'razon_social', name: 'cod_cliente'},
+            {data: 'des_vendedor', name: 'cod_vendedor'}
           ],
           searching: false,
           ordering: false,
@@ -325,7 +332,8 @@
             var last = null;
             var colCount = api.columns().header().length;
 
-            api.column(2, {page: 'current'}).data().each(function (group, i) {
+            console.log(api.column(query.order + ':name', {page: 'current'}).data());
+            api.column(query.order + ':name', {page: 'current'}).data().each(function (group, i) {
               if (last !== group) {
                 $(rows).eq(i).before(
                         '<tr class="group"><td colspan="' + colCount + '">' + group + '</td></tr>'
@@ -338,10 +346,9 @@
         $results.show();
       } else {
         $results.hide();
-        $('#example').DataTable().ajax.url(api + 'empresas/' + query.empresa + '/informes/ventas_resumido')
-                .load(function () {
-                  $results.show();
-                });
+        $('#example').DataTable().ajax.url(api + 'empresas/' + query.empresa + '/informes/ventas_resumido').load(function () {
+          $results.show();
+        });
       }
     }
 
@@ -402,7 +409,7 @@
                 parseFloat(i.replace(/[\$]/g, '')) :
                 typeof i === 'number' ?
                         i : 0;
-        console.log(i, n);
+        //console.log(i, n);
         return n;
       };
 
