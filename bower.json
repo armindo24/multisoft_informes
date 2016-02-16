@@ -14,5 +14,10 @@
     "bower_components",
     "test",
     "tests"
-  ]
+  ],
+  "dependencies": {
+    "datatables": "^1.10.11",
+    "datatables-responsive": "^2.0.2",
+    "datatables-scroller": "^1.4.1"
+  }
 }
