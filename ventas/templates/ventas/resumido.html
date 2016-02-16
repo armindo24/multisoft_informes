@@ -233,6 +233,8 @@
         var item = null;
         var items = [];
         var modal = $(this);
+        var table = modal.find('tbody');
+        table.empty();
 
         modal.find('#comprobanteModal').text(cabecera.comp_numero);
         modal.find('#tipoModal').text(cabecera.cod_tp_comp);
@@ -243,7 +245,6 @@
         modal.find('#ivaModal').text(u.addCommas(cabecera.total_iva));
         modal.find('#descuentoModal').text(u.addCommas(cabecera.totaldescuento));
         modal.find('#netoModal').text(u.addCommas(cabecera.to_gravado));
-
 
         $.get(api + 'empresas/' + cabecera.cod_empresa + '/ventas/' + cabecera.comp_numero).done(function (d) {
           //modal.find('.modal-title').text('Comprobante ' + cabecera.comp_numero);
@@ -270,7 +271,7 @@
                   "<td class='price-value'><strong>" + u.addCommas(cabecera.to_gravado) + "</strong></td>" +
                   "</tr>";
           items.push(summary);
-          modal.find('tbody').html(items.join(''));
+          table.html(items.join(''));
         });
       });
 
@@ -307,9 +308,8 @@
       });
 
       $('[name=empresa]').on('change', function (ev, params) {
-        console.log('select empresa');
-        $.get(api + 'empresas/' + query.empresa + '/clientes', {tipo: ''}).done(function (d) {
-          u.createSelect('cliente', d, 'Cod_Cliente', 'Razon_Social', true);
+        $.get(api + 'clientes/tipos/').done(function (d) {
+          u.createSelect('tipo_cliente', d, 'Cod_Tp_Cliente', 'Des_Tp_Cliente', false);
           $('.chosen-select').trigger('chosen:updated');
         });
 
@@ -325,7 +325,7 @@
       });
 
       $('[name=tipo_cliente]').on('change', function (ev, params) {
-        console.log('select tipo');
+        console.log('select tipo', query.tipo_cliente);
         console.log(query);
         $.get(api + 'empresas/' + query.empresa + '/clientes', {tipo: query.tipo_cliente}).done(function (d) {
           u.createSelect('cliente', d, 'Cod_Cliente', 'Razon_Social', true);
@@ -338,12 +338,6 @@
         $('.chosen-select').trigger('chosen:updated');
       });
 
-
-      $.get(api + 'clientes/tipos/').done(function (d) {
-        u.createSelect('tipo_cliente', d, 'Cod_Tp_Cliente', 'Des_Tp_Cliente', true);
-        $('.chosen-select').trigger('chosen:updated');
-      });
-
       $.get(api + 'grupos/').done(function (d) {
         u.createSelect('grupo', d, 'cod_grupo', 'des_grupo', true);
         $('.chosen-select').trigger('chosen:updated');
@@ -351,7 +345,7 @@
     });
 
     function getInforme() {
-      $('.collapse').collapse('hide')
+      $('.collapse').collapse('hide');
       var mappings = {'cod_cliente': 'razon_social', 'cod_tp_comp': 'des_tp_comp', 'cod_vendedor': 'des_vendedor'};
       var group_field = mappings[query.order];
       var row, i = null;
