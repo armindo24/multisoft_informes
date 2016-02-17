@@ -301,7 +301,9 @@
           deferRender: true,
           scrollY: 400,
           scrollCollapse: true,
-          scroller: true,
+          scroller: {
+            displayBuffer: 30
+          },
           columnDefs: [
             {className: "price-value", targets: "price-label"},
             {render: $.fn.dataTable.render.number('.', ',', 2), targets: "price-label"},
