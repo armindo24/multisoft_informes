@@ -99,7 +99,7 @@
     </div>
   </div>
 
-  <table id="example" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+  <table id="results" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
     <thead>
     <tr>
       <th class="text-center">Detalle</th>
@@ -208,7 +208,7 @@
 
     var api = u.getApiUrl();
     var $preview = $('#preview');
-    var $results = $('#example');
+    var $results = $('#results');
     var numFormat = $.fn.dataTable.render.number('.', ',', 2).display;
 
     $(document).ready(function () {
@@ -294,8 +294,8 @@
         return numFormat(gravado);
       };
 
-      if (!$.fn.DataTable.isDataTable('#example')) {
-        $('#example').DataTable({
+      if (!$.fn.DataTable.isDataTable('#results')) {
+        $('#results').DataTable({
           language: u.spanish_dt,
           ajax: {
             url: api + 'empresas/' + query.empresa + '/informes/ventas_resumido',
@@ -358,7 +358,7 @@
         });
         $results.show();
       } else {
-        var table = $('#example').DataTable();
+        var table = $('#results').DataTable();
         table.row(0).scrollTo();
 {#        $results.hide();#}
         table.ajax.url(api + 'empresas/' + query.empresa + '/informes/ventas_resumido').load(function () {
