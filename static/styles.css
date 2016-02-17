@@ -13,3 +13,7 @@ div.DTS tbody tr.odd {
 div.DTS tbody tr.group {
     background-color: #fff;
 }
+
+.grouping-col {
+    display: none;
+}
