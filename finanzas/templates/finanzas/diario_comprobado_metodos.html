@@ -82,9 +82,11 @@
     var autorizado = $("[name=autorizado]").val()
     var moneda = $("[name=moneda]").val()
     $('.collapse').collapse('hide')
+    $('#table-div').empty()
+    $('#table-div').append("<b>Recuperando datos.</b>")
     $.get("http://" + aux1[0] + ":3000/api/v1/diariocomprobado/list/" + empresa + "/" + tipoasiento + "/" + desde + "/" + hasta + "/" + autorizado,
             function (data) {
-              if (data != null) {
+              if (data.data.length > 0) {
                 $('#table-div').empty()
                 console.log(data)
                 var string = ""
@@ -173,7 +175,10 @@
                 total_credito = 0
                 total_debito_me = 0
                 total_credito_me = 0
-              }
+              } else {
+                    $('#table-div').empty()
+                    $('#table-div').append("<b>No se han encontrado datos.</b>")
+                }
             }
     );
     //}

@@ -120,9 +120,13 @@ function buscar(){
 		alert("No hay datos suficientes para generar el listado")
 	} else {
 		$('.collapse').collapse('hide')
+		$('#table-div').empty()
+		$('#table-div').show()
+        $('#table-div').append("<b>Recuperando datos.</b>")
 		$.get("http://"+aux1[0]+":3000/api/v1/centrocostos/list/"+empresa+"/"+periodo+"/"+cuentad+"/"+cuentah+"/"+cuentaad+"/"+cuentaah+"/"+mesd+"/"+mesh+"/"+nivel,
 		    function(data) {
-		    	if (data != null){
+		    	if (data.data.length > 0) {
+                    $('#table-div').empty()
 		    		console.log(data)
 		    		$('#table-div').show()
 		    		$('#table-div').empty()
@@ -232,7 +236,11 @@ function buscar(){
                     } else {
                         $("[id='Total-Total']").text(addCommas((Math.round((total)* 100) / 100).toString()))
                     }
-		    	}
+		    	} else {
+                    $('#table-div').empty()
+                    $('#table-div').show()
+                    $('#table-div').append("<b>No se han encontrado datos.</b>")
+                }
 		    }
 		);  
 	}
