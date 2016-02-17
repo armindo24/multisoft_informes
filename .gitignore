@@ -5,6 +5,7 @@
 build
 node_modules
 bower_components
+server/multisoft/server.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
