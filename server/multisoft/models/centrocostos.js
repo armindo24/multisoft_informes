@@ -27,7 +27,7 @@ CentroCostos.all = function (params, cb) {
                     string+="AND DBA.PLANAUXI.Nivel = "+params.nivel+" "
                  string+="AND DBA.PLANAUXI.CodPlanCta >= '"+params.cuentad+"' AND DBA.PLANAUXI.CodPlanCta <= '"+params.cuentah+"' " 
                  if (params.cuentaad != 'NINGUNA' && params.cuentaah != 'NINGUNA')
-                    string+="AND DBA.PLANAUXI.Nombre like '%"+params.cuentaad+"%' AND DBA.PLANAUXI.CodPlanAux like '%"+arams.cuentaah+"%' "
+                    string+="AND DBA.PLANAUXI.CodPlanAux >= '"+params.cuentaad+"' AND DBA.PLANAUXI.CodPlanAux <= '"+params.cuentaah+"' "
                  string+="GROUP BY DBA.ACUMAUXI.CodPlanAux,CodPlanCta,DBA.PLANCTA.Nombre,DBA.PLANCTA.TipoSaldo,CodPlanCta_0,PlanAuxi_Nombre "+
                  "order by CodPlanCta,DBA.ACUMAUXI.CodPlanAux ";
     console.log(string)
