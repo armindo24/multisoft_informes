@@ -5,3 +5,15 @@
 .price-label {
     text-align: right;
 }
+
+div.DTS tbody tr.odd {
+    background-color: #f9f9f9;
+}
+
+div.DTS tbody tr.group {
+    background-color: #fff;
+}
+
+.grouping-col {
+    display: none;
+}

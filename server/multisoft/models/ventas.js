@@ -3,7 +3,7 @@ var util = require('util');
 var Ventas = {};
 
 Ventas.all = function (params, filters, cb) {
-    conn.exec("SET ROWCOUNT 100"); //TODO: solucionar resultados muy grandes
+    //conn.exec("SET ROWCOUNT 100"); //TODO: solucionar resultados muy grandes
 
     var select = "dba.vtacab.cod_tp_comp, dba.vtacab.comp_numero, dba.vtacab.cod_cliente, " +
         "dba.f_get_AsoAbreviatura(dba.vtacab.cod_empresa, dba.vtacab.cod_cliente, 'V') as razon_social, " +
