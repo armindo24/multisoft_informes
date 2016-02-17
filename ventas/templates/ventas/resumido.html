@@ -79,12 +79,12 @@
                       <option value="cod_cliente">Cliente</option>
                       <option value="cod_vendedor">Vendedor</option>
                     </select></td>
-{#                    <th> Moneda:</th>#}
-{#                    <td><select name="moneda" data-placeholder="Moneda..." onchange="" class="chosen-select"#}
-{#                                tabindex="2">#}
-{#                      <option value="01">Local</option>#}
-{#                      <option value="02">Extranjera</option>#}
-{#                    </select></td>#}
+                    {#                    <th> Moneda:</th>#}
+                    {#                    <td><select name="moneda" data-placeholder="Moneda..." onchange="" class="chosen-select"#}
+                    {#                                tabindex="2">#}
+                    {#                      <option value="01">Local</option>#}
+                    {#                      <option value="02">Extranjera</option>#}
+                    {#                    </select></td>#}
                   </tr>
                 </table>
               </div>
@@ -243,6 +243,7 @@
         var select = $(this);
         var select_name = select.attr('name');
         query[select_name] = select.val();
+        console.log(query);
         $preview.text(JSON.stringify(query));
       });
 
@@ -299,7 +300,9 @@
           language: u.spanish_dt,
           ajax: {
             url: api + 'empresas/' + query.empresa + '/informes/ventas_resumido',
-            data: query
+            data: function () {
+              return query;
+            }
           },
           deferRender: true,
           scrollY: 400,
@@ -360,9 +363,9 @@
       } else {
         var table = $('#results').DataTable();
         table.row(0).scrollTo();
-{#        $results.hide();#}
+        {#        $results.hide();#}
         table.ajax.url(api + 'empresas/' + query.empresa + '/informes/ventas_resumido').load(function () {
-{#          $results.show();#}
+          {#          $results.show();#}
         });
       }
     }
