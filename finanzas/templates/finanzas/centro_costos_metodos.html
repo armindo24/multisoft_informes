@@ -89,6 +89,7 @@ function checkTime(i) {
     
 
 function buscar(){
+    $('#table-div').hide()
 	var empresa = $("[name=empresa]").val()
 	var periodo = $("[name=periodo]").val()
 	var cuentad = $("[name=cuentad]").val()
@@ -123,6 +124,7 @@ function buscar(){
 		    function(data) {
 		    	if (data != null){
 		    		console.log(data)
+		    		$('#table-div').show()
 		    		$('#table-div').empty()
 		    		var cols = ['Cuentas']
 		    		var accounts = []
@@ -151,11 +153,14 @@ function buscar(){
 		    		var string1 = "";
 		    		var total_row = cols.length
 		    		for (var a=0; a<accounts.length; a++){
-		    		    string1+='<tr><td>'+accounts[a]+'</td>'
+		    		    if (a == (total_row-1)){
+		    		        string1+='<tr><td><b>'+accounts[a]+'</b></td>'
+		    		    } else {
+                            string1+='<tr><td>'+accounts[a]+'</td>'
+                        }
 		    		    var total_row = accounts.length
                         for (var b=1; b<cols.length; b++){
                             if (a == (total_row-1)){
-                                alert('aaa')
                                 string1+='<th style="text-align: right;" class="'+accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('')+' '+cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('')+'" id="'+accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('')+'-'+cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('')+'"></th>'
                             } else {
                                 string1+='<td style="text-align: right;" class="'+accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('')+' '+cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('')+'" id="'+accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('')+'-'+cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('')+'"></td>'
@@ -313,6 +318,8 @@ window.onload = function() {
 	
 	$('[name=fechad]').val(today)
 	$('[name=fechah]').val(today)
+	
+	$('#table-div').hide()
 };
 
 function permisos_empresas(data){
