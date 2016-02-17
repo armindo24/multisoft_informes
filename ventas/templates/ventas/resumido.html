@@ -99,30 +99,32 @@
     </div>
   </div>
 
-  <table id="results" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
-    <thead>
-    <tr>
-      <th class="text-center">Detalle</th>
-      <th># Compr.</th>
-      <th>Cliente</th>
-      <th>RUC</th>
-      <th class="text-center">Fecha</th>
-      <th class="price-label">IVA</th>
-      <th class="price-label">Gravado</th>
-      <th class="price-label">Descuento</th>
-      <th class="price-label">Total</th>
-      <th class="grouping-col">Comprobante</th>
-      <th class="grouping-col">Cliente</th>
-      <th class="grouping-col">Vendedor</th>
-    </tr>
-    </thead>
-    <tfoot>
-    <tr>
-      <th colspan="8" style="text-align:right">Total:</th>
-      <th></th>
-    </tr>
-    </tfoot>
-  </table>
+  <div id="resultado">
+    <table id="results" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+      <thead>
+      <tr>
+        <th class="text-center">Detalle</th>
+        <th># Compr.</th>
+        <th>Cliente</th>
+        <th>RUC</th>
+        <th class="text-center">Fecha</th>
+        <th class="price-label">IVA</th>
+        <th class="price-label">Gravado</th>
+        <th class="price-label">Descuento</th>
+        <th class="price-label">Total</th>
+        <th class="grouping-col">Comprobante</th>
+        <th class="grouping-col">Cliente</th>
+        <th class="grouping-col">Vendedor</th>
+      </tr>
+      </thead>
+      <tfoot>
+      <tr>
+        <th colspan="8" style="text-align:right">Total:</th>
+        <th></th>
+      </tr>
+      </tfoot>
+    </table>
+  </div>
 
   <div class="modal fade" id="ventaModal" tabindex="-1" role="dialog" aria-labelledby="ventaModal">
     <div class="modal-dialog modal-lg" role="document">
@@ -362,10 +364,11 @@
         $results.show();
       } else {
         var table = $('#results').DataTable();
+        var $resultado = $('#resultado');
         table.row(0).scrollTo();
-        {#        $results.hide();#}
+        $resultado.css("position", "absolute").css("left", -9999);
         table.ajax.url(api + 'empresas/' + query.empresa + '/informes/ventas_resumido').load(function () {
-          {#          $results.show();#}
+          $resultado.css("position", "relative").css("left", 0);
         });
       }
     }
