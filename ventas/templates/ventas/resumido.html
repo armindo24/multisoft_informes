@@ -5,7 +5,8 @@
   <link rel="stylesheet" href={% static 'chosen_v1.4.2/chosen.css' %}>
   <link rel="stylesheet" href="{% static 'select2/css/select2.min.css' %}">
   <link rel="stylesheet" href="{% static 'styles.css' %}">
-  <link rel="stylesheet" href="{% static 'datatables/media/css/dataTables.bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'datatables.net-bs/css/dataTables.bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'datatables.net-scroller-bs/css/scroller.bootstrap.css' %}">
   <script src={% static 'js/jquery-ui.js' %}></script>
   <script src={% static 'js/puntos-decimales.js' %}></script>
   <script src={% static 'js/jquery.maskedinput.min.js' %}></script>
@@ -13,8 +14,9 @@
   <script src={% static 'chosen_v1.4.2/chosen.jquery.js' %}></script>
   <script src={% static 'dajaxice/dajaxice.core.js' %}></script>
   <script src="{% static 'js/utils.js' %}"></script>
-  <script src="{% static 'datatables/media/js/jquery.dataTables.js' %}"></script>
-  <script src="{% static 'datatables/media/js/dataTables.bootstrap.js' %}"></script>
+  <script src="{% static 'datatables.net/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'datatables.net-bs/js/dataTables.bootstrap.js' %}"></script>
+  <script src="{% static 'datatables.net-scroller/js/dataTables.scroller.js' %}"></script>
 {% endblock %}
 
 {% block header %}
@@ -296,6 +298,10 @@
             url: api + 'empresas/' + query.empresa + '/informes/ventas_resumido',
             data: query
           },
+          deferRender: true,
+          scrollY: 400,
+          scrollCollapse: true,
+          scroller: true,
           columnDefs: [
             {className: "price-value", targets: "price-label"},
             {render: $.fn.dataTable.render.number('.', ',', 2), targets: "price-label"},
@@ -319,7 +325,7 @@
             {data: null, render: calcGravado},
             {data: 'totaldescuento'},
             {data: 'to_gravado'},
-            {data: 'cod_tp_comp', name: 'cod_tp_comp'},
+            {data: 'des_tp_comp', name: 'cod_tp_comp'},
             {data: 'razon_social', name: 'cod_cliente'},
             {data: 'des_vendedor', name: 'cod_vendedor'}
           ],
@@ -336,7 +342,7 @@
             api.column(query.order + ':name', {page: 'current'}).data().each(function (group, i) {
               if (last !== group) {
                 $(rows).eq(i).before(
-                        '<tr class="group"><td colspan="' + colCount + '">' + group + '</td></tr>'
+                        '<tr class="group text-center"><td colspan="' + colCount + '"><h4>' + group + '</h4></td></tr>'
                 );
                 last = group;
               }
@@ -421,17 +427,10 @@
                 return parseVal(a) + parseVal(b);
               }, 0);
 
-      // Total over this page
-      pageTotal = api
-              .column(8, {page: 'current'})
-              .data()
-              .reduce(function (a, b) {
-                return parseVal(a) + parseVal(b);
-              }, 0);
 
       // Update footer
       $(api.column(8).footer()).html(
-              numFormat(pageTotal) + ' (' + numFormat(total) + ' total)'
+              numFormat(total)
       );
     }
   </script>

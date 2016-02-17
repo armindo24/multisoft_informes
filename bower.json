@@ -18,6 +18,7 @@
   "dependencies": {
     "datatables": "^1.10.11",
     "datatables-responsive": "^2.0.2",
-    "datatables-scroller": "^1.4.1"
+    "datatables.net-scroller": "^1.4.1",
+    "datatables.net-scroller-bs": "^1.4.1"
   }
 }
