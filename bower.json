@@ -1,0 +1,24 @@
+{
+  "name": "multisoft_informes",
+  "authors": [
+    "Jordan <jayala1993@outlook.com>"
+  ],
+  "description": "",
+  "main": "",
+  "moduleType": [],
+  "license": "MIT",
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "datatables": "^1.10.11",
+    "datatables-responsive": "^2.0.2",
+    "datatables.net-scroller": "^1.4.1",
+    "datatables.net-scroller-bs": "^1.4.1"
+  }
+}
