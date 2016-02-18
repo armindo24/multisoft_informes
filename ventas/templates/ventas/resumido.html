@@ -25,9 +25,6 @@
 
 
 {% block content %}
-  <!-- <br>
-  Query
-  <pre id="preview"><p></p></pre><br> -->
 
   <div class="panel-group" id="accordion">
     <div class="panel panel-default">
@@ -42,20 +39,12 @@
               <div class="">
                 <table style="width: auto;" class="table table-striped table-hover table-bordered table-filter scroll">
                   <tr>
-                    <th> Empresa:</th>
-                    <td><select name="empresa" data-placeholder="Empresa..." onchange="" class="chosen-select"
-                                tabindex="2"></select></td>
-                    <th> Sucursal:</th>
-                    <td><select name="sucursal" data-placeholder="Sucursal..." onchange="" class="chosen-select"
-                                tabindex="2"></select></td>
+                    {% include 'ventas/_filtro.html' with title="Empresa" name="empresa" %}
+                    {% include 'ventas/_filtro.html' with title="Sucursal" name="sucursal" %}
                   </tr>
                   <tr>
-                    <th> Tipo Cliente:</th>
-                    <td><select name="tipo_cliente" data-placeholder="Tipo..." onchange="" class="chosen-select"
-                                tabindex="2"></select></td>
-                    <th> Cliente:</th>
-                    <td><select name="cliente" data-placeholder="Cliente..." onchange="" class="chosen-select"
-                                tabindex="2"></select></td>
+                    {% include 'ventas/_filtro.html' with title="Tipo Cliente" name="tipo_cliente" %}
+                    {% include 'ventas/_filtro.html' with title="Cliente" name="cliente" %}
                   </tr>
                   <tr>
                     <th> Desde:</th>
@@ -64,12 +53,8 @@
                     <td><input id="fechah" type="text" class="datepicker" name="fechah"/></td>
                   </tr>
                   <tr>
-                    <th> Grupo:</th>
-                    <td><select name="grupo" data-placeholder="Grupo..." onchange="" class="chosen-select"
-                                tabindex="2"></select></td>
-                    <th> Comprobante:</th>
-                    <td><select name="tipo_comprobante" data-placeholder="Tipo..." onchange="" class="chosen-select"
-                                tabindex="2"></select></td>
+                    {% include 'ventas/_filtro.html' with title="Grupo" name="grupo" %}
+                    {% include 'ventas/_filtro.html' with title="Comprobante" name="tipo_comprobante" %}
                   </tr>
                   <tr>
                     <th> Agrupar por:</th>
@@ -199,7 +184,6 @@
       </div>
     </div>
   </div>
-
 {% endblock %}
 
 {% block extra_foot %}
@@ -289,8 +273,6 @@
     function getInforme() {
       $('.collapse').collapse('hide');
       $results.show();
-      var mappings = {'cod_cliente': 'razon_social', 'cod_tp_comp': 'des_tp_comp', 'cod_vendedor': 'des_vendedor'};
-      var group_field = mappings[query.order];
 
       var calcGravado = function (data, type, row) {
         var gravado = parseFloat(row.to_gravado) - parseFloat(row.total_iva);
