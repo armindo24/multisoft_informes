@@ -109,9 +109,12 @@ function buscar(){
 		alert("No hay datos suficientes para generar el listado")
 	} else {
 		$('.collapse').collapse('hide')
+		$('#table-div').empty()
+        $('#table-div').append("<b>Recuperando datos.</b>")
 		$.get("http://"+aux1[0]+":3000/api/v1/balancegeneral/list/"+empresa+"/"+periodo+"/"+cuentad+"/"+cuentah+"/"+mesd+"/"+mesh+"/"+nivel+"/"+incluir+"/"+moneda+"/"+aux,
 		    function(data) {
-		    	if (data != null){
+		        console.log(data.data.length)
+		    	if (data.data.length > 0){
 		    		$('#table-div').empty()
 		    			var tableta = '<table id="resultados" class="table table-striped table-hover table-bordered table-filter scroll" tyle="width:90%">'+
 							    		'<thead>'+
@@ -263,6 +266,9 @@ function buscar(){
 					$('#resultados tbody').html(string)
 					ingreso=0
 					egreso=0
+		    	} else {
+		    	    $('#table-div').empty()
+		    	    $('#table-div').append("<b>No se han encontrado datos.</b>")
 		    	}
 		    }
 		);  

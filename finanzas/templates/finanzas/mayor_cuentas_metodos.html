@@ -435,9 +435,12 @@ function buscar(){
 		alert("No hay datos suficientes para generar el listado")
 	} else {
 		$('.collapse').collapse('hide')
+		$('#table-div').empty()
+        $('#table-div').append("<b>Recuperando datos.</b>")
 		$.get("http://"+aux1[0]+":3000/api/v1/mayorcuenta/cab/"+empresa+"/"+periodo+"/"+fechad+"/"+fechah+"/"+tipoasiento+"/"+cuentad+"/"+cuentah+"/"+incluir,
 		    function(data) {
-		    	if (data != null){
+		          console.log(data)
+		    	if (data[1].data2.length > 0){
 		    		console.log(data)
 		    		$('#table-div').empty()
 		    		for (var e=0;e < data[1].data2.length;e++ ){
@@ -486,7 +489,10 @@ function buscar(){
     					
 		    		}
 		    		 
-		    	}
+		    	} else {
+                    $('#table-div').empty()
+                    $('#table-div').append("<b>No se han encontrado datos.</b>")
+                }
 		    }
 		);  
 	}

@@ -47,6 +47,7 @@ function permisos_empresas(data){
         $.ajax("http://"+aux1[0]+":3000/api/v1/empresa/inin/select",{method:'POST', contentType:'application/json', data: str}).done(
         function(data) {
             if (data != null){
+                $('#table').empty();
                 for (var a=0; a<data.data.length; a++){
                     lastselect = a
                     string='<div id="row-'+a+'" class="row show-grid">'+

@@ -107,9 +107,11 @@
         periodoant = (parseInt(periodo)).toString()
       }
       $('.collapse').collapse('hide')
+      $('#table-div').empty()
+      $('#table-div').append("<b>Recuperando datos.</b>")
       $.get("http://" + aux1[0] + ":3000/api/v1/balancecomprobado/list/" + empresa + "/" + periodo + "/" + periodoant + "/" + mes + "/" + mesant + "/" + nivel + "/" + moneda,
               function (data) {
-                if (data != null) {
+                if (data.data.length > 0) {
                   $('#table-div').empty()
                   var tableta = '<table id="resultados" class="table table-striped table-hover table-bordered table-filter scroll" tyle="width:90%">' +
                           '<thead>' +
@@ -367,6 +369,9 @@
                   string += '</tr>'
 
                   $('#resultados tbody').html(string)
+                } else {
+                    $('#table-div').empty()
+                    $('#table-div').append("<b>No se han encontrado datos.</b>")
                 }
               }
       );
