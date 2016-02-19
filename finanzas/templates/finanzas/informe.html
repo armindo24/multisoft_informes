@@ -1,0 +1,66 @@
+{% extends 'finanzas/base.html' %}
+
+{% block header %}
+  Activo Fijo:
+{% endblock %}
+
+{% block content %}
+  <br>Query
+  <pre id="preview"><p></p></pre><br>
+
+  <div class="container">
+    <div class="row">
+      <div class='col-sm-6'>
+        <label for="compras">Compras</label>
+        <div id="compras" class="input-daterange input-group">
+          <input type="text" class="input-sm form-control" name="start"/>
+          <span class="input-group-addon">hasta</span>
+          <input type="text" class="input-sm form-control" name="end"/>
+        </div>
+      </div>
+      <div class='col-sm-6'>
+        <label for="altas">Altas</label>
+        <div id="ventas" class="input-daterange input-group">
+          <input type="text" class="input-sm form-control" name="start"/>
+          <span class="input-group-addon">hasta</span>
+          <input type="text" class="input-sm form-control" name="end"/>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_foot %}
+  <script>
+    var query = {};
+
+    var api = u.getApiUrl();
+    var $results = $('#results');
+    var $preview = $('#preview');
+    var today = new Date();
+
+    $(document).ready(function () {
+      u.hideNav();
+      $results.hide();
+
+      $('.input-daterange').datepicker({
+        todayBtn: "linked",
+        language: "es",
+        format: "yyyy-mm-dd",
+        startView: "decade"
+      });
+
+      $('.input-daterange .form-control').datepicker().on('changeDate', function (e) {
+        query[this.parentElement.id + '_' + this.name] = this.value;
+        debug();
+      });
+
+      $('.input-daterange .form-control').datepicker('setDate', today);
+      $('.input-daterange .form-control').datepicker('update');
+    });
+
+    function debug() {
+      $preview.text(JSON.stringify(query));
+    }
+  </script>
+{% endblock %}

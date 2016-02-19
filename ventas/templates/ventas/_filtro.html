@@ -1,4 +1,4 @@
-<th>{{ title }}:</th>
+<th>{% if title %}{{ title }}{% else %}{{ name|capfirst }}{% endif %}:</th>
 <td>
   <select name="{{ name }}" tabindex="2" class="chosen-select"
           data-placeholder="{% if placeholder %}{{ placeholder }}{% else %}{{ title }}...{% endif %}">
