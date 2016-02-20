@@ -4,30 +4,39 @@
   Activo Fijo:
 {% endblock %}
 
-{% block content %}
-  <br>Query
-  <pre id="preview"><p></p></pre><br>
-
-  <div class="container">
-    <div class="row">
-      <div class='col-sm-6'>
-        <label for="compras">Compras</label>
-        <div id="compras" class="input-daterange input-group">
-          <input type="text" class="input-sm form-control" name="start"/>
-          <span class="input-group-addon">hasta</span>
-          <input type="text" class="input-sm form-control" name="end"/>
-        </div>
+{% block filters %}
+  <tr>
+    {% include 'ventas/_filtro.html' with name='empresa' %}
+    {% include 'ventas/_filtro.html' with name='articulo' %}
+  </tr>
+  <tr>
+    {% include 'ventas/_filtro.html' with name='proveedor' %}
+    {% include 'ventas/_filtro.html' with name='estado' %}
+  </tr>
+  <tr>
+    <th>Compras:</th>
+    <td>
+      <div id="compras" class="input-daterange input-group">
+        <input type="text" class="input-sm form-control" name="start"/>
+        <span class="input-group-addon">hasta</span>
+        <input type="text" class="input-sm form-control" name="end"/>
       </div>
-      <div class='col-sm-6'>
-        <label for="altas">Altas</label>
-        <div id="ventas" class="input-daterange input-group">
-          <input type="text" class="input-sm form-control" name="start"/>
-          <span class="input-group-addon">hasta</span>
-          <input type="text" class="input-sm form-control" name="end"/>
-        </div>
+    </td>
+    <th>Altas:</th>
+    <td>
+      <div id="ventas" class="input-daterange input-group">
+        <input type="text" class="input-sm form-control" name="start"/>
+        <span class="input-group-addon">hasta</span>
+        <input type="text" class="input-sm form-control" name="end"/>
       </div>
-    </div>
-  </div>
+    </td>
+  </tr>
+  <tr>
+    <th>Revaluable</th>
+    <td><input type="checkbox" name="revaluable"/></td>
+    <th>Despreciable</th>
+    <td><input type="checkbox" name="despreciable"/></td>
+  </tr>
 {% endblock %}
 
 {% block extra_foot %}
@@ -47,7 +56,7 @@
         todayBtn: "linked",
         language: "es",
         format: "yyyy-mm-dd",
-        startView: "decade"
+        {#        startView: "decade"#}
       });
 
       $('.input-daterange .form-control').datepicker().on('changeDate', function (e) {
@@ -57,10 +66,31 @@
 
       $('.input-daterange .form-control').datepicker('setDate', today);
       $('.input-daterange .form-control').datepicker('update');
+
+      $(".chosen-select").chosen({
+        disable_search_threshold: 0,
+        no_results_text: "No hay resultados disponibles.",
+        width: "200px",
+        allow_single_deselect: true
+      });
+
+      $('.chosen-select').on('change', function (evt, params) {
+        var select = $(this);
+        var select_name = select.attr('name');
+        query[select_name] = select.val();
+        debug();
+      });
+
+      u.get_empresas({{ user }}, function (d) {
+        u.createSelect('empresa', d, 'Cod_Empresa', 'Des_Empresa');
+        $('.chosen-select').trigger('chosen:updated');
+      });
+
     });
 
     function debug() {
       $preview.text(JSON.stringify(query));
+      console.log("debug", query);
     }
   </script>
 {% endblock %}
