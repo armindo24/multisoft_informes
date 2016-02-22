@@ -4,40 +4,50 @@
   Activo Fijo:
 {% endblock %}
 
-{% block filters %}
-  <tr>
-    {% include 'ventas/_filtro.html' with name='empresa' %}
-    {% include 'ventas/_filtro.html' with name='articulo' %}
-  </tr>
-  <tr>
-    {% include 'ventas/_filtro.html' with name='proveedor' %}
-    {% include 'ventas/_filtro.html' with name='estado' %}
-  </tr>
-  <tr>
-    <th>Compras:</th>
-    <td>
-      <div id="compras" class="input-daterange input-group">
-        <input type="text" class="input-sm form-control" name="start"/>
-        <span class="input-group-addon">hasta</span>
-        <input type="text" class="input-sm form-control" name="end"/>
-      </div>
-    </td>
-    <th>Altas:</th>
-    <td>
-      <div id="ventas" class="input-daterange input-group">
-        <input type="text" class="input-sm form-control" name="start"/>
-        <span class="input-group-addon">hasta</span>
-        <input type="text" class="input-sm form-control" name="end"/>
-      </div>
-    </td>
-  </tr>
-  <tr>
-    <th>Revaluable</th>
-    <td><input type="checkbox" name="revaluable"/></td>
-    <th>Despreciable</th>
-    <td><input type="checkbox" name="despreciable"/></td>
-  </tr>
+{% block content %}
+  <select id="select-empresa" placeholder="Empresa..."></select>
+  <select id="select-cliente" placeholder="Cliente..."></select>
+  <div id="ventas" class="input-daterange input-group">
+    <input type="text" class="input-sm form-control" name="start"/>
+    <span class="input-group-addon">hasta</span>
+    <input type="text" class="input-sm form-control" name="end"/>
+  </div>
 {% endblock %}
+
+{#{% block filters %}#}
+{#  <tr>#}
+{#    {% include 'ventas/_filtro.html' with name='empresa' %}#}
+{#    {% include 'ventas/_filtro.html' with name='articulo' %}#}
+{#  </tr>#}
+{#  <tr>#}
+{#    {% include 'ventas/_filtro.html' with name='proveedor' %}#}
+{#    {% include 'ventas/_filtro.html' with name='estado' %}#}
+{#  </tr>#}
+{#  <tr>#}
+{#    <th>Compras:</th>#}
+{#    <td>#}
+{#      <div id="compras" class="input-daterange input-group">#}
+{#        <input type="text" class="input-sm form-control" name="start"/>#}
+{#        <span class="input-group-addon">hasta</span>#}
+{#        <input type="text" class="input-sm form-control" name="end"/>#}
+{#      </div>#}
+{#    </td>#}
+{#    <th>Altas:</th>#}
+{#    <td>#}
+{#      <div id="ventas" class="input-daterange input-group">#}
+{#        <input type="text" class="input-sm form-control" name="start"/>#}
+{#        <span class="input-group-addon">hasta</span>#}
+{#        <input type="text" class="input-sm form-control" name="end"/>#}
+{#      </div>#}
+{#    </td>#}
+{#  </tr>#}
+{#  <tr>#}
+{#    <th>Revaluable</th>#}
+{#    <td><input type="checkbox" name="revaluable"/></td>#}
+{#    <th>Despreciable</th>#}
+{#    <td><input type="checkbox" name="despreciable"/></td>#}
+{#  </tr>#}
+{#{% endblock %}#}
 
 {% block extra_foot %}
   <script>
@@ -47,10 +57,74 @@
     var $results = $('#results');
     var $preview = $('#preview');
     var today = new Date();
+    var initialize = init;
+    var select_empresa, $select_empresa;
+    var select_cliente, $select_cliente;
+    var xhr;
 
     $(document).ready(function () {
       u.hideNav();
       $results.hide();
+      initialize();
+      select_empresa = $select_empresa[0].selectize;
+      select_cliente = $select_cliente[0].selectize;
+      select_cliente.disable();
+    });
+
+    function init() {
+      $select_empresa = $('#select-empresa').selectize({
+        valueField: 'Cod_Empresa',
+        labelField: 'Des_Empresa',
+        searchField: 'Des_Empresa',
+        preload: true,
+        load: function (q, callback) {
+          $.ajax({
+            url: api + 'empresa/select',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+              empresa: q,
+              page_limit: 10,
+            },
+            error: function () {
+              callback();
+            },
+            success: function (res) {
+              callback(res.data);
+            }
+          });
+        },
+        onChange: function (value) {
+          query.empresa = value;
+          debug();
+          if (!value.length) return;
+          select_cliente.disable();
+          select_cliente.clearOptions();
+          select_cliente.load(function (callback) {
+            xhr && xhr.abort();
+            xhr = $.ajax({
+              url: api + 'empresas/' + query.empresa + '/clientes',
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_cliente.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          })
+        }
+      });
+
+      $select_cliente = $('#select-cliente').selectize({
+        valueField: 'Cod_Cliente',
+        labelField: 'Razon_Social',
+        searchField: 'Razon_Social',
+        onChange: function (value) {
+          query.cliente = value;
+          debug();
+        }
+      });
 
       $('.input-daterange').datepicker({
         todayBtn: "linked",
@@ -66,27 +140,7 @@
 
       $('.input-daterange .form-control').datepicker('setDate', today);
       $('.input-daterange .form-control').datepicker('update');
-
-      $(".chosen-select").chosen({
-        disable_search_threshold: 0,
-        no_results_text: "No hay resultados disponibles.",
-        width: "200px",
-        allow_single_deselect: true
-      });
-
-      $('.chosen-select').on('change', function (evt, params) {
-        var select = $(this);
-        var select_name = select.attr('name');
-        query[select_name] = select.val();
-        debug();
-      });
-
-      u.get_empresas({{ user }}, function (d) {
-        u.createSelect('empresa', d, 'Cod_Empresa', 'Des_Empresa');
-        $('.chosen-select').trigger('chosen:updated');
-      });
-
-    });
+    }
 
     function debug() {
       $preview.text(JSON.stringify(query));

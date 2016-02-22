@@ -25,7 +25,7 @@ router.use(function (req, res, next) {
 
 //empresas select option
 router.get('/empresa/select', function (req, res, next) {
-    Empresa.all(function (result) {
+    Empresa.all(req.query, function (result) {
         res.json({data: result});
     });
 });
