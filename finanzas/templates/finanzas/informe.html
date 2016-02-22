@@ -220,8 +220,9 @@
       });
 
       $select_estado = $('#select-estado').selectize({
+        allowEmptyOption: true,
+        placeholder: 'Click here to select ...',
         options: [
-          {value: '', text: 'Todos'},
           {value: 'A', text: 'Activo'},
           {value: 'I', text: 'Inactivo'},
           {value: 'B', text: 'De Baja'}
