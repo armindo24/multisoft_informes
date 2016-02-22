@@ -1,0 +1,42 @@
+{
+  "apps": [
+    {
+      "name": "sig",
+      "script": "bin/www",
+      "env": {
+        "NODE_ENV": "development",
+        "DYLD_LIBRARY_PATH": "/Applications/SQLAnywhere12/System/lib64:",
+        "LD_LIBRARY_PATH": "/opt/sqlanywhere12/lib64:"
+      },
+      "env_production": {
+        "NODE_ENV": "production"
+      },
+      "env_staging": {
+        "NODE_ENV": "staging",
+        "TEST": true
+      }
+    }
+  ],
+
+  "deploy": {
+    "production": {
+      "user": "node",
+      "host": "127.0.0.1",
+      "ref": "origin/master",
+      "repo": "git@github.com:repo.git",
+      "path": "/var/www/production",
+      "post-deploy": "npm install ; pm2 startOrRestart ecosystem.json --env production"
+    },
+    "dev": {
+      "user": "jordan",
+      "host": "127.0.0.1",
+      "ref": "origin/master",
+      "repo": "git@bitbucket.org:suarezlucas28/multisoft_informes.git",
+      "path": "/Users/jordan/Desktop/www/development",
+      "post-deploy": "echo 'Ya esta'",
+      "env": {
+        "NODE_ENV": "dev"
+      }
+    }
+  }
+}

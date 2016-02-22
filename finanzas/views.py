@@ -35,3 +35,8 @@ def extracto_cuentas_banco(request):
 @permission_required('custom_permissions.informe_centrocostos')
 def centro_costos(request):
     return render_to_response('finanzas/centro_costos.html', {'user':request.user.id}, context_instance=RequestContext(request))
+
+# TODO: add permiso
+def informe(request):
+    filters = ['empresas', 'clientes']
+    return render_to_response('finanzas/informe.html', {'user':request.user.id, 'filters': filters}, context_instance=RequestContext(request))

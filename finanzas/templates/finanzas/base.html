@@ -1,0 +1,43 @@
+{% extends 'admin/base_site.html' %}
+{% load staticfiles %}
+{% block extrahead %}
+  <link rel="stylesheet" href={% static 'css/jquery-ui.css' %}>
+  <link rel="stylesheet" href={% static 'chosen_v1.4.2/chosen.css' %}>
+  <link rel="stylesheet" href="{% static 'select2/css/select2.min.css' %}">
+  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/dist/css/bootstrap-datepicker3.min.css' %}">
+  <link rel="stylesheet" href="{% static 'styles.css' %}">
+  <script src="{% static 'select2/js/select2.full.min.js' %}"></script>
+  <script src={% static 'chosen_v1.4.2/chosen.jquery.js' %}></script>
+  <script src={% static 'dajaxice/dajaxice.core.js' %}></script>
+  <script src="{% static 'bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js' %}"></script>
+  <script src="{% static 'bootstrap-datepicker/dist/locales/bootstrap-datepicker.es.min.js' %}"></script>
+  <script src="{% static 'js/utils.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+  <div class="panel-group" id="accordion">
+    <div class="panel panel-default">
+      <div class="panel-heading" data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
+        <h4 class="panel-title">Filtros</h4>
+      </div>
+      <div id="collapseOne" class="panel-collapse collapse">
+        <div class="panel-body">
+          <div class="panel-group text-center" id="archivo_accordion" style="margin-bottom: 0px;">
+
+            <center>
+              <table style="width: auto;" class="table table-striped table-hover table-bordered table-filter scroll">
+                {% block filters %}
+                {% endblock %}
+              </table>
+            </center>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        {% block filter_footer %}
+          <a type="button" class="btn btn-primary" onclick="getInforme()">Filtrar <i class="fa fa-search"></i></a>
+        {% endblock %}
+      </div>
+    </div>
+  </div>
+{% endblock content %}

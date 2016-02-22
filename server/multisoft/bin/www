@@ -6,10 +6,6 @@
 
 var config = require('config');
 var shell = require('shelljs');
-var configScript = config.get('sybase.configScript');
-console.log(configScript);
-shell.exec('source ' + configScript);
-
 var app = require('../app');
 var debug = require('debug')('multisoft:server');
 var http = require('http');

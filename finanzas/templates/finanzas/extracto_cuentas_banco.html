@@ -117,6 +117,9 @@
           $preview.text(JSON.stringify(query));
         }
       });
+      u.translate();
+      $datepicker.datepicker("setDate", today);
+      query.fechad = query.fechah = $.datepicker.formatDate("yy-mm-dd", today);
 
       $(".nav.nav-pills li").on("click", function (e) {
         $(".nav.nav-pills li.active").removeClass("active");
@@ -125,10 +128,6 @@
         $preview.text(JSON.stringify(query));
         getInforme();
       });
-
-      u.translate();
-      $datepicker.datepicker("setDate", today);
-      query.fechad = query.fechah = $.datepicker.formatDate("yy-mm-dd", today);
 
       $(".chosen-select").chosen({
         disable_search_threshold: 0,
@@ -189,7 +188,7 @@
                 var saldo_anterior = 0;
               }
               var saldo_actual = saldo_anterior;
-{#              rows.push("<tr><td colspan='7'>Saldo Anterior:</td><td>" + saldo_anterior + "</td></tr>");#}
+              {#              rows.push("<tr><td colspan='7'>Saldo Anterior:</td><td>" + saldo_anterior + "</td></tr>");#}
               for (i = 0; i < d.data.length; i++) {
                 row = d.data[i];
                 tot_credito += parseFloat(row.tot_credito);
