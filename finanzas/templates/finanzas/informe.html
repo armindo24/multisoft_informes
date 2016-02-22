@@ -6,7 +6,14 @@
 
 {% block content %}
   <select id="select-empresa" placeholder="Empresa..."></select>
-  <select id="select-cliente" placeholder="Cliente..."></select>
+  <select id="select-rubro" placeholder="Rubro..."></select>
+  <select id="select-subrubro" placeholder="Subrubro..."></select>
+
+  <select id="select-articulo" placeholder="Articulo..."></select>
+  <select id="select-proveedor" placeholder="Proveedor..."></select>
+
+  <select id="select-estado" placeholder="Estado..."></select>
+
   <div id="ventas" class="input-daterange input-group">
     <input type="text" class="input-sm form-control" name="start"/>
     <span class="input-group-addon">hasta</span>
@@ -14,40 +21,40 @@
   </div>
 {% endblock %}
 
-{#{% block filters %}#}
-{#  <tr>#}
-{#    {% include 'ventas/_filtro.html' with name='empresa' %}#}
-{#    {% include 'ventas/_filtro.html' with name='articulo' %}#}
-{#  </tr>#}
-{#  <tr>#}
-{#    {% include 'ventas/_filtro.html' with name='proveedor' %}#}
-{#    {% include 'ventas/_filtro.html' with name='estado' %}#}
-{#  </tr>#}
-{#  <tr>#}
-{#    <th>Compras:</th>#}
-{#    <td>#}
-{#      <div id="compras" class="input-daterange input-group">#}
-{#        <input type="text" class="input-sm form-control" name="start"/>#}
-{#        <span class="input-group-addon">hasta</span>#}
-{#        <input type="text" class="input-sm form-control" name="end"/>#}
-{#      </div>#}
-{#    </td>#}
-{#    <th>Altas:</th>#}
-{#    <td>#}
-{#      <div id="ventas" class="input-daterange input-group">#}
-{#        <input type="text" class="input-sm form-control" name="start"/>#}
-{#        <span class="input-group-addon">hasta</span>#}
-{#        <input type="text" class="input-sm form-control" name="end"/>#}
-{#      </div>#}
-{#    </td>#}
-{#  </tr>#}
-{#  <tr>#}
-{#    <th>Revaluable</th>#}
-{#    <td><input type="checkbox" name="revaluable"/></td>#}
-{#    <th>Despreciable</th>#}
-{#    <td><input type="checkbox" name="despreciable"/></td>#}
-{#  </tr>#}
-{#{% endblock %}#}
+{% block filters %}
+  <tr>
+    {% include 'ventas/_filtro.html' with name='empresa' %}
+    {% include 'ventas/_filtro.html' with name='articulo' %}
+  </tr>
+  <tr>
+    {% include 'ventas/_filtro.html' with name='proveedor' %}
+    {% include 'ventas/_filtro.html' with name='estado' %}
+  </tr>
+  <tr>
+    <th>Compras:</th>
+    <td>
+      <div id="compras" class="input-daterange input-group">
+        <input type="text" class="input-sm form-control" name="start"/>
+        <span class="input-group-addon">hasta</span>
+        <input type="text" class="input-sm form-control" name="end"/>
+      </div>
+    </td>
+    <th>Altas:</th>
+    <td>
+      <div id="ventas" class="input-daterange input-group">
+        <input type="text" class="input-sm form-control" name="start"/>
+        <span class="input-group-addon">hasta</span>
+        <input type="text" class="input-sm form-control" name="end"/>
+      </div>
+    </td>
+  </tr>
+  <tr>
+    <th>Revaluable</th>
+    <td><input type="checkbox" name="revaluable"/></td>
+    <th>Despreciable</th>
+    <td><input type="checkbox" name="despreciable"/></td>
+  </tr>
+{% endblock %}
 
 {% block extra_foot %}
   <script>
@@ -59,7 +66,11 @@
     var today = new Date();
     var initialize = init;
     var select_empresa, $select_empresa;
-    var select_cliente, $select_cliente;
+    var select_rubro, $select_rubro;
+    var select_subrubro, $select_subrubro;
+    var select_articulo, $select_articulo;
+    var select_proveedor, $select_proveedor;
+    var select_estado, $select_estado;
     var xhr;
 
     $(document).ready(function () {
@@ -67,8 +78,15 @@
       $results.hide();
       initialize();
       select_empresa = $select_empresa[0].selectize;
-      select_cliente = $select_cliente[0].selectize;
-      select_cliente.disable();
+      select_rubro = $select_rubro[0].selectize;
+      select_subrubro = $select_subrubro[0].selectize;
+      select_articulo = $select_articulo[0].selectize;
+      select_proveedor = $select_proveedor[0].selectize;
+
+      select_rubro.disable();
+      select_subrubro.disable();
+      select_articulo.disable();
+      select_proveedor.disable();
     });
 
     function init() {
@@ -98,30 +116,118 @@
           query.empresa = value;
           debug();
           if (!value.length) return;
-          select_cliente.disable();
-          select_cliente.clearOptions();
-          select_cliente.load(function (callback) {
+          select_rubro.disable();
+          select_rubro.clearOptions();
+          select_articulo.disable();
+          select_articulo.clearOptions();
+          select_proveedor.disable();
+          select_proveedor.clearOptions();
+          select_rubro.load(function (callback) {
             xhr && xhr.abort();
             xhr = $.ajax({
-              url: api + 'empresas/' + query.empresa + '/clientes',
+              url: api + 'empresas/' + query.empresa + '/rubros',
               type: 'GET',
               dataType: 'json'
             }).done(function (res) {
-              select_cliente.enable();
+              select_rubro.enable();
               callback(res.data);
             }).fail(function () {
               callback();
             });
-          })
+          });
+          select_articulo.load(function (callback) {
+            $.ajax({
+              url: api + 'empresas/' + query.empresa + '/articulos',
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_articulo.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+          select_proveedor.load(function (callback) {
+            $.ajax({
+              url: api + 'empresas/' + query.empresa + '/proveedores',
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_proveedor.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
         }
       });
 
-      $select_cliente = $('#select-cliente').selectize({
-        valueField: 'Cod_Cliente',
-        labelField: 'Razon_Social',
-        searchField: 'Razon_Social',
+      $select_rubro = $('#select-rubro').selectize({
+        valueField: 'codrubro',
+        labelField: 'descrip',
+        searchField: 'descrip',
         onChange: function (value) {
-          query.cliente = value;
+          query.rubro = value;
+          debug();
+          if (!value.length) return;
+          select_subrubro.disable();
+          select_subrubro.clearOptions();
+          select_subrubro.load(function (callback) {
+            $.ajax({
+              url: api + 'empresas/' + query.empresa + '/rubros/' + query.rubro + '/subrubros',
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_subrubro.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+
+      $select_subrubro = $('#select-subrubro').selectize({
+        valueField: 'codsubrubro',
+        labelField: 'descrip',
+        searchField: 'descrip',
+        onChange: function (value) {
+          query.subrubro = value;
+          debug();
+        }
+      });
+
+      $select_articulo = $('#select-articulo').selectize({
+        valueField: 'cod_articulo',
+        labelField: 'des_art',
+        searchField: 'des_art',
+        maxItems: null,
+        onChange: function (value) {
+          query.articulo = value;
+          debug();
+        }
+      });
+
+      $select_proveedor = $('#select-proveedor').selectize({
+        valueField: 'CodProv',
+        labelField: 'RazonSocial',
+        searchField: 'RazonSocial',
+        maxItems: null,
+        onChange: function (value) {
+          query.articulo = value;
+          debug();
+        }
+      });
+
+      $select_estado = $('#select-estado').selectize({
+        options: [
+          {value: '', text: 'Todos'},
+          {value: 'A', text: 'Activo'},
+          {value: 'I', text: 'Inactivo'},
+          {value: 'B', text: 'De Baja'}
+        ],
+        onChange: function (value) {
+          query.estado = value;
           debug();
         }
       });
