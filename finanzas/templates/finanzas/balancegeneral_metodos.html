@@ -108,6 +108,9 @@ function buscar(){
 	if (periodo == "" || periodo == null || periodo == " "){
 		alert("No hay datos suficientes para generar el listado")
 	} else {
+	    total_debito=0
+        total_credito=0
+        total_saldo=0
 		$('.collapse').collapse('hide')
 		$('#table-div').empty()
         $('#table-div').append("<b>Recuperando datos.</b>")
