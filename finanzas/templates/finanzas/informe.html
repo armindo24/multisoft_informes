@@ -21,40 +21,40 @@
   </div>
 {% endblock %}
 
-{% block filters %}
-  <tr>
-    {% include 'ventas/_filtro.html' with name='empresa' %}
-    {% include 'ventas/_filtro.html' with name='articulo' %}
-  </tr>
-  <tr>
-    {% include 'ventas/_filtro.html' with name='proveedor' %}
-    {% include 'ventas/_filtro.html' with name='estado' %}
-  </tr>
-  <tr>
-    <th>Compras:</th>
-    <td>
-      <div id="compras" class="input-daterange input-group">
-        <input type="text" class="input-sm form-control" name="start"/>
-        <span class="input-group-addon">hasta</span>
-        <input type="text" class="input-sm form-control" name="end"/>
-      </div>
-    </td>
-    <th>Altas:</th>
-    <td>
-      <div id="ventas" class="input-daterange input-group">
-        <input type="text" class="input-sm form-control" name="start"/>
-        <span class="input-group-addon">hasta</span>
-        <input type="text" class="input-sm form-control" name="end"/>
-      </div>
-    </td>
-  </tr>
-  <tr>
-    <th>Revaluable</th>
-    <td><input type="checkbox" name="revaluable"/></td>
-    <th>Despreciable</th>
-    <td><input type="checkbox" name="despreciable"/></td>
-  </tr>
-{% endblock %}
+{#{% block filters %}#}
+{#  <tr>#}
+{#    {% include 'ventas/_filtro.html' with name='empresa' %}#}
+{#    {% include 'ventas/_filtro.html' with name='articulo' %}#}
+{#  </tr>#}
+{#  <tr>#}
+{#    {% include 'ventas/_filtro.html' with name='proveedor' %}#}
+{#    {% include 'ventas/_filtro.html' with name='estado' %}#}
+{#  </tr>#}
+{#  <tr>#}
+{#    <th>Compras:</th>#}
+{#    <td>#}
+{#      <div id="compras" class="input-daterange input-group">#}
+{#        <input type="text" class="input-sm form-control" name="start"/>#}
+{#        <span class="input-group-addon">hasta</span>#}
+{#        <input type="text" class="input-sm form-control" name="end"/>#}
+{#      </div>#}
+{#    </td>#}
+{#    <th>Altas:</th>#}
+{#    <td>#}
+{#      <div id="ventas" class="input-daterange input-group">#}
+{#        <input type="text" class="input-sm form-control" name="start"/>#}
+{#        <span class="input-group-addon">hasta</span>#}
+{#        <input type="text" class="input-sm form-control" name="end"/>#}
+{#      </div>#}
+{#    </td>#}
+{#  </tr>#}
+{#  <tr>#}
+{#    <th>Revaluable</th>#}
+{#    <td><input type="checkbox" name="revaluable"/></td>#}
+{#    <th>Despreciable</th>#}
+{#    <td><input type="checkbox" name="despreciable"/></td>#}
+{#  </tr>#}
+{#{% endblock %}#}
 
 {% block extra_foot %}
   <script>
