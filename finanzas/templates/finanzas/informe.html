@@ -8,6 +8,8 @@
   <tr>
     <th>Empresa:</th>
     <td><select id="select-empresa" placeholder="Empresa..."></select></td>
+    <th>Sucursal:</th>
+    <td><select id="select-sucursal" placeholder="Sucursal..."></select></td>
   </tr>
   <tr>
     <th>Estado:</th>
@@ -54,6 +56,25 @@
   </tr>
 {% endblock %}
 
+{% block table %}
+  <div id="resultado">
+    <table id="results" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+      <thead>
+      <tr>
+        <th class="text-center">Codigo</th>
+        <th>Descripcion</th>
+        <th>Estado</th>
+        <th>Rubro</th>
+        <th>Subrubro</th>
+        <th class="text-center">Fecha de Compra</th>
+        <th class="price-label">Costo (Local)</th>
+        <th class="price-label">Costo (Extranjera)</th>
+      </tr>
+      </thead>
+    </table>
+  </div>
+{% endblock %}
+
 {% block extra_foot %}
   <script>
     var query = {};
@@ -64,6 +85,7 @@
     var today = new Date();
     var initialize = init;
     var select_empresa, $select_empresa;
+    var select_sucursal, $select_sucursal;
     var select_rubro, $select_rubro;
     var select_subrubro, $select_subrubro;
     var select_articulo, $select_articulo;
@@ -76,14 +98,16 @@
       $results.hide();
       initialize();
       select_empresa = $select_empresa[0].selectize;
-      select_rubro = $select_rubro[0].selectize;
-      select_subrubro = $select_subrubro[0].selectize;
-      select_articulo = $select_articulo[0].selectize;
-      select_proveedor = $select_proveedor[0].selectize;
 
+      select_sucursal = $select_sucursal[0].selectize;
+      select_sucursal.disable();
+      select_rubro = $select_rubro[0].selectize;
       select_rubro.disable();
+      select_subrubro = $select_subrubro[0].selectize;
       select_subrubro.disable();
+      select_articulo = $select_articulo[0].selectize;
       select_articulo.disable();
+      select_proveedor = $select_proveedor[0].selectize;
       select_proveedor.disable();
     });
 
@@ -157,6 +181,18 @@
               callback();
             });
           });
+          select_sucursal.load(function (callback) {
+            $.ajax({
+              url: api + 'sucursal/select/' + query.empresa,
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_sucursal.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
         }
       });
 
@@ -212,7 +248,17 @@
         searchField: 'RazonSocial',
         maxItems: null,
         onChange: function (value) {
-          query.articulo = value;
+          query.proveedor = value;
+          debug();
+        }
+      });
+
+      $select_sucursal = $('#select-sucursal').selectize({
+        valueField: 'Cod_Sucursal',
+        labelField: 'Des_Sucursal',
+        searchField: 'Des_Sucursal',
+        onChange: function (value) {
+          query.sucursal = value;
           debug();
         }
       });
@@ -259,6 +305,57 @@
     function debug() {
       $preview.text(JSON.stringify(query));
       console.log("debug", query);
+    }
+
+    function getInforme() {
+      $('.collapse').collapse('hide');
+      $results.show();
+
+      if (!$.fn.DataTable.isDataTable('#results')) {
+        $('#results').DataTable({
+          language: u.spanish_dt,
+          ajax: {
+            url: api + 'empresas/' + query.empresa + '/informes/activo',
+            data: function () {
+              return query;
+            }
+          },
+          deferRender: true,
+          scrollY: 400,
+          scrollCollapse: true,
+          scroller: {
+            displayBuffer: 30,
+            loadingIndicator: true
+          },
+          columnDefs: [
+            {className: "price-value", targets: "price-label"},
+            {render: $.fn.dataTable.render.number('.', ',', 2), targets: "price-label"},
+            {className: "text-center", targets: "text-center"},
+            {visible: false, targets: "grouping-col"}
+          ],
+          columns: [
+            {data: 'codactivo'},
+            {data: 'descrip'},
+            {data: 'estado'},
+            {data: 'RUBROORIGINAL_DESCRIP'},
+            {data: 'SUBRUBROORIGINAL_DESCRIP'},
+            {data: 'fechacompra'},
+            {data: 'costocompra'},
+            {data: 'costocomprame'}
+          ],
+          searching: false,
+          ordering: false,
+        });
+        $results.show();
+      } else {
+        var table = $('#results').DataTable();
+        var $resultado = $('#resultado');
+        table.row(0).scrollTo();
+        $resultado.css("position", "absolute").css("left", -9999);
+        table.ajax.url(api + 'empresas/' + query.empresa + '/informes/activo').load(function () {
+          $resultado.css("position", "relative").css("left", 0);
+        });
+      }
     }
   </script>
 {% endblock %}
