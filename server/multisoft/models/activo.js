@@ -3,6 +3,7 @@ var conn = require('../db');
 var Activo = {};
 
 Activo.bienes = function (params, filters, cb) {
+    console.log(filters);
     var sql = "SELECT dba.bienactivo.cod_empresa, dba.bienactivo.codactivo, dba.bienactivo.descrip, dba.bienactivo.cod_articulo, " +
         "dba.bienactivo.cantidad, dba.bienactivo.nroserie, dba.bienactivo.nroparte, dba.bienactivo.codrubro, " +
         "dba.bienactivo.codsubrubro, dba.bienactivo.vidautil, dba.bienactivo.vidautilrestante, dba.bienactivo.revaluable, " +
@@ -60,12 +61,54 @@ Activo.bienes = function (params, filters, cb) {
         "r2.codrubro) LEFT OUTER JOIN dba.subrubrosaf s2 ON dba.bienactivo.cod_empresa = s2.cod_empresa AND " +
         "dba.bienactivo.rubrooriginal = s2.codrubro AND dba.bienactivo.subrubrooriginal = s2.codsubrubro) LEFT OUTER JOIN " +
         "dba.ubicacion u2 ON dba.bienactivo.cod_empresa = u2.cod_empresa AND dba.bienactivo.ubicoriginal = u2.codubicacion) LEFT " +
-        "OUTER JOIN dba.control ON dba.bienactivo.cod_empresa = dba.control.cod_empresa AND dba.control.Periodo = '2015' )  " +
-        "WHERE dba.bienactivo.cod_empresa = '10' AND (UPPER(dba.bienactivo.depreciable) = 'N') AND (dba.bienactivo.estado = 'A') AND " +
-        "DATE(dba.bienactivo.fechacompra) >= DATE('2011-01-01') AND DATE(dba.bienactivo.fechacompra) <= DATE('2016-01-01') AND " +
-        "DATE(dba.bienactivo.fechaalta) >= DATE('2011-01-01') AND DATE(dba.bienactivo.fechaalta) <= DATE('2016-01-01')";
+        "OUTER JOIN dba.control ON dba.bienactivo.cod_empresa = dba.control.cod_empresa AND dba.control.Periodo = ? )  " +
+        "WHERE dba.bienactivo.cod_empresa = ? AND " +
+        "DATE(dba.bienactivo.fechacompra) >= DATE(?) AND DATE(dba.bienactivo.fechacompra) <= DATE(?) AND " +
+        "DATE(dba.bienactivo.fechaalta) >= DATE(?) AND DATE(dba.bienactivo.fechaalta) <= DATE(?)";
 
-    conn.exec(sql, function (err, res) {
+    var sql_params = [
+        filters.periodo_year, params.empresa,
+        filters.compras_start, filters.compras_end,
+        filters.ventas_start, filters.ventas_end
+    ];
+
+    //TODO: probar si es necesario el UPPER?
+    if (filters.despreciable) {
+        sql += " AND (UPPER(dba.bienactivo.depreciable) = 'S')";
+    } else {
+        sql += " AND (UPPER(dba.bienactivo.depreciable) = 'N')";
+    }
+
+    if (filters.revaluable) {
+        sql += " AND (UPPER(dba.bienactivo.revaluable) = 'S')";
+    } else {
+        sql += " AND (UPPER(dba.bienactivo.revaluable) = 'N')";
+    }
+
+    if (filters.estado) {
+        sql += " AND (dba.bienactivo.estado = ?)";
+        sql_params.push(filters.estado);
+    }
+
+    if (filters.rubro) {
+        sql += " AND ( dba.bienactivo.codrubro = ? )"
+        sql_params.push(filters.rubro);
+    }
+
+    if (filters.subrubro) {
+        sql += " AND ( dba.bienactivo.codsubrubro = ? )";
+        sql_params.push(filters.subrubro);
+    }
+
+    if (filters.proveedor) {
+        sql += " AND (dba.bienactivo.codprov IN (" + filters.proveeedor.toString() + ")";
+    }
+
+    if (filters.articulo) {
+        sql += " AND (dba.bienactivo.cod_articulo IN (" + filters.articulo.toString() + ")";
+    }
+
+    conn.exec(sql, sql_params, function (err, res) {
         if (err) throw err;
         cb(res);
     });
