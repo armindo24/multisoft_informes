@@ -4,57 +4,55 @@
   Activo Fijo:
 {% endblock %}
 
-{% block content %}
-  <select id="select-empresa" placeholder="Empresa..."></select>
-  <select id="select-rubro" placeholder="Rubro..."></select>
-  <select id="select-subrubro" placeholder="Subrubro..."></select>
+{% block filters %}
+  <tr>
+    <th>Empresa:</th>
+    <td><select id="select-empresa" placeholder="Empresa..."></select></td>
+  </tr>
+  <tr>
+    <th>Estado:</th>
+    <td><select id="select-estado" placeholder="Estado..."></select></td>
+    <th>Periodo:</th>
+    <td class="input-date" id="periodo"><input type="text" class="form-control" name="year"></td>
+  </tr>
+  <tr>
+    <th>Rubro:</th>
+    <td><select id="select-rubro" placeholder="Rubro..."></select></td>
+    <th>Subrubro:</th>
+    <td><select id="select-subrubro" placeholder="Subrubro..."></select></td>
+  </tr>
+  <tr>
+    <th>Articulo:</th>
+    <td><select id="select-articulo" placeholder="Articulo..."></select></td>
+    <th>Proveedor:</th>
+    <td><select id="select-proveedor" placeholder="Proveedor..."></select></td>
+  </tr>
 
-  <select id="select-articulo" placeholder="Articulo..."></select>
-  <select id="select-proveedor" placeholder="Proveedor..."></select>
-
-  <select id="select-estado" placeholder="Estado..."></select>
-
-  <div id="ventas" class="input-daterange input-group">
-    <input type="text" class="input-sm form-control" name="start"/>
-    <span class="input-group-addon">hasta</span>
-    <input type="text" class="input-sm form-control" name="end"/>
-  </div>
+  <tr>
+    <th>Ventas</th>
+    <td>
+      <div id="ventas" class="input-daterange input-group input-date">
+        <input type="text" class="input-sm form-control" name="start"/>
+        <span class="input-group-addon">hasta</span>
+        <input type="text" class="input-sm form-control" name="end"/>
+      </div>
+    </td>
+    <th>Compras</th>
+    <td>
+      <div id="compras" class="input-daterange input-group input-date">
+        <input type="text" class="input-sm form-control" name="start"/>
+        <span class="input-group-addon">hasta</span>
+        <input type="text" class="input-sm form-control" name="end"/>
+      </div>
+    </td>
+  </tr>
+  <tr>
+    <th>Revaluable</th>
+    <td><input type="checkbox" name="revaluable"/></td>
+    <th>Despreciable</th>
+    <td><input type="checkbox" name="despreciable"/></td>
+  </tr>
 {% endblock %}
-
-{#{% block filters %}#}
-{#  <tr>#}
-{#    {% include 'ventas/_filtro.html' with name='empresa' %}#}
-{#    {% include 'ventas/_filtro.html' with name='articulo' %}#}
-{#  </tr>#}
-{#  <tr>#}
-{#    {% include 'ventas/_filtro.html' with name='proveedor' %}#}
-{#    {% include 'ventas/_filtro.html' with name='estado' %}#}
-{#  </tr>#}
-{#  <tr>#}
-{#    <th>Compras:</th>#}
-{#    <td>#}
-{#      <div id="compras" class="input-daterange input-group">#}
-{#        <input type="text" class="input-sm form-control" name="start"/>#}
-{#        <span class="input-group-addon">hasta</span>#}
-{#        <input type="text" class="input-sm form-control" name="end"/>#}
-{#      </div>#}
-{#    </td>#}
-{#    <th>Altas:</th>#}
-{#    <td>#}
-{#      <div id="ventas" class="input-daterange input-group">#}
-{#        <input type="text" class="input-sm form-control" name="start"/>#}
-{#        <span class="input-group-addon">hasta</span>#}
-{#        <input type="text" class="input-sm form-control" name="end"/>#}
-{#      </div>#}
-{#    </td>#}
-{#  </tr>#}
-{#  <tr>#}
-{#    <th>Revaluable</th>#}
-{#    <td><input type="checkbox" name="revaluable"/></td>#}
-{#    <th>Despreciable</th>#}
-{#    <td><input type="checkbox" name="despreciable"/></td>#}
-{#  </tr>#}
-{#{% endblock %}#}
 
 {% block extra_foot %}
   <script>
@@ -221,8 +219,8 @@
 
       $select_estado = $('#select-estado').selectize({
         allowEmptyOption: true,
-        placeholder: 'Click here to select ...',
         options: [
+          {value: 'T', text: 'Todos'},
           {value: 'A', text: 'Activo'},
           {value: 'I', text: 'Inactivo'},
           {value: 'B', text: 'De Baja'}
@@ -237,16 +235,25 @@
         todayBtn: "linked",
         language: "es",
         format: "yyyy-mm-dd",
-        {#        startView: "decade"#}
       });
 
-      $('.input-daterange .form-control').datepicker().on('changeDate', function (e) {
+      $('#periodo .form-control').datepicker({
+        format: "yyyy",
+        startView: 2,
+        minViewMode: 2,
+        maxViewMode: 2,
+        language: "es",
+        autoclose: true,
+        orientation: "bottom auto"
+      });
+
+      $('.input-date .form-control').datepicker().on('changeDate', function (e) {
         query[this.parentElement.id + '_' + this.name] = this.value;
         debug();
       });
 
-      $('.input-daterange .form-control').datepicker('setDate', today);
-      $('.input-daterange .form-control').datepicker('update');
+      $('.input-date .form-control').datepicker('setDate', today);
+      $('.input-date .form-control').datepicker('update');
     }
 
     function debug() {
