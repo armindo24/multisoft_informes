@@ -17,6 +17,7 @@ var CentroCostos = require('../models/centrocostos');
 var ExtractoCuenta = require('../models/extractoCuenta');
 var Rubro = require('../models/rubro');
 var Articulo = require('../models/articulo');
+var Activo = require('../models/activo');
 
 var conn = require('../db');
 
@@ -248,6 +249,12 @@ router.get('/empresas/:empresa/articulos', function (req, res, next) {
 
 router.get('/empresas/:empresa/proveedores', function (req, res, next) {
     Proveedor.list(req.params, req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/empresas/:empresa/informes/activo', function (req, res, next) {
+    Activo.bienes(req.params, req.query, function (result) {
         res.json({data: result});
     });
 });
