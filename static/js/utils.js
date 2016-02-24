@@ -119,26 +119,26 @@ var permisos_empresas = function (data, args) {
 };
 
 u.spanish_dt = {
-    "decimal":        ",",
-    "emptyTable":     "Ningún dato disponible en esta tabla",
-    "info":           "Mostrando registros del _START_ al _END_ de _TOTAL_ registros",
-    "infoEmpty":      "Mostrando registros del 0 al 0 de un total de 0 registros",
-    "infoFiltered":   "(filtrado de un total de _MAX_ entradas)",
-    "infoPostFix":    "",
-    "thousands":      ".",
-    "lengthMenu":     "Mostrar _MENU_ registros",
+    "decimal": ",",
+    "emptyTable": "Ningún dato disponible en esta tabla",
+    "info": "Mostrando registros del _START_ al _END_ de _TOTAL_ registros",
+    "infoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
+    "infoFiltered": "(filtrado de un total de _MAX_ entradas)",
+    "infoPostFix": "",
+    "thousands": ".",
+    "lengthMenu": "Mostrar _MENU_ registros",
     "loadingRecords": "Cargando...",
-    "processing":     "Procesando...",
-    "search":         "Buscar:",
-    "zeroRecords":    "No se encontraron resultados",
+    "processing": "Procesando...",
+    "search": "Buscar:",
+    "zeroRecords": "No se encontraron resultados",
     "paginate": {
-        "first":      "Primero",
-        "last":       "Último",
-        "next":       "Siguiente",
-        "previous":   "Anterior"
+        "first": "Primero",
+        "last": "Último",
+        "next": "Siguiente",
+        "previous": "Anterior"
     },
     "aria": {
-        "sortAscending":  ": activar para ordenar la columna de manera ascendente",
+        "sortAscending": ": activar para ordenar la columna de manera ascendente",
         "sortDescending": ": activar para ordenar la columna de manera descendente"
     }
 };
@@ -146,4 +146,15 @@ u.spanish_dt = {
 u.get_empresas = function (user_id, cb) {
     console.log("getempresas");
     Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario': user_id}, {'cb': cb});
+};
+
+u.numFormat = $.fn.dataTable.render.number('.', ',', 2).display;
+
+u.parseVal = function (i) {
+    var n = typeof i === 'string' ?
+        parseFloat(i.replace(/[\$]/g, '')) :
+        typeof i === 'number' ?
+            i : 0;
+    //console.log(i, n);
+    return n;
 };
