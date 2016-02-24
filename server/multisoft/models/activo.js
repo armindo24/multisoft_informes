@@ -3,7 +3,6 @@ var conn = require('../db');
 var Activo = {};
 
 Activo.bienes = function (params, filters, cb) {
-    console.log(filters);
     var sql = "SELECT dba.bienactivo.cod_empresa, dba.bienactivo.codactivo, dba.bienactivo.descrip, dba.bienactivo.cod_articulo, " +
         "dba.bienactivo.cantidad, dba.bienactivo.nroserie, dba.bienactivo.nroparte, dba.bienactivo.codrubro, " +
         "dba.bienactivo.codsubrubro, dba.bienactivo.vidautil, dba.bienactivo.vidautilrestante, dba.bienactivo.revaluable, " +
@@ -62,7 +61,7 @@ Activo.bienes = function (params, filters, cb) {
         "dba.bienactivo.rubrooriginal = s2.codrubro AND dba.bienactivo.subrubrooriginal = s2.codsubrubro) LEFT OUTER JOIN " +
         "dba.ubicacion u2 ON dba.bienactivo.cod_empresa = u2.cod_empresa AND dba.bienactivo.ubicoriginal = u2.codubicacion) LEFT " +
         "OUTER JOIN dba.control ON dba.bienactivo.cod_empresa = dba.control.cod_empresa AND dba.control.Periodo = ? )  " +
-        "WHERE dba.bienactivo.cod_empresa = ? AND (UPPER(dba.bienactivo.depreciable) = 'N') AND (dba.bienactivo.estado = 'A') AND " +
+        "WHERE dba.bienactivo.cod_empresa = ? AND " +
         "DATE(dba.bienactivo.fechacompra) >= DATE(?) AND DATE(dba.bienactivo.fechacompra) <= DATE(?) AND " +
         "DATE(dba.bienactivo.fechaalta) >= DATE(?) AND DATE(dba.bienactivo.fechaalta) <= DATE(?)";
 
@@ -72,20 +71,18 @@ Activo.bienes = function (params, filters, cb) {
         filters.ventas_start, filters.ventas_end
     ];
 
-    console.log(sql_params);
+    //TODO: probar si es necesario el UPPER?
+    if (filters.despreciable && filters.despreciable === 'true') {
+        sql += " AND (UPPER(dba.bienactivo.depreciable) = 'S')";
+    } else {
+        sql += " AND (UPPER(dba.bienactivo.depreciable) = 'N')";
+    }
 
-    ////TODO: probar si es necesario el UPPER?
-    //if (filters.despreciable) {
-    //    sql += " AND (UPPER(dba.bienactivo.depreciable) = 'S')";
-    //} else {
-    //    sql += " AND (UPPER(dba.bienactivo.depreciable) = 'N')";
-    //}
-    //
-    //if (filters.revaluable) {
-    //    sql += " AND (UPPER(dba.bienactivo.revaluable) = 'S')";
-    //} else {
-    //    sql += " AND (UPPER(dba.bienactivo.revaluable) = 'N')";
-    //}
+    if (filters.revaluable && filters.revaluable === 'true') {
+        sql += " AND (UPPER(dba.bienactivo.revaluable) = 'S')";
+    } else {
+        sql += " AND (UPPER(dba.bienactivo.revaluable) = 'N')";
+    }
     //
     //if (filters.estado) {
     //    sql += " AND (dba.bienactivo.estado = ?)";
@@ -109,6 +106,9 @@ Activo.bienes = function (params, filters, cb) {
     //if (filters.articulo) {
     //    sql += " AND (dba.bienactivo.cod_articulo IN (" + filters.articulo.toString() + ")";
     //}
+
+    console.log(sql_params);
+    console.log(sql);
 
     conn.exec(sql, sql_params, function (err, res) {
         if (err) throw err;
