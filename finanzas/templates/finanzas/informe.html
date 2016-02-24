@@ -6,25 +6,42 @@
 
 {% block filters %}
   <tr>
-    {% include 'ventas/_filtro.html' with name='empresa' %}
-    {% include 'ventas/_filtro.html' with name='articulo' %}
+    <th>Empresa:</th>
+    <td><select id="select-empresa" placeholder="Empresa..."></select></td>
+    <th>Sucursal:</th>
+    <td><select id="select-sucursal" placeholder="Sucursal..."></select></td>
   </tr>
   <tr>
-    {% include 'ventas/_filtro.html' with name='proveedor' %}
-    {% include 'ventas/_filtro.html' with name='estado' %}
+    <th>Estado:</th>
+    <td><select id="select-estado" placeholder="Estado..."></select></td>
+    <th>Periodo:</th>
+    <td class="input-date" id="periodo"><input type="text" class="form-control" name="year"></td>
   </tr>
   <tr>
-    <th>Compras:</th>
+    <th>Rubro:</th>
+    <td><select id="select-rubro" placeholder="Rubro..."></select></td>
+    <th>Subrubro:</th>
+    <td><select id="select-subrubro" placeholder="Subrubro..."></select></td>
+  </tr>
+  <tr>
+    <th>Articulo:</th>
+    <td><select id="select-articulo" placeholder="Articulo..."></select></td>
+    <th>Proveedor:</th>
+    <td><select id="select-proveedor" placeholder="Proveedor..."></select></td>
+  </tr>
+
+  <tr>
+    <th>Ventas</th>
     <td>
-      <div id="compras" class="input-daterange input-group">
+      <div id="ventas" class="input-daterange input-group input-date">
         <input type="text" class="input-sm form-control" name="start"/>
         <span class="input-group-addon">hasta</span>
         <input type="text" class="input-sm form-control" name="end"/>
       </div>
     </td>
-    <th>Altas:</th>
+    <th>Compras</th>
     <td>
-      <div id="ventas" class="input-daterange input-group">
+      <div id="compras" class="input-daterange input-group input-date">
         <input type="text" class="input-sm form-control" name="start"/>
         <span class="input-group-addon">hasta</span>
         <input type="text" class="input-sm form-control" name="end"/>
@@ -39,6 +56,21 @@
   </tr>
 {% endblock %}
 
+{% block table %}
+  <thead>
+  <tr>
+    <th class="text-center">Codigo</th>
+    <th>Descripcion</th>
+    <th>Estado</th>
+    <th>Rubro</th>
+    <th>Subrubro</th>
+    <th class="text-center">Fecha de Compra</th>
+    <th class="price-label">Costo (Local)</th>
+    <th class="price-label">Costo (Extranjera)</th>
+  </tr>
+  </thead>
+{% endblock %}
+
 {% block extra_foot %}
   <script>
     var query = {};
@@ -47,50 +79,282 @@
     var $results = $('#results');
     var $preview = $('#preview');
     var today = new Date();
+    var initialize = init;
+    var select_empresa, $select_empresa;
+    var select_sucursal, $select_sucursal;
+    var select_rubro, $select_rubro;
+    var select_subrubro, $select_subrubro;
+    var select_articulo, $select_articulo;
+    var select_proveedor, $select_proveedor;
+    var select_estado, $select_estado;
+    var xhr;
 
     $(document).ready(function () {
       u.hideNav();
       $results.hide();
+      initialize();
+      select_empresa = $select_empresa[0].selectize;
+
+      select_sucursal = $select_sucursal[0].selectize;
+      select_sucursal.disable();
+      select_rubro = $select_rubro[0].selectize;
+      select_rubro.disable();
+      select_subrubro = $select_subrubro[0].selectize;
+      select_subrubro.disable();
+      select_articulo = $select_articulo[0].selectize;
+      select_articulo.disable();
+      select_proveedor = $select_proveedor[0].selectize;
+      select_proveedor.disable();
+    });
+
+    function init() {
+      $select_empresa = $('#select-empresa').selectize({
+        valueField: 'Cod_Empresa',
+        labelField: 'Des_Empresa',
+        searchField: 'Des_Empresa',
+        preload: true,
+        load: function (q, callback) {
+          $.ajax({
+            url: api + 'empresa/select',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+              empresa: q,
+              page_limit: 10,
+            },
+            error: function () {
+              callback();
+            },
+            success: function (res) {
+              callback(res.data);
+            }
+          });
+        },
+        onChange: function (value) {
+          query.empresa = value;
+          debug();
+          if (!value.length) return;
+          select_rubro.disable();
+          select_rubro.clearOptions();
+          select_articulo.disable();
+          select_articulo.clearOptions();
+          select_proveedor.disable();
+          select_proveedor.clearOptions();
+          select_rubro.load(function (callback) {
+            xhr && xhr.abort();
+            xhr = $.ajax({
+              url: api + 'empresas/' + query.empresa + '/rubros',
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_rubro.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+          select_articulo.load(function (callback) {
+            $.ajax({
+              url: api + 'empresas/' + query.empresa + '/articulos',
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_articulo.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+          select_proveedor.load(function (callback) {
+            $.ajax({
+              url: api + 'empresas/' + query.empresa + '/proveedores',
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_proveedor.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+          select_sucursal.load(function (callback) {
+            $.ajax({
+              url: api + 'sucursal/select/' + query.empresa,
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_sucursal.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+
+      $select_rubro = $('#select-rubro').selectize({
+        valueField: 'codrubro',
+        labelField: 'descrip',
+        searchField: 'descrip',
+        onChange: function (value) {
+          query.rubro = value;
+          debug();
+          if (!value.length) return;
+          select_subrubro.disable();
+          select_subrubro.clearOptions();
+          select_subrubro.load(function (callback) {
+            $.ajax({
+              url: api + 'empresas/' + query.empresa + '/rubros/' + query.rubro + '/subrubros',
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_subrubro.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+
+      $select_subrubro = $('#select-subrubro').selectize({
+        valueField: 'codsubrubro',
+        labelField: 'descrip',
+        searchField: 'descrip',
+        onChange: function (value) {
+          query.subrubro = value;
+          debug();
+        }
+      });
+
+      $select_articulo = $('#select-articulo').selectize({
+        valueField: 'cod_articulo',
+        labelField: 'des_art',
+        searchField: 'des_art',
+        maxItems: null,
+        onChange: function (value) {
+          query.articulo = value;
+          debug();
+        }
+      });
+
+      $select_proveedor = $('#select-proveedor').selectize({
+        valueField: 'CodProv',
+        labelField: 'RazonSocial',
+        searchField: 'RazonSocial',
+        maxItems: null,
+        onChange: function (value) {
+          query.proveedor = value;
+          debug();
+        }
+      });
+
+      $select_sucursal = $('#select-sucursal').selectize({
+        valueField: 'Cod_Sucursal',
+        labelField: 'Des_Sucursal',
+        searchField: 'Des_Sucursal',
+        onChange: function (value) {
+          query.sucursal = value;
+          debug();
+        }
+      });
+
+      $select_estado = $('#select-estado').selectize({
+        allowEmptyOption: true,
+        options: [
+          {value: 'T', text: 'Todos'},
+          {value: 'A', text: 'Activo'},
+          {value: 'I', text: 'Inactivo'},
+          {value: 'B', text: 'De Baja'}
+        ],
+        onChange: function (value) {
+          query.estado = value;
+          debug();
+        }
+      });
 
       $('.input-daterange').datepicker({
         todayBtn: "linked",
         language: "es",
         format: "yyyy-mm-dd",
-        {#        startView: "decade"#}
       });
 
-      $('.input-daterange .form-control').datepicker().on('changeDate', function (e) {
+      $('#periodo .form-control').datepicker({
+        format: "yyyy",
+        startView: 2,
+        minViewMode: 2,
+        maxViewMode: 2,
+        language: "es",
+        autoclose: true,
+        orientation: "bottom auto"
+      });
+
+      $('.input-date .form-control').datepicker().on('changeDate', function (e) {
         query[this.parentElement.id + '_' + this.name] = this.value;
         debug();
       });
 
-      $('.input-daterange .form-control').datepicker('setDate', today);
-      $('.input-daterange .form-control').datepicker('update');
-
-      $(".chosen-select").chosen({
-        disable_search_threshold: 0,
-        no_results_text: "No hay resultados disponibles.",
-        width: "200px",
-        allow_single_deselect: true
-      });
-
-      $('.chosen-select').on('change', function (evt, params) {
-        var select = $(this);
-        var select_name = select.attr('name');
-        query[select_name] = select.val();
-        debug();
-      });
-
-      u.get_empresas({{ user }}, function (d) {
-        u.createSelect('empresa', d, 'Cod_Empresa', 'Des_Empresa');
-        $('.chosen-select').trigger('chosen:updated');
-      });
-
-    });
+      $('.input-date .form-control').datepicker('setDate', today);
+      $('.input-date .form-control').datepicker('update');
+    }
 
     function debug() {
       $preview.text(JSON.stringify(query));
       console.log("debug", query);
+    }
+
+    function getInforme() {
+      $('.collapse').collapse('hide');
+      $results.show();
+
+      var revaluable = $("[name=revaluable]")[0].checked;
+      var despreciable = $("[name=despreciable]")[0].checked;
+
+      if (!$.fn.DataTable.isDataTable('#results')) {
+        $('#results').DataTable({
+          language: u.spanish_dt,
+          ajax: {
+            url: api + 'empresas/' + query.empresa + '/informes/activo',
+            data: function () {
+              return query;
+            }
+          },
+          deferRender: true,
+          scrollY: 400,
+          scrollCollapse: true,
+          scroller: {
+            displayBuffer: 30,
+            loadingIndicator: true
+          },
+          columnDefs: [
+            {className: "price-value", targets: "price-label"},
+            {render: $.fn.dataTable.render.number('.', ',', 2), targets: "price-label"},
+            {className: "text-center", targets: "text-center"},
+            {visible: false, targets: "grouping-col"}
+          ],
+          columns: [
+            {data: 'codactivo'},
+            {data: 'descrip'},
+            {data: 'estado'},
+            {data: 'RUBROORIGINAL_DESCRIP'},
+            {data: 'SUBRUBROORIGINAL_DESCRIP'},
+            {data: 'fechacompra'},
+            {data: 'costocompra'},
+            {data: 'costocomprame'}
+          ],
+          searching: false,
+          ordering: false,
+        });
+        $results.show();
+      } else {
+        var table = $('#results').DataTable();
+        var $resultado = $('#resultado');
+        table.row(0).scrollTo();
+        $resultado.css("position", "absolute").css("left", -9999);
+        table.ajax.url(api + 'empresas/' + query.empresa + '/informes/activo').load(function () {
+          $resultado.css("position", "relative").css("left", 0);
+        });
+      }
     }
   </script>
 {% endblock %}

@@ -2,8 +2,12 @@ var conn = require('../db');
 
 var Empresa = {};
 
-Empresa.all = function (cb) {
-    conn.exec("select Cod_Empresa,Des_Empresa from dba.EMPRESA", function (err, row) {
+Empresa.all = function (query, cb) {
+    var sql = "select Cod_Empresa,Des_Empresa from dba.EMPRESA";
+    if (query.empresa) {
+        sql += " WHERE Des_Empresa LIKE '" + query.empresa + "%'";
+    }
+    conn.exec(sql, function (err, row) {
         if (err) throw err;
         cb(row);
     });
