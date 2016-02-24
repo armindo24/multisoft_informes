@@ -15,7 +15,6 @@ var Ventas = require('../models/ventas');
 var Grupo = require('../models/grupo');
 var CentroCostos = require('../models/centrocostos');
 var ExtractoCuenta = require('../models/extractoCuenta');
-var FlowCash = require('../models/flowcash');
 
 var conn = require('../db');
 
@@ -224,13 +223,6 @@ router.get('/grupos', function (req, res, next) {
 // Informe ventas resumido por comprobante
 router.get('/centrocostos/list/:empresa/:periodo/:cuentad/:cuentah/:cuentaad/:cuentaah/:mesd/:mesh/:nivel', function (req, res, next) {
     CentroCostos.all(req.params, function (result) {
-        res.json({data: result});
-    });
-});
-
-
-router.get('/flowcash/:periodo/:empresa/:mes', function (req, res, next) {
-    FlowCash.all(req.params, function (result) {
         res.json({data: result});
     });
 });
