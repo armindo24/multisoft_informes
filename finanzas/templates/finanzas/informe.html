@@ -310,9 +310,6 @@
       var revaluable = $("[name=revaluable]")[0].checked;
       var despreciable = $("[name=despreciable]")[0].checked;
 
-      query.revaluable = revaluable;
-      query.despreciable = despreciable;
-
       if (!$.fn.DataTable.isDataTable('#results')) {
         $('#results').DataTable({
           language: u.spanish_dt,

@@ -1,5 +1,5 @@
 var conn = require('../db');
-
+var q = require('./queryUtils');
 var Activo = {};
 
 Activo.bienes = function (params, filters, cb) {
@@ -71,7 +71,6 @@ Activo.bienes = function (params, filters, cb) {
         filters.ventas_start, filters.ventas_end
     ];
 
-    //TODO: probar si es necesario el UPPER?
     if (filters.despreciable && filters.despreciable === 'true') {
         sql += " AND (UPPER(dba.bienactivo.depreciable) = 'S')";
     } else {
@@ -83,29 +82,34 @@ Activo.bienes = function (params, filters, cb) {
     } else {
         sql += " AND (UPPER(dba.bienactivo.revaluable) = 'N')";
     }
-    //
-    //if (filters.estado) {
-    //    sql += " AND (dba.bienactivo.estado = ?)";
-    //    sql_params.push(filters.estado);
-    //}
-    //
-    //if (filters.rubro) {
-    //    sql += " AND ( dba.bienactivo.codrubro = ? )"
-    //    sql_params.push(filters.rubro);
-    //}
-    //
-    //if (filters.subrubro) {
-    //    sql += " AND ( dba.bienactivo.codsubrubro = ? )";
-    //    sql_params.push(filters.subrubro);
-    //}
-    //
-    //if (filters.proveedor) {
-    //    sql += " AND (dba.bienactivo.codprov IN (" + filters.proveeedor.toString() + ")";
-    //}
-    //
-    //if (filters.articulo) {
-    //    sql += " AND (dba.bienactivo.cod_articulo IN (" + filters.articulo.toString() + ")";
-    //}
+
+    if (filters.estado && filters.estado != 'T') {
+        sql += " AND (dba.bienactivo.estado = ?)";
+        sql_params.push(filters.estado);
+    }
+
+    if (filters.rubro) {
+        sql += " AND ( dba.bienactivo.codrubro = ? )"
+        sql_params.push(filters.rubro);
+    }
+
+    if (filters.subrubro) {
+        sql += " AND ( dba.bienactivo.codsubrubro = ? )";
+        sql_params.push(filters.subrubro);
+    }
+
+    if (filters.proveedor) {
+        sql += " AND (dba.bienactivo.codprov IN " + q.in(filters.proveedor) + ")";
+    }
+
+    if (filters.articulo) {
+        sql += " AND (dba.bienactivo.cod_articulo IN " + q.in(filters.articulo) + ")";
+    }
+
+    if (filters.sucursal) {
+        sql += " AND (dba.sucursal.Cod_Sucursal = ?)";
+        sql_params.push(filters.sucursal);
+    }
 
     console.log(sql_params);
     console.log(sql);
