@@ -15,6 +15,9 @@ var Ventas = require('../models/ventas');
 var Grupo = require('../models/grupo');
 var CentroCostos = require('../models/centrocostos');
 var ExtractoCuenta = require('../models/extractoCuenta');
+var Rubro = require('../models/rubro');
+var Articulo = require('../models/articulo');
+var Activo = require('../models/activo');
 
 var conn = require('../db');
 
@@ -25,7 +28,7 @@ router.use(function (req, res, next) {
 
 //empresas select option
 router.get('/empresa/select', function (req, res, next) {
-    Empresa.all(function (result) {
+    Empresa.all(req.query, function (result) {
         res.json({data: result});
     });
 });
@@ -220,9 +223,38 @@ router.get('/grupos', function (req, res, next) {
     });
 });
 
-// Informe ventas resumido por comprobante
 router.get('/centrocostos/list/:empresa/:periodo/:cuentad/:cuentah/:cuentaad/:cuentaah/:mesd/:mesh/:nivel', function (req, res, next) {
     CentroCostos.all(req.params, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/empresas/:empresa/rubros', function (req, res, next) {
+    Rubro.list(req.params, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/empresas/:empresa/rubros/:rubro/subrubros', function (req, res, next) {
+    Rubro.list(req.params, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/empresas/:empresa/articulos', function (req, res, next) {
+    Articulo.list(req.params, {}, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/empresas/:empresa/proveedores', function (req, res, next) {
+    Proveedor.list(req.params, req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/empresas/:empresa/informes/activo', function (req, res, next) {
+    Activo.bienes(req.params, req.query, function (result) {
         res.json({data: result});
     });
 });
