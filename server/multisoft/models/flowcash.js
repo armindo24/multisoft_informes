@@ -235,7 +235,122 @@ Flow.all = function (params,cb) {
         
         conn.exec(string1, function(err, row){
             data2 = row;
-            cb([{ saldos : data1 },{ movimientos : data2 }]);
+            
+            var string2 = "";
+            
+            string2 =   "SELECT "+
+                            "DBA.AsientosCab.Cod_empresa,"+
+                            "DBA.AsientosDet.CodPlanCta,"+
+                            "DBA.PlanCta.Nombre,"+
+                            "DBA.PlanCta.TipoSaldo,"+
+                            "SUM (IF (DBA.AsientosDet.DBCR = 'D') THEN DBA.AsientosDet.Importe ELSE 0 ENDIF) AS TotalDebito,"+
+                            "SUM (IF (DBA.AsientosDet.DBCR = 'C') THEN DBA.AsientosDet.Importe ELSE 0 ENDIF) AS TotalCredito "+
+                        "FROM "+
+                            "DBA.AsientosCab,"+
+                            "DBA.AsientosDet,"+
+                            "DBA.TipoAsiento,"+
+                            "DBA.lstCashFlow,"+
+                            "DBA.PlanCta,"+
+                            "DBA.Control "+
+                        "WHERE "+
+                            "(DBA.AsientosCab.Cod_Empresa = '"+params.empresa+"') "+
+                            "AND (DBA.AsientosCab.Periodo = '"+params.periodo+"' ) "+ 
+                            "AND (DBA.lstCashFlow.Cod_Empresa = DBA.PlanCta.Cod_Empresa) "+
+                            "AND (DBA.lstCashFlow.Periodo = DBA.PlanCta.Periodo ) "+
+                            "AND (DBA.lstCashFlow.CodPlanCta = DBA.PlanCta.CodPlanCta ) "+
+                            "AND (DBA.lstCashFlow.TipoCta = 'S' ) "+
+                            "AND (DATE (DBA.AsientosCab.Fecha) >= '"+str_mesDiaDesde+"') "+
+                            "AND (DATE (DBA.AsientosCab.Fecha) <= '"+str_mesDiaHasta+"') "+
+                            "AND (DBA.AsientosCab.Cod_Empresa = DBA.AsientosDet.Cod_Empresa) "+
+                            "AND (DBA.AsientosCab.Periodo = DBA.AsientosDet.Periodo ) "+
+                            "AND (DBA.AsientosCab.NroTransac = DBA.AsientosDet.NroTransac ) "+
+                            "AND (DBA.AsientosCab.TipoAsiento = DBA.TipoAsiento.TipoAsiento) "+
+                            "AND (DBA.AsientosCab.Cod_Empresa = DBA.Control.Cod_Empresa) "+
+                            "AND (DBA.AsientosCab.Periodo = DBA.Control.Periodo ) "+
+                            "AND (DBA.AsientosCab.TipoAsiento <> DBA.Control.TipoAsientoAper) "+
+                            "AND (DBA.AsientosDet.Cod_Empresa = DBA.PlanCta.Cod_Empresa) "+
+                            "AND (DBA.AsientosDet.Periodo = DBA.PlanCta.Periodo ) "+
+                            "AND (DBA.AsientosDet.CodPlanCta = DBA.PlanCta.CodPlanCta ) "+
+                        "GROUP BY "+
+                            "DBA.AsientosCab.Cod_empresa,"+
+                            "DBA.AsientosDet.CodPlanCta,"+
+                            "DBA.PlanCta.Nombre,"+
+                            "DBA.PlanCta.TipoSaldo "+
+                        "UNION "+
+                        "SELECT "+
+                            "DBA.AsientosCab.Cod_empresa,"+
+                            "DBA.AsientosDet.CodPlanCta,"+
+                            "DBA.PlanCta.Nombre,"+
+                            "DBA.PlanCta.TipoSaldo,"+
+                            "SUM (IF (DBA.AsientosDet.DBCR = 'D') THEN DBA.AsientosDet.Importe ELSE 0 ENDIF) AS TotalDebito,"+
+                            "SUM (IF (DBA.AsientosDet.DBCR = 'C') THEN DBA.AsientosDet.Importe ELSE 0 ENDIF) AS TotalCredito "+
+                        "FROM "+
+                            "DBA.AsientosCab,"+
+                            "DBA.AsientosDet,"+
+                            "DBA.TipoAsiento,"+
+                            "DBA.lstCashFlow,"+
+                            "DBA.PlanCta "+
+                        "WHERE "+
+                            "(DBA.AsientosCab.Cod_Empresa = '"+params.empresa+"') "+
+                            "AND (DBA.AsientosCab.Periodo = '"+params.periodo+"' ) "+
+                            "AND (DBA.lstCashFlow.Cod_Empresa = DBA.PlanCta.Cod_Empresa) "+
+                            "AND (DBA.lstCashFlow.Periodo = DBA.PlanCta.Periodo ) "+
+                            "AND (DBA.lstCashFlow.CodPlanCta = DBA.PlanCta.CodPlanCta ) "+
+                            "AND (DBA.lstCashFlow.TipoCta = 'D') "+
+                            "AND (DATE (DBA.AsientosCab.Fecha) >= '"+str_mesDiaDesde+"') "+
+                            "AND (DATE (DBA.AsientosCab.Fecha) <= '"+str_mesDiaHasta+"') "+
+                            "AND (DBA.AsientosCab.Transf <> 'S') "+
+                            "AND (DBA.AsientosCab.Cod_Empresa = DBA.AsientosDet.Cod_Empresa) "+
+                            "AND (DBA.AsientosCab.Periodo = DBA.AsientosDet.Periodo ) "+
+                            "AND (DBA.AsientosCab.NroTransac = DBA.AsientosDet.NroTransac ) "+
+                            "AND (DBA.AsientosCab.TipoAsiento = DBA.TipoAsiento.TipoAsiento) "+
+                            "AND (DBA.AsientosDet.Cod_Empresa = DBA.PlanCta.Cod_Empresa) "+
+                            "AND (DBA.AsientosDet.Periodo = DBA.PlanCta.Periodo ) "+
+                            "AND (DBA.AsientosDet.CodPlanCta = DBA.PlanCta.CodPlanCta ) "+
+                            "AND (DBA.TipoAsiento.TpDef = 'I') "+
+                        "GROUP BY "+
+                            "DBA.AsientosCab.Cod_empresa,"+
+                            "DBA.AsientosDet.CodPlanCta,"+
+                            "DBA.PlanCta.Nombre,"+
+                            "DBA.PlanCta.TipoSaldo "+
+                        "UNION "+
+                        "SELECT "+
+                            "DBA.AsientosCab.Cod_empresa,"+
+                            "DBA.AsientosDet.CodPlanCta,"+
+                            "DBA.PlanCta.Nombre,"+
+                            "DBA.PlanCta.TipoSaldo,"+
+                            "SUM (IF (DBA.AsientosDet.DBCR = 'D') THEN DBA.AsientosDet.Importe ELSE 0 ENDIF) AS TotalDebito,"+
+                            "SUM (IF (DBA.AsientosDet.DBCR = 'C') THEN DBA.AsientosDet.Importe ELSE 0 ENDIF) AS TotalCredito "+
+                        "FROM "+
+                            "DBA.AsientosCab,"+
+                            "DBA.AsientosDet,"+
+                            "DBA.TipoAsiento,"+
+                            "DBA.lstCashFlow,"+
+                            "DBA.PlanCta "+
+                        "WHERE "+
+                            "(DBA.AsientosCab.Cod_Empresa = '"+params.empresa+"' ) "+
+                            "AND (DBA.AsientosCab.Periodo = '"+params.periodo+"' ) "+
+                            "AND (DBA.lstCashFlow.Cod_Empresa = DBA.PlanCta.Cod_Empresa) "+
+                            "AND (DBA.lstCashFlow.Periodo = DBA.PlanCta.Periodo ) "+
+                            "AND (DBA.lstCashFlow.CodPlanCta = DBA.PlanCta.CodPlanCta ) "+
+                            "AND (DBA.lstCashFlow.TipoCta = 'D') "+
+                            "AND (DBA.AsientosCab.Transf = 'D' ) "+
+                            "AND (DATE (DBA.AsientosCab.Fecha) >= '"+str_mesDiaAnterior+"' ) "+
+                            "AND (DATE (DBA.AsientosCab.Fecha) < '"+str_mesDiaDesde+"' ) "+
+                            "AND (DBA.AsientosCab.Cod_Empresa = DBA.AsientosDet.Cod_Empresa) "+
+                            "AND (DBA.AsientosCab.Periodo = DBA.AsientosDet.Periodo ) "+
+                            "AND (DBA.AsientosCab.NroTransac = DBA.AsientosDet.NroTransac ) "+
+                            "AND (DBA.AsientosCab.TipoAsiento = DBA.TipoAsiento.TipoAsiento) "+
+                            "AND (DBA.AsientosDet.Cod_Empresa = DBA.PlanCta.Cod_Empresa) "+
+                            "AND (DBA.AsientosDet.Periodo = DBA.PlanCta.Periodo ) "+
+                            "AND (DBA.AsientosDet.CodPlanCta = DBA.PlanCta.CodPlanCta ) "+
+                            "AND (DBA.TipoAsiento.TpDef = 'I') "+
+                        "GROUP BY "+
+                            "DBA.AsientosCab.Cod_empresa,"+
+                            "DBA.AsientosDet.CodPlanCta,"+
+                            "DBA.PlanCta.Nombre,"+
+                            "DBA.PlanCta.TipoSaldo";
+            //cb([{ saldos : data1 },{ movimientos : data2 }]);
         });
     });
 
