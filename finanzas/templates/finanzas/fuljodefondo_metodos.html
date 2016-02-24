@@ -1,6 +1,6 @@
 <script type="text/javascript">
 
-  var numFormat = u.numFormat; // Formato de numeros, 1.500,03
+  var numFormat = $.fn.dataTable.render.number('.', ',', 0).display;
   var aux1 = null;
   var mes_corte = null;
 
@@ -46,7 +46,7 @@
       },
       columnDefs: [
         {className: "price-value", targets: "price-label"},
-        {render: $.fn.dataTable.render.number('.', ',', 2), targets: "price-label"},
+        {render: $.fn.dataTable.render.number('.', ',', 0), targets: "price-label"},
         {className: "text-center", targets: "text-center"},
         {visible: false, targets: "grouping-col"}
       ],
@@ -58,7 +58,7 @@
         }, 0);
 
         // Update footer
-        $(api.column(-1).footer()).html(u.numFormat(total));
+        $(api.column(-1).footer()).html(numFormat(total));
       }
     });
 
