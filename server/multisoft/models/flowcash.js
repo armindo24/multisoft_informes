@@ -350,7 +350,12 @@ Flow.all = function (params,cb) {
                             "DBA.AsientosDet.CodPlanCta,"+
                             "DBA.PlanCta.Nombre,"+
                             "DBA.PlanCta.TipoSaldo";
-            //cb([{ saldos : data1 },{ movimientos : data2 }]);
+            
+            conn.exec(string2, function(err, row){
+                if (err) throw err;
+                data3 = row;
+                cb([{ saldos : data1 },{ movimientos : data2 },{ descuentoes : data3 }]);
+            });
         });
     });
 
