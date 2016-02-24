@@ -1,15 +1,16 @@
 <script type="text/javascript">
 
-  var aux1 = null
-  var mes_corte = null
+  var numFormat = u.numFormat; // Formato de numeros, 1.500,03
+  var aux1 = null;
+  var mes_corte = null;
 
   $(document).ready(function () {
     $('#page-wrapper').css('margin-left', '0px');
     $('#my-left-menu').toggle(0);
-    var url = window.location.href
+    var url = window.location.href;
 
-    aux = url.toString().split("http://")
-    aux1 = aux[1].toString().split(":8000")
+    aux = url.toString().split("http://");
+    aux1 = aux[1].toString().split(":8000");
 
     $('.mes').datepicker({
       autoclose: true,
@@ -19,7 +20,6 @@
       startView: 1,
       minViewMode: 1,
       maxViewMode: 1,
-      {#        startView: "decade"#}
     });
 
     $('.mes').datepicker().on('changeDate', function (c) {
@@ -33,33 +33,41 @@
       allow_single_deselect: true
     });
 
-    $('#egresos').DataTable({
-      columns: [{data: 'CodPlanCta'}, {data: 'Nombre'}, {data: 'Total'}],
-      deferRender: true,
-      scrollY: 200,
-      scrollCollapse: true,
-      scroller: {
-        displayBuffer: 30,
-        loadingIndicator: true
-      },
-      searching: false,
-      ordering: false,
-      language: u.spanish_dt
-    });
-
-    $('#ingresos').DataTable({
-      columns: [{data: 'CodPlanCta'}, {data: 'Nombre'}, {data: 'Total'}],
-      deferRender: true,
-      scrollY: 200,
-      scrollCollapse: true,
-      scroller: {
-        displayBuffer: 30,
-        loadingIndicator: true
-      },
+    $.extend(true, $.fn.dataTable.defaults, {
       searching: false,
       ordering: false,
       language: u.spanish_dt,
-      //info: false, //muestra la cantidad cargada, aun no hice funcionar
+      deferRender: true,
+      scrollY: 200,
+      scrollCollapse: true,
+      scroller: {
+        displayBuffer: 30,
+        loadingIndicator: true
+      },
+      columnDefs: [
+        {className: "price-value", targets: "price-label"},
+        {render: $.fn.dataTable.render.number('.', ',', 2), targets: "price-label"},
+        {className: "text-center", targets: "text-center"},
+        {visible: false, targets: "grouping-col"}
+      ],
+      footerCallback: function (row, data, start, end, display) {
+        var api = this.api(), data;
+        // Total over all pages
+        var total = api.column(-1).data().reduce(function (a, b) {
+          return u.parseVal(a) + u.parseVal(b);
+        }, 0);
+
+        // Update footer
+        $(api.column(-1).footer()).html(u.numFormat(total));
+      }
+    });
+
+    $('#egresos').DataTable({
+      columns: [{data: 'CodPlanCta'}, {data: 'Nombre'}, {data: 'Total'}]
+    });
+
+    $('#ingresos').DataTable({
+      columns: [{data: 'CodPlanCta'}, {data: 'Nombre'}, {data: 'Total'}]
     });
 
   });
