@@ -18,6 +18,8 @@ var ExtractoCuenta = require('../models/extractoCuenta');
 var Rubro = require('../models/rubro');
 var Articulo = require('../models/articulo');
 var Activo = require('../models/activo');
+var FlowCash = require('../models/flowcash');
+
 
 var conn = require('../db');
 
@@ -255,6 +257,12 @@ router.get('/empresas/:empresa/proveedores', function (req, res, next) {
 
 router.get('/empresas/:empresa/informes/activo', function (req, res, next) {
     Activo.bienes(req.params, req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/flowcash/:periodo/:empresa/:mes', function (req, res, next) {
+    FlowCash.all(req.params, function (result) {
         res.json({data: result});
     });
 });
