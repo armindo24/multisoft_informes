@@ -1,0 +1,114 @@
+{% extends 'admin/base_site.html' %}
+{% load staticfiles %}
+{% block extrahead %}
+  <link rel="stylesheet" href={% static 'css/jquery-ui.css' %}>
+  <link rel="stylesheet" href={% static 'chosen_v1.4.2/chosen.css' %}>
+  <link rel="stylesheet" href="{% static 'select2/css/select2.min.css' %}">
+  <link rel="stylesheet" href="{% static 'styles.css' %}">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.10.11/css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="{% static 'datatables.net-scroller-bs/css/scroller.bootstrap.css' %}">
+  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/dist/css/bootstrap-datepicker3.min.css' %}">
+  <script src="{% static 'js/jquery-ui.js' %}"></script>
+  <script src="{% static 'js/puntos-decimales.js' %}"></script>
+  <script src="{% static 'js/jquery.maskedinput.min.js' %}"></script>
+  <script src="{% static 'select2/js/select2.full.min.js' %}"></script>
+  <script src="{% static 'chosen_v1.4.2/chosen.jquery.js' %}"></script>
+  <script src="{% static 'dajaxice/dajaxice.core.js' %}"></script>
+  <script src="{% static 'js/utils.js' %}"></script>
+  <script src="https://cdn.datatables.net/1.10.11/js/jquery.dataTables.min.js"></script>
+  <!-- <script src="{% static 'datatables.net/js/jquery.dataTables.js' %}"></script>
+  <script src="{% static 'datatables.net-bs/js/dataTables.bootstrap.js' %}"></script>
+  <script src="{% static 'datatables.net-scroller/js/dataTables.scroller.js' %}"></script> -->
+  <script src="{% static 'bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js' %}"></script>
+  <script src="{% static 'bootstrap-datepicker/dist/locales/bootstrap-datepicker.es.min.js' %}"></script>
+  {% include 'finanzas/fuljodefondo_metodos.html' %}
+{% endblock %}
+
+{% block header %}
+  Flujo de Fondo:
+{% endblock %}
+
+{% block content %}
+    <div class="panel-group" id="accordion" >
+        <div class="panel panel-default">
+            <div class="panel-heading"  data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
+                <h4 class="panel-title">
+                   Filtros
+                </h4>
+            </div>
+            <div id="collapseOne" class="panel-collapse collapse">
+                <div class="panel-body">
+                    <div class="panel-group" id="archivo_accordion" style="margin-bottom: 0px;">
+                    <center>
+                        <table style="width: auto;" class="table table-striped table-hover table-bordered table-filter scroll">
+                            <tr>
+                                <th style="text-align: right;"> Empresa: </th>
+                                <td><select name="empresa" data-placeholder="Empresa..." onchange="buscar_cuenta();" class="chosen-select" tabindex="2"></select></td>
+                                <th style="text-align: right;"> Per&#237;odo: </th>
+                                <td><input style="width:50px" type="text" name="periodo" ></td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: right;"> Mes: </th>
+                                <td><input type="text" onkeydown="return false" class="mes input-sm form-control" name="mes"/></td>
+                                <th></th>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <th style="text-align: right;"> Factor de Cambio Anterior: </th>
+                                <td><input type="text" class="input-sm form-control" name="anterior" onkeyup="agregarSeparadorDeMiles_tiemporeal_2(this);"/></td>
+                                <th style="text-align: right;"> Factor de Cambio Actual: </th>
+                                <td><input type="text" class="input-sm form-control" name="actual" onkeyup="agregarSeparadorDeMiles_tiemporeal_2(this);"/></td>
+                            </tr>
+                        </table>
+                    </center>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a type="button" class="btn btn-primary" onclick="buscar()">Filtrar <i class="fa fa-search"></i></a>
+            </div>
+        </div>
+    </div> 
+    
+    <div id="resultado">
+    <table id="saldos" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+    Egresos
+    <table id="ingresos" class="display" cellspacing="0" width="100%">
+      <thead>
+      <tr>
+        <th style="width:25%;">Cuenta</th>
+        <th style="width:50%;">Nombre</th>
+        <th style="width:25%;">Total</th>
+      </tr>
+      </thead>
+      <tbody>
+      </tbody>
+      <tfoot>
+      <tr>
+        <th colspan="2" style="text-align:right">Total:</th>
+        <th></th>
+      </tr>
+      </tfoot>
+    </table>
+    </table>
+    Egresos
+    <table id="egresos" class="display" cellspacing="0" width="100%">
+      <thead>
+      <tr>
+        <th style="width:25%;">Cuenta</th>
+        <th style="width:50%;">Nombre</th>
+        <th style="width:25%;">Total</th>
+      </tr>
+      </thead>
+      <tbody>
+      </tbody>
+      <tfoot>
+      <tr>
+        <th colspan="2" style="text-align:right">Total:</th>
+        <th></th>
+      </tr>
+      </tfoot>
+    </table>
+  </div>
+  
+{% endblock %}

@@ -44,6 +44,9 @@
                 <li>
                     <a href="{% url 'finanzas:extracto_cuentas_banco' %}"> Extracto Cuenta Bancaria </a>
                 </li>
+                <li>
+                    <a href="{% url 'finanzas:flujo_fondo' %}"> Flujo de Fondo </a>
+                </li>
 		    {% endif %}
 			{% if  request.session.modulo_seleccionado == "Admin"  %}
 			<li>

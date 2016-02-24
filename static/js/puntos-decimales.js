@@ -1,3 +1,35 @@
+function quitarSeparadorDeMiles(input) {
+    var parts = input.toString().split(",");
+    if (parts.length == 1){
+        parts[0] = parts[0].replace(/[^0-9]/g,"");
+        return parts[0]
+    }else{
+        if (parts.length >= 2){
+            parts[0] = parts[0].replace(/[^0-9]/g,"");
+            parts[1] = parts[1].replace(/[^0-9]/g,"");
+            return parts[0]+"."+parts[1]; 
+        }
+    }
+    return null;
+};
+
+function agregarSeparadorDeMiles_tiemporeal_2(element) {
+    var input=document.getElementsByName(element.name)[0].value
+    input = quitarSeparadorDeMiles(input)
+    var parts = input.toString().split(".");
+    parts[0] = parts[0].replace(/[^0-9]/g,"");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+$)/g, ".");
+    if (parts.length >= 2){
+        parts[1] = parts[1].replace(/[^0-9]/g,"");
+        element.value = parts[0]+","+parts[1];
+        return parts[0]+","+parts[1]; 
+    }else{
+        element.value = parts.join(",");
+        return parts.join(",");
+    }
+    element.focus()
+};
+
 function puntitos(donde,caracter,campo)
 {
 var decimales = true

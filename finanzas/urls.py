@@ -11,4 +11,5 @@ urlpatterns = patterns('',
     url(r'^extracto_cuentas_banco/$', views.extracto_cuentas_banco, name='extracto_cuentas_banco'),
     url(r'^centro_costos/$',  'finanzas.views.centro_costos', name="centro_costos"),
     url(r'^informe/$',  'finanzas.views.informe', name="informe"),
+    url(r'^flujo_fondo/$',  'finanzas.views.flujo_fondo', name="flujo_fondo"),
 )

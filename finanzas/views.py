@@ -40,3 +40,7 @@ def centro_costos(request):
 def informe(request):
     filters = ['empresas', 'clientes']
     return render_to_response('finanzas/informe.html', {'user':request.user.id, 'filters': filters}, context_instance=RequestContext(request))
+
+# TODO: add permiso
+def flujo_fondo(request):
+    return render_to_response('finanzas/flujodefondo.html', {'user':request.user.id}, context_instance=RequestContext(request))

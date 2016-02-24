@@ -1,0 +1,164 @@
+<script type="text/javascript">
+
+var aux1 = null
+var mes_corte = null
+ 
+$(document).ready(function() {
+    $('#page-wrapper').css('margin-left','0px');
+    $('#my-left-menu').toggle(0);
+    var url = window.location.href
+    
+    aux = url.toString().split("http://")
+    aux1 = aux[1].toString().split(":8000")
+    
+    $('.mes').datepicker({
+        autoclose: true,
+        todayBtn: "linked",
+        language: "es",
+        format: "MM",
+        startView: 1,
+        minViewMode: 1,
+        maxViewMode: 1,
+        {#        startView: "decade"#}
+    });
+    
+    $('.mes').datepicker().on('changeDate',function (c){
+        mes_corte = c.format('mm');
+    });
+    
+    $(".chosen-select").chosen({
+        disable_search_threshold: 0,
+        no_results_text: "Oops, nothing found!",
+        width: "200px",
+        allow_single_deselect: true
+    });
+    
+    $('#egresos').DataTable( {
+        deferRender: true,
+        scrollY: 150,
+        scrollCollapse: true,
+        scroller: {
+            displayBuffer: 10,
+            loadingIndicator: true
+        },
+        searching: false,
+        ordering: false,
+        paging: false,
+        language: u.spanish_dt,
+        //info: false, //muestra la cantidad cargada, aun no hice funcionar
+    });
+    
+    $('#ingresos').DataTable( {
+        deferRender: true,
+        scrollY: 150,
+        scrollCollapse: true,
+        scroller: {
+            displayBuffer: 10,
+            loadingIndicator: true
+        },
+        searching: false,
+        ordering: false,
+        paging: false,
+        language: u.spanish_dt,
+        //info: false, //muestra la cantidad cargada, aun no hice funcionar
+    });
+  
+});
+
+function remover(selectbox){
+    var i;
+    for(i=selectbox.options.length-1;i>=0;i--)
+    {
+        selectbox.remove(i);
+    }
+} 
+
+
+window.onload = function() {
+    Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario':'{{user}}'});
+
+    var today = new Date();
+    var dd = today.getDate();
+    var mm = today.getMonth()+1; //January is 0!
+    var yyyy = today.getFullYear();
+    
+    if(dd<10) {
+        dd='0'+dd
+    } 
+    
+    if(mm<10) {
+        mm='0'+mm
+    } 
+    
+    today = yyyy
+    
+    $('[name=periodo]').val(today)
+};
+
+function permisos_empresas(data){
+    if(data.length > 0){
+        console.log('Hay datos');
+        var vector = [] 
+        for (var a=0; a<data.length; a++){
+            vector.push("'"+data[a].empresa+"'")
+        }
+        var str = JSON.stringify({empresas: vector});
+        $.ajax("http://"+aux1[0]+":3000/api/v1/empresa/inin/select",{method:'POST', contentType:'application/json', data: str}).done(
+        function(data) {
+            if (data != null){
+                var select = document.getElementsByName("empresa")[0]
+                remover(select);
+                for (var i=0;i < data.data.length;i++){
+                    var option = document.createElement("option");
+                    option.value = data.data[i].Cod_Empresa;
+                    option.text = data.data[i].Des_Empresa;
+                    select.add(option);
+                }
+                $('.chosen-select').trigger('chosen:updated');
+            }
+        }
+    );}
+} 
+
+function buscar(){
+
+    var empresa = $("[name=empresa]").val()
+    var periodo = $("[name=periodo]").val()
+    var anterior = $("[name=anterior]").val().split('.').join('')
+    var actual = $("[name=actual]").val().split('.').join('')
+    
+    if (periodo == "" || periodo == null || periodo == " " || mes_corte == null || anterior == "" || anterior == null || anterior == " " || actual == "" || actual == null || actual == " "){
+        alert("No hay datos suficientes para generar el listado")
+    } else {
+        $('.collapse').collapse('hide');
+        $.get("http://"+aux1[0]+":3000/api/v1/flowcash/"+periodo+"/"+empresa+"/"+mes_corte,
+        function(data) {
+            if (data.data[1].movimientos.length > 0) {
+                var egresos = "";
+                var ingresos = "";
+                for (var a=0; a < data.data[1].movimientos.length; a++){
+                    if (data.data[1].movimientos[a].Tipo == 'E'){
+//                         var object_e = data.data[1].movimientos[a];
+//                         egresos.push(object_e);
+                        egresos+='<tr>'+
+                                    '<td>'+data.data[1].movimientos[a].CodPlanCta+'</td>'+
+                                    '<td>'+data.data[1].movimientos[a].Nombre+'</td>'+
+                                    '<td>'+convertir_rever(data.data[1].movimientos[a].Total)+'</td>'+
+                                 '</tr>'; 
+                    } else {
+                        ingresos+='<tr>'+
+                                    '<td>'+data.data[1].movimientos[a].CodPlanCta+'</td>'+
+                                    '<td>'+data.data[1].movimientos[a].Nombre+'</td>'+
+                                    '<td>'+convertir_rever(data.data[1].movimientos[a].Total)+'</td>'+
+                                 '</tr>'; 
+                    }
+                } 
+               $('#egresos tbody').html(egresos)
+               $('#ingresos tbody').html(ingresos)
+               //alert(egresos)
+            }
+        });
+    }
+}
+
+</script>
