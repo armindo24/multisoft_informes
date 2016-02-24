@@ -17,3 +17,7 @@ div.DTS tbody tr.group {
 .grouping-col {
     display: none;
 }
+
+td.multi{
+    max-width: 200px;
+}
