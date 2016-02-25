@@ -1,6 +1,12 @@
-<th>{% if title %}{{ title }}{% else %}{{ name|capfirst }}{% endif %}:</th>
-<td>
-  <select id="select-{{ name }}" name="{{ name }}"{% if class %} class="{{ class }}"{% endif %}
-          placeholder="{% if placeholder %}{{ placeholder }}{% elif title %}{{ title }}{% else %}{{ name|capfirst }}{% endif %}...">
-  </select>
-</td>
+<div class="col-sm-6">
+  <div class="form-group">
+    <label for="select-{{ name }}" class="col-md-4 control-label">
+      {% if title %}{{ title }}{% else %}{{ name|capfirst }}{% endif %}:</label>
+
+    <div class="col-md-6">
+      <select id="select-{{ name }}" name="{{ name }}"{% if class %} class="{{ class }}"{% endif %}
+              placeholder="{% if placeholder %}{{ placeholder }}{% elif title %}{{ title }}{% else %}{{ name|capfirst }}{% endif %}...">
+      </select>
+    </div>
+  </div>
+</div>

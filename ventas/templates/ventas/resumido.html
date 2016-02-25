@@ -5,34 +5,26 @@
 {% endblock %}
 
 {% block filters %}
-  <tr>
-    {% include 'ventas/_filtro.html' with title="Empresa" name="empresa" %}
-    {% include 'ventas/_filtro.html' with title="Sucursal" name="sucursal" %}
-  </tr>
-  <tr>
-    {% include 'ventas/_filtro.html' with title="Tipo Cliente" name="tipo_cliente" %}
-    {% include 'ventas/_filtro.html' with title="Cliente" name="cliente" %}
-  </tr>
-  <tr>
-    <th>Fecha</th>
-    <td>
-      <div id="fecha" class="input-daterange input-group input-date">
-        <input type="text" class="input-sm form-control" name="desde"/>
-        <span class="input-group-addon">a</span>
-        <input type="text" class="input-sm form-control" name="hasta"/>
+  {% include 'ventas/_filtro.html' with title="Empresa" name="empresa" %}
+  {% include 'ventas/_filtro.html' with title="Sucursal" name="sucursal" %}
+  {% include 'ventas/_filtro.html' with title="Tipo Cliente" name="tipo_cliente" %}
+  {% include 'ventas/_filtro.html' with title="Cliente" name="cliente" %}
+  <div class="col-sm-6">
+    <div class="form-group">
+      <label for="fecha" class="col-md-4 control-label">Fecha:</label>
+
+      <div class="col-md-6">
+        <div id="fecha" class="input-daterange input-group input-date">
+          <input type="text" class="input-sm form-control" name="desde"/>
+          <span class="input-group-addon">a</span>
+          <input type="text" class="input-sm form-control" name="hasta"/>
+        </div>
       </div>
-    </td>
-    <td></td>
-    <td style="width: 329px;"></td>
-  </tr>
-  <tr>
-    {% include 'ventas/_filtro.html' with title="Grupo" name="grupo" %}
-    {% include 'ventas/_filtro.html' with title="Comprobante" name="tipo_comprobante" %}
-  </tr>
-  <tr>
-    {% include 'ventas/_filtro.html' with title="Agrupar por" name="order" %}
-    <td></td><td></td>
-  </tr>
+    </div>
+  </div>
+  {% include 'ventas/_filtro.html' with title="Grupo" name="grupo" %}
+  {% include 'ventas/_filtro.html' with title="Comprobante" name="tipo_comprobante" %}
+  {% include 'ventas/_filtro.html' with title="Agrupar por" name="order" %}
 {% endblock filters %}
 
 
