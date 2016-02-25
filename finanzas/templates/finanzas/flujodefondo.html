@@ -72,10 +72,26 @@
     </div>
   </div>
 
+  <div id="mensaje"></div>
+    
   <div id="resultado">
-    <table id="saldos" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
-      Egresos
-      <table id="ingresos" class="display" cellspacing="0" width="100%">
+    <h3 style="text-align: center;" class="page-header">Saldo anterior de Bancos en Moneda Local y Extranjera</h3>  
+    <table id="saldos" class="display" cellspacing="0" width="100%">
+        <thead>
+        <tr>
+            <th style="width:75%;">Saldo</th>
+            <th style="width:25%;" class="price-label">Monto</th>
+        </tr>
+        <tfoot>
+        <tr>
+          <th colspan="1" style="text-align:right">Total:</th>
+          <th id="tsaldo"></th>
+        </tr>
+        </tfoot>
+    </table>
+    
+    <h2 style="text-align: center;" class="page-header">Ingresos</h2>    
+    <table id="ingresos" class="display" cellspacing="0" width="100%">
         <thead>
         <tr>
           <th style="width:25%;">Cuenta</th>
@@ -86,12 +102,12 @@
         <tfoot>
         <tr>
           <th colspan="2" style="text-align:right">Total:</th>
-          <th></th>
+          <th id="tingreso"></th>
         </tr>
         </tfoot>
-      </table>
     </table>
-    Egresos
+    
+    <h2 style="text-align: center;" class="page-header">Egresos</h2>
     <table id="egresos" class="display" cellspacing="0" width="100%">
       <thead>
       <tr>
@@ -103,11 +119,18 @@
       <tfoot>
       <tr>
         <th colspan="2" style="text-align:right">Total:</th>
-        <th></th>
+        <th id="tegreso"></th>
       </tr>
       </tfoot>
     </table>
-    Obs.: Cuentas Contables cuyos saldos será descontado del Saldo Total de la Planilla
+    
+    </br>
+    <table cellspacing="0" width="100%" class="table table-striped table-hover table-bordered table-filter scroll" id="parcial">
+        <tbody>
+        </tbody>
+    </table>
+    
+    <h3 class="page-header">Obs.: Cuentas Contables cuyos saldos será descontado del Saldo Total de la Planilla</h3>
     <table id="descuentos" class="display" cellspacing="0" width="100%">
       <thead>
       <tr>
@@ -119,9 +142,36 @@
       <tfoot>
       <tr>
         <th colspan="2" style="text-align:right">Total:</th>
-        <th></th>
+        <th id="tdescuento"></th>
       </tr>
       </tfoot>
+    </table>
+    
+    </br>
+    <table cellspacing="0" width="100%" class="table table-striped table-hover table-bordered table-filter scroll" id="parcial_descuentos">
+        <tbody>
+        </tbody>
+    </table>
+    
+    <h3 style="text-align: center;" class="page-header">Cotejación de la Planilla de Ingresos y Egresos con el Saldo Bancario</h3>
+    <table id="bancos" class="display" cellspacing="0" width="100%">
+        <thead>
+        <tr>
+            <th style="width:75%;">Saldo</th>
+            <th style="width:25%;" class="price-label">Monto</th>
+        </tr>
+        <tfoot>
+        <tr>
+          <th colspan="1" style="text-align:right">Total:</th>
+          <th id="tbanco"></th>
+        </tr>
+        </tfoot>
+    </table>
+    
+    </br>
+    <table cellspacing="0" width="100%" class="table table-striped table-hover table-bordered table-filter scroll" id="resultados">
+        <tbody>
+        </tbody>
     </table>
   </div>
 

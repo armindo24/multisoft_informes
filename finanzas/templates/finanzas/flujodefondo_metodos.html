@@ -71,7 +71,15 @@
     });
     
     $('#descuentos').DataTable({
-      columns: [{data: 'CodPlanCta'}, {data: 'Nombre'}, {data: 'Total'}]
+      columns: [{data: 'CodPlanCta'}, {data: 'Nombre'}, {data: 'Saldo'}]
+    });
+    
+    $('#saldos').DataTable({
+      columns: [{data: 'Saldo'}, {data: 'Monto'}]
+    });
+    
+    $('#bancos').DataTable({
+      columns: [{data: 'Saldo'}, {data: 'Monto'}]
     });
 
   });
@@ -85,6 +93,7 @@
 
 
   window.onload = function () {
+    $('#resultado').hide();
     Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario': '{{user}}'});
 
     var today = new Date();
@@ -146,32 +155,118 @@
       alert("No hay datos suficientes para generar el listado")
     } else {
       $('.collapse').collapse('hide');
+      $('#resultado').hide();
+      $('#mensaje').empty();
+      $('#mensaje').append("<b>Recuperando datos.</b>");
       $.get("http://" + aux1[0] + ":3000/api/v1/flowcash/" + periodo + "/" + empresa + "/" + mes_corte,
               function (data) {
                 console.log(data)
-                if (data.data[1].movimientos.length > 0) {
-                  var egresos = [];
-                  var ingresos = [];
-                  for (var a = 0; a < data.data[1].movimientos.length; a++) {
-                    if (data.data[1].movimientos[a].Tipo == 'E') {
-                      var object_e = data.data[1].movimientos[a];
-                      egresos.push(object_e);
-                    } else {
-                      var object_i = data.data[1].movimientos[a];
-                      ingresos.push(object_i);
+                if (data.data[0].saldos.length > 0 || data.data[1].movimientos.length > 0 || data.data[2].descuentos.length > 0 || data.data[3].bancos.length > 0) {
+                    $('#resultado').show();
+                    $('#mensaje').empty();
+                    if (data.data[0].saldos.length > 0) {
+                        var saldos = []
+                        for (var a = 0; a < data.data[0].saldos.length; a++) {
+                            var object_s = {}
+                            if (data.data[0].saldos[a].codmoneda == "GS"){
+                                object_s.Saldo = "Saldos de Bancos Moneda Local" 
+                                object_s.Monto = data.data[0].saldos[a].Saldo
+                            } else {
+                                object_s.Saldo = "Saldos de Bancos Moneda Extranjera &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"+convertir_rever(data.data[0].saldos[a].SaldoME) +"*"+ convertir_rever(anterior)
+                                object_s.Monto = data.data[0].saldos[a].SaldoME*anterior
+                            }
+                            saldos.push(object_s);
+                        }
                     }
-                  }
-                }
-                var tegresos = $('#egresos').DataTable();
-                tegresos.row(0).scrollTo();
-                tegresos.clear();
-                tegresos.rows.add(egresos).draw();
-                var tingresos = $('#ingresos').DataTable();
-                tingresos.row(0).scrollTo();
-                tingresos.clear();
-                tingresos.rows.add(ingresos).draw();
-                if (data.data[2].descuentos.length > 0) {
-                    alert('hay datos')
+                    var tsaldos = $('#saldos').DataTable();
+                    tsaldos.row(0).scrollTo();
+                    tsaldos.clear();
+                    tsaldos.rows.add(saldos).draw();
+                    if (data.data[1].movimientos.length > 0) {
+                      var egresos = [];
+                      var ingresos = [];
+                      for (var a = 0; a < data.data[1].movimientos.length; a++) {
+                        if (data.data[1].movimientos[a].Tipo == 'E') {
+                          var object_e = data.data[1].movimientos[a];
+                          egresos.push(object_e);
+                        } else {
+                          var object_i = data.data[1].movimientos[a];
+                          ingresos.push(object_i);
+                        }
+                      }
+                    }
+                    var tegresos = $('#egresos').DataTable();
+                    tegresos.row(0).scrollTo();
+                    tegresos.clear();
+                    tegresos.rows.add(egresos).draw();
+                    var tingresos = $('#ingresos').DataTable();
+                    tingresos.row(0).scrollTo();
+                    tingresos.clear();
+                    tingresos.rows.add(ingresos).draw();
+                    if (data.data[2].descuentos.length > 0) {
+                        var descuentos = [];
+                        for (var a = 0; a < data.data[2].descuentos.length; a++) {
+                            var object_d = data.data[2].descuentos[a];
+                            descuentos.push(object_d);
+                        }
+                    }
+                    var tdescuentos = $('#descuentos').DataTable();
+                    tdescuentos.row(0).scrollTo();
+                    tdescuentos.clear();
+                    tdescuentos.rows.add(descuentos).draw();
+                    var tsaldo = parseInt($('#tsaldo').text().toString().split('.').join(''));
+                    var tegreso = parseInt($('#tegreso').text().toString().split('.').join(''));
+                    var tingreso = parseInt($('#tingreso').text().toString().split('.').join(''));
+                    var parcial = tsaldo+(tingreso-tegreso)
+                    var string_parcial = '<tr>'+
+                                            '<th style="width:75%;">TOTAL SALDO: SA + (INGRESO - EGRESO)= &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+convertir_rever(tsaldo)+ ' + (' +convertir_rever(tingreso-tegreso)+') = </th>'+
+                                            '<th style="width:25%;text-align: right;">'+convertir_rever(parcial)+'</th>'+
+                                         '</tr>';
+                    $('#parcial tbody').html(string_parcial);
+                    var tdescuento = parseInt($('#tdescuento').text().toString().split('.').join(''));
+                    var string_parcial_descuento = '<tr>'+
+                                                        '<th style="width:75%;">SALDO FINAL DE LA PLANILLA</th>'+
+                                                        '<th style="width:25%;text-align: right;">'+convertir_rever(parcial-tdescuento)+'</th>'+
+                                                    '</tr>';
+                    $('#parcial_descuentos tbody').html(string_parcial_descuento);
+                    if (data.data[3].bancos.length > 0) {
+                        var bancos = []
+                        for (var a = 0; a < data.data[3].bancos.length; a++) {
+                            var object_b = {}
+                            if (data.data[3].bancos[a].codmoneda == "GS"){
+                                object_b.Saldo = "Saldos de Bancos Moneda Local" 
+                                object_b.Monto = data.data[3].bancos[a].Saldo
+                            } else {
+                                object_b.Saldo = "Saldos de Bancos Moneda Extranjera &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"+convertir_rever(data.data[3].bancos[a].SaldoME) +"*"+ convertir_rever(actual)
+                                object_b.Monto = data.data[3].bancos[a].SaldoME*actual
+                            }
+                            bancos.push(object_b);
+                        }
+                    }
+                    var tbancos = $('#bancos').DataTable();
+                    tbancos.row(0).scrollTo();
+                    tbancos.clear();
+                    tbancos.rows.add(bancos).draw();
+                    var tbanco = parseInt($('#tbanco').text().toString().split('.').join(''));
+                    var string_resultados = '<tr>'+
+                                                '<tr>'+
+                                                    '<th style="width:75%;">SALDO DE BANCOS</th>'+
+                                                    '<th style="width:25%;text-align: right;">'+convertir_rever(tbanco)+'</th>'+
+                                                '</tr>'+
+                                                '<tr>'+
+                                                    '<th style="width:75%;">SALDO DE PLANILLA</th>'+
+                                                    '<th style="width:25%;text-align: right;">'+convertir_rever(parcial-tdescuento)+'</th>'+
+                                                '</tr>'+
+                                                '<tr>'+
+                                                    '<th style="width:75%;">Diferencia de Saldo de Bancos - Planilla de Ingresos/Egresos</th>'+
+                                                    '<th style="width:25%;text-align: right;">'+convertir_rever(tbanco-(parcial-tdescuento))+'</th>'+
+                                                '</tr>'+
+                                            '</tr>';
+                    $('#resultados tbody').html(string_resultados);
+                } else {
+                    $('#resultado').hide();
+                    $('#mensaje').empty();
+                    $('#mensaje').append("<b>No se han encontrado datos.</b>");
                 }
               });
               
