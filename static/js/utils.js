@@ -158,3 +158,8 @@ u.parseVal = function (i) {
     //console.log(i, n);
     return n;
 };
+
+u.debug = function ($p, query) {
+    $p.text(JSON.stringify(query));
+    console.log("debug", query);
+};

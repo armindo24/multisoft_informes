@@ -32,7 +32,8 @@
           <div class="panel-group text-center" id="archivo_accordion" style="margin-bottom: 0px;">
 
             <center>
-              <table style="width: auto;" class="table table-striped table-hover table-bordered table-filter scroll" id="filters">
+              <table style="width: auto;" class="table table-striped table-bordered table-filter scroll"
+                     id="filters">
                 {% block filters %}
                 {% endblock %}
               </table>
@@ -54,4 +55,7 @@
       {% endblock %}
     </table>
   </div>
+
+  {% block innner_content %}
+  {% endblock %}
 {% endblock content %}

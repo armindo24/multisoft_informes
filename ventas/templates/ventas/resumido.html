@@ -1,116 +1,67 @@
-{% extends 'admin/base_site.html' %}
-{% load staticfiles %}
-{% block extrahead %}
-  <link rel="stylesheet" href={% static 'css/jquery-ui.css' %}>
-  <link rel="stylesheet" href={% static 'chosen_v1.4.2/chosen.css' %}>
-  <link rel="stylesheet" href="{% static 'select2/css/select2.min.css' %}">
-  <link rel="stylesheet" href="{% static 'styles.css' %}">
-  <link rel="stylesheet" href="{% static 'datatables.net-bs/css/dataTables.bootstrap.min.css' %}">
-  <link rel="stylesheet" href="{% static 'datatables.net-scroller-bs/css/scroller.bootstrap.css' %}">
-  <script src="{% static 'js/jquery-ui.js' %}"></script>
-  <script src="{% static 'js/puntos-decimales.js' %}"></script>
-  <script src="{% static 'js/jquery.maskedinput.min.js' %}"></script>
-  <script src="{% static 'select2/js/select2.full.min.js' %}"></script>
-  <script src="{% static 'chosen_v1.4.2/chosen.jquery.js' %}"></script>
-  <script src="{% static 'dajaxice/dajaxice.core.js' %}"></script>
-  <script src="{% static 'js/utils.js' %}"></script>
-  <script src="{% static 'datatables.net/js/jquery.dataTables.js' %}"></script>
-  <script src="{% static 'datatables.net-bs/js/dataTables.bootstrap.js' %}"></script>
-  <script src="{% static 'datatables.net-scroller/js/dataTables.scroller.js' %}"></script>
-{% endblock %}
+{% extends 'finanzas/base.html' %}
 
 {% block header %}
   Ventas:
 {% endblock %}
 
-
-{% block content %}
-
-  <div class="panel-group" id="accordion">
-    <div class="panel panel-default">
-      <div class="panel-heading" data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
-        <h4 class="panel-title">Filtros</h4>
+{% block filters %}
+  <tr>
+    {% include 'ventas/_filtro.html' with title="Empresa" name="empresa" %}
+    {% include 'ventas/_filtro.html' with title="Sucursal" name="sucursal" %}
+  </tr>
+  <tr>
+    {% include 'ventas/_filtro.html' with title="Tipo Cliente" name="tipo_cliente" %}
+    {% include 'ventas/_filtro.html' with title="Cliente" name="cliente" %}
+  </tr>
+  <tr>
+    <th>Fecha</th>
+    <td>
+      <div id="fecha" class="input-daterange input-group input-date">
+        <input type="text" class="input-sm form-control" name="desde"/>
+        <span class="input-group-addon">hasta</span>
+        <input type="text" class="input-sm form-control" name="hasta"/>
       </div>
-      <div id="collapseOne" class="panel-collapse collapse">
-        <div class="panel-body">
-          <div class="panel-group text-center" id="archivo_accordion" style="margin-bottom: 0px;">
+    </td>
+    <th></th>
+    <td></td>
+  </tr>
+  <tr>
+    {% include 'ventas/_filtro.html' with title="Grupo" name="grupo" %}
+    {% include 'ventas/_filtro.html' with title="Comprobante" name="tipo_comprobante" %}
+  </tr>
+  <tr>
+    {% include 'ventas/_filtro.html' with title="Agrupar por" name="order" %}
+    <td></td><td></td>
+  </tr>
+{% endblock filters %}
 
-            <center>
-              <div class="">
-                <table style="width: auto;" class="table table-striped table-hover table-bordered table-filter scroll">
-                  <tr>
-                    {% include 'ventas/_filtro.html' with title="Empresa" name="empresa" %}
-                    {% include 'ventas/_filtro.html' with title="Sucursal" name="sucursal" %}
-                  </tr>
-                  <tr>
-                    {% include 'ventas/_filtro.html' with title="Tipo Cliente" name="tipo_cliente" %}
-                    {% include 'ventas/_filtro.html' with title="Cliente" name="cliente" %}
-                  </tr>
-                  <tr>
-                    <th> Desde:</th>
-                    <td><input id="fechad" type="text" class="datepicker" name="fechad"/></td>
-                    <th> Hasta:</th>
-                    <td><input id="fechah" type="text" class="datepicker" name="fechah"/></td>
-                  </tr>
-                  <tr>
-                    {% include 'ventas/_filtro.html' with title="Grupo" name="grupo" %}
-                    {% include 'ventas/_filtro.html' with title="Comprobante" name="tipo_comprobante" %}
-                  </tr>
-                  <tr>
-                    <th> Agrupar por:</th>
-                    <td><select name="order" data-placeholder="Agrupar..." onchange="" class="chosen-select"
-                                tabindex="2">
-                      <option value="cod_tp_comp">Comprobante</option>
-                      <option value="cod_cliente">Cliente</option>
-                      <option value="cod_vendedor">Vendedor</option>
-                    </select></td>
-                    {#                    <th> Moneda:</th>#}
-                    {#                    <td><select name="moneda" data-placeholder="Moneda..." onchange="" class="chosen-select"#}
-                    {#                                tabindex="2">#}
-                    {#                      <option value="01">Local</option>#}
-                    {#                      <option value="02">Extranjera</option>#}
-                    {#                    </select></td>#}
-                  </tr>
-                </table>
-              </div>
-            </center>
 
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <a type="button" class="btn btn-primary" onclick="getInforme()">Filtrar <i class="fa fa-search"></i></a>
-      </div>
-    </div>
-  </div>
+{% block table %}
+  <thead>
+  <tr>
+    <th class="text-center">Detalle</th>
+    <th># Compr.</th>
+    <th>Cliente</th>
+    <th>RUC</th>
+    <th class="text-center">Fecha</th>
+    <th class="price-label">IVA</th>
+    <th class="price-label">Gravado</th>
+    <th class="price-label">Descuento</th>
+    <th class="price-label">Total</th>
+    <th class="grouping-col">Comprobante</th>
+    <th class="grouping-col">Cliente</th>
+    <th class="grouping-col">Vendedor</th>
+  </tr>
+  </thead>
+  <tfoot>
+  <tr>
+    <th colspan="8" style="text-align:right">Total:</th>
+    <th></th>
+  </tr>
+  </tfoot>
+{% endblock %}
 
-  <div id="resultado">
-    <table id="results" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
-      <thead>
-      <tr>
-        <th class="text-center">Detalle</th>
-        <th># Compr.</th>
-        <th>Cliente</th>
-        <th>RUC</th>
-        <th class="text-center">Fecha</th>
-        <th class="price-label">IVA</th>
-        <th class="price-label">Gravado</th>
-        <th class="price-label">Descuento</th>
-        <th class="price-label">Total</th>
-        <th class="grouping-col">Comprobante</th>
-        <th class="grouping-col">Cliente</th>
-        <th class="grouping-col">Vendedor</th>
-      </tr>
-      </thead>
-      <tfoot>
-      <tr>
-        <th colspan="8" style="text-align:right">Total:</th>
-        <th></th>
-      </tr>
-      </tfoot>
-    </table>
-  </div>
-
+{% block inner_content %}
   <div class="modal fade" id="ventaModal" tabindex="-1" role="dialog" aria-labelledby="ventaModal">
     <div class="modal-dialog modal-lg" role="document">
       <div class="modal-content">
@@ -196,79 +147,182 @@
     var $preview = $('#preview');
     var $results = $('#results');
     var numFormat = $.fn.dataTable.render.number('.', ',', 2).display;
+    var init = initialize;
+    var today = new Date();
+
+    var select_empresa, $select_empresa;
+    var select_sucursal, $select_sucursal;
+    var select_tipo_cliente, $select_tipo_cliente;
+    var select_cliente, $select_cliente;
+    var select_grupo, $select_grupo;
+    var select_tipo_comprobante, $select_tipo_comprobante;
+    var $select_order;
 
     $(document).ready(function () {
-      $('#ventaModal').on('show.bs.modal', showModal);
-
       u.hideNav();
       $results.hide();
+      init();
 
-      var today = new Date();
-      var $datepicker = $('.datepicker');
+      select_empresa = $select_empresa[0].selectize;
 
-      $datepicker.datepicker({
-        dateFormat: 'yy-mm-dd',
-        onSelect: function (dateText, inst) {
-          query[inst.id] = dateText;
-          $preview.text(JSON.stringify(query));
+      select_tipo_cliente = $select_tipo_cliente[0].selectize;
+      select_tipo_cliente.disable();
+      select_sucursal = $select_sucursal[0].selectize;
+      select_sucursal.disable();
+      select_cliente = $select_cliente[0].selectize;
+      select_cliente.disable();
+      select_tipo_comprobante = $select_tipo_comprobante[0].selectize;
+      select_tipo_comprobante.disable();
+      select_grupo = $select_grupo[0].selectize;
+      select_grupo.disable();
+
+    });
+
+    function initialize() {
+      $('#ventaModal').on('show.bs.modal', showModal);
+
+      $('.input-daterange').datepicker({
+        todayBtn: "linked",
+        language: "es",
+        format: "yyyy-mm-dd",
+        orientation: "bottom auto"
+      });
+
+      $('.input-date .form-control').datepicker().on('changeDate', function (e) {
+        query[this.name] = this.value;
+        u.debug($preview, query);
+      });
+
+      $('.input-date .form-control').datepicker('setDate', today);
+      $('.input-date .form-control').datepicker('update');
+
+      $.extend(true, $.fn.selectize.defaults, {
+        onChange: function (value) {
+          query[this.$input.attr('name')] = value;
+          u.debug($preview, query);
         }
       });
 
-      u.translate();
-      $datepicker.datepicker("setDate", today);
-      query.fechad = query.fechah = $.datepicker.formatDate("yy-mm-dd", today);
+      $select_empresa = $('#select-empresa').selectize({
+        valueField: 'Cod_Empresa',
+        labelField: 'Des_Empresa',
+        searchField: 'Des_Empresa',
+        preload: true,
+        load: function (q, callback) {
+          $.ajax({
+            url: api + 'empresa/select',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+              empresa: q,
+              page_limit: 10,
+            },
+            error: function () {
+              callback();
+            },
+            success: function (res) {
+              callback(res.data);
+            }
+          });
+        }, onChange: function (value) {
+          query.empresa = value;
+          if (!value.length) return;
+          select_tipo_cliente.disable();
+          select_tipo_cliente.clearOptions();
+          select_tipo_cliente.load(function (callback) {
+            $.get(api + 'clientes/tipos/').done(function (res) {
+              select_tipo_cliente.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
 
-      $(".chosen-select").chosen({
-        disable_search_threshold: 0,
-        no_results_text: "No hay resultados disponibles.",
-        width: "200px",
-        allow_single_deselect: true
+          select_tipo_comprobante.disable();
+          select_tipo_comprobante.clearOptions();
+          select_tipo_comprobante.load(function (callback) {
+            $.get(api + 'empresas/' + query.empresa + '/comprobantes/tipos').done(function (res) {
+              select_tipo_comprobante.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+          select_grupo.disable();
+          select_grupo.clearOptions();
+          select_grupo.load(function (callback) {
+            $.get(api + 'grupos/').done(function (res) {
+              select_grupo.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+          select_sucursal.disable();
+          select_sucursal.clearOptions();
+          select_sucursal.load(function (callback) {
+            $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
+              select_sucursal.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
       });
 
-      $('.chosen-select').on('change', function (evt, params) {
-        var select = $(this);
-        var select_name = select.attr('name');
-        query[select_name] = select.val();
-        console.log(query);
-        $preview.text(JSON.stringify(query));
+      $select_tipo_cliente = $('#select-tipo_cliente').selectize({
+        valueField: 'Cod_Tp_Cliente',
+        labelField: 'Des_Tp_Cliente',
+        searchField: 'Des_Tp_Cliente',
+        onChange: function (value) {
+          query.tipo_cliente = value;
+          if (!value.length) return;
+          select_cliente.disable();
+          select_cliente.clearOptions();
+          select_cliente.load(function (cb) {
+            $.get(api + 'empresas/' + query.empresa + '/clientes', {tipo: query.tipo_cliente}).done(function (res) {
+              select_cliente.enable();
+              cb(res.data);
+            }).fail(function () {
+              cb();
+            });
+          });
+        }
       });
 
-      $('[name=empresa]').on('change', function (ev, params) {
-        $.get(api + 'clientes/tipos/').done(function (d) {
-          u.createSelect('tipo_cliente', d, 'Cod_Tp_Cliente', 'Des_Tp_Cliente', false);
-          $('.chosen-select').trigger('chosen:updated');
-        });
-
-        $.get(api + '/sucursal/select/' + query.empresa).done(function (d) {
-          u.createSelect('sucursal', d, 'Cod_Sucursal', 'Des_Sucursal');
-          $('.chosen-select').trigger('chosen:updated');
-        });
-
-        $.get(api + 'empresas/' + query.empresa + '/comprobantes/tipos').done(function (d) {
-          u.createSelect('tipo_comprobante', d, 'Cod_Tp_Comp', 'des_tp_comp', true);
-          $('.chosen-select').trigger('chosen:updated');
-        });
+      $select_cliente = $('#select-cliente').selectize({
+        valueField: 'Cod_Cliente',
+        labelField: 'Razon_Social',
+        searchField: 'Razon_Social'
       });
 
-      $('[name=tipo_cliente]').on('change', function (ev, params) {
-        console.log('select tipo', query.tipo_cliente);
-        console.log(query);
-        $.get(api + 'empresas/' + query.empresa + '/clientes', {tipo: query.tipo_cliente}).done(function (d) {
-          u.createSelect('cliente', d, 'Cod_Cliente', 'Razon_Social', true);
-          $('.chosen-select').trigger('chosen:updated');
-        });
+      $select_tipo_comprobante = $('#select-tipo_comprobante').selectize({
+        valueField: 'Cod_Tp_Comp',
+        labelField: 'des_tp_comp',
+        searchField: 'des_tp_comp'
       });
 
-      u.get_empresas({{ user.id }}, function (d) {
-        u.createSelect('empresa', d, 'Cod_Empresa', 'Des_Empresa');
-        $('.chosen-select').trigger('chosen:updated');
+      $select_grupo = $('#select-grupo').selectize({
+        valueField: 'cod_grupo',
+        labelField: 'des_grupo',
+        searchField: 'des_grupo'
       });
 
-      $.get(api + 'grupos/').done(function (d) {
-        u.createSelect('grupo', d, 'cod_grupo', 'des_grupo', true);
-        $('.chosen-select').trigger('chosen:updated');
+      $select_sucursal = $('#select-sucursal').selectize({
+        valueField: 'Cod_Sucursal',
+        labelField: 'Des_Sucursal',
+        searchField: 'Des_Sucursal'
       });
-    });
+
+      $select_order = $('#select-order').selectize({
+        options: [
+          {value: 'cod_tp_comp', text: 'Comprobante'},
+          {value: 'cod_cliente', text: 'Cliente'},
+          {value: 'cod_vendedor', text: 'Vendedor'},
+        ]
+      });
+    }
 
     function getInforme() {
       $('.collapse').collapse('hide');
