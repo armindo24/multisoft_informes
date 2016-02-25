@@ -21,3 +21,7 @@ div.DTS tbody tr.group {
 td.multi{
     max-width: 200px;
 }
+
+#filters tr th {
+    text-align: right;
+}
