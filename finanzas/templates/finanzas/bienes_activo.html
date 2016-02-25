@@ -7,27 +7,27 @@
 {% block filters %}
   <tr>
     <th>Empresa:</th>
-    <td><select id="select-empresa" placeholder="Empresa..."></select></td>
+    <td><select id="select-empresa" placeholder="Empresa..." name="empresa"></select></td>
     <th>Sucursal:</th>
-    <td><select id="select-sucursal" placeholder="Sucursal..."></select></td>
+    <td><select id="select-sucursal" placeholder="Sucursal..." name="sucursal"></select></td>
   </tr>
   <tr>
     <th>Estado:</th>
-    <td><select id="select-estado" placeholder="Estado..."></select></td>
+    <td><select id="select-estado" placeholder="Estado..." name="estado"></select></td>
     <th>Periodo:</th>
     <td class="input-date" id="periodo"><input type="text" class="form-control" name="year"></td>
   </tr>
   <tr>
     <th>Rubro:</th>
-    <td><select id="select-rubro" placeholder="Rubro..."></select></td>
+    <td><select id="select-rubro" placeholder="Rubro..." name="rubro"></select></td>
     <th>Subrubro:</th>
-    <td><select id="select-subrubro" placeholder="Subrubro..."></select></td>
+    <td><select id="select-subrubro" placeholder="Subrubro..." name="subrubro"></select></td>
   </tr>
   <tr>
     <th>Articulo:</th>
-    <td class="multi"><select id="select-articulo" placeholder="Articulo..."></select></td>
+    <td class="multi"><select id="select-articulo" placeholder="Articulo..." name="articulo"></select></td>
     <th>Proveedor:</th>
-    <td class="multi"><select id="select-proveedor" placeholder="Proveedor..."></select></td>
+    <td class="multi"><select id="select-proveedor" placeholder="Proveedor..." name="proveedor"></select></td>
   </tr>
 
   <tr>
@@ -108,6 +108,13 @@
     });
 
     function init() {
+      $.extend(true, $.fn.selectize.defaults, {
+        onChange: function (value) {
+          query[this.$input.attr('name')] = value;
+          debug();
+        }
+      });
+
       $select_empresa = $('#select-empresa').selectize({
         valueField: 'Cod_Empresa',
         labelField: 'Des_Empresa',
@@ -220,43 +227,27 @@
       $select_subrubro = $('#select-subrubro').selectize({
         valueField: 'codsubrubro',
         labelField: 'descrip',
-        searchField: 'descrip',
-        onChange: function (value) {
-          query.subrubro = value;
-          debug();
-        }
+        searchField: 'descrip'
       });
 
       $select_articulo = $('#select-articulo').selectize({
         valueField: 'cod_articulo',
         labelField: 'des_art',
         searchField: 'des_art',
-        maxItems: null,
-        onChange: function (value) {
-          query.articulo = value;
-          debug();
-        }
+        maxItems: null
       });
 
       $select_proveedor = $('#select-proveedor').selectize({
         valueField: 'CodProv',
         labelField: 'RazonSocial',
         searchField: 'RazonSocial',
-        maxItems: null,
-        onChange: function (value) {
-          query.proveedor = value;
-          debug();
-        }
+        maxItems: null
       });
 
       $select_sucursal = $('#select-sucursal').selectize({
         valueField: 'Cod_Sucursal',
         labelField: 'Des_Sucursal',
-        searchField: 'Des_Sucursal',
-        onChange: function (value) {
-          query.sucursal = value;
-          debug();
-        }
+        searchField: 'Des_Sucursal'
       });
 
       $select_estado = $('#select-estado').selectize({
@@ -266,11 +257,7 @@
           {value: 'A', text: 'Activo'},
           {value: 'I', text: 'Inactivo'},
           {value: 'B', text: 'De Baja'}
-        ],
-        onChange: function (value) {
-          query.estado = value;
-          debug();
-        }
+        ]
       });
 
       $('.input-daterange').datepicker({
