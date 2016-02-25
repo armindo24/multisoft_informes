@@ -201,20 +201,8 @@
         searchField: 'Des_Empresa',
         preload: true,
         load: function (q, callback) {
-          $.ajax({
-            url: api + 'empresa/select',
-            type: 'GET',
-            dataType: 'json',
-            data: {
-              empresa: q,
-              page_limit: 10,
-            },
-            error: function () {
-              callback();
-            },
-            success: function (res) {
-              callback(res.data);
-            }
+          u.get_empresas({{ user }}, function (d) {
+            callback(d.data);
           });
         }, onChange: function (value) {
           query.empresa = value;
