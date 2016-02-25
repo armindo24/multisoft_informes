@@ -20,7 +20,7 @@
   <script src="{% static 'bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js' %}"></script>
   <script src="{% static 'bootstrap-datepicker/dist/locales/bootstrap-datepicker.es.min.js' %}"></script>
   <script src="{% static 'js/utils.js' %}"></script>
-  {% include 'finanzas/fuljodefondo_metodos.html' %}
+  {% include 'finanzas/flujodefondo_metodos.html' %}
 {% endblock %}
 
 {% block header %}
@@ -93,6 +93,22 @@
     </table>
     Egresos
     <table id="egresos" class="display" cellspacing="0" width="100%">
+      <thead>
+      <tr>
+        <th style="width:25%;">Cuenta</th>
+        <th style="width:50%;">Nombre</th>
+        <th style="width:25%;" class="price-label">Total</th>
+      </tr>
+      </thead>
+      <tfoot>
+      <tr>
+        <th colspan="2" style="text-align:right">Total:</th>
+        <th></th>
+      </tr>
+      </tfoot>
+    </table>
+    Obs.: Cuentas Contables cuyos saldos será descontado del Saldo Total de la Planilla
+    <table id="descuentos" class="display" cellspacing="0" width="100%">
       <thead>
       <tr>
         <th style="width:25%;">Cuenta</th>

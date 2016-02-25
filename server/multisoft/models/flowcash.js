@@ -238,7 +238,16 @@ Flow.all = function (params,cb) {
             
             var string2 = "";
             
-            string2 =   "SELECT "+
+            string2 =   "select "+
+                            "Cod_empresa,"+
+                            "CodPlanCta,"+
+                            "Nombre,"+
+                            "TipoSaldo,"+
+                            "cast(TotalDebito as decimal(20,0)),"+
+                            "cast(TotalCredito as decimal(20,0)), "+
+                            "cast((if (TipoSaldo = 'D') then TotalDebito-TotalCredito else TotalCredito-TotalDebito endif) as decimal(20,0)) as Saldo "+
+                        "from "+
+                        "(SELECT "+
                             "DBA.AsientosCab.Cod_empresa,"+
                             "DBA.AsientosDet.CodPlanCta,"+
                             "DBA.PlanCta.Nombre,"+
@@ -349,12 +358,12 @@ Flow.all = function (params,cb) {
                             "DBA.AsientosCab.Cod_empresa,"+
                             "DBA.AsientosDet.CodPlanCta,"+
                             "DBA.PlanCta.Nombre,"+
-                            "DBA.PlanCta.TipoSaldo";
-            
+                            "DBA.PlanCta.TipoSaldo) as tabla";
+            console.log(string2)
             conn.exec(string2, function(err, row){
                 if (err) throw err;
                 data3 = row;
-                cb([{ saldos : data1 },{ movimientos : data2 },{ descuentoes : data3 }]);
+                cb([{ saldos : data1 },{ movimientos : data2 },{ descuentos : data3 }]);
             });
         });
     });

@@ -69,6 +69,10 @@
     $('#ingresos').DataTable({
       columns: [{data: 'CodPlanCta'}, {data: 'Nombre'}, {data: 'Total'}]
     });
+    
+    $('#descuentos').DataTable({
+      columns: [{data: 'CodPlanCta'}, {data: 'Nombre'}, {data: 'Total'}]
+    });
 
   });
 
@@ -144,6 +148,7 @@
       $('.collapse').collapse('hide');
       $.get("http://" + aux1[0] + ":3000/api/v1/flowcash/" + periodo + "/" + empresa + "/" + mes_corte,
               function (data) {
+                console.log(data)
                 if (data.data[1].movimientos.length > 0) {
                   var egresos = [];
                   var ingresos = [];
@@ -165,7 +170,11 @@
                 tingresos.row(0).scrollTo();
                 tingresos.clear();
                 tingresos.rows.add(ingresos).draw();
+                if (data.data[2].descuentos.length > 0) {
+                    alert('hay datos')
+                }
               });
+              
     }
   }
 
