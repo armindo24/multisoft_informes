@@ -149,15 +149,15 @@ Activo.bienes = function (params, filters, cb) {
         sql += "AND (dba.bienactivo.cod_articulo IN " + q.in(filters.articulo) + ") ";
     }
 
+    if (filters.sucursal) {
+        sql += "AND (dba.sucursal.Cod_Sucursal = ?) ";
+        sql_params.push(filters.sucursal);
+    }
+
     conn.exec(sql, sql_params, function (err, res) {
         if (err) throw err;
         cb(res);
     });
-
-    if (filters.sucursal) {
-        sql += " AND (dba.sucursal.Cod_Sucursal = ?)";
-        sql_params.push(filters.sucursal);
-    }
 
     console.log(sql_params);
     console.log(sql);
