@@ -29,10 +29,7 @@
   });
 
   function initDate() {
-    $.extend(true, $.fn.datepicker.defaults, {
-      language: "es",
-      orientation: "bottom auto"
-    });
+    u.defaultDatepicker();
 
     $('#periodo .form-control').datepicker({
       format: "yyyy",
@@ -65,7 +62,6 @@
   }
 
   function initSelect() {
-
     $.extend(true, $.fn.selectize.defaults, {
       onChange: function (value) {
         query[this.$input.attr('name')] = value;

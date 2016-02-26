@@ -160,6 +160,15 @@ u.parseVal = function (i) {
 };
 
 u.debug = function ($p, query) {
-    $p.text(JSON.stringify(query));
+    if ($p) {
+        $p.text(JSON.stringify(query));
+    }
     console.log("debug", query);
+};
+
+u.defaultDatepicker = function () {
+    $.extend(true, $.fn.datepicker.defaults, {
+        language: "es",
+        orientation: "bottom auto"
+    });
 };
