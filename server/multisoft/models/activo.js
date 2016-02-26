@@ -136,23 +136,23 @@ Activo.bienes = function (params, filters, cb) {
         sql_params.push(filters.rubro);
     }
 
-    conn.exec(sql, sql_params, function (err, res) {
-        if (err) throw err;
-        cb(res);
-    });
-
     if (filters.subrubro) {
-        sql += " AND ( dba.bienactivo.codsubrubro = ? )";
+        sql += "AND ( dba.bienactivo.codsubrubro = ? ) ";
         sql_params.push(filters.subrubro);
     }
 
     if (filters.proveedor) {
-        sql += " AND (dba.bienactivo.codprov IN " + q.in(filters.proveedor) + ")";
+        sql += "AND (dba.bienactivo.codprov IN " + q.in(filters.proveedor) + ") ";
     }
 
     if (filters.articulo) {
-        sql += " AND (dba.bienactivo.cod_articulo IN " + q.in(filters.articulo) + ")";
+        sql += "AND (dba.bienactivo.cod_articulo IN " + q.in(filters.articulo) + ") ";
     }
+
+    conn.exec(sql, sql_params, function (err, res) {
+        if (err) throw err;
+        cb(res);
+    });
 
     if (filters.sucursal) {
         sql += " AND (dba.sucursal.Cod_Sucursal = ?)";
