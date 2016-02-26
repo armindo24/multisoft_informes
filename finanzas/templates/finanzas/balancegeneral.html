@@ -80,15 +80,18 @@
         <label for="moneda" class="col-md-4 control-label">Moneda Extranjera:</label>
 
         <div class="col-md-6">
-          <input type="checkbox" name="moneda" id="moneda" checked/>
+          <input type="checkbox" name="moneda" id="moneda"/>
         </div>
       </div>
     </div>
   </div>
-
 {% endblock %}
 
 
 {% block inner_content %}
+  <!-- TODO: poner dentro de bloque table -->
+  <div id="table-div">
+
+  </div>
   {% include 'finanzas/balancegeneral_metodos.html' %}
 {% endblock %}
