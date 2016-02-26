@@ -1,151 +1,94 @@
-{% extends 'admin/base_site.html'%}
-{% load staticfiles %}
-{% block extrahead %}
-	<link rel="stylesheet" href={% static 'css/jquery-ui.css' %}> 
-    <link rel="stylesheet" href={% static 'chosen_v1.4.2/chosen.css' %}>
-    <link rel="stylesheet" href={% static 'chosen_v1.4.2/docsupport/prism.css' %}>
-    <script src={% static 'js/jquery-ui.js' %}></script>
-    <script src={% static 'js/puntos-decimales.js' %}></script>
-    <script src={% static 'js/jquery.maskedinput.min.js' %}></script>
-    <script src={% static 'chosen_v1.4.2/chosen.jquery.js' %}></script>
-	<script src={% static 'chosen_v1.4.2/docsupport/prism.js' %}></script>
-	<script src={% static 'dajaxice/dajaxice.core.js' %}></script>
-	{% include 'finanzas/ordenpago_metodos.html' %}
-{% endblock %}
+{% extends 'finanzas/base.html' %}
 
 {% block header %}
-	&Oacute;rdenes de Pago: 
+  &Oacute;rdenes de Pago:
 {% endblock %}
 
-{% block content %}
-	<div class="panel-group" id="accordion" >
-	    <div class="panel panel-default">
-	        <div class="panel-heading"  data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
-	            <h4 class="panel-title">
-	               Filtros
-	            </h4>
-	        </div>
-	        <div id="collapseOne" class="panel-collapse collapse">
-	            <div class="panel-body">
-					<div class="panel-group" id="archivo_accordion" style="margin-bottom: 0px;">
-						<div class="row show-grid">
-						   <div style="text-align:center;" class="col-md-6 col-sm-6">
-						  		<th style="vertical-align: middle;">
-									<b>
-										Empresa:
-									</b>
-								</th>
-								<td>
-									<select name="empresa" data-placeholder="Empresa..." onchange="buscar_comprobante();buscar_sucursal();" class="chosen-select" tabindex="2">
-						          	</select>
-								</td>
-							</div>
-							<div style="text-align:center;" class="col-md-6 col-sm-6">
-						  		<th style="vertical-align: middle;">
-									<b>
-										Sucursal:
-									</b>
-								</th>
-								<td>
-									<select name="sucursal" data-placeholder="Surcusal..." class="chosen-select" tabindex="2">
-						          	</select>
-								</td>
-							</div>
-						</div>
-						<div class="row show-grid">
-						   <div style="text-align:center;" class="col-md-6 col-sm-6">
-						   		<th style="vertical-align: middle;">
-							   		<b>
-										Tipo OP:
-									</b>
-								</th>
-								<td>
-									<select name="tipoop" data-placeholder="Tipo..." class="chosen-select" tabindex="2">
-							   			<option value="">NINGUNO</option>
-							   			<option selected value="A">A</option>
-							   			<option value="B">B</option>
-							   			<option value="C">C</option>
-						          	</select>
-								</td>
-						   </div>
-						   <div style="text-align:center;" class="col-md-6 col-sm-6">
-						   		<th style="vertical-align: middle;">
-									<b>
-										Comprobante:
-									</b>
-								</th>
-								<td>
-									<select name="comprobante" data-placeholder="Comprobante..." class="chosen-select" tabindex="2">
-						          	</select>
-								</td>
-						   </div>
-						</div>
-						<div class="row show-grid">
-						   <div style="text-align:center;" class="col-md-6 col-sm-6">
-						   		<th style="vertical-align: middle;">
-							   		<b>
-										T. Proveedor:
-									</b>
-								</th>
-								<td>
-									<select name="tipoproveedor" data-placeholder="Tipo..." onchange="buscar_proveedor()" class="chosen-select" tabindex="2">
-							   			<option value="">NINGUNO</option>
-							   			<option selected value="PR">PROVEEDOR LOCAL</option>
-							   			<option value="PE">PROVEEDOR EXTERIOR</option>
-							   			<option value="PC">PROVEEDOR DE CAJA CHICA</option>}
-							   			<option value="PS">PROVEEDOR DE SERVICIO</option>
-							   			<option value="OP">OTRO PROVEEDOR</option>
-							   			<option value="DE">DESPACHANTE</option>
-							   			<option value="EM">EMPLEADO</option>
-						          	</select>
-								</td>
-						   </div>
-						    <div style="text-align:center;" class="col-md-6 col-sm-6">
-						   		<th style="vertical-align: middle;">
-									<b>
-										Proveedor:
-									</b>
-								</th>
-								<td>
-									<select name="proveedor" data-placeholder="Proveedor..." class="chosen-select" tabindex="2">
-						          	</select>
-								</td>
-						   </div>
-						</div>
-						<div class="row show-grid">
-						   <div style="text-align:center;" class="col-md-6 col-sm-6">
-						   		<th style="vertical-align: middle;">
-									<b>
-										Desde:
-									</b>
-								</th>
-								<td>
-									<input type="text" class="datepicker" name="fechad" >
-								</td>
-						   </div>
-						    <div style="text-align:center;" class="col-md-6 col-sm-6">
-						   		<th style="vertical-align: middle;">
-									<b>
-										Hasta:
-									</b>
-								</th>
-								<td>
-									<input type="text" class="datepicker" name="fechah" >
-								</td>
-						   </div>
-						</div>
-					</div>
-				</div>
-	        </div>
-	        <div class="modal-footer">
-		        <a type="button" class="btn btn-primary" onclick="buscar()">Filtrar <i class="fa fa-search"></i></a>
-	        </div>
-	    </div>
-	</div> 
-	
-    <div id="table-div">
-    	
+{% block filters %}
+  {% include 'ventas/_filtro.html' with name="empresa" %}
+  {% include 'ventas/_filtro.html' with name="sucursal" %}
+  {% include 'ventas/_filtro.html' with name="tipoop" placeholder="Tipo" title="Tipo OP" %}
+  {% include 'ventas/_filtro.html' with name="comprobante" %}
+  {% include 'ventas/_filtro.html' with name="tipoproveedor" placeholder="Tipo" title="T. Proveedor" %}
+  {% include 'ventas/_filtro.html' with name="proveedor" %}
+  <div class="col-sm-6">
+    <div class="form-group">
+      <label for="fecha" class="col-md-4 control-label">Fecha:</label>
+
+      <div class="col-md-6">
+        <div id="fecha" class="input-daterange input-group input-date">
+          <input type="text" class="input-sm form-control" name="desde"/>
+          <span class="input-group-addon">a</span>
+          <input type="text" class="input-sm form-control" name="hasta"/>
+        </div>
+      </div>
     </div>
-    <br>
-	</br>
+  </div>
+
+
+  {#                  <select name="empresa" data-placeholder="Empresa..."#}
+  {#                          onchange="buscar_comprobante();buscar_sucursal();" class="chosen-select" tabindex="2">#}
+  {#                  </select>#}
+  {#                  <select name="sucursal" data-placeholder="Surcusal..." class="chosen-select" tabindex="2">#}
+  {#                  </select>#}
+  {#                <td>#}
+  {#                  <select name="tipoop" data-placeholder="Tipo..." class="chosen-select" tabindex="2">#}
+  {#                    <option value="">NINGUNO</option>#}
+  {#                    <option selected value="A">A</option>#}
+  {#                    <option value="B">B</option>#}
+  {#                    <option value="C">C</option>#}
+  {#                  </select>#}
+  {#                  <select name="comprobante" data-placeholder="Comprobante..." class="chosen-select" tabindex="2">#}
+  {#                  </select>#}
+  {#                  <select name="tipoproveedor" data-placeholder="Tipo..." onchange="buscar_proveedor()"#}
+  {#                          class="chosen-select" tabindex="2">#}
+  {#                    <option value="">NINGUNO</option>#}
+  {#                    <option selected value="PR">PROVEEDOR LOCAL</option>#}
+  {#                    <option value="PE">PROVEEDOR EXTERIOR</option>#}
+  {#                    <option value="PC">PROVEEDOR DE CAJA CHICA</option>#}
+  {#                    }#}
+  {#                    <option value="PS">PROVEEDOR DE SERVICIO</option>#}
+  {#                    <option value="OP">OTRO PROVEEDOR</option>#}
+  {#                    <option value="DE">DESPACHANTE</option>#}
+  {#                    <option value="EM">EMPLEADO</option>#}
+  {#                  </select>#}
+  {#                  <select name="proveedor" data-placeholder="Proveedor..." class="chosen-select" tabindex="2">#}
+  {#            <div class="row show-grid">#}
+  {#              <div style="text-align:center;" class="col-md-6 col-sm-6">#}
+  {#                <th style="vertical-align: middle;">#}
+  {#                  <b>#}
+  {#                    Desde:#}
+  {#                  </b>#}
+  {#                </th>#}
+  {#                <td>#}
+  {#                  <input type="text" class="datepicker" name="fechad">#}
+  {#                </td>#}
+  {#              </div>#}
+  {#              <div style="text-align:center;" class="col-md-6 col-sm-6">#}
+  {#                <th style="vertical-align: middle;">#}
+  {#                  <b>#}
+  {#                    Hasta:#}
+  {#                  </b>#}
+  {#                </th>#}
+  {#                <td>#}
+  {#                  <input type="text" class="datepicker" name="fechah">#}
+  {#                </td>#}
+  {#              </div>#}
+  {#            </div>#}
+  {#          </div>#}
+  {#        </div>#}
+  {#      </div>#}
+  {#      <div class="modal-footer">#}
+  {#        <a type="button" class="btn btn-primary" onclick="buscar()">Filtrar <i class="fa fa-search"></i></a>#}
+  {#      </div>#}
+  {#    </div>#}
+  {#  </div>#}
+{% endblock %}
+
+
+{% block inner_content %}
+  <div id="table-div">
+
+  </div>
+  {% include 'finanzas/ordenpago_metodos.html' %}
 {% endblock %}
