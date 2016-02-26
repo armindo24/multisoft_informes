@@ -172,3 +172,9 @@ u.defaultDatepicker = function () {
         orientation: "bottom auto"
     });
 };
+
+u.resetSelect = function ($select) {
+    if (!$select) return;
+    $select.disable();
+    $select.clearOptions();
+}
