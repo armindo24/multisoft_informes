@@ -1,16 +1,48 @@
 <script type="text/javascript">
 
-  var numFormat = $.fn.dataTable.render.number('.', ',', 0).display;
-  var aux1 = null;
-  var mes_corte = null;
+var numFormat = $.fn.dataTable.render.number('.', ',', 0).display;
+var aux1 = null;
+var mes_corte = null;
+var initialize = init;
+var select_empresa, $select_empresa;
+ var api = u.getApiUrl();
 
-  $(document).ready(function () {
-    $('#page-wrapper').css('margin-left', '0px');
-    $('#my-left-menu').toggle(0);
-    var url = window.location.href;
+function init() {
+    $.extend(true, $.fn.selectize.defaults, {
+        onChange: function (value) {
+            query[this.$input.attr('name')] = value;
+            debug();
+        }
+    });
 
-    aux = url.toString().split("http://");
-    aux1 = aux[1].toString().split(":8000");
+    $select_empresa = $('#select-empresa').selectize({
+        valueField: 'Cod_Empresa',
+        labelField: 'Des_Empresa',
+        searchField: 'Des_Empresa',
+        preload: true,
+        load: function (q, callback) {
+            u.get_empresas({{ user }}, function (d) {
+            callback(d.data);
+            });
+        },
+        onChange: function (value) {
+            debug();
+            if (!value.length) return;
+        }
+    });
+}
+
+$(document).ready(function () {
+    $('#resultado').hide();
+    initialize();
+    u.hideNav();
+    
+    select_empresa = $select_empresa[0].selectize; 
+    
+//     var url = window.location.href;
+// 
+//     aux = url.toString().split("http://");
+//     aux1 = aux[1].toString().split(":8000");
 
     $('.mes').datepicker({
       autoclose: true,
@@ -26,138 +58,65 @@
       mes_corte = c.format('mm');
     });
 
-    $(".chosen-select").chosen({
-      disable_search_threshold: 0,
-      no_results_text: "Oops, nothing found!",
-      width: "200px",
-      allow_single_deselect: true
-    });
-
     $.extend(true, $.fn.dataTable.defaults, {
-      searching: false,
-      ordering: false,
-      language: u.spanish_dt,
-      deferRender: true,
-      scrollY: 200,
-      scrollCollapse: true,
-      scroller: {
-        displayBuffer: 30,
-        loadingIndicator: true
-      },
-      columnDefs: [
-        {className: "price-value", targets: "price-label"},
-        {render: $.fn.dataTable.render.number('.', ',', 0), targets: "price-label"},
-        {className: "text-center", targets: "text-center"},
-        {visible: false, targets: "grouping-col"}
-      ],
-      footerCallback: function (row, data, start, end, display) {
-        var api = this.api(), data;
-        // Total over all pages
-        var total = api.column(-1).data().reduce(function (a, b) {
-          return u.parseVal(a) + u.parseVal(b);
-        }, 0);
-
-        // Update footer
-        $(api.column(-1).footer()).html(numFormat(total));
-      }
+        searching: false,
+        ordering: false,
+        language: u.spanish_dt,
+        deferRender: true,
+        scrollY: 200,
+        scrollCollapse: true,
+        scroller: {
+            displayBuffer: 30,
+            loadingIndicator: true
+        },
+        columnDefs: [
+            {className: "price-value", targets: "price-label"},
+            {render: $.fn.dataTable.render.number('.', ',', 0), targets: "price-label"},
+            {className: "text-center", targets: "text-center"},
+            {visible: false, targets: "grouping-col"}
+        ],
+        footerCallback: function (row, data, start, end, display) {
+            var api = this.api(), data;
+            var total = api.column(-1).data().reduce(function (a, b) {
+                return u.parseVal(a) + u.parseVal(b);
+            }, 0);
+            $(api.column(-1).footer()).html(numFormat(total));
+        }
     });
-
+    
     $('#egresos').DataTable({
-      columns: [{data: 'CodPlanCta'}, {data: 'Nombre'}, {data: 'Total'}]
+        columns: [{data: 'CodPlanCta'}, {data: 'Nombre'}, {data: 'Total'}]
     });
-
+    
     $('#ingresos').DataTable({
-      columns: [{data: 'CodPlanCta'}, {data: 'Nombre'}, {data: 'Total'}]
+        columns: [{data: 'CodPlanCta'}, {data: 'Nombre'}, {data: 'Total'}]
     });
     
     $('#descuentos').DataTable({
-      columns: [{data: 'CodPlanCta'}, {data: 'Nombre'}, {data: 'Saldo'}]
+        columns: [{data: 'CodPlanCta'}, {data: 'Nombre'}, {data: 'Saldo'}]
     });
     
     $('#saldos').DataTable({
-      columns: [{data: 'Saldo'}, {data: 'Monto'}]
+        columns: [{data: 'Saldo'}, {data: 'Monto'}]
     });
     
     $('#bancos').DataTable({
-      columns: [{data: 'Saldo'}, {data: 'Monto'}]
+        columns: [{data: 'Saldo'}, {data: 'Monto'}]
     });
-    
-//     $('#resultados').DataTable( {
-//         deferRender: true,
-//         scrollY: 150,
-//         scrollCollapse: true,
-//         scroller: {
-//             displayBuffer: 10,
-//             loadingIndicator: true
-//         },
-//         searching: false,
-//         ordering: false,
-//         paging: false,
-//         language: u.spanish_dt,
-//         //info: false, //muestra la cantidad cargada, aun no hice funcionar
-//     });
-
-  });
-
-  function remover(selectbox) {
-    var i;
-    for (i = selectbox.options.length - 1; i >= 0; i--) {
-      selectbox.remove(i);
-    }
-  }
-
-
-  window.onload = function () {
-    $('#resultado').hide();
-    Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario': '{{user}}'});
-
+        
     var today = new Date();
     var dd = today.getDate();
     var mm = today.getMonth() + 1; //January is 0!
     var yyyy = today.getFullYear();
-
     if (dd < 10) {
       dd = '0' + dd
     }
-
     if (mm < 10) {
       mm = '0' + mm
     }
-
     today = yyyy
-
     $('[name=periodo]').val(today)
-  };
-
-  function permisos_empresas(data) {
-    if (data.length > 0) {
-      console.log('Hay datos');
-      var vector = []
-      for (var a = 0; a < data.length; a++) {
-        vector.push("'" + data[a].empresa + "'")
-      }
-      var str = JSON.stringify({empresas: vector});
-      $.ajax("http://" + aux1[0] + ":3000/api/v1/empresa/inin/select", {
-        method: 'POST',
-        contentType: 'application/json',
-        data: str
-      }).done(
-              function (data) {
-                if (data != null) {
-                  var select = document.getElementsByName("empresa")[0]
-                  remover(select);
-                  for (var i = 0; i < data.data.length; i++) {
-                    var option = document.createElement("option");
-                    option.value = data.data[i].Cod_Empresa;
-                    option.text = data.data[i].Des_Empresa;
-                    select.add(option);
-                  }
-                  $('.chosen-select').trigger('chosen:updated');
-                }
-              }
-      );
-    }
-  }
+});
 
   function buscar() {
 
