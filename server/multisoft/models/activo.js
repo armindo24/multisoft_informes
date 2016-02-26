@@ -103,8 +103,7 @@ Activo.bienes = function (params, filters, cb) {
         "AND DATE(dba.bienactivo.fechacompra) >= DATE(?) " +
         "AND DATE(dba.bienactivo.fechacompra) <= DATE(?) " +
         "AND DATE(dba.bienactivo.fechaalta) >= DATE(?) " +
-        "AND DATE(dba.bienactivo.fechaalta) <= DATE(?) " +
-        "AND ( ( dba.bienactivo.codrubro = '1201007' ) ) ";
+        "AND DATE(dba.bienactivo.fechaalta) <= DATE(?) ";
 
     var sql_params = [
         filters.periodo_year, params.empresa,
@@ -131,15 +130,16 @@ Activo.bienes = function (params, filters, cb) {
         sql_params.push(filters.estado);
     }
 
+
+    if (filters.rubro) {
+        sql += "AND ( ( dba.bienactivo.codrubro = ? ) ) ";
+        sql_params.push(filters.rubro);
+    }
+
     conn.exec(sql, sql_params, function (err, res) {
         if (err) throw err;
         cb(res);
     });
-
-    if (filters.rubro) {
-        sql += " AND ( dba.bienactivo.codrubro = ? )"
-        sql_params.push(filters.rubro);
-    }
 
     if (filters.subrubro) {
         sql += " AND ( dba.bienactivo.codsubrubro = ? )";
