@@ -104,9 +104,7 @@ Activo.bienes = function (params, filters, cb) {
         "AND DATE(dba.bienactivo.fechacompra) <= DATE(?) " +
         "AND DATE(dba.bienactivo.fechaalta) >= DATE(?) " +
         "AND DATE(dba.bienactivo.fechaalta) <= DATE(?) " +
-        "AND ( ( dba.bienactivo.codrubro = '1201007' ) ) " +
-        "AND (UPPER(dba.bienactivo.revaluable) = 'S') " +
-        "AND (UPPER(dba.bienactivo.depreciable) = 'S')";
+        "AND ( ( dba.bienactivo.codrubro = '1201007' ) ) ";
 
     var sql_params = [
         filters.periodo_year, params.empresa,
@@ -114,22 +112,24 @@ Activo.bienes = function (params, filters, cb) {
         filters.ventas_start, filters.ventas_end
     ];
 
+    console.log(filters);
+
+    if (filters.despreciable && filters.despreciable === 'true') {
+        sql += "AND (UPPER(dba.bienactivo.depreciable) = 'S') ";
+    } else {
+        sql += "AND (UPPER(dba.bienactivo.depreciable) = 'N') ";
+    }
+
+    if (filters.revaluable && filters.revaluable === 'true') {
+        sql += "AND (UPPER(dba.bienactivo.revaluable) = 'S') ";
+    } else {
+        sql += "AND (UPPER(dba.bienactivo.revaluable) = 'N') ";
+    }
+
     conn.exec(sql, sql_params, function (err, res) {
         if (err) throw err;
         cb(res);
     });
-
-    if (filters.despreciable && filters.despreciable === 'true') {
-        sql += " AND (UPPER(dba.bienactivo.depreciable) = 'S')";
-    } else {
-        sql += " AND (UPPER(dba.bienactivo.depreciable) = 'N')";
-    }
-
-    if (filters.revaluable && filters.revaluable === 'true') {
-        sql += " AND (UPPER(dba.bienactivo.revaluable) = 'S')";
-    } else {
-        sql += " AND (UPPER(dba.bienactivo.revaluable) = 'N')";
-    }
 
     if (filters.estado && filters.estado != 'T') {
         sql += " AND (dba.bienactivo.estado = ?)";
