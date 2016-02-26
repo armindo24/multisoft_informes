@@ -5,75 +5,85 @@
 {% endblock %}
 
 {% block filters %}
-  {% include 'ventas/_filtro.html' with name="empresa" %}
-  <div class="col-sm-6">
-    <div class="form-group">
-      <label for="periodo" class="col-md-4 control-label">Periodo:</label>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="empresa" %}
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="periodo" class="col-md-4 control-label">Periodo:</label>
 
-      <div class="col-md-6">
-        <div class="input-date" id="periodo"><input type="text" class="form-control" name="year"></div>
-      </div>
-    </div>
-  </div>
-  {% include 'ventas/_filtro.html' with name="cuentad" placeholder="Cuenta" title="Cta. desde" %}
-  {% include 'ventas/_filtro.html' with name="cuentah" placeholder="Cuenta" title="Cta. hasta" %}
-  <div class="col-sm-6">
-    <div class="form-group">
-      <label for="mesd" class="col-md-4 control-label">Mes desde:</label>
-
-      <div class="col-md-6">
-        <div class="input-date" id="mesd"><input type="text" class="form-control" name="mesd"></div>
+        <div class="col-md-6">
+          <div class="input-date" id="periodo"><input type="text" class="form-control" name="periodo"></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="col-sm-6">
-    <div class="form-group">
-      <label for="mesh" class="col-md-4 control-label">Mes hasta:</label>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="cuentad" placeholder="Cuenta" title="Cta. desde" %}
+    {% include 'ventas/_filtro.html' with name="cuentah" placeholder="Cuenta" title="Cta. hasta" %}
+  </div>
 
-      <div class="col-md-6">
-        <div class="input-date" id="mesh"><input type="text" class="form-control" name="mesh"></div>
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="fecha" class="col-md-4 control-label">Fecha:</label>
+
+        <div class="col-md-6">
+          <div id="fecha" class="input-daterange input-group input-date">
+            <input type="text" class="input-sm form-control" name="mesd"/>
+            <span class="input-group-addon">a</span>
+            <input type="text" class="input-sm form-control" name="mesh"/>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="nivel" class="col-md-4 control-label">Nivel:</label>
+
+        <div class="col-md-6">
+          <div id="nivel"><input type="text" class="form-control" name="nivel" value="0"></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="col-sm-6">
-    <div class="form-group">
-      <label for="nivel" class="col-md-4 control-label">Nivel:</label>
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="incluir" class="col-md-4 control-label">Cuentas con saldo cero:</label>
 
-      <div class="col-md-6">
-        <div id="nivel"><input type="text" class="form-control" name="nivel" value="0"></div>
+        <div class="col-md-6">
+          <input type="checkbox" name="incluir" id="incluir" checked/>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="auxiliar" class="col-md-4 control-label">Incluir cuentas auxiliares:</label>
+
+        <div class="col-md-6">
+          <input type="checkbox" name="auxiliar" id="auxiliar" checked/>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="col-sm-6">
-    <div class="form-group">
-      <label for="incluir" class="col-md-4 control-label">Incluir cuentas con saldo cero:</label>
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="moneda" class="col-md-4 control-label">Moneda Extranjera:</label>
 
-      <div class="col-md-6">
-        <input type="checkbox" name="incluir" id="incluir" checked/>
+        <div class="col-md-6">
+          <input type="checkbox" name="moneda" id="moneda" checked/>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="col-sm-6">
-    <div class="form-group">
-      <label for="auxiliar" class="col-md-4 control-label">Incluir cuentas auxiliares:</label>
+{% endblock %}
 
-      <div class="col-md-6">
-        <input type="checkbox" name="auxiliar" id="auxiliar" checked/>
-      </div>
-    </div>
-  </div>
 
-  <div class="col-sm-6">
-    <div class="form-group">
-      <label for="moneda" class="col-md-4 control-label">Moneda Extranjera:</label>
-
-      <div class="col-md-6">
-        <input type="checkbox" name="moneda" id="moneda" checked/>
-      </div>
-    </div>
-  </div>
+{% block inner_content %}
+  {% include 'finanzas/balancegeneral_metodos.html' %}
 {% endblock %}
