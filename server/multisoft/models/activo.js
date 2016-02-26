@@ -126,15 +126,15 @@ Activo.bienes = function (params, filters, cb) {
         sql += "AND (UPPER(dba.bienactivo.revaluable) = 'N') ";
     }
 
+    if (filters.estado && filters.estado != 'T') {
+        sql += "AND (dba.bienactivo.estado = ?) ";
+        sql_params.push(filters.estado);
+    }
+
     conn.exec(sql, sql_params, function (err, res) {
         if (err) throw err;
         cb(res);
     });
-
-    if (filters.estado && filters.estado != 'T') {
-        sql += " AND (dba.bienactivo.estado = ?)";
-        sql_params.push(filters.estado);
-    }
 
     if (filters.rubro) {
         sql += " AND ( dba.bienactivo.codrubro = ? )"
