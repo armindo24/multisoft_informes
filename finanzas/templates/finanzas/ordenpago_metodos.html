@@ -146,65 +146,66 @@
     });
   }
 
-  {#  function buscar() {#}
-  {#    var desde = $("[name=fechad]").val()#}
-  {#    var hasta = $("[name=fechah]").val()#}
-  {#    var empresa = $("[name=empresa]").val()#}
-  {#    var sucursal = $("[name=sucursal]").val()#}
-  {#    var tipoop = $("[name=tipoop]").val()#}
-  {#    var comprobante = $("[name=comprobante]").val()#}
-  {#    var tipoproveedor = $("[name=tipoproveedor]").val()#}
-  {#    var proveedor = $("[name=proveedor]").val()#}
-  {#    if (sucursal == "" || sucursal == null)#}
-  {#      sucursal = " ";#}
-  {#    if (tipoop == "" || tipoop == null)#}
-  {#      tipoop = " ";#}
-  {#    if (comprobante == "" || comprobante == null)#}
-  {#      comprobante = " ";#}
-  {#    if (tipoproveedor == "" || tipoproveedor == null)#}
-  {#      tipoproveedor = " ";#}
-  {#    if (proveedor == "" || proveedor == null)#}
-  {#      proveedor = " ";#}
-  {#    if (desde == " " || desde == "" || desde == null || hasta == " " || hasta == "" || hasta == null) {#}
-  {#      alert("No hay datos suficientes para generar el listado")#}
-  {#    } else {#}
-  {#      $('.collapse').collapse('hide')#}
-  {#      $('#table-div').empty()#}
-  {#      $('#table-div').append("<b>Recuperando datos.</b>")#}
-  {#      $.get("http://" + aux1[0] + ":3000/api/v1/ordenpago/list/" + empresa + "/" + sucursal + "/" + tipoop + "/" + comprobante + "/" + tipoproveedor + "/" + proveedor + "/" + desde + "/" + hasta,#}
-  {#              function (data) {#}
-  {#                if (data.data.length > 0) {#}
-  {#                  $('#table-div').empty()#}
-  {#                  var tableta = '<table id="resultados" class="table table-striped table-hover table-bordered table-filter scroll" tyle="width:90%">' +#}
-  {#                          '<thead>' +#}
-  {#                          '<tr>' +#}
-  {#                          '<th>Proveedor</th>' +#}
-  {#                          '<th>Sucursal</th>' +#}
-  {#                          '<th>OP N&#176;</th>' +#}
-  {#                          '<th>Fecha</th>' +#}
-  {#                          '<th>Monto</th>' +#}
-  {#                          '</tr>' +#}
-  {#                          '</thead>' +#}
-  {#                          '<tbody></tbody>' +#}
-  {#                          '</table>'#}
-  {#                  $('#table-div').append(tableta)#}
-  {#                  var string = ""#}
-  {#                  for (var i = 0; i < data.data.length; i++) {#}
-  {#                    string += '<tr>' +#}
-  {#                            '<td>' + data.data[i].RazonSocial + '</td>' +#}
-  {#                            '<td>' + data.data[i].Des_Sucursal + '</td>' +#}
-  {#                            '<td>' + data.data[i].NroOP + '/' + data.data[i].des_tp_comp + '</td>' +#}
-  {#                            '<td>' + data.data[i].Fecha + '</td>' +#}
-  {#                            '<td style="text-align: right;">' + convertir_rever(data.data[i].TotalImporte) + '</td>' +#}
-  {#                            '</tr>'#}
-  {#                  }#}
-  {#                  $('#resultados tbody').html(string)#}
-  {#                } else {#}
-  {#                  $('#table-div').empty()#}
-  {#                  $('#table-div').append("<b>No se han encontrado datos.</b>")#}
-  {#                }#}
-  {#              }#}
-  {#      );#}
-  {#    }#}
-  {#  }#}
+  function getInforme() {
+    var desde = query.desde;
+    var hasta = query.hasta;
+    var empresa = query.empresa;
+    var sucursal = query.sucursal;
+    var tipoop = query.tipoop;
+    var comprobante = query.comprobante;
+    var tipoproveedor = query.tipoproveedor;
+    var proveedor = query.proveedor;
+
+    if (sucursal == "" || sucursal == null)
+      sucursal = " ";
+    if (tipoop == "" || tipoop == null)
+      tipoop = " ";
+    if (comprobante == "" || comprobante == null)
+      comprobante = " ";
+    if (tipoproveedor == "" || tipoproveedor == null)
+      tipoproveedor = " ";
+    if (proveedor == "" || proveedor == null)
+      proveedor = " ";
+    if (desde == " " || desde == "" || desde == null || hasta == " " || hasta == "" || hasta == null) {
+      alert("No hay datos suficientes para generar el listado")
+    } else {
+      $('.collapse').collapse('hide')
+      $('#table-div').empty()
+      $('#table-div').append("<b>Recuperando datos.</b>")
+      $.get(api + "ordenpago/list/" + empresa + "/" + sucursal + "/" + tipoop + "/" + comprobante + "/" + tipoproveedor + "/" + proveedor + "/" + desde + "/" + hasta,
+              function (data) {
+                if (data.data.length > 0) {
+                  $('#table-div').empty()
+                  var tableta = '<table id="resultados" class="table table-striped table-hover table-bordered table-filter scroll" tyle="width:90%">' +
+                          '<thead>' +
+                          '<tr>' +
+                          '<th>Proveedor</th>' +
+                          '<th>Sucursal</th>' +
+                          '<th>OP N&#176;</th>' +
+                          '<th>Fecha</th>' +
+                          '<th>Monto</th>' +
+                          '</tr>' +
+                          '</thead>' +
+                          '<tbody></tbody>' +
+                          '</table>'
+                  $('#table-div').append(tableta)
+                  var string = ""
+                  for (var i = 0; i < data.data.length; i++) {
+                    string += '<tr>' +
+                            '<td>' + data.data[i].RazonSocial + '</td>' +
+                            '<td>' + data.data[i].Des_Sucursal + '</td>' +
+                            '<td>' + data.data[i].NroOP + '/' + data.data[i].des_tp_comp + '</td>' +
+                            '<td>' + data.data[i].Fecha + '</td>' +
+                            '<td style="text-align: right;">' + convertir_rever(data.data[i].TotalImporte) + '</td>' +
+                            '</tr>'
+                  }
+                  $('#resultados tbody').html(string)
+                } else {
+                  $('#table-div').empty()
+                  $('#table-div').append("<b>No se han encontrado datos.</b>")
+                }
+              }
+      );
+    }
+  }
 </script>
