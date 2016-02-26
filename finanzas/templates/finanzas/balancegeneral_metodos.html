@@ -15,8 +15,8 @@
 
   $(document).ready(function () {
     u.hideNav();
-    init_date();
-    init_select();
+    initDate();
+    initSelect();
 
     select_empresa = $select_empresa[0].selectize;
 
@@ -27,7 +27,7 @@
     select_cuentah.disable();
   });
 
-  function init_date() {
+  function initDate() {
     $('#periodo .form-control').datepicker({
       format: "yyyy",
       startView: 2,
@@ -62,7 +62,7 @@
     $('.input-date .form-control').datepicker('update');
   }
 
-  function init_select() {
+  function initSelect() {
 
     $.extend(true, $.fn.selectize.defaults, {
       onChange: function (value) {
@@ -79,32 +79,6 @@
       load: function (q, callback) {
         u.get_empresas({{ user }}, function (d) {
           callback(d.data);
-        });
-      },
-      onChange: function (value) {
-        query.empresa = value;
-        console.log(query);
-        if (!value.length) return;
-        select_cuentad.disable();
-        select_cuentad.clearOptions();
-        select_cuentad.load(function (cb) {
-          $.get(api + 'cuenta/select/' + query.empresa + '/' + '2013').done(function (d) {
-            cb(d.data);
-            select_cuentad.enable();
-          }).fail(function () {
-            cb();
-          });
-        });
-
-        select_cuentah.disable();
-        select_cuentah.clearOptions();
-        select_cuentah.load(function (cb) {
-          $.get(api + 'cuenta/select/' + query.empresa + '/' + '2013').done(function (d) {
-            cb(d.data);
-            select_cuentah.enable();
-          }).fail(function () {
-            cb();
-          });
         });
       }
     });
@@ -333,106 +307,31 @@
     }
   }
 
-  function buscar_cuenta() {
-    $.get("http://" + aux1[0] + ":3000/api/v1/cuenta/select/" + document.getElementsByName('empresa')[0].value + "/" + document.getElementsByName('periodo')[0].value,
-            function (data) {
-              if (data != null) {
-                var select = document.getElementsByName("cuentad")[0]
-                var select1 = document.getElementsByName("cuentah")[0]
-                remover(select);
-                remover(select1);
-                for (var i = 0; i < data.data.length; i++) {
-                  var option = document.createElement("option");
-                  var option1 = document.createElement("option");
-                  option.value = data.data[i].CodPlanCta;
-                  option.text = data.data[i].Nombre;
-                  option1.value = data.data[i].CodPlanCta;
-                  option1.text = data.data[i].Nombre;
-                  select.add(option);
-                  select1.add(option1);
-                }
-                SelectElement(data.data[0].CodPlanCta, 'cuentad')
-                SelectElement(data.data[0].CodPlanCta, 'cuentah')
-              }
-            }
-    );
+  function buscarCuenta() {
+    if (!query.empresa || !query.empresa.length) return;
+    if (!query.periodo || !query.periodo.length) return;
 
-    $('.chosen-select').trigger('chosen:updated');
+    console.log('buscar-cuenta');
+    select_cuentad.disable();
+    select_cuentad.clearOptions();
+    select_cuentad.load(function (cb) {
+      $.get(api + 'cuenta/select/' + query.empresa + '/' + query.periodo).done(function (d) {
+        cb(d.data);
+        select_cuentad.enable();
+      }).fail(function () {
+        cb();
+      });
+    });
+
+    select_cuentah.disable();
+    select_cuentah.clearOptions();
+    select_cuentah.load(function (cb) {
+      $.get(api + 'cuenta/select/' + query.empresa + '/' + query.periodo).done(function (d) {
+        cb(d.data);
+        select_cuentah.enable();
+      }).fail(function () {
+        cb();
+      });
+    });
   }
-
-  {#  window.onload = function () {#}
-  {#    Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario': '{{user}}'});#}
-  {##}
-  {#    var today = new Date();#}
-  {#    var dd = today.getDate();#}
-  {#    var mm = today.getMonth() + 1; //January is 0!#}
-  {#    var yyyy = today.getFullYear();#}
-  {##}
-  {#    if (dd < 10) {#}
-  {#      dd = '0' + dd#}
-  {#    }#}
-  {##}
-  {#    if (mm < 10) {#}
-  {#      mm = '0' + mm#}
-  {#    }#}
-  {##}
-  {#    today = yyyy#}
-  {##}
-  {#    $('[name=periodo]').val(today)#}
-  {#  };#}
-
-  {#  function permisos_empresas(data) {#}
-  {#    if (data.length > 0) {#}
-  {#      console.log('Hay datos');#}
-  {#      var vector = []#}
-  {#      for (var a = 0; a < data.length; a++) {#}
-  {#        vector.push("'" + data[a].empresa + "'")#}
-  {#      }#}
-  {#      var str = JSON.stringify({empresas: vector});#}
-  {#      $.ajax("http://" + aux1[0] + ":3000/api/v1/empresa/inin/select", {#}
-  {#        method: 'POST',#}
-  {#        contentType: 'application/json',#}
-  {#        data: str#}
-  {#      }).done(#}
-  {#              function (data) {#}
-  {#                if (data != null) {#}
-  {#                  var select = document.getElementsByName("empresa")[0]#}
-  {#                  remover(select);#}
-  {#                  for (var i = 0; i < data.data.length; i++) {#}
-  {#                    var option = document.createElement("option");#}
-  {#                    option.value = data.data[i].Cod_Empresa;#}
-  {#                    option.text = data.data[i].Des_Empresa;#}
-  {#                    select.add(option);#}
-  {#                  }#}
-  {#                  SelectElement(data.data[0].Cod_Empresa, 'empresa')#}
-  {##}
-  {#                  $.get("http://" + aux1[0] + ":3000/api/v1/cuenta/select/" + document.getElementsByName('empresa')[0].value + "/" + document.getElementsByName('periodo')[0].value,#}
-  {#                          function (data) {#}
-  {#                            if (data != null) {#}
-  {#                              var select = document.getElementsByName("cuentad")[0]#}
-  {#                              var select1 = document.getElementsByName("cuentah")[0]#}
-  {#                              remover(select);#}
-  {#                              remover(select1);#}
-  {#                              for (var i = 0; i < data.data.length; i++) {#}
-  {#                                var option = document.createElement("option");#}
-  {#                                var option1 = document.createElement("option");#}
-  {#                                option.value = data.data[i].CodPlanCta;#}
-  {#                                option.text = data.data[i].Nombre;#}
-  {#                                option1.value = data.data[i].CodPlanCta;#}
-  {#                                option1.text = data.data[i].Nombre;#}
-  {#                                select.add(option);#}
-  {#                                select1.add(option1);#}
-  {#                              }#}
-  {#                              SelectElement(data.data[0].CodPlanCta, 'cuentad')#}
-  {#                              SelectElement(data.data[0].CodPlanCta, 'cuentah')#}
-  {#                            }#}
-  {#                          }#}
-  {#                  );#}
-  {##}
-  {#                  $('.chosen-select').trigger('chosen:updated');#}
-  {#                }#}
-  {#              }#}
-  {#      );#}
-  {#    }#}
-  {#  }#}
 </script>
