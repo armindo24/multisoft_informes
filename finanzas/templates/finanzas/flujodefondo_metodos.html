@@ -9,11 +9,6 @@ var select_empresa, $select_empresa;
  var api = u.getApiUrl();
 
 function init() {
-    $.extend(true, $.fn.selectize.defaults, {
-        onChange: function (value) {
-            query[this.$input.attr('name')] = value;
-        }
-    });
 
     $select_empresa = $('#select-empresa').selectize({
         valueField: 'Cod_Empresa',
@@ -25,10 +20,6 @@ function init() {
             callback(d.data);
             });
         },
-        onChange: function (value) {
-            debug();
-            if (!value.length) return;
-        }
     });
 }
 
@@ -39,11 +30,6 @@ $(document).ready(function () {
     
     select_empresa = $select_empresa[0].selectize; 
     
-//     var url = window.location.href;
-// 
-//     aux = url.toString().split("http://");
-//     aux1 = aux[1].toString().split(":8000");
-
     $('.mes').datepicker({
         autoclose: true,
         todayBtn: "linked",
@@ -119,22 +105,10 @@ $(document).ready(function () {
         columns: [{data: 'Saldo'}, {data: 'Monto'}]
     });
         
-//     var today = new Date();
-//     var dd = today.getDate();
-//     var mm = today.getMonth() + 1; //January is 0!
-//     var yyyy = today.getFullYear();
-//     if (dd < 10) {
-//       dd = '0' + dd
-//     }
-//     if (mm < 10) {
-//       mm = '0' + mm
-//     }
-//     today = yyyy
-//     $('[name=periodo]').val(today)
 });
 
   function buscar() {
-
+  
     var empresa = $("[name=empresa]").val()
     var anterior = $("[name=anterior]").val().split('.').join('')
     var actual = $("[name=actual]").val().split('.').join('')
@@ -146,7 +120,7 @@ $(document).ready(function () {
       $('#resultado').hide();
       $('#mensaje').empty();
       $('#mensaje').append("<b>Recuperando datos.</b>");
-      $.get("http://" + aux1[0] + ":3000/api/v1/flowcash/" + periodo + "/" + empresa + "/" + mes_corte,
+      $.get(api+"flowcash/" + periodo + "/" + empresa + "/" + mes_corte,
               function (data) {
                 console.log(data)
                 if (data.data[0].saldos.length > 0 || data.data[1].movimientos.length > 0 || data.data[2].descuentos.length > 0 || data.data[3].bancos.length > 0) {
@@ -165,11 +139,11 @@ $(document).ready(function () {
                             }
                             saldos.push(object_s);
                         }
+                        var tsaldos = $('#saldos').DataTable();
+                        tsaldos.row(0).scrollTo();
+                        tsaldos.clear();
+                        tsaldos.rows.add(saldos).draw();
                     }
-                    var tsaldos = $('#saldos').DataTable();
-                    tsaldos.row(0).scrollTo();
-                    tsaldos.clear();
-                    tsaldos.rows.add(saldos).draw();
                     if (data.data[1].movimientos.length > 0) {
                       var egresos = [];
                       var ingresos = [];
@@ -183,25 +157,29 @@ $(document).ready(function () {
                         }
                       }
                     }
-                    var tegresos = $('#egresos').DataTable();
-                    tegresos.row(0).scrollTo();
-                    tegresos.clear();
-                    tegresos.rows.add(egresos).draw();
-                    var tingresos = $('#ingresos').DataTable();
-                    tingresos.row(0).scrollTo();
-                    tingresos.clear();
-                    tingresos.rows.add(ingresos).draw();
+                    if (egresos.lenth > 0){
+                        var tegresos = $('#egresos').DataTable();
+                        tegresos.row(0).scrollTo();
+                        tegresos.clear();
+                        tegresos.rows.add(egresos).draw();
+                    }
+                    if (ingresos.length > 0){ 
+                        var tingresos = $('#ingresos').DataTable();
+                        tingresos.row(0).scrollTo();
+                        tingresos.clear();
+                        tingresos.rows.add(ingresos).draw();
+                    }
                     if (data.data[2].descuentos.length > 0) {
                         var descuentos = [];
                         for (var a = 0; a < data.data[2].descuentos.length; a++) {
                             var object_d = data.data[2].descuentos[a];
                             descuentos.push(object_d);
                         }
+                        var tdescuentos = $('#descuentos').DataTable();
+                        tdescuentos.row(0).scrollTo();
+                        tdescuentos.clear();
+                        tdescuentos.rows.add(descuentos).draw();
                     }
-                    var tdescuentos = $('#descuentos').DataTable();
-                    tdescuentos.row(0).scrollTo();
-                    tdescuentos.clear();
-                    tdescuentos.rows.add(descuentos).draw();
                     var tsaldo = parseInt($('#tsaldo').text().toString().split('.').join(''));
                     var tegreso = parseInt($('#tegreso').text().toString().split('.').join(''));
                     var tingreso = parseInt($('#tingreso').text().toString().split('.').join(''));
@@ -230,11 +208,11 @@ $(document).ready(function () {
                             }
                             bancos.push(object_b);
                         }
+                        var tbancos = $('#bancos').DataTable();
+                        tbancos.row(0).scrollTo();
+                        tbancos.clear();
+                        tbancos.rows.add(bancos).draw();        
                     }
-                    var tbancos = $('#bancos').DataTable();
-                    tbancos.row(0).scrollTo();
-                    tbancos.clear();
-                    tbancos.rows.add(bancos).draw();
                     var tbanco = parseInt($('#tbanco').text().toString().split('.').join(''));
                     var string_resultados = '<tr>'+
                                                 '<tr>'+
