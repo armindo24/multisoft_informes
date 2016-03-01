@@ -6,7 +6,7 @@ OrdenPago.all = function (params,cb) {
 
     var sucursal = (params.sucursal == "NINGUNA" || params.sucursal == " ") ? "" : params.sucursal;
     var tipoop = (params.tipoop == "NINGUNO" || params.tipoop == " ") ? "" : params.tipoop;
-    var comprobante = (params.comprobante == "NINGUNO" || params.comprobante == " ") ? "" : params.comprobante;
+//     var comprobante = (params.comprobante == "NINGUNO" || params.comprobante == " ") ? "" : params.comprobante;
     var tipoproveedor = (params.tipoproveedor == "NINGUNO" || params.tipoproveedor == " ") ? "" : params.tipoproveedor;
     var proveedor = (params.proveedor == "NINGUNO" || params.proveedor == " ") ? "" : params.proveedor;
 
@@ -20,7 +20,8 @@ OrdenPago.all = function (params,cb) {
                 "DBA.PROVEED.CodProv = DBA.OPCAB.CodProv AND DBA.PROVEED.Cod_Empresa = DBA.OPCAB.Cod_Empresa AND "+
                 "DBA.PROVEED.Cod_Empresa = DBA.EMPRESA.Cod_Empresa AND DBA.OPCAB.Anulado = 'N' AND "+
                 "cast(DBA.SUCURSAL.Cod_Sucursal as varchar(50)) like '%"+sucursal+"%' AND cast(DBA.EMPRESA.Cod_Empresa as varchar(50)) like '%"+params.empresa+"%' "+
-                "AND cast(DBA.OPCAB.TipoOP as varchar(50)) like '%"+tipoop+"%' AND cast(DBA.TPOCBTE.Cod_Tp_Comp as varchar(50)) like '%"+comprobante+"%' "+
+//                 "AND cast(DBA.OPCAB.TipoOP as varchar(50)) like '%"+tipoop+"%' AND cast(DBA.TPOCBTE.Cod_Tp_Comp as varchar(50)) like '%"+comprobante+"%' "+
+                "AND cast(DBA.OPCAB.TipoOP as varchar(50)) like '%"+tipoop+"%' "+
                 "AND cast(DBA.PROVEED.TipoProv as varchar(50)) like '%"+tipoproveedor+"%' AND cast(DBA.PROVEED.CodProv as varchar(50)) like '%"+proveedor+"%' "+
                 "AND DBA.OPCAB.Fecha BETWEEN '"+params.desde+"' and '"+params.hasta+"'", function(err, row){
         if (err) throw err;

@@ -11,7 +11,7 @@
   var select_empresa, $select_empresa;
   var select_sucursal, $select_sucursal;
   var $select_tipoop;
-  var select_comprobante, $select_comprobante;
+//   var select_comprobante, $select_comprobante;
   var select_tipo_proveedor, $select_tipo_proveedor;
   var select_proveedor, $select_proveedor;
 
@@ -71,28 +71,28 @@
             cb();
           });
         });
-        u.resetSelect(select_comprobante);
-        select_comprobante.load(function (cb) {
-          $.get(api + 'empresas/' + query.empresa + '/comprobantes/tipos').done(function (res) {
-            select_comprobante.enable();
-            cb(res.data);
-          }).fail(function () {
-            cb();
-          });
-        });
+//         u.resetSelect(select_comprobante);
+//         select_comprobante.load(function (cb) {
+//           $.get(api + 'empresas/' + query.empresa + '/comprobantes/tipos').done(function (res) {
+//             select_comprobante.enable();
+//             cb(res.data);
+//           }).fail(function () {
+//             cb();
+//           });
+//         });
         select_tipo_proveedor.enable();
       }
     });
     select_empresa = $select_empresa[0].selectize;
 
-    $select_comprobante = $('#select-comprobante').selectize({
-      valueField: 'Cod_Tp_Comp',
-      labelField: 'des_tp_comp',
-      searchField: 'des_tp_comp'
-    });
-
-    select_comprobante = $select_comprobante[0].selectize;
-    select_comprobante.disable();
+//     $select_comprobante = $('#select-comprobante').selectize({
+//       valueField: 'Cod_Tp_Comp',
+//       labelField: 'des_tp_comp',
+//       searchField: 'des_tp_comp'
+//     });
+// 
+//     select_comprobante = $select_comprobante[0].selectize;
+//     select_comprobante.disable();
 
     $select_sucursal = $('#select-sucursal').selectize({
       valueField: 'Cod_Sucursal',
@@ -129,9 +129,9 @@
     select_tipo_proveedor.disable();
 
     $select_proveedor = $('#select-proveedor').selectize({
-      valueField: 'Cod_proveedor',
-      labelField: 'Des_proveedor',
-      searchField: 'Des_proveedor'
+      valueField: 'CodProv',
+      labelField: 'RazonSocial',
+      searchField: 'RazonSocial'
     });
     select_proveedor = $select_proveedor[0].selectize;
     select_proveedor.disable();
@@ -152,7 +152,7 @@
     var empresa = query.empresa;
     var sucursal = query.sucursal;
     var tipoop = query.tipoop;
-    var comprobante = query.comprobante;
+//     var comprobante = query.comprobante;
     var tipoproveedor = query.tipoproveedor;
     var proveedor = query.proveedor;
 
@@ -160,8 +160,8 @@
       sucursal = " ";
     if (tipoop == "" || tipoop == null)
       tipoop = " ";
-    if (comprobante == "" || comprobante == null)
-      comprobante = " ";
+//     if (comprobante == "" || comprobante == null)
+//       comprobante = " ";
     if (tipoproveedor == "" || tipoproveedor == null)
       tipoproveedor = " ";
     if (proveedor == "" || proveedor == null)
@@ -172,7 +172,8 @@
       $('.collapse').collapse('hide')
       $('#table-div').empty()
       $('#table-div').append("<b>Recuperando datos.</b>")
-      $.get(api + "ordenpago/list/" + empresa + "/" + sucursal + "/" + tipoop + "/" + comprobante + "/" + tipoproveedor + "/" + proveedor + "/" + desde + "/" + hasta,
+//       $.get(api + "ordenpago/list/" + empresa + "/" + sucursal + "/" + tipoop + "/" + comprobante + "/" + tipoproveedor + "/" + proveedor + "/" + desde + "/" + hasta,
+      $.get(api + "ordenpago/list/" + empresa + "/" + sucursal + "/" + tipoop + "/" + tipoproveedor + "/" + proveedor + "/" + desde + "/" + hasta,
               function (data) {
                 if (data.data.length > 0) {
                   $('#table-div').empty()
