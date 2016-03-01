@@ -3,6 +3,7 @@
 var numFormat = $.fn.dataTable.render.number('.', ',', 0).display;
 var aux1 = null;
 var mes_corte = null;
+var periodo = null;
 var initialize = init;
 var select_empresa, $select_empresa;
  var api = u.getApiUrl();
@@ -11,7 +12,6 @@ function init() {
     $.extend(true, $.fn.selectize.defaults, {
         onChange: function (value) {
             query[this.$input.attr('name')] = value;
-            debug();
         }
     });
 
@@ -45,17 +45,32 @@ $(document).ready(function () {
 //     aux1 = aux[1].toString().split(":8000");
 
     $('.mes').datepicker({
-      autoclose: true,
-      todayBtn: "linked",
-      language: "es",
-      format: "MM",
-      startView: 1,
-      minViewMode: 1,
-      maxViewMode: 1,
+        autoclose: true,
+        todayBtn: "linked",
+        language: "es",
+        format: "MM",
+        startView: 1,
+        minViewMode: 1,
+        maxViewMode: 1,
+    });
+    
+    $('.periodo').datepicker({
+        todayBtn: "linked",
+        language: "es",
+        startView: 1,
+        setDate: new Date(),
+        autoclose: true,
+        format: " yyyy", // Notice the Extra space at the beginning
+        viewMode: "years", 
+        minViewMode: "years"
     });
 
     $('.mes').datepicker().on('changeDate', function (c) {
-      mes_corte = c.format('mm');
+        mes_corte = c.format('mm');
+    });
+    
+    $('.periodo').datepicker().on('changeDate', function (c) {
+        periodo = c.format('yyyy');
     });
 
     $.extend(true, $.fn.dataTable.defaults, {
@@ -104,24 +119,23 @@ $(document).ready(function () {
         columns: [{data: 'Saldo'}, {data: 'Monto'}]
     });
         
-    var today = new Date();
-    var dd = today.getDate();
-    var mm = today.getMonth() + 1; //January is 0!
-    var yyyy = today.getFullYear();
-    if (dd < 10) {
-      dd = '0' + dd
-    }
-    if (mm < 10) {
-      mm = '0' + mm
-    }
-    today = yyyy
-    $('[name=periodo]').val(today)
+//     var today = new Date();
+//     var dd = today.getDate();
+//     var mm = today.getMonth() + 1; //January is 0!
+//     var yyyy = today.getFullYear();
+//     if (dd < 10) {
+//       dd = '0' + dd
+//     }
+//     if (mm < 10) {
+//       mm = '0' + mm
+//     }
+//     today = yyyy
+//     $('[name=periodo]').val(today)
 });
 
   function buscar() {
 
     var empresa = $("[name=empresa]").val()
-    var periodo = $("[name=periodo]").val()
     var anterior = $("[name=anterior]").val().split('.').join('')
     var actual = $("[name=actual]").val().split('.').join('')
 
