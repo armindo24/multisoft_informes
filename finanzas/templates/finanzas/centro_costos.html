@@ -28,11 +28,50 @@
     {% include 'ventas/_filtro.html' with name="cuentah" placeholder="Cuenta" title="Cta. hasta" %}
   </div>
 
-  {#      <th style="text-align: right;"> Cta. Aux. desde: </th>#}
-  {#      <td><input type="hidden" name="cuentaah" value="NINGUNA"><input size="30px" name="cuentaad_name" readonly="readonly" type="text">&nbsp;<a type="button" class="btn btn-xs btn-primary" onclick="search_cuenta('cuentaad_name');"><i class="fa fa-search-plus"></i></a></td>#}
-  {#      <th style="text-align: right;"> Cta. Aux. hasta: </th>#}
-  {#      <td><input type="hidden" name="cuentaad" value="NINGUNA"><input size="30px" name="cuentaah_name" readonly="readonly" type="text">&nbsp;<a type="button" class="btn btn-xs btn-primary" onclick="search_cuenta('cuentaah_name');"><i class="fa fa-search-plus"></i></a></td>#}
-  {#  <tr>#}
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="cuentaad" class="col-md-4 control-label">Cta. Aux. Desde:</label>
+
+        <div class="col-md-6">
+          <div class="input-group" id="cuentaad">
+            <input type="hidden" name="cuentaah" value="NINGUNA">
+            <input type="text" class="form-control" name="cuentaad_name" readonly>
+            <span class="input-group-btn">
+              <button class="btn btn-primary disabled" type="button"
+                      onclick="search_cuenta('cuentaad_name')"><i class="fa fa-search-plus"></i></button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="cuentaah" class="col-md-4 control-label">Cta. Aux. Hasta:</label>
+
+        <div class="col-md-6">
+          <div class="input-group" id="cuentaah">
+            <input type="hidden" name="cuentaad" value="NINGUNA">
+            <input type="text" class="form-control" name="cuentaah_name" readonly>
+            <span class="input-group-btn">
+              <button class="btn btn-primary disabled" type="button"
+                      onclick="search_cuenta('cuentaah_name')"><i class="fa fa-search-plus"></i></button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {#  <input type="hidden" name="cuentaah" value="NINGUNA"><input size="30px" name="cuentaad_name" readonly="readonly"#}
+  {#                                                                type="text">&nbsp;<a type="button"#}
+  {#                                                                                     class="btn btn-xs btn-primary"#}
+  {#                                                                                     onclick="search_cuenta('cuentaad_name');"><i#}
+  {#          class="fa fa-search-plus"></i></a>#}
+  {#    <input type="hidden" name="cuentaad" value="NINGUNA"><input size="30px" name="cuentaah_name" readonly="readonly"#}
+  {#                                                                type="text">&nbsp;<a type="button"#}
+  {#                                                                                     class="btn btn-xs btn-primary"#}
+  {#                                                                                     onclick="search_cuenta('cuentaah_name');"><i#}
+  {#          class="fa fa-search-plus"></i></a>#}
 
   <div class="row">
     <div class="col-sm-6">
@@ -72,54 +111,56 @@
   </div>
 
 
-  {#<div id="modalCuentas" class="modal fade bs-example-modal-sm" tabindex="-1" data-backdrop="static" data-keyboard="false" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="false">#}
-  {#    <div class="modal-dialog">#}
-  {#        <div class="modal-content">#}
-  {#            <div class="modal-header">#}
-  {#                <h3>Seleccione Cuenta Auxiliar</h3>#}
-  {#            </div>#}
-  {#            <div class="modal-body span3">#}
-  {#                <center>#}
-  {#                    <table>#}
-  {#                        <td>#}
-  {#                            <select name="codigo" data-placeholder="Filtro..." class="chosen-select">#}
-  {#                                <option selected value="CO">Código</option>#}
-  {#                                <option value="NO">Nombre</option>#}
-  {#                            </select>#}
-  {#                        </td>#}
-  {#                        <td>&nbsp;<input name="filtro" onkeyup="if (event.keyCode == 13) {filtro_cuenta(this)}" type="text"></td>#}
-  {#                    </table>#}
-  {#                    <table class="table table-striped table-filter scroll" id="tableCuentas">#}
-  {#                        <thead>#}
-  {#                            <tr>#}
-  {#                                <th>Código</th>#}
-  {#                                <th>Nombre</th>#}
-  {#                                <th>Padre</th>#}
-  {#                                <th>Seleccionar</th>#}
-  {#                            </tr>#}
-  {#                        </thead>#}
-  {#                        <tbody>#}
-  {#                        </tbody>#}
-  {#                    </table>#}
-  {#                </center>#}
-  {#            </div>#}
-  {#            <div class="modal-footer">#}
-  {#                <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>#}
-  {#            </div>#}
-  {#        </div>#}
-  {#    </div>#}
-  {#</div>#}
-  {##}
-  {#<input type="hidden" id="string_table">#}
-  {#<input type="hidden" id="total_debe">#}
-  {#<input type="hidden" id="total_haber">#}
-  {#<input type="hidden" id="total_debeME">#}
-  {#<input type="hidden" id="total_haberME">#}
-  {#<input type="hidden" id="fromcall">#}
+
 {% endblock %}
 
 {% block inner_content %}
   <div id="table-div" class="span2">
   </div>
+  <div id="modalCuentas" class="modal fade bs-example-modal-sm" tabindex="-1" data-backdrop="static"
+       data-keyboard="false" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="false">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Seleccione Cuenta Auxiliar</h3>
+        </div>
+        <div class="modal-body span3">
+          <center>
+            <table>
+              <td>
+                <select name="codigo" data-placeholder="Filtro..." class="chosen-select">
+                  <option selected value="CO">Código</option>
+                  <option value="NO">Nombre</option>
+                </select>
+              </td>
+              <td>&nbsp;<input name="filtro" onkeyup="if (event.keyCode == 13) {filtro_cuenta(this)}" type="text"></td>
+            </table>
+            <table class="table table-striped table-filter scroll" id="tableCuentas">
+              <thead>
+              <tr>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Padre</th>
+                <th>Seleccionar</th>
+              </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </center>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <input type="hidden" id="string_table">
+  <input type="hidden" id="total_debe">
+  <input type="hidden" id="total_haber">
+  <input type="hidden" id="total_debeME">
+  <input type="hidden" id="total_haberME">
+  <input type="hidden" id="fromcall">
   {% include 'finanzas/centro_costos_metodos.html' %}
 {% endblock %}
