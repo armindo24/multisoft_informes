@@ -88,7 +88,26 @@
 
 {% block inner_content %}
   <div id="table-div">
-
   </div>
+  
+    <table id="resultados" class="display" cellspacing="0" width="100%">
+      <thead>
+      <tr>
+        <th>Proveedor</th>
+        <th>Sucursal</th>
+        <th>OP N&#176;</th>
+        <th>Fecha</th>
+        <th class="price-label">Total</th>
+      </tr>
+      </thead>
+      <tfoot>
+      <tr>
+        <th colspan="2" style="text-align:right">Total:</th>
+        <th</th>
+      </tr>
+      </tfoot>
+    </table>
+
+  
   {% include 'finanzas/ordenpago_metodos.html' %}
 {% endblock %}
