@@ -5,11 +5,14 @@
   var cuenta = 0;
   var today = new Date();
 
+  var select_empresa, $select_empresa;
+  var select_cuentad, $select_cuentad;
+  var select_cuentah, $select_cuentah;
+
   $(document).ready(function () {
     u.hideNav();
     initDate();
-    return;
-
+    initSelects();
   });
 
   function initDate() {
@@ -45,12 +48,45 @@
     $('.input-date .form-control').datepicker('update');
   }
 
-  function checkTime(i) {
-    return (i < 10) ? "0" + i : i;
+  function initSelects() {
+    $.extend(true, $.fn.selectize.defaults, {
+      onChange: function (value) {
+        query[this.$input.attr('name')] = value;
+        console.log(query);
+      }
+    });
+
+    $select_empresa = $('#select-empresa').selectize({
+      valueField: 'Cod_Empresa',
+      labelField: 'Des_Empresa',
+      searchField: 'Des_Empresa',
+      preload: true,
+      load: function (q, callback) {
+        u.get_empresas({{ user }}, function (d) {
+          callback(d.data);
+        });
+      }
+    });
+    select_empresa = $select_empresa[0].selectize;
+
+    $select_cuentad = $('#select-cuentad').selectize({
+      valueField: 'CodPlanCta',
+      labelField: 'Nombre',
+      searchField: 'Nombre'
+    });
+    select_cuentad = $select_cuentad[0].selectize;
+    select_cuentad.disable();
+
+    $select_cuentah = $('#select-cuentah').selectize({
+      valueField: 'CodPlanCta',
+      labelField: 'Nombre',
+      searchField: 'Nombre'
+    });
+    select_cuentah = $select_cuentah[0].selectize;
+    select_cuentah.disable();
   }
 
-
-  function buscar() {
+  function getInforme() {
     $('#table-div').hide()
     var empresa = $("[name=empresa]").val()
     var periodo = $("[name=periodo]").val()
@@ -270,91 +306,91 @@
     $('.chosen-select').trigger('chosen:updated');
   }
 
-  function permisos_empresas(data) {
-    if (data.length > 0) {
-      console.log('Hay datos');
-      var vector = []
-      for (var a = 0; a < data.length; a++) {
-        vector.push("'" + data[a].empresa + "'")
-      }
-      var str = JSON.stringify({empresas: vector});
-      $.ajax("http://" + aux1[0] + ":3000/api/v1/empresa/inin/select", {
-        method: 'POST',
-        contentType: 'application/json',
-        data: str
-      }).done(
-              function (data) {
-                if (data != null) {
-                  var select = document.getElementsByName("empresa")[0]
-                  remover(select);
-                  for (var i = 0; i < data.data.length; i++) {
-                    var option = document.createElement("option");
-                    option.value = data.data[i].Cod_Empresa;
-                    option.text = data.data[i].Des_Empresa;
-                    select.add(option);
-                  }
-                  SelectElement(data.data[0].Cod_Empresa, 'empresa')
-
-                  $.get("http://" + aux1[0] + ":3000/api/v1/cuenta/select/" + document.getElementsByName('empresa')[0].value + "/" + document.getElementsByName('periodo')[0].value,
-                          function (data) {
-                            if (data != null) {
-                              var select = document.getElementsByName("cuentad")[0]
-                              var select1 = document.getElementsByName("cuentah")[0]
-                              remover(select);
-                              remover(select1);
-                              for (var i = 0; i < data.data.length; i++) {
-                                var option = document.createElement("option");
-                                var option1 = document.createElement("option");
-                                option.value = data.data[i].CodPlanCta;
-                                option.text = data.data[i].Nombre;
-                                option1.value = data.data[i].CodPlanCta;
-                                option1.text = data.data[i].Nombre;
-                                select.add(option);
-                                select1.add(option1);
-                              }
-                              SelectElement(data.data[0].CodPlanCta, 'cuentad')
-                              SelectElement(data.data[0].CodPlanCta, 'cuentah')
-                            }
-                          }
-                  );
-
-//                 $.get("http://"+aux1[0]+":3000/api/v1/cuentaauxi/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('periodo')[0].value,
-//                     function(data)  {
-//                         if (data != null){
-//                             var select = document.getElementsByName("cuentaad")[0]
-//                             var select1 = document.getElementsByName("cuentaah")[0]
-//                             remover(select);
-//                             remover(select1);
-//                             var option = document.createElement("option");
-//                             option.text = "NINGUNA";
-//                             option.value = "NINGUNA";
-//                             select.add(option);
-//                             var option1 = document.createElement("option");
-//                             option1.text = "NINGUNA";
-//                             option1.value = "NINGUNA";
-//                             select1.add(option1);
-//                             for (var i=0;i < data.data.length;i++){
-//                                 var option = document.createElement("option");
-//                                 var option1 = document.createElement("option");
-//                                 option.value = data.data[i].CodPlanAux;
-//                                 option.text =data.data[i].Nombre;
-//                                 option1.value = data.data[i].CodPlanAux;
-//                                 option1.text =data.data[i].Nombre;
-//                                 select.add(option);
-//                                 select1.add(option1);
-//                             }
-//                             //SelectElement(data.data[0].CodPlanAux,'cuentaad')
-//                             //SelectElement(data.data[0].CodPlanAux,'cuentaah')
-//                         }
-//                     }
-//                 ); 
-
-                  $('.chosen-select').trigger('chosen:updated');
-                }
-              }
-      );
-    }
-  }
+  {#  function permisos_empresas(data) {#}
+  {#    if (data.length > 0) {#}
+  {#      console.log('Hay datos');#}
+  {#      var vector = []#}
+  {#      for (var a = 0; a < data.length; a++) {#}
+  {#        vector.push("'" + data[a].empresa + "'")#}
+  {#      }#}
+  {#      var str = JSON.stringify({empresas: vector});#}
+  {#      $.ajax("http://" + aux1[0] + ":3000/api/v1/empresa/inin/select", {#}
+  {#        method: 'POST',#}
+  {#        contentType: 'application/json',#}
+  {#        data: str#}
+  {#      }).done(#}
+  {#              function (data) {#}
+  {#                if (data != null) {#}
+  {#                  var select = document.getElementsByName("empresa")[0]#}
+  {#                  remover(select);#}
+  {#                  for (var i = 0; i < data.data.length; i++) {#}
+  {#                    var option = document.createElement("option");#}
+  {#                    option.value = data.data[i].Cod_Empresa;#}
+  {#                    option.text = data.data[i].Des_Empresa;#}
+  {#                    select.add(option);#}
+  {#                  }#}
+  {#                  SelectElement(data.data[0].Cod_Empresa, 'empresa')#}
+  {##}
+  {#                  $.get("http://" + aux1[0] + ":3000/api/v1/cuenta/select/" + document.getElementsByName('empresa')[0].value + "/" + document.getElementsByName('periodo')[0].value,#}
+  {#                          function (data) {#}
+  {#                            if (data != null) {#}
+  {#                              var select = document.getElementsByName("cuentad")[0]#}
+  {#                              var select1 = document.getElementsByName("cuentah")[0]#}
+  {#                              remover(select);#}
+  {#                              remover(select1);#}
+  {#                              for (var i = 0; i < data.data.length; i++) {#}
+  {#                                var option = document.createElement("option");#}
+  {#                                var option1 = document.createElement("option");#}
+  {#                                option.value = data.data[i].CodPlanCta;#}
+  {#                                option.text = data.data[i].Nombre;#}
+  {#                                option1.value = data.data[i].CodPlanCta;#}
+  {#                                option1.text = data.data[i].Nombre;#}
+  {#                                select.add(option);#}
+  {#                                select1.add(option1);#}
+  {#                              }#}
+  {#                              SelectElement(data.data[0].CodPlanCta, 'cuentad')#}
+  {#                              SelectElement(data.data[0].CodPlanCta, 'cuentah')#}
+  {#                            }#}
+  {#                          }#}
+  {#                  );#}
+  {##}
+  {#//                 $.get("http://"+aux1[0]+":3000/api/v1/cuentaauxi/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('periodo')[0].value,#}
+  {#//                     function(data)  {#}
+  {#//                         if (data != null){#}
+  {#//                             var select = document.getElementsByName("cuentaad")[0]#}
+  {#//                             var select1 = document.getElementsByName("cuentaah")[0]#}
+  {#//                             remover(select);#}
+  {#//                             remover(select1);#}
+  {#//                             var option = document.createElement("option");#}
+  {#//                             option.text = "NINGUNA";#}
+  {#//                             option.value = "NINGUNA";#}
+  {#//                             select.add(option);#}
+  {#//                             var option1 = document.createElement("option");#}
+  {#//                             option1.text = "NINGUNA";#}
+  {#//                             option1.value = "NINGUNA";#}
+  {#//                             select1.add(option1);#}
+  {#//                             for (var i=0;i < data.data.length;i++){#}
+  {#//                                 var option = document.createElement("option");#}
+  {#//                                 var option1 = document.createElement("option");#}
+  {#//                                 option.value = data.data[i].CodPlanAux;#}
+  {#//                                 option.text =data.data[i].Nombre;#}
+  {#//                                 option1.value = data.data[i].CodPlanAux;#}
+  {#//                                 option1.text =data.data[i].Nombre;#}
+  {#//                                 select.add(option);#}
+  {#//                                 select1.add(option1);#}
+  {#//                             }#}
+  {#//                             //SelectElement(data.data[0].CodPlanAux,'cuentaad')#}
+  {#//                             //SelectElement(data.data[0].CodPlanAux,'cuentaah')#}
+  {#//                         }#}
+  {#//                     }#}
+  {#//                 ); #}
+  {##}
+  {#                  $('.chosen-select').trigger('chosen:updated');#}
+  {#                }#}
+  {#              }#}
+  {#      );#}
+  {#    }#}
+  {#  }#}
 
   function search_cuenta(b) {
     console.log(b)
