@@ -54,6 +54,7 @@
 
     $('#periodo .form-control').datepicker().on('changeDate', function (e) {
       query[this.name] = this.value;
+      buscarCuenta();
       console.log(query);
     });
 
