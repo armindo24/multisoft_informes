@@ -5,55 +5,67 @@
 {% endblock %}
 
 {% block filters %}
-  <tr>
-    <th>Empresa:</th>
-    <td><select id="select-empresa" placeholder="Empresa..." name="empresa"></select></td>
-    <th>Sucursal:</th>
-    <td><select id="select-sucursal" placeholder="Sucursal..." name="sucursal"></select></td>
-  </tr>
-  <tr>
-    <th>Estado:</th>
-    <td><select id="select-estado" placeholder="Estado..." name="estado"></select></td>
-    <th>Periodo:</th>
-    <td class="input-date" id="periodo"><input type="text" class="form-control" name="year"></td>
-  </tr>
-  <tr>
-    <th>Rubro:</th>
-    <td><select id="select-rubro" placeholder="Rubro..." name="rubro"></select></td>
-    <th>Subrubro:</th>
-    <td><select id="select-subrubro" placeholder="Subrubro..." name="subrubro"></select></td>
-  </tr>
-  <tr>
-    <th>Articulo:</th>
-    <td class="multi"><select id="select-articulo" placeholder="Articulo..." name="articulo"></select></td>
-    <th>Proveedor:</th>
-    <td class="multi"><select id="select-proveedor" placeholder="Proveedor..." name="proveedor"></select></td>
-  </tr>
+  {% include 'ventas/_filtro.html' with name="empresa" %}
+  {% include 'ventas/_filtro.html' with name="sucursal" %}
+  <div class="col-sm-6">
+    <div class="form-group">
+      <label for="periodo" class="col-md-4 control-label">Periodo:</label>
 
-  <tr>
-    <th>Ventas</th>
-    <td>
-      <div id="ventas" class="input-daterange input-group input-date">
-        <input type="text" class="input-sm form-control" name="start"/>
-        <span class="input-group-addon">hasta</span>
-        <input type="text" class="input-sm form-control" name="end"/>
+      <div class="col-md-6">
+        <div class="input-date" id="periodo"><input type="text" class="form-control" name="year"></div>
       </div>
-    </td>
-    <th>Compras</th>
-    <td>
-      <div id="compras" class="input-daterange input-group input-date">
-        <input type="text" class="input-sm form-control" name="start"/>
-        <span class="input-group-addon">hasta</span>
-        <input type="text" class="input-sm form-control" name="end"/>
+    </div>
+  </div>
+  {% include 'ventas/_filtro.html' with name="estado" %}
+  {% include 'ventas/_filtro.html' with name="rubro" %}
+  {% include 'ventas/_filtro.html' with name="subrubro" %}
+  {% include 'ventas/_filtro.html' with name="articulo" %}
+  {% include 'ventas/_filtro.html' with name="proveedor" %}
+
+  <div class="col-sm-6">
+    <div class="form-group">
+      <label for="ventas" class="col-md-4 control-label">Ventas:</label>
+
+      <div class="col-md-6">
+        <div id="ventas" class="input-daterange input-group input-date">
+          <input type="text" class="input-sm form-control" name="start"/>
+          <span class="input-group-addon">hasta</span>
+          <input type="text" class="input-sm form-control" name="end"/>
+        </div>
       </div>
-    </td>
-  </tr>
-  <tr>
-    <th>Revaluable</th>
-    <td><input type="checkbox" name="revaluable"/></td>
-    <th>Despreciable</th>
-    <td><input type="checkbox" name="despreciable"/></td>
-  </tr>
+    </div>
+  </div>
+  <div class="col-sm-6">
+    <div class="form-group">
+      <label for="compras" class="col-md-4 control-label">Compras:</label>
+
+      <div class="col-md-6">
+        <div id="compras" class="input-daterange input-group input-date">
+          <input type="text" class="input-sm form-control" name="start"/>
+          <span class="input-group-addon">hasta</span>
+          <input type="text" class="input-sm form-control" name="end"/>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6">
+    <div class="form-group">
+      <label for="revaluable" class="col-md-4 control-label">Revaluable:</label>
+
+      <div class="col-md-6">
+        <input type="checkbox" name="revaluable" id="revaluable" checked/>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6">
+    <div class="form-group">
+      <label for="despreciable" class="col-md-4 control-label">Despreciable:</label>
+
+      <div class="col-md-6">
+        <input type="checkbox" name="despreciable" id="despreciable" checked/>
+      </div>
+    </div>
+  </div>
 {% endblock %}
 
 {% block table %}
@@ -121,20 +133,8 @@
         searchField: 'Des_Empresa',
         preload: true,
         load: function (q, callback) {
-          $.ajax({
-            url: api + 'empresa/select',
-            type: 'GET',
-            dataType: 'json',
-            data: {
-              empresa: q,
-              page_limit: 10,
-            },
-            error: function () {
-              callback();
-            },
-            success: function (res) {
-              callback(res.data);
-            }
+          u.get_empresas({{ user }}, function (d) {
+            callback(d.data);
           });
         },
         onChange: function (value) {
@@ -297,6 +297,9 @@
       var revaluable = $("[name=revaluable]")[0].checked;
       var despreciable = $("[name=despreciable]")[0].checked;
 
+      query.revaluable = revaluable;
+      query.despreciable = despreciable;
+
       if (!$.fn.DataTable.isDataTable('#results')) {
         $('#results').DataTable({
           language: u.spanish_dt,
@@ -321,7 +324,7 @@
           ],
           columns: [
             {data: 'codactivo'},
-            {data: 'descrip'},
+            {data: 'comentario'},
             {data: 'estado'},
             {data: 'RUBROORIGINAL_DESCRIP'},
             {data: 'SUBRUBROORIGINAL_DESCRIP'},

@@ -17,7 +17,8 @@
   ],
   "dependencies": {
     "datatables": "^1.10.11",
-    "datatables-responsive": "^2.0.2",
+    "datatables.net-responsive": "^2.0.2",
+    "datatables.net-responsive-bs": "^2.0.2",
     "datatables.net-scroller": "^1.4.1",
     "datatables.net-scroller-bs": "^1.4.1",
     "bootstrap-datepicker": "~1.5.1",

@@ -29,15 +29,13 @@
       </div>
       <div id="collapseOne" class="panel-collapse collapse">
         <div class="panel-body">
-          <div class="panel-group text-center" id="archivo_accordion" style="margin-bottom: 0px;">
-
-            <center>
-              <table style="width: auto;" class="table table-striped table-bordered table-filter scroll"
-                     id="filters">
+          <div class="panel-group" id="archivo_accordion" style="margin-bottom: 0px;">
+            <div id="filters">
+              <form class="form-horizontal">
                 {% block filters %}
                 {% endblock %}
-              </table>
-            </center>
+              </form>
+            </div>
           </div>
         </div>
       </div>
@@ -56,6 +54,7 @@
     </table>
   </div>
 
-  {% block innner_content %}
+
+  {% block inner_content %}
   {% endblock %}
 {% endblock content %}

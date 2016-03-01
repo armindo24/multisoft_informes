@@ -1,461 +1,448 @@
-<style>       
-.span3 {  
-    height: 500px !important;
-    overflow: scroll;
-}
-
-.span2 {  
-    width: 100% !important;
-    overflow: scroll;
-}
-
-.span4 { overflow-x: scroll; }
-th, td { min-width: 100px; }
-</style>
-
 <script type="text/javascript">
+  var query = {};
+  var api = u.getApiUrl();
+  var pad = 0;
+  var cuenta = 0;
+  var today = new Date();
 
-var aux1 = null
-var pad = 0
-var cuenta = 0
+  var select_empresa, $select_empresa;
+  var select_cuentad, $select_cuentad;
+  var select_cuentah, $select_cuentah;
 
-$(document).ready(function() {
-    var url = window.location.href
-    
-    aux = url.toString().split("http://")
-    aux1 = aux[1].toString().split(":8000")
-            
-	$('#page-wrapper').css('margin-left','0px');
-    $('#my-left-menu').toggle(0);
-	
-    $(".chosen-select").chosen({
-        disable_search_threshold: 0,
-        no_results_text: "Oops, nothing found!",
-        width: "200px",
-        allow_single_deselect: true
-     	});
-});
+  $(document).ready(function () {
+    u.hideNav();
+    initDate();
+    initSelects();
+  });
 
-function renewDatePickers() {
-    $('.datepicker').datepicker('destroy');
-    $(".datepicker").datepicker({dateFormat: 'yy-mm-dd'});
-}
+  function initDate() {
+    u.defaultDatepicker();
 
-$(renewDatePickers);
-$.datepicker.regional['es'] = {
-	closeText: 'Cerrar',
-	prevText: '<Ant',
-	nextText: 'Sig>',
-	currentText: 'Hoy',
-	monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
-	monthNamesShort: ['Ene','Feb','Mar','Abr', 'May','Jun','Jul','Ago','Sep', 'Oct','Nov','Dic'],
-	dateFormat: 'yy/mm/dd',
-	firstDay: 1,
-	isRTL: false,
-	showMonthAfterYear: false,
-	yearSuffix: ''
-};
-$.datepicker.setDefaults($.datepicker.regional["es"]);
+    $('#periodo .form-control').datepicker({
+      format: "yyyy",
+      startView: 2,
+      minViewMode: 2,
+      maxViewMode: 2,
+      autoclose: true
+    });
 
-function remover(selectbox){
-    var i;
-    for(i=selectbox.options.length-1;i>=0;i--)
-    {
-        selectbox.remove(i);
-    }
-} 
+    $('.input-daterange').datepicker({
+      todayBtn: "linked",
+      startView: 1,
+      minViewMode: 1,
+      maxViewMode: 1,
+      format: "MM"
+    });
 
-function SelectElement(value,name){    
-    var element = document.getElementsByName(name)[0];
-    element.value = value;
-}
+    $('.input-daterange .form-control').datepicker().on('changeDate', function (e) {
+      query[this.name] = e.format('mm');
+      console.log(query);
+    });
 
-function addCommas(nStr)
-{
-	nStr += '';
-	x = nStr.split('.');
-	x1 = x[0];
-	x2 = x.length > 1 ? ',' + x[1] : '';
-	var rgx = /(\d+)(\d{3})/;
-	while (rgx.test(x1)) {
-		x1 = x1.replace(rgx, '$1' + '.' + '$2');
-	}
-	return x1 + x2;
-}
+    $('#periodo .form-control').datepicker().on('changeDate', function (e) {
+      query[this.name] = this.value;
+      console.log(query);
+    });
 
-function checkTime(i) {
-        return (i < 10) ? "0" + i : i;
-    }
-    
+    $('.input-date .form-control').datepicker('setDate', today);
+    $('.input-date .form-control').datepicker('update');
+  }
 
-function buscar(){
+  function initSelects() {
+    $.extend(true, $.fn.selectize.defaults, {
+      onChange: function (value) {
+        query[this.$input.attr('name')] = value;
+        console.log(query);
+      }
+    });
+
+    $select_empresa = $('#select-empresa').selectize({
+      valueField: 'Cod_Empresa',
+      labelField: 'Des_Empresa',
+      searchField: 'Des_Empresa',
+      preload: true,
+      load: function (q, callback) {
+        u.get_empresas({{ user }}, function (d) {
+          callback(d.data);
+        });
+      }
+    });
+    select_empresa = $select_empresa[0].selectize;
+
+    $select_cuentad = $('#select-cuentad').selectize({
+      valueField: 'CodPlanCta',
+      labelField: 'Nombre',
+      searchField: 'Nombre'
+    });
+    select_cuentad = $select_cuentad[0].selectize;
+    select_cuentad.disable();
+
+    $select_cuentah = $('#select-cuentah').selectize({
+      valueField: 'CodPlanCta',
+      labelField: 'Nombre',
+      searchField: 'Nombre'
+    });
+    select_cuentah = $select_cuentah[0].selectize;
+    select_cuentah.disable();
+  }
+
+  function getInforme() {
     $('#table-div').hide()
-	var empresa = $("[name=empresa]").val()
-	var periodo = $("[name=periodo]").val()
-	var cuentad = $("[name=cuentad]").val()
-	var cuentah = $("[name=cuentah]").val()
-	var cuentaad = $("[name=cuentaad]").val()
+    var empresa = $("[name=empresa]").val()
+    var periodo = $("[name=periodo]").val()
+    var cuentad = $("[name=cuentad]").val()
+    var cuentah = $("[name=cuentah]").val()
+    var cuentaad = $("[name=cuentaad]").val()
     var cuentaah = $("[name=cuentaah]").val()
-	var mesd = $("[name=mesd]").val()
-	var mesh = $("[name=mesh]").val()
-	var moneda = $("[name=moneda]")[0]
-	var nivel = $("[name=nivel]").val()
-	
-	if (nivel == "" || nivel == null || nivel == " " || nivel == '0')
-        nivel = 0
-	
-  	if(moneda.checked == true){
-		moneda = "ME"
-	  }else{
-		moneda = "LO"
-	  }
-	  
-	if (cuentaad == null || cuentaad == "")
-	   cuentaad = "NINGUNA"
-	   
-	if (cuentaah == null || cuentaah == "")
-       cuentaah = "NINGUNA"
-	  	
-	if (periodo == "" || periodo == null || periodo == " "){
-		alert("No hay datos suficientes para generar el listado")
-	} else {
-		$('.collapse').collapse('hide')
-		$('#table-div').empty()
-		$('#table-div').show()
-        $('#table-div').append("<b>Recuperando datos.</b>")
-		$.get("http://"+aux1[0]+":3000/api/v1/centrocostos/list/"+empresa+"/"+periodo+"/"+cuentad+"/"+cuentah+"/"+cuentaad+"/"+cuentaah+"/"+mesd+"/"+mesh+"/"+nivel,
-		    function(data) {
-		    	if (data.data.length > 0) {
-                    $('#table-div').empty()
-		    		console.log(data)
-		    		$('#table-div').show()
-		    		$('#table-div').empty()
-		    		var cols = ['Cuentas']
-		    		var accounts = []
-		    		var rows = []
-		    		for (var a=0; a<data.data.length; a++){
-		    		    if ($.inArray(data.data[a].CodPlanAux + ' - ' + data.data[a].PlanAuxi_Nombre, cols) == -1)
-		    		        cols.push(data.data[a].CodPlanAux + ' - ' + data.data[a].PlanAuxi_Nombre)
-		    		}
-		    		cols.push('Total')
-		    		for (var a=0; a<data.data.length; a++){
-                        if ($.inArray(data.data[a].CodPlanCta + '-' + data.data[a].Nombre, accounts) == -1){
-                            accounts.push(data.data[a].CodPlanCta + '-' + data.data[a].Nombre)
-                            }
-                    }
-                    accounts.push('Total')
-		    		//alert(cols)
-		    		//alert(accounts)
-		    		var string = '<table id="resultados" class="span4 table table-striped table-hover table-bordered table-filter scroll"><thead><tr>'	
-		    		for (var e=0;e<cols.length;e++){
-		    		    string+='<th style="text-align: right;">'+cols[e]+'</th>'
-		    		}
-		    		string+='</tr></thead><tbody></tbody></table>'
-		    		
-		    		$('#table-div').append(string)    
-		    		
-		    		var string1 = "";
-		    		var total_row = cols.length
-		    		for (var a=0; a<accounts.length; a++){
-		    		    if (a == (total_row-1)){
-		    		        string1+='<tr><td><b>'+accounts[a]+'</b></td>'
-		    		    } else {
-                            string1+='<tr><td>'+accounts[a]+'</td>'
-                        }
-		    		    var total_row = accounts.length
-                        for (var b=1; b<cols.length; b++){
-                            if (a == (total_row-1)){
-                                string1+='<th style="text-align: right;" class="'+accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+' '+cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+'" id="'+accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+'-'+cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+'"></th>'
-                            } else {
-                                string1+='<td style="text-align: right;" class="'+accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+' '+cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+'" id="'+accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+'-'+cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+'"></td>'
-                            }
-                        }
-                        string1+='</tr>';
-                    }
-                    $('#resultados tbody').html(string1)
-                    for( e=0; e<data.data.length; e++){
-                       
-                       if (moneda == "LO"){
-                           if (data.data[e].TipoSaldo == "D"){
-                              $("[id='"+data.data[e].CodPlanCta.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+"-"+data.data[e].Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+"-"+data.data[e].CodPlanAux.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+"-"+data.data[e].PlanAuxi_Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+"']").text(convertir_rever((data.data[e].sum_TotalDb-data.data[e].sum_TotalCr).toString()));
-                           } else {
-                              $("[id='"+data.data[e].CodPlanCta.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+"-"+data.data[e].Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+"-"+data.data[e].CodPlanAux.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+"-"+data.data[e].PlanAuxi_Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+"']").text(convertir_rever((data.data[e].sum_TotalCr-data.data[e].sum_TotalDb).toString()));
-                           }
-                       } else {
-                           if (data.data[e].TipoSaldo == "D"){
-                              $("[id='"+data.data[e].CodPlanCta.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+"-"+data.data[e].Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+"-"+data.data[e].CodPlanAux.toString().split(' ').join('')+"-"+data.data[e].PlanAuxi_Nombre.toString().split(' ').join('')+"']").text(addCommas((Math.round((data.data[e].sum_TotalDbME-data.data[e].sum_TotalCrME)* 100) / 100).toString()));
-                           } else {
-                              $("[id='"+data.data[e].CodPlanCta.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+"-"+data.data[e].Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+"-"+data.data[e].CodPlanAux.toString().split(' ').join('')+"-"+data.data[e].PlanAuxi_Nombre.toString().split(' ').join('')+"']").text(addCommas((Math.round((data.data[e].sum_TotalCrME-data.data[e].sum_TotalDbME)* 100) / 100).toString()));
-                           }
-                       }
-                    }
-                    for (var a=0; a<accounts.length-1; a++){
-                        var total=0;
-                        $("."+accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')).each(function(){
-                            if (moneda == "LO"){
-                                if ($(this).text() != null && $(this).text() != "")
-                                    total+=parseInt($(this).text().split('.').join('') );
-                            } else {
-                                if ($(this).text() != null && $(this).text() != "")
-                                    total+=parseFloat($(this).text().split('.').join('').replace(',','.'));
-                            }
-                        });
-                        if (moneda == "LO"){
-                            $("[id='"+accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+"-Total']").text(convertir_rever(total))
-                        } else {
-                            $("[id='"+accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+"-Total']").text(addCommas((Math.round((total)* 100) / 100).toString()))
-                        }
-                    }
-                    for (var a=1;a<cols.length;a++){
-                        var total=0
-                        $("."+cols[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')).each(function(){
-                            if (moneda == "LO"){
-                                if ($(this).text() != null && $(this).text() != "")
-                                    total+=parseInt($(this).text().split('.').join('')  );
-                            } else {
-                                if ($(this).text() != null && $(this).text() != "")
-                                    total+=parseFloat($(this).text().split('.').join('').replace(',','.'));
-                            }
-                        });
-                        if (moneda == "LO"){
-                            $("[id='Total-"+cols[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+"']").text(convertir_rever(total))
-                        } else {
-                            $("[id='Total-"+cols[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+"']").text(addCommas((Math.round((total)* 100) / 100).toString()))
-                        }
-                    }
-                    var total=0;
-                    for (var a=0; a<accounts.length-1; a++){
-                        if (moneda == "LO"){
-                            total+=parseInt($("."+accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+".Total").text().split('.').join(''));
-                        } else {
-                            total+=parseFloat($("."+accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')+".Total").text().split('.').join('').replace(',','.'));
-                        }
-                    }
-                    if (moneda == "LO"){
-                        $("[id='Total-Total']").text(convertir_rever(total))
-                    } else {
-                        $("[id='Total-Total']").text(addCommas((Math.round((total)* 100) / 100).toString()))
-                    }
-		    	} else {
-                    $('#table-div').empty()
-                    $('#table-div').show()
-                    $('#table-div').append("<b>No se han encontrado datos.</b>")
-                }
-		    }
-		);  
-	}
-}
+    var mesd = $("[name=mesd]").val()
+    var mesh = $("[name=mesh]").val()
+    var moneda = $("[name=moneda]")[0]
+    var nivel = $("[name=nivel]").val()
 
-function buscar_cuenta(){
-	$.ajax("http://"+aux1[0]+":3000/api/v1/cuenta/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('periodo')[0].value,{method:'GET', contentType:'application/json', async: false,}).done(
-	    function(data) 	{
-	    	if (data != null){
-	    		var select = document.getElementsByName("cuentad")[0]
-	    		var select1 = document.getElementsByName("cuentah")[0]
-	    		remover(select);
-	    		remover(select1);
-				for (var i=0;i < data.data.length;i++){
-					var option = document.createElement("option");
-					var option1 = document.createElement("option");
-					option.value = data.data[i].CodPlanCta;
-					option.text =data.data[i].Nombre;
-					option1.value = data.data[i].CodPlanCta;
-					option1.text =data.data[i].Nombre;
-					select.add(option);
-					select1.add(option1);
-				}
-				SelectElement(data.data[0].CodPlanCta,'cuentad')
-				SelectElement(data.data[0].CodPlanCta,'cuentah')
-	    	}
-	    }
-	);
-	
-// 	$.ajax("http://"+aux1[0]+":3000/api/v1/cuentaauxi/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('periodo')[0].value,{method:'GET', contentType:'application/json', async: false,}).done(
-//         function(data)  {
-//             if (data != null){
-//                 var select = document.getElementsByName("cuentaad")[0]
-//                 var select1 = document.getElementsByName("cuentaah")[0]
-//                 remover(select);
-//                 remover(select1);
-//                 var option = document.createElement("option");
-//                 option.text = "NINGUNA";
-//                 option.value = "NINGUNA"
-//                 select.add(option);
-//                 var option1 = document.createElement("option");
-//                 option1.text = "NINGUNA";
-//                 option1.value = "NINGUNA";
-//                 select1.add(option1);
-//                 for (var i=0;i < data.data.length;i++){
-//                     var option = document.createElement("option");
-//                     var option1 = document.createElement("option");
-//                     option.value = data.data[i].CodPlanAux;
-//                     option.text =data.data[i].Nombre;
-//                     option1.value = data.data[i].CodPlanAux;
-//                     option1.text =data.data[i].Nombre;
-//                     select.add(option);
-//                     select1.add(option1);
-//                 }
-//                 //SelectElement(data.data[0].CodPlanAux,'cuentaad')
-//                 //SelectElement(data.data[0].CodPlanAux,'cuentaah')
-//             }
-//         }
-//     ); 
-	
-	$('.chosen-select').trigger('chosen:updated');   
-}
+    if (nivel == "" || nivel == null || nivel == " " || nivel == '0')
+      nivel = 0
 
-window.onload = function() {
-    Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario':'{{user}}'});
-
-	var today = new Date();
-	var dd = today.getDate();
-	var mm = today.getMonth()+1; //January is 0!
-	var yyyy = today.getFullYear();
-	
-	if(dd<10) {
-	    dd='0'+dd
-	} 
-	
-	if(mm<10) {
-	    mm='0'+mm
-	} 
-	
-	$('[name=periodo]').val(yyyy)
-	
-	today = yyyy+'-'+mm+'-'+dd; 
-	
-	$('[name=fechad]').val(today)
-	$('[name=fechah]').val(today)
-	
-	$('#table-div').hide()
-};
-
-function permisos_empresas(data){
-    if(data.length > 0){
-        console.log('Hay datos');
-        var vector = [] 
-        for (var a=0; a<data.length; a++){
-            vector.push("'"+data[a].empresa+"'")
-        }
-        var str = JSON.stringify({empresas: vector});
-        $.ajax("http://"+aux1[0]+":3000/api/v1/empresa/inin/select",{method:'POST', contentType:'application/json', data: str}).done(
-        function(data) {
-            if (data != null){
-               var select = document.getElementsByName("empresa")[0]
-               remover(select);
-                for (var i=0;i < data.data.length;i++){
-                    var option = document.createElement("option");
-                    option.value = data.data[i].Cod_Empresa;
-                    option.text = data.data[i].Des_Empresa;
-                    select.add(option);
-                }
-                SelectElement(data.data[0].Cod_Empresa,'empresa')
-                
-                $.get("http://"+aux1[0]+":3000/api/v1/cuenta/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('periodo')[0].value,
-                    function(data)  {
-                        if (data != null){
-                            var select = document.getElementsByName("cuentad")[0]
-                            var select1 = document.getElementsByName("cuentah")[0]
-                            remover(select);
-                            remover(select1);
-                            for (var i=0;i < data.data.length;i++){
-                                var option = document.createElement("option");
-                                var option1 = document.createElement("option");
-                                option.value = data.data[i].CodPlanCta;
-                                option.text =data.data[i].Nombre;
-                                option1.value = data.data[i].CodPlanCta;
-                                option1.text =data.data[i].Nombre;
-                                select.add(option);
-                                select1.add(option1);
-                            }
-                            SelectElement(data.data[0].CodPlanCta,'cuentad')
-                            SelectElement(data.data[0].CodPlanCta,'cuentah')
-                        }
-                    }
-                );  
-                
-//                 $.get("http://"+aux1[0]+":3000/api/v1/cuentaauxi/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('periodo')[0].value,
-//                     function(data)  {
-//                         if (data != null){
-//                             var select = document.getElementsByName("cuentaad")[0]
-//                             var select1 = document.getElementsByName("cuentaah")[0]
-//                             remover(select);
-//                             remover(select1);
-//                             var option = document.createElement("option");
-//                             option.text = "NINGUNA";
-//                             option.value = "NINGUNA";
-//                             select.add(option);
-//                             var option1 = document.createElement("option");
-//                             option1.text = "NINGUNA";
-//                             option1.value = "NINGUNA";
-//                             select1.add(option1);
-//                             for (var i=0;i < data.data.length;i++){
-//                                 var option = document.createElement("option");
-//                                 var option1 = document.createElement("option");
-//                                 option.value = data.data[i].CodPlanAux;
-//                                 option.text =data.data[i].Nombre;
-//                                 option1.value = data.data[i].CodPlanAux;
-//                                 option1.text =data.data[i].Nombre;
-//                                 select.add(option);
-//                                 select1.add(option1);
-//                             }
-//                             //SelectElement(data.data[0].CodPlanAux,'cuentaad')
-//                             //SelectElement(data.data[0].CodPlanAux,'cuentaah')
-//                         }
-//                     }
-//                 ); 
-                
-                $('.chosen-select').trigger('chosen:updated'); 
-                }
-            }
-        );
+    if (moneda.checked == true) {
+      moneda = "ME"
+    } else {
+      moneda = "LO"
     }
-} 
 
-function search_cuenta(b){
+    if (cuentaad == null || cuentaad == "")
+      cuentaad = "NINGUNA"
+
+    if (cuentaah == null || cuentaah == "")
+      cuentaah = "NINGUNA"
+
+    if (periodo == "" || periodo == null || periodo == " ") {
+      alert("No hay datos suficientes para generar el listado")
+    } else {
+      $('.collapse').collapse('hide')
+      $('#table-div').empty()
+      $('#table-div').show()
+      $('#table-div').append("<b>Recuperando datos.</b>")
+      $.get("http://" + aux1[0] + ":3000/api/v1/centrocostos/list/" + empresa + "/" + periodo + "/" + cuentad + "/" + cuentah + "/" + cuentaad + "/" + cuentaah + "/" + mesd + "/" + mesh + "/" + nivel,
+              function (data) {
+                if (data.data.length > 0) {
+                  $('#table-div').empty()
+                  console.log(data)
+                  $('#table-div').show()
+                  $('#table-div').empty()
+                  var cols = ['Cuentas']
+                  var accounts = []
+                  var rows = []
+                  for (var a = 0; a < data.data.length; a++) {
+                    if ($.inArray(data.data[a].CodPlanAux + ' - ' + data.data[a].PlanAuxi_Nombre, cols) == -1)
+                      cols.push(data.data[a].CodPlanAux + ' - ' + data.data[a].PlanAuxi_Nombre)
+                  }
+                  cols.push('Total')
+                  for (var a = 0; a < data.data.length; a++) {
+                    if ($.inArray(data.data[a].CodPlanCta + '-' + data.data[a].Nombre, accounts) == -1) {
+                      accounts.push(data.data[a].CodPlanCta + '-' + data.data[a].Nombre)
+                    }
+                  }
+                  accounts.push('Total')
+                  //alert(cols)
+                  //alert(accounts)
+                  var string = '<table id="resultados" class="span4 table table-striped table-hover table-bordered table-filter scroll"><thead><tr>'
+                  for (var e = 0; e < cols.length; e++) {
+                    string += '<th style="text-align: right;">' + cols[e] + '</th>'
+                  }
+                  string += '</tr></thead><tbody></tbody></table>'
+
+                  $('#table-div').append(string)
+
+                  var string1 = "";
+                  var total_row = cols.length
+                  for (var a = 0; a < accounts.length; a++) {
+                    if (a == (total_row - 1)) {
+                      string1 += '<tr><td><b>' + accounts[a] + '</b></td>'
+                    } else {
+                      string1 += '<tr><td>' + accounts[a] + '</td>'
+                    }
+                    var total_row = accounts.length
+                    for (var b = 1; b < cols.length; b++) {
+                      if (a == (total_row - 1)) {
+                        string1 += '<th style="text-align: right;" class="' + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + ' ' + cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + '" id="' + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + '-' + cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + '"></th>'
+                      } else {
+                        string1 += '<td style="text-align: right;" class="' + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + ' ' + cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + '" id="' + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + '-' + cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + '"></td>'
+                      }
+                    }
+                    string1 += '</tr>';
+                  }
+                  $('#resultados tbody').html(string1)
+                  for (e = 0; e < data.data.length; e++) {
+
+                    if (moneda == "LO") {
+                      if (data.data[e].TipoSaldo == "D") {
+                        $("[id='" + data.data[e].CodPlanCta.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-" + data.data[e].Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-" + data.data[e].CodPlanAux.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-" + data.data[e].PlanAuxi_Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "']").text(convertir_rever((data.data[e].sum_TotalDb - data.data[e].sum_TotalCr).toString()));
+                      } else {
+                        $("[id='" + data.data[e].CodPlanCta.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-" + data.data[e].Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-" + data.data[e].CodPlanAux.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-" + data.data[e].PlanAuxi_Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "']").text(convertir_rever((data.data[e].sum_TotalCr - data.data[e].sum_TotalDb).toString()));
+                      }
+                    } else {
+                      if (data.data[e].TipoSaldo == "D") {
+                        $("[id='" + data.data[e].CodPlanCta.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-" + data.data[e].Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-" + data.data[e].CodPlanAux.toString().split(' ').join('') + "-" + data.data[e].PlanAuxi_Nombre.toString().split(' ').join('') + "']").text(addCommas((Math.round((data.data[e].sum_TotalDbME - data.data[e].sum_TotalCrME) * 100) / 100).toString()));
+                      } else {
+                        $("[id='" + data.data[e].CodPlanCta.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-" + data.data[e].Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-" + data.data[e].CodPlanAux.toString().split(' ').join('') + "-" + data.data[e].PlanAuxi_Nombre.toString().split(' ').join('') + "']").text(addCommas((Math.round((data.data[e].sum_TotalCrME - data.data[e].sum_TotalDbME) * 100) / 100).toString()));
+                      }
+                    }
+                  }
+                  for (var a = 0; a < accounts.length - 1; a++) {
+                    var total = 0;
+                    $("." + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')).each(function () {
+                      if (moneda == "LO") {
+                        if ($(this).text() != null && $(this).text() != "")
+                          total += parseInt($(this).text().split('.').join(''));
+                      } else {
+                        if ($(this).text() != null && $(this).text() != "")
+                          total += parseFloat($(this).text().split('.').join('').replace(',', '.'));
+                      }
+                    });
+                    if (moneda == "LO") {
+                      $("[id='" + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-Total']").text(convertir_rever(total))
+                    } else {
+                      $("[id='" + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-Total']").text(addCommas((Math.round((total) * 100) / 100).toString()))
+                    }
+                  }
+                  for (var a = 1; a < cols.length; a++) {
+                    var total = 0
+                    $("." + cols[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')).each(function () {
+                      if (moneda == "LO") {
+                        if ($(this).text() != null && $(this).text() != "")
+                          total += parseInt($(this).text().split('.').join(''));
+                      } else {
+                        if ($(this).text() != null && $(this).text() != "")
+                          total += parseFloat($(this).text().split('.').join('').replace(',', '.'));
+                      }
+                    });
+                    if (moneda == "LO") {
+                      $("[id='Total-" + cols[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "']").text(convertir_rever(total))
+                    } else {
+                      $("[id='Total-" + cols[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "']").text(addCommas((Math.round((total) * 100) / 100).toString()))
+                    }
+                  }
+                  var total = 0;
+                  for (var a = 0; a < accounts.length - 1; a++) {
+                    if (moneda == "LO") {
+                      total += parseInt($("." + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + ".Total").text().split('.').join(''));
+                    } else {
+                      total += parseFloat($("." + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + ".Total").text().split('.').join('').replace(',', '.'));
+                    }
+                  }
+                  if (moneda == "LO") {
+                    $("[id='Total-Total']").text(convertir_rever(total))
+                  } else {
+                    $("[id='Total-Total']").text(addCommas((Math.round((total) * 100) / 100).toString()))
+                  }
+                } else {
+                  $('#table-div').empty()
+                  $('#table-div').show()
+                  $('#table-div').append("<b>No se han encontrado datos.</b>")
+                }
+              }
+      );
+    }
+  }
+
+  function buscarCuenta() {
+    if (!query.empresa || !query.empresa.length) return;
+    if (!query.periodo || !query.periodo.length) return;
+    // resetear selects
+    select_cuentad.disable();
+    select_cuentad.clearOptions();
+    select_cuentah.disable();
+    select_cuentah.clearOptions();
+
+    $.get(api + 'cuenta/select/' + query.empresa + '/' + query.periodo).done(function (d) {
+      //cargar resultados y habilitar options
+      select_cuentad.load(function (cb) {
+        cb(d.data);
+        select_cuentad.enable();
+      });
+
+      select_cuentah.load(function (cb) {
+        cb(d.data);
+        select_cuentah.enable();
+      });
+    }).fail(function () {
+      select_cuentad.load(function (cb) {
+        cb();
+      });
+      select_cuentah.load(function (cb) {
+        cb();
+      });
+    }).done(function () {
+      $.get(api + 'cuentaauxi/select/' + query.empresa + '/' + query.periodo).done(function (d) {
+        console.log(d);
+      });
+    });
+  }
+
+  // 	$.ajax("http://"+aux1[0]+":3000/api/v1/cuentaauxi/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('periodo')[0].value,{method:'GET', contentType:'application/json', async: false,}).done(
+  //         function(data)  {
+  //             if (data != null){
+  //                 var select = document.getElementsByName("cuentaad")[0]
+  //                 var select1 = document.getElementsByName("cuentaah")[0]
+  //                 remover(select);
+  //                 remover(select1);
+  //                 var option = document.createElement("option");
+  //                 option.text = "NINGUNA";
+  //                 option.value = "NINGUNA"
+  //                 select.add(option);
+  //                 var option1 = document.createElement("option");
+  //                 option1.text = "NINGUNA";
+  //                 option1.value = "NINGUNA";
+  //                 select1.add(option1);
+  //                 for (var i=0;i < data.data.length;i++){
+  //                     var option = document.createElement("option");
+  //                     var option1 = document.createElement("option");
+  //                     option.value = data.data[i].CodPlanAux;
+  //                     option.text =data.data[i].Nombre;
+  //                     option1.value = data.data[i].CodPlanAux;
+  //                     option1.text =data.data[i].Nombre;
+  //                     select.add(option);
+  //                     select1.add(option1);
+  //                 }
+  //                 //SelectElement(data.data[0].CodPlanAux,'cuentaad')
+  //                 //SelectElement(data.data[0].CodPlanAux,'cuentaah')
+  //             }
+  //         }
+  //     );
+
+  {#  function permisos_empresas(data) {#}
+  {#    if (data.length > 0) {#}
+  {#      console.log('Hay datos');#}
+  {#      var vector = []#}
+  {#      for (var a = 0; a < data.length; a++) {#}
+  {#        vector.push("'" + data[a].empresa + "'")#}
+  {#      }#}
+  {#      var str = JSON.stringify({empresas: vector});#}
+  {#      $.ajax("http://" + aux1[0] + ":3000/api/v1/empresa/inin/select", {#}
+  {#        method: 'POST',#}
+  {#        contentType: 'application/json',#}
+  {#        data: str#}
+  {#      }).done(#}
+  {#              function (data) {#}
+  {#                if (data != null) {#}
+  {#                  var select = document.getElementsByName("empresa")[0]#}
+  {#                  remover(select);#}
+  {#                  for (var i = 0; i < data.data.length; i++) {#}
+  {#                    var option = document.createElement("option");#}
+  {#                    option.value = data.data[i].Cod_Empresa;#}
+  {#                    option.text = data.data[i].Des_Empresa;#}
+  {#                    select.add(option);#}
+  {#                  }#}
+  {#                  SelectElement(data.data[0].Cod_Empresa, 'empresa')#}
+  {##}
+  {#                  $.get("http://" + aux1[0] + ":3000/api/v1/cuenta/select/" + document.getElementsByName('empresa')[0].value + "/" + document.getElementsByName('periodo')[0].value,#}
+  {#                          function (data) {#}
+  {#                            if (data != null) {#}
+  {#                              var select = document.getElementsByName("cuentad")[0]#}
+  {#                              var select1 = document.getElementsByName("cuentah")[0]#}
+  {#                              remover(select);#}
+  {#                              remover(select1);#}
+  {#                              for (var i = 0; i < data.data.length; i++) {#}
+  {#                                var option = document.createElement("option");#}
+  {#                                var option1 = document.createElement("option");#}
+  {#                                option.value = data.data[i].CodPlanCta;#}
+  {#                                option.text = data.data[i].Nombre;#}
+  {#                                option1.value = data.data[i].CodPlanCta;#}
+  {#                                option1.text = data.data[i].Nombre;#}
+  {#                                select.add(option);#}
+  {#                                select1.add(option1);#}
+  {#                              }#}
+  {#                              SelectElement(data.data[0].CodPlanCta, 'cuentad')#}
+  {#                              SelectElement(data.data[0].CodPlanCta, 'cuentah')#}
+  {#                            }#}
+  {#                          }#}
+  {#                  );#}
+  {##}
+  {#//                 $.get("http://"+aux1[0]+":3000/api/v1/cuentaauxi/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('periodo')[0].value,#}
+  {#//                     function(data)  {#}
+  {#//                         if (data != null){#}
+  {#//                             var select = document.getElementsByName("cuentaad")[0]#}
+  {#//                             var select1 = document.getElementsByName("cuentaah")[0]#}
+  {#//                             remover(select);#}
+  {#//                             remover(select1);#}
+  {#//                             var option = document.createElement("option");#}
+  {#//                             option.text = "NINGUNA";#}
+  {#//                             option.value = "NINGUNA";#}
+  {#//                             select.add(option);#}
+  {#//                             var option1 = document.createElement("option");#}
+  {#//                             option1.text = "NINGUNA";#}
+  {#//                             option1.value = "NINGUNA";#}
+  {#//                             select1.add(option1);#}
+  {#//                             for (var i=0;i < data.data.length;i++){#}
+  {#//                                 var option = document.createElement("option");#}
+  {#//                                 var option1 = document.createElement("option");#}
+  {#//                                 option.value = data.data[i].CodPlanAux;#}
+  {#//                                 option.text =data.data[i].Nombre;#}
+  {#//                                 option1.value = data.data[i].CodPlanAux;#}
+  {#//                                 option1.text =data.data[i].Nombre;#}
+  {#//                                 select.add(option);#}
+  {#//                                 select1.add(option1);#}
+  {#//                             }#}
+  {#//                             //SelectElement(data.data[0].CodPlanAux,'cuentaad')#}
+  {#//                             //SelectElement(data.data[0].CodPlanAux,'cuentaah')#}
+  {#//                         }#}
+  {#//                     }#}
+  {#//                 ); #}
+  {##}
+  {#                  $('.chosen-select').trigger('chosen:updated');#}
+  {#                }#}
+  {#              }#}
+  {#      );#}
+  {#    }#}
+  {#  }#}
+
+  function search_cuenta(b) {
     console.log(b)
-    $('#fromcall').val(b) 
+    $('#fromcall').val(b)
     $("#modalCuentas").modal("show");
-    $('#tableCuentas tbody').empty(); 
-}
+    $('#tableCuentas tbody').empty();
+  }
 
-function filtro_cuenta(){
+  function filtro_cuenta() {
     var filtros = null
     if ($('[name=codigo]').val() == "CO") {
-        filtros = JSON.stringify({codigo: $('[name=filtro]').val()});
+      filtros = JSON.stringify({codigo: $('[name=filtro]').val()});
     } else {
-       filtros = JSON.stringify({nombre: $('[name=filtro]').val()}); 
+      filtros = JSON.stringify({nombre: $('[name=filtro]').val()});
     }
-    
-    $.ajax("http://"+aux1[0]+":3000/api/v1/cuentaauxi/query/"+$('[name=periodo]').val()+"/"+$('[name=empresa]').val()+"/"+$('[name=cuentad]').val()+"/"+$('[name=cuentah]').val(),{method:'POST', contentType:'application/json', data: filtros}).done(
-        function(data) {
-            if (data != null){
+
+    $.ajax("http://" + aux1[0] + ":3000/api/v1/cuentaauxi/query/" + $('[name=periodo]').val() + "/" + $('[name=empresa]').val() + "/" + $('[name=cuentad]').val() + "/" + $('[name=cuentah]').val(), {
+      method: 'POST',
+      contentType: 'application/json',
+      data: filtros
+    }).done(
+            function (data) {
+              if (data != null) {
                 var string = "";
-                for (var i=0;i < data.data.length;i++){
-                        string+= '<tr id="cuenta-row-'+data.data[i].CodPlanAux+'">'+
-                                    '<td class="codigo">'+data.data[i].CodPlanAux+'</td>'+
-                                    '<td class="nombre">'+data.data[i].Nombre+'</td>'+
-                                    '<td class="padre">'+data.data[i].CodPlanCta+'</td>'+
-                                    '<td><a class="btn btn-success btn-sm" onclick="cargar_cuenta(&quot;'+data.data[i].CodPlanAux+'&quot;)" title="Selecionar"><i class="fa fa-check"></i></td>'+
-                                 '</tr>';
-                    
+                for (var i = 0; i < data.data.length; i++) {
+                  string += '<tr id="cuenta-row-' + data.data[i].CodPlanAux + '">' +
+                          '<td class="codigo">' + data.data[i].CodPlanAux + '</td>' +
+                          '<td class="nombre">' + data.data[i].Nombre + '</td>' +
+                          '<td class="padre">' + data.data[i].CodPlanCta + '</td>' +
+                          '<td><a class="btn btn-success btn-sm" onclick="cargar_cuenta(&quot;' + data.data[i].CodPlanAux + '&quot;)" title="Selecionar"><i class="fa fa-check"></i></td>' +
+                          '</tr>';
+
                 }
                 $('#tableCuentas tbody').html(string);
+              }
             }
-        }
     );
-}
+  }
 
-function cargar_cuenta(a){
+  function cargar_cuenta(a) {
     $("#modalCuentas").modal("hide");
     console.log($('#fromcall').val())
-    if ($('#fromcall').val() == "cuentaad_name"){
-        $('[name=cuentaad]').val($('#cuenta-row-'+a).children('.codigo').text());
-        $('[name=cuentaad_name]').val($('#cuenta-row-'+a).children('.codigo').text()+' - '+$('#cuenta-row-'+a).children('.nombre').text());
+    if ($('#fromcall').val() == "cuentaad_name") {
+      $('[name=cuentaad]').val($('#cuenta-row-' + a).children('.codigo').text());
+      $('[name=cuentaad_name]').val($('#cuenta-row-' + a).children('.codigo').text() + ' - ' + $('#cuenta-row-' + a).children('.nombre').text());
     } else {
-        $('[name=cuentaah]').val($('#cuenta-row-'+a).children('.codigo').text());
-        $('[name=cuentaah_name]').val($('#cuenta-row-'+a).children('.codigo').text()+' - '+$('#cuenta-row-'+a).children('.nombre').text());
+      $('[name=cuentaah]').val($('#cuenta-row-' + a).children('.codigo').text());
+      $('[name=cuentaah_name]').val($('#cuenta-row-' + a).children('.codigo').text() + ' - ' + $('#cuenta-row-' + a).children('.nombre').text());
     }
-}
+  }
 </script>
 

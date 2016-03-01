@@ -34,10 +34,10 @@ Ventas.all = function (params, filters, cb) {
         args.push(filters.tipo_comprobante);
     }
 
-    if (filters.fechad && filters.fechah) {
+    if (filters.desde && filters.hasta) {
         where += " and (dba.vtacab.fha_cbte BETWEEN ? and ?)";
-        args.push(filters.fechad);
-        args.push(filters.fechah);
+        args.push(filters.desde);
+        args.push(filters.hasta);
     }
 
 
