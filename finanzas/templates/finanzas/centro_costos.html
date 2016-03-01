@@ -29,39 +29,44 @@
   </div>
 
   <div class="row">
-    <div class="col-sm-6">
-      <div class="form-group">
-        <label for="cuentaad" class="col-md-4 control-label">Cta. Aux. Desde:</label>
-
-        <div class="col-md-6">
-          <div class="input-group" id="cuentaad">
-            <input type="hidden" name="cuentaah" value="NINGUNA">
-            <input type="text" class="form-control" name="cuentaad_name" readonly>
-            <span class="input-group-btn">
-              <button class="btn btn-primary disabled" type="button"
-                      onclick="search_cuenta('cuentaad_name')"><i class="fa fa-search-plus"></i></button>
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-sm-6">
-      <div class="form-group">
-        <label for="cuentaah" class="col-md-4 control-label">Cta. Aux. Hasta:</label>
-
-        <div class="col-md-6">
-          <div class="input-group" id="cuentaah">
-            <input type="hidden" name="cuentaad" value="NINGUNA">
-            <input type="text" class="form-control" name="cuentaah_name" readonly>
-            <span class="input-group-btn">
-              <button class="btn btn-primary disabled" type="button"
-                      onclick="search_cuenta('cuentaah_name')"><i class="fa fa-search-plus"></i></button>
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
+    {% include 'ventas/_filtro.html' with name="cuenta-aux-d" placeholder="Cuenta" title="Cta. Aux. desde" %}
+    {% include 'ventas/_filtro.html' with name="cuenta-aux-h" placeholder="Cuenta" title="Cta. Aux. hasta" %}
   </div>
+
+{#  <div class="row">#}
+{#    <div class="col-sm-6">#}
+{#      <div class="form-group">#}
+{#        <label for="cuentaad" class="col-md-4 control-label">Cta. Aux. Desde:</label>#}
+{##}
+{#        <div class="col-md-6">#}
+{#          <div class="input-group" id="cuentaad">#}
+{#            <input type="hidden" name="cuentaah" value="NINGUNA">#}
+{#            <input type="text" class="form-control" name="cuentaad_name" readonly>#}
+{#            <span class="input-group-btn">#}
+{#              <button class="btn btn-primary disabled" type="button"#}
+{#                      onclick="search_cuenta('cuentaad_name')"><i class="fa fa-search-plus"></i></button>#}
+{#            </span>#}
+{#          </div>#}
+{#        </div>#}
+{#      </div>#}
+{#    </div>#}
+{#    <div class="col-sm-6">#}
+{#      <div class="form-group">#}
+{#        <label for="cuentaah" class="col-md-4 control-label">Cta. Aux. Hasta:</label>#}
+{##}
+{#        <div class="col-md-6">#}
+{#          <div class="input-group" id="cuentaah">#}
+{#            <input type="hidden" name="cuentaad" value="NINGUNA">#}
+{#            <input type="text" class="form-control" name="cuentaah_name" readonly>#}
+{#            <span class="input-group-btn">#}
+{#              <button class="btn btn-primary disabled" type="button"#}
+{#                      onclick="search_cuenta('cuentaah_name')"><i class="fa fa-search-plus"></i></button>#}
+{#            </span>#}
+{#          </div>#}
+{#        </div>#}
+{#      </div>#}
+{#    </div>#}
+{#  </div>#}
   {#  <input type="hidden" name="cuentaah" value="NINGUNA"><input size="30px" name="cuentaad_name" readonly="readonly"#}
   {#                                                                type="text">&nbsp;<a type="button"#}
   {#                                                                                     class="btn btn-xs btn-primary"#}
