@@ -5,9 +5,17 @@
   }
 </style>
 
+
 <script type="text/javascript">
   var pad = 0;
   var cuenta = 0;
+
+  var select_empresa, $select_empresa;
+  var select_cuentad, $select_cuentad;
+  var select_cuentah, $select_cuentah;
+  var select_cuenta_auxd, $select_cuenta_auxd;
+  var select_cuenta_auxh, $select_cuenta_auxh;
+  var $select_tipo_asiento, select_tipo_asiento;
 
   var addCommas = u.addCommas;
   var today = new Date();
@@ -18,6 +26,7 @@
   $(document).ready(function () {
     u.hideNav();
     initDates();
+    initSelects();
   });
 
   function initDates() {
@@ -56,18 +65,19 @@
 
     $year.datepicker().on('changeDate', function (e) {
       query.periodo = this.value;
-      var desdeNewDate = $desde.datepicker('getDate');
-      var hastaNewDate = $hasta.datepicker('getDate');
-      if (desdeNewDate && hastaNewDate) {
-        var startDate = new Date(this.value, 0, 1);
-        var endDate = new Date(this.value, 11, 31);
-        desdeNewDate.setFullYear(this.value);
+      buscar_cuenta();
+      var desdeNewDate = $desde.datepicker('getDate'); //get fecha actual
+      var hastaNewDate = $hasta.datepicker('getDate'); //get fecha actual
+      if (desdeNewDate && hastaNewDate) { //if not null
+        var startDate = new Date(this.value, 0, 1); //set new year start
+        var endDate = new Date(this.value, 11, 31); //set new year end
+        desdeNewDate.setFullYear(this.value); //change fecha actual year
         $desde.datepicker('setStartDate', startDate);
         $desde.datepicker('setEndDate', endDate);
         $desde.datepicker('setDate', desdeNewDate);
         $desde.datepicker('update');
 
-        hastaNewDate.setFullYear(this.value);
+        hastaNewDate.setFullYear(this.value); //set new year actual
         $hasta.datepicker('setStartDate', startDate);
         $hasta.datepicker('setEndDate', endDate);
         $hasta.datepicker('setDate', hastaNewDate);
@@ -77,6 +87,70 @@
 
     $allDates.datepicker('setDate', today);
     $allDates.datepicker('update');
+  }
+
+  function initSelects() {
+    $.extend(true, $.fn.selectize.defaults, {
+      onChange: function (value) {
+        query[this.$input.attr('name')] = value;
+        console.log(query);
+      }
+    });
+
+    $select_empresa = $('#select-empresa').selectize({
+      valueField: 'Cod_Empresa',
+      labelField: 'Des_Empresa',
+      searchField: 'Des_Empresa',
+      onChange: function (value) {
+        query.empresa = value;
+        buscar_cuenta();
+      }
+    });
+    select_empresa = $select_empresa[0].selectize;
+    select_empresa.load(function (callback) {
+      u.get_empresas({{ user }}, function (d) {
+        callback(d.data);
+      });
+    });
+
+    $select_cuentad = $('#select-cuentad').selectize({
+      valueField: 'CodPlanCta',
+      labelField: 'Nombre',
+      searchField: 'Nombre'
+    });
+    select_cuentad = $select_cuentad[0].selectize;
+    select_cuentad.disable();
+
+    $select_cuentah = $('#select-cuentah').selectize({
+      valueField: 'CodPlanCta',
+      labelField: 'Nombre',
+      searchField: 'Nombre'
+    });
+    select_cuentah = $select_cuentah[0].selectize;
+    select_cuentah.disable();
+
+    $select_tipo_asiento = $('#select-tipoAsiento').selectize({
+      valueField: 'TipoAsiento',
+      labelField: 'Descrip',
+      searchField: 'Descrip'
+    });
+    select_tipo_asiento = $select_tipo_asiento[0].selectize;
+    select_tipo_asiento.load(function (cb) {
+      $.ajax({
+        url: api + 'tipoasiento/select',
+        method: 'GET'
+      }).done(function (res) {
+        cb(res.data);
+      });
+    });
+
+    $('#select-moneda').selectize({
+      options: [
+        {value: 'LO', text: 'Local'},
+        {value: 'EX', text: 'Extranjera'},
+        {value: 'AM', text: 'Ambas'}
+      ]
+    });
   }
 
   function checkTime(i) {
@@ -514,66 +588,66 @@
   }
 
   function buscar_cuenta() {
-    $.ajax("http://" + aux1[0] + ":3000/api/v1/cuenta/select/" + document.getElementsByName('empresa')[0].value + "/" + document.getElementsByName('periodo')[0].value, {
-      method: 'GET',
-      contentType: 'application/json',
-      async: false,
-    }).done(
-            function (data) {
-              if (data != null) {
-                var select = document.getElementsByName("cuentad")[0]
-                var select1 = document.getElementsByName("cuentah")[0]
-                remover(select);
-                remover(select1);
-                for (var i = 0; i < data.data.length; i++) {
-                  var option = document.createElement("option");
-                  var option1 = document.createElement("option");
-                  option.value = data.data[i].CodPlanCta;
-                  option.text = data.data[i].Nombre;
-                  option1.value = data.data[i].CodPlanCta;
-                  option1.text = data.data[i].Nombre;
-                  select.add(option);
-                  select1.add(option1);
-                }
-                SelectElement(data.data[0].CodPlanCta, 'cuentad')
-                SelectElement(data.data[0].CodPlanCta, 'cuentah')
-              }
-            }
-    );
+    if (!query.empresa || !query.empresa.length) return;
+    if (!query.periodo || !query.periodo.length) return;
+    // resetear selects
+    u.resetSelect(select_cuentad);
+    u.resetSelect(select_cuentah);
 
-// 	$.ajax("http://"+aux1[0]+":3000/api/v1/cuentaauxi/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('periodo')[0].value,{method:'GET', contentType:'application/json', async: false,}).done(
-//         function(data)  {
-//             if (data != null){
-//                 var select = document.getElementsByName("cuentaad")[0]
-//                 var select1 = document.getElementsByName("cuentaah")[0]
-//                 remover(select);
-//                 remover(select1);
-//                 var option = document.createElement("option");
-//                 option.text = "NINGUNA";
-//                 option.value = "NINGUNA"
-//                 select.add(option);
-//                 var option1 = document.createElement("option");
-//                 option1.text = "NINGUNA";
-//                 option1.value = "NINGUNA";
-//                 select1.add(option1);
-//                 for (var i=0;i < data.data.length;i++){
-//                     var option = document.createElement("option");
-//                     var option1 = document.createElement("option");
-//                     option.value = data.data[i].CodPlanAux;
-//                     option.text =data.data[i].Nombre;
-//                     option1.value = data.data[i].CodPlanAux;
-//                     option1.text =data.data[i].Nombre;
-//                     select.add(option);
-//                     select1.add(option1);
-//                 }
-//                 //SelectElement(data.data[0].CodPlanAux,'cuentaad')
-//                 //SelectElement(data.data[0].CodPlanAux,'cuentaah')
-//             }
-//         }
-//     ); 
+    $.ajax({
+      url: api + 'cuenta/select/' + query.empresa + '/' + query.periodo,
+      method: 'GET'
+    }).done(function (d) {
+      //cargar resultados y habilitar options
+      select_cuentad.load(function (cb) {
+        cb(d.data);
+        select_cuentad.enable();
+      });
 
-    $('.chosen-select').trigger('chosen:updated');
+      select_cuentah.load(function (cb) {
+        cb(d.data);
+        select_cuentah.enable();
+      });
+    }).fail(function () {
+      select_cuentad.load(function (cb) {
+        cb();
+      });
+      select_cuentah.load(function (cb) {
+        cb();
+      });
+    });
   }
+
+  // 	$.ajax("http://"+aux1[0]+":3000/api/v1/cuentaauxi/select/"+document.getElementsByName('empresa')[0].value+"/"+document.getElementsByName('periodo')[0].value,{method:'GET', contentType:'application/json', async: false,}).done(
+  //         function(data)  {
+  //             if (data != null){
+  //                 var select = document.getElementsByName("cuentaad")[0]
+  //                 var select1 = document.getElementsByName("cuentaah")[0]
+  //                 remover(select);
+  //                 remover(select1);
+  //                 var option = document.createElement("option");
+  //                 option.text = "NINGUNA";
+  //                 option.value = "NINGUNA"
+  //                 select.add(option);
+  //                 var option1 = document.createElement("option");
+  //                 option1.text = "NINGUNA";
+  //                 option1.value = "NINGUNA";
+  //                 select1.add(option1);
+  //                 for (var i=0;i < data.data.length;i++){
+  //                     var option = document.createElement("option");
+  //                     var option1 = document.createElement("option");
+  //                     option.value = data.data[i].CodPlanAux;
+  //                     option.text =data.data[i].Nombre;
+  //                     option1.value = data.data[i].CodPlanAux;
+  //                     option1.text =data.data[i].Nombre;
+  //                     select.add(option);
+  //                     select1.add(option1);
+  //                 }
+  //                 //SelectElement(data.data[0].CodPlanAux,'cuentaad')
+  //                 //SelectElement(data.data[0].CodPlanAux,'cuentaah')
+  //             }
+  //         }
+  //     );
 
   function cambiar_anho(a) {
     var vector_desde = $('[name=fechad]').val().split('-')
