@@ -64,7 +64,7 @@ router.get('/sucursal/select/:empresa', function (req, res, next) {
 });
 
 //list orden de pago
-router.get('/ordenpago/list/:empresa/:sucursal/:tipoop/:comprobante/:tipoproveedor/:proveedor/:desde/:hasta', function (req, res, next) {
+router.get('/ordenpago/list/:empresa/:sucursal/:tipoop/:tipoproveedor/:proveedor/:desde/:hasta', function (req, res, next) {
     OrdenPago.all(req.params, function (result) {
         res.json({data: result});
     });

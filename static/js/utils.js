@@ -214,3 +214,14 @@ u.convertir_rever = function (str) {
         return (nuevo);
     }
 };
+};
+
+u.hideTable = function ($table) {
+    if (!$table) return;
+    $table.css("position", "absolute").css("left", -9999);
+};
+
+u.showTable = function ($table) {
+    if (!$table) return;
+    $table.css("position", "relative").css("left", 0);
+};

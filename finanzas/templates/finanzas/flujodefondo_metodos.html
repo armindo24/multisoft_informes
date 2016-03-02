@@ -1,114 +1,117 @@
 <script type="text/javascript">
 
-var numFormat = $.fn.dataTable.render.number('.', ',', 0).display;
-var aux1 = null;
-var mes_corte = null;
-var periodo = null;
-var initialize = init;
-var select_empresa, $select_empresa;
- var api = u.getApiUrl();
+  var numFormat = $.fn.dataTable.render.number('.', ',', 0).display;
+  var aux1 = null;
+  var mes_corte = null;
+  var periodo = null;
+  var initialize = init;
+  var select_empresa, $select_empresa;
+  var api = u.getApiUrl();
+  var today = new Date();
 
-function init() {
-
+  function init() {
     $select_empresa = $('#select-empresa').selectize({
-        valueField: 'Cod_Empresa',
-        labelField: 'Des_Empresa',
-        searchField: 'Des_Empresa',
-        preload: true,
-        load: function (q, callback) {
-            u.get_empresas({{ user }}, function (d) {
-            callback(d.data);
-            });
-        },
+      valueField: 'Cod_Empresa',
+      labelField: 'Des_Empresa',
+      searchField: 'Des_Empresa',
+      preload: true,
+      load: function (q, callback) {
+        u.get_empresas({{ user }}, function (d) {
+          callback(d.data);
+        });
+      },
     });
-}
+  }
 
-$(document).ready(function () {
-    $('#resultado').hide();
+  $(document).ready(function () {
     initialize();
     u.hideNav();
-    
-    select_empresa = $select_empresa[0].selectize; 
-    
+
+    select_empresa = $select_empresa[0].selectize;
+
     $('.mes').datepicker({
-        autoclose: true,
-        todayBtn: "linked",
-        language: "es",
-        format: "MM",
-        startView: 1,
-        minViewMode: 1,
-        maxViewMode: 1,
+      autoclose: true,
+      todayBtn: "linked",
+      language: "es",
+      format: "MM",
+      startView: 1,
+      minViewMode: 1,
+      maxViewMode: 1
     });
-    
+
     $('.periodo').datepicker({
-        todayBtn: "linked",
-        language: "es",
-        startView: 1,
-        setDate: new Date(),
-        autoclose: true,
-        format: " yyyy", // Notice the Extra space at the beginning
-        viewMode: "years", 
-        minViewMode: "years"
+      todayBtn: "linked",
+      language: "es",
+      startView: 1,
+      setDate: new Date(),
+      autoclose: true,
+      format: " yyyy", // Notice the Extra space at the beginning
+      viewMode: "years",
+      minViewMode: "years"
     });
 
     $('.mes').datepicker().on('changeDate', function (c) {
-        mes_corte = c.format('mm');
+      mes_corte = c.format('mm');
     });
-    
+
     $('.periodo').datepicker().on('changeDate', function (c) {
-        periodo = c.format('yyyy');
+      periodo = c.format('yyyy');
     });
+
+    $('.dateclass').datepicker('setDate', today);
+    $('.dateclass').datepicker('update');
 
     $.extend(true, $.fn.dataTable.defaults, {
-        searching: false,
-        ordering: false,
-        language: u.spanish_dt,
-        deferRender: true,
-        scrollY: 200,
-        scrollCollapse: true,
-        scroller: {
-            displayBuffer: 30,
-            loadingIndicator: true
-        },
-        columnDefs: [
-            {className: "price-value", targets: "price-label"},
-            {render: $.fn.dataTable.render.number('.', ',', 0), targets: "price-label"},
-            {className: "text-center", targets: "text-center"},
-            {visible: false, targets: "grouping-col"}
-        ],
-        footerCallback: function (row, data, start, end, display) {
-            var api = this.api(), data;
-            var total = api.column(-1).data().reduce(function (a, b) {
-                return u.parseVal(a) + u.parseVal(b);
-            }, 0);
-            $(api.column(-1).footer()).html(numFormat(total));
-        }
+      searching: false,
+      ordering: false,
+      language: u.spanish_dt,
+      deferRender: true,
+      scrollY: 200,
+      scrollCollapse: true,
+      scroller: {
+        displayBuffer: 30,
+        loadingIndicator: true
+      },
+      columnDefs: [
+        {className: "price-value", targets: "price-label"},
+        {render: $.fn.dataTable.render.number('.', ',', 0), targets: "price-label"},
+        {className: "text-center", targets: "text-center"},
+        {visible: false, targets: "grouping-col"}
+      ],
+      footerCallback: function (row, data, start, end, display) {
+        var api = this.api(), data;
+        var total = api.column(-1).data().reduce(function (a, b) {
+          return u.parseVal(a) + u.parseVal(b);
+        }, 0);
+        $(api.column(-1).footer()).html(numFormat(total));
+      }
     });
-    
-    $('#egresos').DataTable({
-        columns: [{data: 'CodPlanCta'}, {data: 'Nombre'}, {data: 'Total'}]
-    });
-    
-    $('#ingresos').DataTable({
-        columns: [{data: 'CodPlanCta'}, {data: 'Nombre'}, {data: 'Total'}]
-    });
-    
-    $('#descuentos').DataTable({
-        columns: [{data: 'CodPlanCta'}, {data: 'Nombre'}, {data: 'Saldo'}]
-    });
-    
-    $('#saldos').DataTable({
-        columns: [{data: 'Saldo'}, {data: 'Monto'}]
-    });
-    
-    $('#bancos').DataTable({
-        columns: [{data: 'Saldo'}, {data: 'Monto'}]
-    });
-        
-});
 
-  function buscar() {
-  
+    $('#egresos').DataTable({
+      columns: [{data: 'CodPlanCta', width: '25%'}, {data: 'Nombre', width: '50%'}, {data: 'Total', width: '25%'}]
+    });
+
+    $('#ingresos').DataTable({
+      columns: [{data: 'CodPlanCta', width: '25%'}, {data: 'Nombre', width: '50%'}, {data: 'Total', width: '25%'}]
+    });
+
+    $('#descuentos').DataTable({
+      columns: [{data: 'CodPlanCta', width: '25%'}, {data: 'Nombre', width: '50%'}, {data: 'Saldo', width: '25%'}]
+    });
+
+    $('#saldos').DataTable({
+      columns: [{data: 'Saldo', width: '75%'}, {data: 'Monto', width: '25%'}]
+    });
+
+    $('#bancos').DataTable({
+      columns: [{data: 'Saldo', width: '75%'}, {data: 'Monto', width: '25%'}]
+    });
+
+    $('#resultado-table').hide();
+  });
+
+  function getInforme() {
+
     var empresa = $("[name=empresa]").val()
     var anterior = $("[name=anterior]").val().split('.').join('')
     var actual = $("[name=actual]").val().split('.').join('')
@@ -117,125 +120,125 @@ $(document).ready(function () {
       alert("No hay datos suficientes para generar el listado")
     } else {
       $('.collapse').collapse('hide');
-      $('#resultado').hide();
+      $('#resultado-table').hide();
       $('#mensaje').empty();
       $('#mensaje').append("<b>Recuperando datos.</b>");
-      $.get(api+"flowcash/" + periodo + "/" + empresa + "/" + mes_corte,
+      $.get(api + "flowcash/" + periodo + "/" + empresa + "/" + mes_corte,
               function (data) {
                 console.log(data)
                 if (data.data[0].saldos.length > 0 || data.data[1].movimientos.length > 0 || data.data[2].descuentos.length > 0 || data.data[3].bancos.length > 0) {
-                    $('#resultado').show();
-                    $('#mensaje').empty();
-                    if (data.data[0].saldos.length > 0) {
-                        var saldos = []
-                        for (var a = 0; a < data.data[0].saldos.length; a++) {
-                            var object_s = {}
-                            if (data.data[0].saldos[a].codmoneda == "GS"){
-                                object_s.Saldo = "Saldos de Bancos Moneda Local" 
-                                object_s.Monto = data.data[0].saldos[a].Saldo
-                            } else {
-                                object_s.Saldo = "Saldos de Bancos Moneda Extranjera &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"+convertir_rever(data.data[0].saldos[a].SaldoME) +"*"+ convertir_rever(anterior)
-                                object_s.Monto = data.data[0].saldos[a].SaldoME*anterior
-                            }
-                            saldos.push(object_s);
-                        }
-                        var tsaldos = $('#saldos').DataTable();
-                        tsaldos.row(0).scrollTo();
-                        tsaldos.clear();
-                        tsaldos.rows.add(saldos).draw();
+                  $('#resultado-table').show();
+                  $('#mensaje').empty();
+                  if (data.data[0].saldos.length > 0) {
+                    var saldos = []
+                    for (var a = 0; a < data.data[0].saldos.length; a++) {
+                      var object_s = {}
+                      if (data.data[0].saldos[a].codmoneda == "GS") {
+                        object_s.Saldo = "Saldos de Bancos Moneda Local"
+                        object_s.Monto = data.data[0].saldos[a].Saldo
+                      } else {
+                        object_s.Saldo = "Saldos de Bancos Moneda Extranjera &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" + convertir_rever(data.data[0].saldos[a].SaldoME) + "*" + convertir_rever(anterior)
+                        object_s.Monto = data.data[0].saldos[a].SaldoME * anterior
+                      }
+                      saldos.push(object_s);
                     }
-                    if (data.data[1].movimientos.length > 0) {
-                      var egresos = [];
-                      var ingresos = [];
-                      for (var a = 0; a < data.data[1].movimientos.length; a++) {
-                        if (data.data[1].movimientos[a].Tipo == 'E') {
-                          var object_e = data.data[1].movimientos[a];
-                          egresos.push(object_e);
-                        } else {
-                          var object_i = data.data[1].movimientos[a];
-                          ingresos.push(object_i);
-                        }
+                    var tsaldos = $('#saldos').DataTable();
+                    tsaldos.row(0).scrollTo();
+                    tsaldos.clear();
+                    tsaldos.rows.add(saldos).draw();
+                  }
+                  if (data.data[1].movimientos.length > 0) {
+                    var egresos = [];
+                    var ingresos = [];
+                    for (var a = 0; a < data.data[1].movimientos.length; a++) {
+                      if (data.data[1].movimientos[a].Tipo == 'E') {
+                        var object_e = data.data[1].movimientos[a];
+                        egresos.push(object_e);
+                      } else {
+                        var object_i = data.data[1].movimientos[a];
+                        ingresos.push(object_i);
                       }
                     }
-                    if (egresos.lenth > 0){
-                        var tegresos = $('#egresos').DataTable();
-                        tegresos.row(0).scrollTo();
-                        tegresos.clear();
-                        tegresos.rows.add(egresos).draw();
+                  }
+                  if (egresos.length > 0) {
+                    var tegresos = $('#egresos').DataTable();
+                    tegresos.row(0).scrollTo();
+                    tegresos.clear();
+                    tegresos.rows.add(egresos).draw();
+                  }
+                  if (ingresos.length > 0) {
+                    var tingresos = $('#ingresos').DataTable();
+                    tingresos.row(0).scrollTo();
+                    tingresos.clear();
+                    tingresos.rows.add(ingresos).draw();
+                  }
+                  if (data.data[2].descuentos.length > 0) {
+                    var descuentos = [];
+                    for (var a = 0; a < data.data[2].descuentos.length; a++) {
+                      var object_d = data.data[2].descuentos[a];
+                      descuentos.push(object_d);
                     }
-                    if (ingresos.length > 0){ 
-                        var tingresos = $('#ingresos').DataTable();
-                        tingresos.row(0).scrollTo();
-                        tingresos.clear();
-                        tingresos.rows.add(ingresos).draw();
+                    var tdescuentos = $('#descuentos').DataTable();
+                    tdescuentos.row(0).scrollTo();
+                    tdescuentos.clear();
+                    tdescuentos.rows.add(descuentos).draw();
+                  }
+                  var tsaldo = parseInt($('#tsaldo').text().toString().split('.').join(''));
+                  var tegreso = parseInt($('#tegreso').text().toString().split('.').join(''));
+                  var tingreso = parseInt($('#tingreso').text().toString().split('.').join(''));
+                  var parcial = tsaldo + (tingreso - tegreso)
+                  var string_parcial = '<tr>' +
+                          '<th style="width:75%;">TOTAL SALDO: SA + (INGRESO - EGRESO)= &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + convertir_rever(tsaldo) + ' + (' + convertir_rever(tingreso - tegreso) + ') = </th>' +
+                          '<th style="width:25%;text-align: right;">' + convertir_rever(parcial) + '</th>' +
+                          '</tr>';
+                  $('#parcial tbody').html(string_parcial);
+                  var tdescuento = parseInt($('#tdescuento').text().toString().split('.').join(''));
+                  var string_parcial_descuento = '<tr>' +
+                          '<th style="width:75%;">SALDO FINAL DE LA PLANILLA</th>' +
+                          '<th style="width:25%;text-align: right;">' + convertir_rever(parcial - tdescuento) + '</th>' +
+                          '</tr>';
+                  $('#parcial_descuentos tbody').html(string_parcial_descuento);
+                  if (data.data[3].bancos.length > 0) {
+                    var bancos = []
+                    for (var a = 0; a < data.data[3].bancos.length; a++) {
+                      var object_b = {}
+                      if (data.data[3].bancos[a].codmoneda == "GS") {
+                        object_b.Saldo = "Saldos de Bancos Moneda Local"
+                        object_b.Monto = data.data[3].bancos[a].Saldo
+                      } else {
+                        object_b.Saldo = "Saldos de Bancos Moneda Extranjera &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" + convertir_rever(data.data[3].bancos[a].SaldoME) + "*" + convertir_rever(actual)
+                        object_b.Monto = data.data[3].bancos[a].SaldoME * actual
+                      }
+                      bancos.push(object_b);
                     }
-                    if (data.data[2].descuentos.length > 0) {
-                        var descuentos = [];
-                        for (var a = 0; a < data.data[2].descuentos.length; a++) {
-                            var object_d = data.data[2].descuentos[a];
-                            descuentos.push(object_d);
-                        }
-                        var tdescuentos = $('#descuentos').DataTable();
-                        tdescuentos.row(0).scrollTo();
-                        tdescuentos.clear();
-                        tdescuentos.rows.add(descuentos).draw();
-                    }
-                    var tsaldo = parseInt($('#tsaldo').text().toString().split('.').join(''));
-                    var tegreso = parseInt($('#tegreso').text().toString().split('.').join(''));
-                    var tingreso = parseInt($('#tingreso').text().toString().split('.').join(''));
-                    var parcial = tsaldo+(tingreso-tegreso)
-                    var string_parcial = '<tr>'+
-                                            '<th style="width:75%;">TOTAL SALDO: SA + (INGRESO - EGRESO)= &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+convertir_rever(tsaldo)+ ' + (' +convertir_rever(tingreso-tegreso)+') = </th>'+
-                                            '<th style="width:25%;text-align: right;">'+convertir_rever(parcial)+'</th>'+
-                                         '</tr>';
-                    $('#parcial tbody').html(string_parcial);
-                    var tdescuento = parseInt($('#tdescuento').text().toString().split('.').join(''));
-                    var string_parcial_descuento = '<tr>'+
-                                                        '<th style="width:75%;">SALDO FINAL DE LA PLANILLA</th>'+
-                                                        '<th style="width:25%;text-align: right;">'+convertir_rever(parcial-tdescuento)+'</th>'+
-                                                    '</tr>';
-                    $('#parcial_descuentos tbody').html(string_parcial_descuento);
-                    if (data.data[3].bancos.length > 0) {
-                        var bancos = []
-                        for (var a = 0; a < data.data[3].bancos.length; a++) {
-                            var object_b = {}
-                            if (data.data[3].bancos[a].codmoneda == "GS"){
-                                object_b.Saldo = "Saldos de Bancos Moneda Local" 
-                                object_b.Monto = data.data[3].bancos[a].Saldo
-                            } else {
-                                object_b.Saldo = "Saldos de Bancos Moneda Extranjera &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"+convertir_rever(data.data[3].bancos[a].SaldoME) +"*"+ convertir_rever(actual)
-                                object_b.Monto = data.data[3].bancos[a].SaldoME*actual
-                            }
-                            bancos.push(object_b);
-                        }
-                        var tbancos = $('#bancos').DataTable();
-                        tbancos.row(0).scrollTo();
-                        tbancos.clear();
-                        tbancos.rows.add(bancos).draw();        
-                    }
-                    var tbanco = parseInt($('#tbanco').text().toString().split('.').join(''));
-                    var string_resultados = '<tr>'+
-                                                '<tr>'+
-                                                    '<th style="width:75%;">SALDO DE BANCOS</th>'+
-                                                    '<th style="width:25%;text-align: right;">'+convertir_rever(tbanco)+'</th>'+
-                                                '</tr>'+
-                                                '<tr>'+
-                                                    '<th style="width:75%;">SALDO DE PLANILLA</th>'+
-                                                    '<th style="width:25%;text-align: right;">'+convertir_rever(parcial-tdescuento)+'</th>'+
-                                                '</tr>'+
-                                                '<tr>'+
-                                                    '<th style="width:75%;">Diferencia de Saldo de Bancos - Planilla de Ingresos/Egresos</th>'+
-                                                    '<th style="width:25%;text-align: right;">'+convertir_rever(tbanco-(parcial-tdescuento))+'</th>'+
-                                                '</tr>'+
-                                            '</tr>';
-                    $('#resultados tbody').html(string_resultados);
+                    var tbancos = $('#bancos').DataTable();
+                    tbancos.row(0).scrollTo();
+                    tbancos.clear();
+                    tbancos.rows.add(bancos).draw();
+                  }
+                  var tbanco = parseInt($('#tbanco').text().toString().split('.').join(''));
+                  var string_resultados = '<tr>' +
+                          '<tr>' +
+                          '<th style="width:75%;">SALDO DE BANCOS</th>' +
+                          '<th style="width:25%;text-align: right;">' + convertir_rever(tbanco) + '</th>' +
+                          '</tr>' +
+                          '<tr>' +
+                          '<th style="width:75%;">SALDO DE PLANILLA</th>' +
+                          '<th style="width:25%;text-align: right;">' + convertir_rever(parcial - tdescuento) + '</th>' +
+                          '</tr>' +
+                          '<tr>' +
+                          '<th style="width:75%;">Diferencia de Saldo de Bancos - Planilla de Ingresos/Egresos</th>' +
+                          '<th style="width:25%;text-align: right;">' + convertir_rever(tbanco - (parcial - tdescuento)) + '</th>' +
+                          '</tr>' +
+                          '</tr>';
+                  $('#resultado-tables tbody').html(string_resultados);
                 } else {
-                    $('#resultado').hide();
-                    $('#mensaje').empty();
-                    $('#mensaje').append("<b>No se han encontrado datos.</b>");
+                  $('#resultado-table').hide();
+                  $('#mensaje').empty();
+                  $('#mensaje').append("<b>No se han encontrado datos.</b>");
                 }
               });
-              
+
     }
   }
 
