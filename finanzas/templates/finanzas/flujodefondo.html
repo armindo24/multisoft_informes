@@ -1,188 +1,124 @@
-{% extends 'admin/base_site.html' %}
-{% load staticfiles %}
-{% block extrahead %}
-  <link rel="stylesheet" href="{% static 'css/jquery-ui.css' %}">
-  <link rel="stylesheet" href="{% static 'chosen_v1.4.2/chosen.css' %}">
-  <link rel="stylesheet" href="{% static 'select2/css/select2.min.css' %}">
-  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/dist/css/bootstrap-datepicker3.min.css' %}">
-  <link rel="stylesheet" href="{% static 'selectize/dist/css/selectize.bootstrap3.css' %}">
-  <!-- <link rel="stylesheet" href="{% static 'datatables.net-bs/css/dataTables.bootstrap.min.css' %}"> -->
-  <!-- <link rel="stylesheet" href="{% static 'datatables/media/css/jquery.dataTables.min.css' %}"> -->
-  <!-- <link rel="stylesheet" href="{% static 'datatables.net-scroller-bs/css/scroller.bootstrap.css' %}"> -->
-  <link rel="stylesheet" href="{% static 'datatables.net-bs/css/dataTables.bootstrap.min.css' %}">
-  <link rel="stylesheet" href="{% static 'datatables.net-scroller-bs/css/scroller.bootstrap.css' %}">
-  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/dist/css/bootstrap-datepicker3.min.css' %}">
-  <link rel="stylesheet" href="{% static 'styles.css' %}">
-  <script src="{% static 'select2/js/select2.full.min.js' %}"></script>
-  <script src="{% static 'chosen_v1.4.2/chosen.jquery.js' %}"></script>
-  <script src="{% static 'js/puntos-decimales.js' %}"></script>
-  <script src="{% static 'dajaxice/dajaxice.core.js' %}"></script>
-  <script src="{% static 'bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js' %}"></script>
-  <script src="{% static 'bootstrap-datepicker/dist/locales/bootstrap-datepicker.es.min.js' %}"></script>
-  <script src="{% static 'selectize/dist/js/standalone/selectize.min.js' %}"></script>
-  <!-- <script src="{% static 'datatables.net/js/jquery.dataTables.js' %}"></script>
-  <script src="{% static 'datatables.net-bs/js/dataTables.bootstrap.js' %}"></script>
-  <script src="{% static 'datatables.net-scroller/js/dataTables.scroller.js' %}"></script> -->
-  <script src="{% static 'datatables.net/js/jquery.dataTables.js' %}"></script>
-  <script src="{% static 'datatables.net-bs/js/dataTables.bootstrap.js' %}"></script>
-  <script src="{% static 'datatables.net-scroller/js/dataTables.scroller.js' %}"></script>
-  <script src="{% static 'js/utils.js' %}"></script>
-  {% include 'finanzas/flujodefondo_metodos.html' %}
-{% endblock %}
+{% extends 'finanzas/base.html' %}
 
 {% block header %}
   Flujo de Fondo:
 {% endblock %}
 
-{% block content %}
-  <div class="panel-group" id="accordion">
-    <div class="panel panel-default">
-        <div class="panel-heading" data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
-            <h4 class="panel-title">
-            Filtros
-        </h4>
-    </div>
-    <div id="collapseOne" class="panel-collapse collapse">
-        <div class="panel-body">
-            <div class="panel-group" id="archivo_accordion" style="margin-bottom: 0px;"> 
-                <div id="filters">
-                    <form class="form-horizontal">
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <div class="form-group">
-                                    <label for="select-empresa" class="col-md-4 control-label">Empresa:</label>
-                                    <div class="col-md-6">
-                                        <select id="select-empresa" name="empresa" placeholder="Empresa...">
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="form-group">
-                                    <label for="periodo" class="col-md-4 control-label">Periodo:</label>
-                                    <div class="col-md-6">
-                                        <input type="text" onkeydown="return false" class="dateclass periodo form-control" name="periodo">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <div class="form-group">
-                                    <label for="mes" class="col-md-4 control-label">Mes:</label>
-                                    <div class="col-md-6">
-                                        <input type="text" onkeydown="return false" class="dateclass mes form-control" name="mes">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                        </div>
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <div class="form-group">
-                                    <label for="anterior" class="col-md-4 control-label">Factor Cambio Anterior:</label>
-                                    <div class="col-md-6">
-                                        <input type="text" class="form-control" name="anterior" onkeyup="agregarSeparadorDeMiles_tiemporeal_2(this);">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="form-group">
-                                    <label for="actual" class="col-md-4 control-label">Factor Cambio Actual:</label>
-                                    <div class="col-md-6">
-                                        <input type="text" class="form-control" name="actual" onkeyup="agregarSeparadorDeMiles_tiemporeal_2(this);">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>      
-            <!-- <center>
-              <table style="width: auto;" class="table table-striped table-hover table-bordered table-filter scroll">
-                <tr>
-                  <th style="text-align: right;"> Empresa:</th>
-                  <td><select name="empresa" data-placeholder="Empresa..." onchange="buscar_cuenta();"
-                              class="chosen-select" tabindex="2"></select></td>
-                  <th style="text-align: right;"> Per&#237;odo:</th>
-                  <td><input style="width:50px" type="text" name="periodo"></td>
-                </tr>
-                <tr>
-                  <th style="text-align: right;"> Mes:</th>
-                  <td><input type="text" onkeydown="return false" class="mes input-sm form-control" name="mes"/></td>
-                  <th></th>
-                  <td></td>
-                </tr>
-                <tr>
-                  <th style="text-align: right;"> Factor de Cambio Anterior:</th>
-                  <td><input type="text" class="input-sm form-control" name="anterior"
-                             onkeyup="agregarSeparadorDeMiles_tiemporeal_2(this);"/></td>
-                  <th style="text-align: right;"> Factor de Cambio Actual:</th>
-                  <td><input type="text" class="input-sm form-control" name="actual"
-                             onkeyup="agregarSeparadorDeMiles_tiemporeal_2(this);"/></td>
-                </tr>
-              </table>
-            </center> -->
-          </div>
-        </div>
-    </div>    
-    <div class="modal-footer">
-        <a type="button" class="btn btn-primary" onclick="buscar()">Filtrar <i class="fa fa-search"></i></a>
-    </div>
-    </div>
-    </div>
+{% block filters %}
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="select-empresa" class="col-md-4 control-label">Empresa:</label>
 
+        <div class="col-md-6">
+          <select id="select-empresa" name="empresa" placeholder="Empresa...">
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="periodo" class="col-md-4 control-label">Periodo:</label>
+
+        <div class="col-md-6">
+          <input type="text" onkeydown="return false" class="dateclass periodo form-control"
+                 name="periodo">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="mes" class="col-md-4 control-label">Mes:</label>
+
+        <div class="col-md-6">
+          <input type="text" onkeydown="return false" class="dateclass mes form-control" name="mes">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="anterior" class="col-md-4 control-label">Factor Cambio Anterior:</label>
+
+        <div class="col-md-6">
+          <input type="text" class="form-control" name="anterior"
+                 onkeyup="agregarSeparadorDeMiles_tiemporeal_2(this);">
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="actual" class="col-md-4 control-label">Factor Cambio Actual:</label>
+
+        <div class="col-md-6">
+          <input type="text" class="form-control" name="actual"
+                 onkeyup="agregarSeparadorDeMiles_tiemporeal_2(this);">
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block table %}
+  <div></div>
+{% endblock %}
+
+{% block inner_content %}
   <div id="mensaje"></div>
-    
-  <div id="resultado">
-    
-    <hr />
-    <h3 style="text-align: center;">Saldo anterior de Bancos en Moneda Local y Extranjera</h3>
-    <hr />
-      
-    <table id="saldos" class="display" cellspacing="0" width="100%">
-        <thead>
-        <tr>
-            <th style="width:75%;">Saldo</th>
-            <th style="width:25%;" class="price-label">Monto</th>
-        </tr>
-        <tfoot>
-        <tr>
-          <th colspan="1" style="text-align:right">Total:</th>
-          <th id="tsaldo"></th>
-        </tr>
-        </tfoot>
-    </table>
-    
-    <hr />
-    <h2 style="text-align: center;">Ingresos</h2>
-    <hr />
-        
-    <table id="ingresos" class="display" cellspacing="0" width="100%">
-        <thead>
-        <tr>
-          <th style="width:25%;">Cuenta</th>
-          <th style="width:50%;">Nombre</th>
-          <th style="width:25%;" class="price-label">Total</th>
-        </tr>
-        </thead>
-        <tfoot>
-        <tr>
-          <th colspan="2" style="text-align:right">Total:</th>
-          <th id="tingreso"></th>
-        </tr>
-        </tfoot>
-    </table>
-    
-    <hr />
-    <h2 style="text-align: center;">Egresos</h2>
-    <hr />
-    
-    <table id="egresos" class="display" cellspacing="0" width="100%">
+
+  <div id="resultado-table">
+    <hr/>
+    <h3 class="text-center">Saldo anterior de Bancos en Moneda Local y Extranjera</h3>
+    <hr/>
+    <table id="saldos" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
       <thead>
       <tr>
-        <th style="width:25%;">Cuenta</th>
-        <th style="width:50%;">Nombre</th>
-        <th style="width:25%;" class="price-label">Total</th>
+        <th>Saldo</th>
+        <th class="price-label">Monto</th>
+      </tr>
+      <tfoot>
+      <tr>
+        <th colspan="1" style="text-align:right">Total:</th>
+        <th id="tsaldo"></th>
+      </tr>
+      </tfoot>
+    </table>
+
+    <hr/>
+    <h2 style="text-align: center;">Ingresos</h2>
+    <hr/>
+
+    <table id="ingresos" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+      <thead>
+      <tr>
+        <th>Cuenta</th>
+        <th>Nombre</th>
+        <th class="price-label">Total</th>
+      </tr>
+      </thead>
+      <tfoot>
+      <tr>
+        <th colspan="2" style="text-align:right">Total:</th>
+        <th id="tingreso"></th>
+      </tr>
+      </tfoot>
+    </table>
+
+    <hr/>
+    <h2 style="text-align: center;">Egresos</h2>
+    <hr/>
+
+    <table id="egresos" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+      <thead>
+      <tr>
+        <th>Cuenta</th>
+        <th>Nombre</th>
+        <th class="price-label">Total</th>
       </tr>
       </thead>
       <tfoot>
@@ -192,23 +128,24 @@
       </tr>
       </tfoot>
     </table>
-    
+
     </br>
-    <table cellspacing="0" width="100%" class="table table-striped table-hover table-bordered table-filter scroll" id="parcial">
-        <tbody>
-        </tbody>
+    <table cellspacing="0" width="100%" class="table table-striped table-bordered nowrap"
+           id="parcial">
+      <tbody>
+      </tbody>
     </table>
-    
-    <hr />
+
+    <hr/>
     <h3>Obs.: Cuentas Contables cuyos saldos será descontado del Saldo Total de la Planilla</h3>
-    <hr />
-    
-    <table id="descuentos" class="display" cellspacing="0" width="100%">
+    <hr/>
+
+    <table id="descuentos" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
       <thead>
       <tr>
-        <th style="width:25%;">Cuenta</th>
-        <th style="width:50%;">Nombre</th>
-        <th style="width:25%;" class="price-label">Total</th>
+        <th>Cuenta</th>
+        <th>Nombre</th>
+        <th class="price-label">Total</th>
       </tr>
       </thead>
       <tfoot>
@@ -218,36 +155,38 @@
       </tr>
       </tfoot>
     </table>
-    
+
     </br>
-    <table cellspacing="0" width="100%" class="table table-striped table-hover table-bordered table-filter scroll" id="parcial_descuentos">
-        <tbody>
-        </tbody>
+    <table cellspacing="0" width="100%" class="table table-striped table-bordered nowrap"
+           id="parcial_descuentos">
+      <tbody>
+      </tbody>
     </table>
-    
-    <hr />
+
+    <hr/>
     <h3 style="text-align: center;">Cotejación de la Planilla de Ingresos y Egresos con el Saldo Bancario</h3>
-    <hr />
-    
-    <table id="bancos" class="display" cellspacing="0" width="100%">
-        <thead>
-        <tr>
-            <th style="width:75%;">Saldo</th>
-            <th style="width:25%;" class="price-label">Monto</th>
-        </tr>
-        <tfoot>
-        <tr>
-          <th colspan="1" style="text-align:right">Total:</th>
-          <th id="tbanco"></th>
-        </tr>
-        </tfoot>
+    <hr/>
+
+    <table id="bancos" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+      <thead>
+      <tr>
+        <th>Saldo</th>
+        <th class="price-label">Monto</th>
+      </tr>
+      <tfoot>
+      <tr>
+        <th colspan="1" style="text-align:right">Total:</th>
+        <th id="tbanco"></th>
+      </tr>
+      </tfoot>
     </table>
-    
+
     </br>
-    <table cellspacing="0" width="100%" class="table table-striped table-hover table-bordered table-filter scroll" id="resultados">
-        <tbody>
-        </tbody>
+    <table cellspacing="0" width="100%" class="table table-striped table-bordered nowrap"
+           id="resultados">
+      <tbody>
+      </tbody>
     </table>
   </div>
-
+  {% include 'finanzas/flujodefondo_metodos.html' %}
 {% endblock %}

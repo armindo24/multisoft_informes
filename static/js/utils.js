@@ -177,4 +177,14 @@ u.resetSelect = function ($select) {
     if (!$select) return;
     $select.disable();
     $select.clearOptions();
-}
+};
+
+u.hideTable = function ($table) {
+    if (!$table) return;
+    $table.css("position", "absolute").css("left", -9999);
+};
+
+u.showTable = function ($table) {
+    if (!$table) return;
+    $table.css("position", "relative").css("left", 0);
+};
