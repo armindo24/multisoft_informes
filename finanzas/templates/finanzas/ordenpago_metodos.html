@@ -50,9 +50,11 @@
     });
     
     $('#resultados').DataTable({
-        columns: [{data: 'RazonSocial'}, {data: 'Des_Sucursal'},
-                   {data: 'NroOP'}, {data: 'Fecha'}, {data: 'TotalImporte'}]
+        columns: [{data: 'Proveedor'}, {data: 'Sucursal'},
+                   {data: 'OP_Nro'}, {data: 'Fecha'}, {data: 'Total'}]
     });
+    
+    $('#table-div').hide();
   });
 
 
@@ -62,7 +64,8 @@
       todayBtn: "linked",
       language: "es",
       format: "yyyy-mm-dd",
-      orientation: "bottom auto"
+      orientation: "bottom auto",
+      autoclose: true
     });
 
     $('.input-date .form-control').datepicker().on('changeDate', function (e) {
@@ -202,22 +205,22 @@
       alert("No hay datos suficientes para generar el listado")
     } else {
       $('.collapse').collapse('hide')
-      $('#resultados').hide()
-      $('#table-div').empty()
-      $('#table-div').append("<b>Recuperando datos.</b>")
+      $('#table-div').hide()
+      $('#mensaje-div').empty()
+      $('#mensaje-div').append("<b>Recuperando datos.</b>")
 //       $.get(api + "ordenpago/list/" + empresa + "/" + sucursal + "/" + tipoop + "/" + comprobante + "/" + tipoproveedor + "/" + proveedor + "/" + desde + "/" + hasta,
       $.get(api + "ordenpago/list/" + empresa + "/" + sucursal + "/" + tipoop + "/" + tipoproveedor + "/" + proveedor + "/" + desde + "/" + hasta,
               function (data) {
                 if (data.data.length > 0) {
-                     $('#table-div').empty()
+                     $('#mensaje-div').empty()
                      var op = []
                      for (var i = 0; i < data.data.length; i++) {
                          var object_op = {}
-                         object_op.RazonSocial = data.data[i].RazonSocial
-                         object_op.Des_Sucursal = data.data[i].Des_Sucursal
-                         object_op.NroOP = data.data[i].des_tp_comp+"/"+data.data[i].NroOP
+                         object_op.Proveedor = data.data[i].RazonSocial
+                         object_op.Sucursal = data.data[i].Des_Sucursal
+                         object_op.OP_Nro = data.data[i].des_tp_comp+"/"+data.data[i].NroOP
                          object_op.Fecha = data.data[i].Fecha
-                         object_op.TotalImporte = data.data[i].TotalImporte
+                         object_op.Total = data.data[i].TotalImporte
                          op.push(object_op);
                      }
                      var tresultados = $('#resultados').DataTable();
@@ -249,11 +252,11 @@
 //                             '</tr>'
 //                   }
 //                   $('#resultados tbody').html(string)
-                  $('#resultados').show()
+                  $('#table-div').show()
                 } else {
-                  $('#resultados').hide()
-                  $('#table-div').empty()
-                  $('#table-div').append("<b>No se han encontrado datos.</b>")
+                  $('#table-div').hide()
+                  $('#mensaje-div').empty()
+                  $('#mensaje-div').append("<b>No se han encontrado datos.</b>")
                 }
               }
       );

@@ -1,7 +1,7 @@
 <script type="text/javascript">
+  
   var query = {};
   var api = u.getApiUrl();
-  var convertir_rever = u.numFormat;
 
   var today = new Date();
   var total_debito = 0;
@@ -26,6 +26,37 @@
 
     select_cuentah = $select_cuentah[0].selectize;
     select_cuentah.disable();
+    
+    $.extend(true, $.fn.dataTable.defaults, {
+        searching: false,
+        ordering: false,
+        language: u.spanish_dt,
+        deferRender: true,
+        scrollY: 200,
+        scrollCollapse: true,
+        scroller: {
+            displayBuffer: 30,
+            loadingIndicator: true
+        },
+//         columnDefs: [
+//             {className: "price-value", targets: "price-label"},
+//             {render: $.fn.dataTable.render.number('.', ',', 0), targets: "price-label"},
+//             {className: "text-center", targets: "text-center"},
+//             {visible: false, targets: "grouping-col"}
+//         ],
+//         footerCallback: function (row, data, start, end, display) {
+//             var api = this.api(), data;
+//             var total = api.column(-1).data().reduce(function (a, b) {
+//                 return u.parseVal(a) + u.parseVal(b);
+//             }, 0);
+//             $(api.column(-1).footer()).html(numFormat(total));
+//         }
+    });
+    
+    $('#resultados').DataTable({
+        columns: [{data: 'Cuenta'}, {data: 'Descripción'}, {data: 'Saldo'}]
+    });
+    
   });
 
   function initDate() {
@@ -44,7 +75,8 @@
       startView: 1,
       minViewMode: 1,
       maxViewMode: 1,
-      format: "MM"
+      format: "MM",
+      autoclose: true
     });
 
     $('.input-daterange .form-control').datepicker().on('changeDate', function (e) {
@@ -94,6 +126,19 @@
       searchField: 'Nombre'
     });
   }
+  
+  function addCommas(nStr)
+    {
+        nStr += '';
+        x = nStr.split('.');
+        x1 = x[0];
+        x2 = x.length > 1 ? ',' + x[1] : '';
+        var rgx = /(\d+)(\d{3})/;
+        while (rgx.test(x1)) {
+            x1 = x1.replace(rgx, '$1' + '.' + '$2');
+        }
+        return x1 + x2;
+    }
 
   function getInforme() {
     var empresa = query.empresa;
@@ -103,21 +148,22 @@
     var mesd = query.mesd;
     var mesh = query.mesh;
     var nivel = $("#nivel").val();
-    var moneda = $("#moneda");
-    var incluir = $("#incluir");
-    var aux = $("#auxiliar");
+    var moneda = $("[name=moneda]")[0];
+    var incluir = $("[name=incluir]")[0];
+    var aux = $("[name=auxiliar]")[0];
 
-    if (moneda.checked === true) {
+    if (moneda.checked == true) {
       moneda = "extranjera";
     } else {
       moneda = "local";
     }
-    if (incluir.checked === true) {
+    
+    if (incluir.checked == true) {
       incluir = "SI";
     } else {
       incluir = "NO";
     }
-    if (aux.checked === true) {
+    if (aux.checked == true) {
       aux = "SI";
     } else {
       aux = "NO";
@@ -132,15 +178,39 @@
       total_credito = 0;
       total_saldo = 0;
       $('.collapse').collapse('hide');
-      $('#table-div').empty();
-      $('#table-div').append("<b>Recuperando datos.</b>");
+      $('#mensaje-div').empty();
+      $('#mensaje-div').append("<b>Recuperando datos.</b>");
       var pathParams = [empresa, periodo, cuentad, cuentah, mesd, mesh, nivel, incluir, moneda, aux];
       $.get(api + "balancegeneral/list/" + pathParams.join('/'),
               function (data) {
-                console.log(data.data.length);
+                console.log(data.data);
                 if (data.data.length > 0) {
-                  $('#table-div').empty();
-                  var tableta = '<table id="resultados" class="table table-striped table-hover table-bordered table-filter scroll" tyle="width:90%">' +
+                    var registros = []
+                    for (var a = 0; a < data.data.length; a++) {
+                        var object_ba = {}
+                            if (data.data[a].CodPlanCta.length == 1) {
+                                object_ba.Cuenta = data.data[a].CodPlanCta
+                                object_ba.Descripción = data.data[a].Nombre
+                                if (moneda == 'local') {
+                                    object_ba.Saldo = convertir_rever(data.data[a].SALDO)
+                                } else {
+                                    object_ba.Saldo = addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString())
+                                }
+                                registros.push(object_ba);
+                            }
+                        
+                    }
+                    
+                    alert(registros)
+                    
+                    var tresultados = $('#resultados').DataTable();
+                    tresultados.row(0).scrollTo();
+                    tresultados.clear();
+                    tresultados.rows.add(registros).draw();
+                    
+                    
+                  //$('#table-div').empty();
+                  var tableta = '<table id="resultadoss" class="table table-striped table-hover table-bordered table-filter scroll" tyle="width:90%">' +
                           '<thead>' +
                           '<tr>' +
                           '<th style="width:15%">CUENTA</th>' +
@@ -288,12 +358,12 @@
                     string += '<td style="text-align: center;" colspan="4"><b>Resultado del Ejercicio: ' + addCommas((Math.round((ingreso - egreso) * 100) / 100).toString()) + '</b></td>';
                   }
                   string += '</tr>';
-                  $('#resultados tbody').html(string);
+                  $('#resultadoss tbody').html(string);
                   ingreso = 0;
                   egreso = 0;
                 } else {
-                  $('#table-div').empty();
-                  $('#table-div').append("<b>No se han encontrado datos.</b>");
+                  $('#mensaje-div').empty();
+                  $('#mensaje-div').append("<b>No se han encontrado datos.</b>");
                 }
               }
       );

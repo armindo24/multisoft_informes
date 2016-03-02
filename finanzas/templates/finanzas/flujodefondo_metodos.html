@@ -6,7 +6,8 @@ var mes_corte = null;
 var periodo = null;
 var initialize = init;
 var select_empresa, $select_empresa;
- var api = u.getApiUrl();
+var api = u.getApiUrl();
+var today = new Date();
 
 function init() {
 
@@ -58,7 +59,10 @@ $(document).ready(function () {
     $('.periodo').datepicker().on('changeDate', function (c) {
         periodo = c.format('yyyy');
     });
-
+    
+    $('.dateclass').datepicker('setDate', today);
+    $('.dateclass').datepicker('update');
+    
     $.extend(true, $.fn.dataTable.defaults, {
         searching: false,
         ordering: false,

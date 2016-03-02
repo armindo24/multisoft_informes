@@ -59,7 +59,7 @@
         <label for="incluir" class="col-md-4 control-label">Cuentas con saldo cero:</label>
 
         <div class="col-md-6">
-          <input type="checkbox" name="incluir" id="incluir" checked/>
+          <input type="checkbox" name="incluir" id="incluir"/>
         </div>
       </div>
     </div>
@@ -68,7 +68,7 @@
         <label for="auxiliar" class="col-md-4 control-label">Incluir cuentas auxiliares:</label>
 
         <div class="col-md-6">
-          <input type="checkbox" name="auxiliar" id="auxiliar" checked/>
+          <input type="checkbox" name="auxiliar" id="auxiliar"/>
         </div>
       </div>
     </div>
@@ -90,8 +90,27 @@
 
 {% block inner_content %}
   <!-- TODO: poner dentro de bloque table -->
+  <div id="mensaje-div">
+  </div>
+  
   <div id="table-div">
-
+  
+    <table id ="resultados" class="display" cellspacing="0" width="100%">
+      <thead>
+      <tr>
+        <th style="width:25%;">Cuenta</th>
+        <th style="width:50%;">Descripción</th>
+        <th style="width:25%;">Saldo</th>
+      </tr>
+      </thead>
+      <!-- <tfoot>
+      <tr>
+        <th colspan="2" style="text-align:right">Total:</th>
+        <th></th>
+      </tr>
+      </tfoot> -->
+    </table>
+    
   </div>
   {% include 'finanzas/balancegeneral_metodos.html' %}
 {% endblock %}
