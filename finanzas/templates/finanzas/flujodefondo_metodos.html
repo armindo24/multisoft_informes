@@ -24,7 +24,6 @@
   }
 
   $(document).ready(function () {
-{#    $('#resultado-table').hide();#}
     initialize();
     u.hideNav();
 
@@ -89,25 +88,26 @@
     });
 
     $('#egresos').DataTable({
-      columns: [{data: 'CodPlanCta'}, {data: 'Nombre'}, {data: 'Total'}]
+      columns: [{data: 'CodPlanCta', width: '25%'}, {data: 'Nombre', width: '50%'}, {data: 'Total', width: '25%'}]
     });
 
     $('#ingresos').DataTable({
-      columns: [{data: 'CodPlanCta'}, {data: 'Nombre'}, {data: 'Total'}]
+      columns: [{data: 'CodPlanCta', width: '25%'}, {data: 'Nombre', width: '50%'}, {data: 'Total', width: '25%'}]
     });
 
     $('#descuentos').DataTable({
-      columns: [{data: 'CodPlanCta'}, {data: 'Nombre'}, {data: 'Saldo'}]
+      columns: [{data: 'CodPlanCta', width: '25%'}, {data: 'Nombre', width: '50%'}, {data: 'Saldo', width: '25%'}]
     });
 
     $('#saldos').DataTable({
-      columns: [{data: 'Saldo'}, {data: 'Monto'}]
+      columns: [{data: 'Saldo', width: '75%'}, {data: 'Monto', width: '25%'}]
     });
 
     $('#bancos').DataTable({
-      columns: [{data: 'Saldo'}, {data: 'Monto'}]
+      columns: [{data: 'Saldo', width: '75%'}, {data: 'Monto', width: '25%'}]
     });
 
+    $('#resultado-table').hide();
   });
 
   function getInforme() {
@@ -120,14 +120,14 @@
       alert("No hay datos suficientes para generar el listado")
     } else {
       $('.collapse').collapse('hide');
-{#      $('#resultado-table').hide();#}
+      $('#resultado-table').hide();
       $('#mensaje').empty();
       $('#mensaje').append("<b>Recuperando datos.</b>");
       $.get(api + "flowcash/" + periodo + "/" + empresa + "/" + mes_corte,
               function (data) {
                 console.log(data)
                 if (data.data[0].saldos.length > 0 || data.data[1].movimientos.length > 0 || data.data[2].descuentos.length > 0 || data.data[3].bancos.length > 0) {
-{#                  $('#resultado-table').show();#}
+                  $('#resultado-table').show();
                   $('#mensaje').empty();
                   if (data.data[0].saldos.length > 0) {
                     var saldos = []
@@ -233,7 +233,7 @@
                           '</tr>';
                   $('#resultado-tables tbody').html(string_resultados);
                 } else {
-{#                  $('#resultado-table').hide();#}
+                  $('#resultado-table').hide();
                   $('#mensaje').empty();
                   $('#mensaje').append("<b>No se han encontrado datos.</b>");
                 }
