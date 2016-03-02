@@ -24,65 +24,6 @@
       </div>
     </div>
   </div>
-
-
-  {#                  <select name="empresa" data-placeholder="Empresa..."#}
-  {#                          onchange="buscar_comprobante();buscar_sucursal();" class="chosen-select" tabindex="2">#}
-  {#                  </select>#}
-  {#                  <select name="sucursal" data-placeholder="Surcusal..." class="chosen-select" tabindex="2">#}
-  {#                  </select>#}
-  {#                <td>#}
-  {#                  <select name="tipoop" data-placeholder="Tipo..." class="chosen-select" tabindex="2">#}
-  {#                    <option value="">NINGUNO</option>#}
-  {#                    <option selected value="A">A</option>#}
-  {#                    <option value="B">B</option>#}
-  {#                    <option value="C">C</option>#}
-  {#                  </select>#}
-  {#                  <select name="comprobante" data-placeholder="Comprobante..." class="chosen-select" tabindex="2">#}
-  {#                  </select>#}
-  {#                  <select name="tipoproveedor" data-placeholder="Tipo..." onchange="buscar_proveedor()"#}
-  {#                          class="chosen-select" tabindex="2">#}
-  {#                    <option value="">NINGUNO</option>#}
-  {#                    <option selected value="PR">PROVEEDOR LOCAL</option>#}
-  {#                    <option value="PE">PROVEEDOR EXTERIOR</option>#}
-  {#                    <option value="PC">PROVEEDOR DE CAJA CHICA</option>#}
-  {#                    }#}
-  {#                    <option value="PS">PROVEEDOR DE SERVICIO</option>#}
-  {#                    <option value="OP">OTRO PROVEEDOR</option>#}
-  {#                    <option value="DE">DESPACHANTE</option>#}
-  {#                    <option value="EM">EMPLEADO</option>#}
-  {#                  </select>#}
-  {#                  <select name="proveedor" data-placeholder="Proveedor..." class="chosen-select" tabindex="2">#}
-  {#            <div class="row show-grid">#}
-  {#              <div style="text-align:center;" class="col-md-6 col-sm-6">#}
-  {#                <th style="vertical-align: middle;">#}
-  {#                  <b>#}
-  {#                    Desde:#}
-  {#                  </b>#}
-  {#                </th>#}
-  {#                <td>#}
-  {#                  <input type="text" class="datepicker" name="fechad">#}
-  {#                </td>#}
-  {#              </div>#}
-  {#              <div style="text-align:center;" class="col-md-6 col-sm-6">#}
-  {#                <th style="vertical-align: middle;">#}
-  {#                  <b>#}
-  {#                    Hasta:#}
-  {#                  </b>#}
-  {#                </th>#}
-  {#                <td>#}
-  {#                  <input type="text" class="datepicker" name="fechah">#}
-  {#                </td>#}
-  {#              </div>#}
-  {#            </div>#}
-  {#          </div>#}
-  {#        </div>#}
-  {#      </div>#}
-  {#      <div class="modal-footer">#}
-  {#        <a type="button" class="btn btn-primary" onclick="buscar()">Filtrar <i class="fa fa-search"></i></a>#}
-  {#      </div>#}
-  {#    </div>#}
-  {#  </div>#}
 {% endblock %}
 
 
@@ -90,7 +31,7 @@
   <div id="mensaje-div">
   </div>
   <div id="table-div">
-    <table id="resultados" class="display" cellspacing="0" width="100%">
+    <table id="resultados" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
       <thead>
       <tr>
         <th style="width:30%;">Proveedor</th>
@@ -100,12 +41,8 @@
         <th style="width:20%;" class="price-label">Total</th>
       </tr>
       </thead>
-      <tfoot>
-      <tr>
-        <th colspan="3" style="text-align:right">Total:</th>
-        <th></th>
-      </tr>
-      </tfoot>
+      <tbody>
+      </tbody>
     </table>
     </div>
 
