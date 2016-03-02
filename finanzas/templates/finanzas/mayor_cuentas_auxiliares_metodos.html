@@ -45,6 +45,10 @@
       maxViewMode: 1
     });
 
+    $('#fecha').datepicker({
+      inputs: [$desde, $hasta]
+    });
+
     $('.input-daterange .form-control').on('changeDate', function (e) {
       query[this.name] = this.value;
       console.log(query);
