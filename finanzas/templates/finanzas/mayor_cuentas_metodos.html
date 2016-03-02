@@ -8,6 +8,12 @@
 
   var api = u.getApiUrl();
   var query = {};
+  var today = new Date();
+
+  var $select_empresa, select_empresa;
+  var $select_cuentad, select_cuentad;
+  var $select_cuentah, select_cuentah;
+  var $select_tipo_asiento, select_tipo_asiento;
 
   $(document).ready(function () {
     u.hideNav();
@@ -34,17 +40,82 @@
       orientation: "bottom auto"
     });
 
-    $('.input-date .form-control').datepicker().on('changeDate', function (e) {
+    $(".input-daterange .form-control").datepicker().on('changeDate', function (e) {
       query[this.name] = this.value;
       console.log(query);
     });
 
-    $('.input-date .form-control').datepicker('setDate', new Date());
+    $("#periodo .form-control").datepicker().on('changeDate', function (e) {
+      query.periodo = this.value;
+      buscar_cuenta();
+    });
+
+    $('.input-date .form-control').datepicker('setDate', today);
     $('.input-date .form-control').datepicker('update');
   }
 
-  function initSelects(){
+  function initSelects() {
+    $.extend(true, $.fn.selectize.defaults, {
+      onChange: function (value) {
+        query[this.$input.attr('name')] = value;
+        console.log(query);
+      }
+    });
 
+    $select_empresa = $('#select-empresa').selectize({
+      valueField: 'Cod_Empresa',
+      labelField: 'Des_Empresa',
+      searchField: 'Des_Empresa',
+      onChange: function (value) {
+        query.empresa = value;
+        buscar_cuenta();
+      }
+    });
+    select_empresa = $select_empresa[0].selectize;
+    select_empresa.load(function (callback) {
+      u.get_empresas({{ user }}, function (d) {
+        callback(d.data);
+      });
+    });
+
+    $select_cuentad = $('#select-cuentad').selectize({
+      valueField: 'CodPlanCta',
+      labelField: 'Nombre',
+      searchField: 'Nombre'
+    });
+    select_cuentad = $select_cuentad[0].selectize;
+    select_cuentad.disable();
+
+    $select_cuentah = $('#select-cuentah').selectize({
+      valueField: 'CodPlanCta',
+      labelField: 'Nombre',
+      searchField: 'Nombre'
+    });
+    select_cuentah = $select_cuentah[0].selectize;
+    select_cuentah.disable();
+
+    $select_tipo_asiento = $('#select-tipoAsiento').selectize({
+      valueField: 'TipoAsiento',
+      labelField: 'Descrip',
+      searchField: 'Descrip'
+    });
+    select_tipo_asiento = $select_tipo_asiento[0].selectize;
+    select_tipo_asiento.load(function (cb) {
+      $.ajax({
+        url: api + 'tipoasiento/select',
+        method: 'GET'
+      }).done(function (res) {
+        cb(res.data);
+      });
+    });
+
+    $('#select-moneda').selectize({
+      options: [
+        {value: 'LO', text: 'Local'},
+        {value: 'EX', text: 'Extranjera'},
+        {value: 'AM', text: 'Ambas'}
+      ]
+    });
   }
 
   function checkTime(i) {
@@ -389,24 +460,23 @@
 
   }
 
-  function buscar() {
-    var empresa = $("[name=empresa]").val()
-    var periodo = $("[name=periodo]").val()
-    var cuentad = $("[name=cuentad]").val()
-    var cuentah = $("[name=cuentah]").val()
-    var fechad = $("[name=fechad]").val()
-    var fechah = $("[name=fechah]").val()
-    var moneda = $("[name=moneda]").val()
-    var incluir = document.getElementsByName("incluir")[0]
-    var tipoasiento = $("[name=tipoasiento]").val()
+  function getInforme() {
+    var empresa = query.empresa;
+    var periodo = query.periodo;
+    var cuentad = query.cuentad;
+    var cuentah = query.cuentah;
+    var fechad = query.desde;
+    var fechah = query.hasta;
+    var moneda = query.moneda;
+    var incluir = $("#incluir").prop('checked');
+    var tipoasiento = query.tipoAsiento;
 
-    if (incluir.checked == true) {
+    if (incluir) {
       incluir = "SI"
     } else {
       incluir = "NO"
     }
 
-    var today = new Date()
     h = checkTime(today.getHours())
     m = checkTime(today.getMinutes())
     s = checkTime(today.getSeconds())
@@ -479,30 +549,34 @@
   }
 
   function buscar_cuenta() {
-    $.get("http://" + aux1[0] + ":3000/api/v1/cuenta/select/" + document.getElementsByName('empresa')[0].value + "/" + document.getElementsByName('periodo')[0].value,
-            function (data) {
-              if (data != null) {
-                var select = document.getElementsByName("cuentad")[0]
-                var select1 = document.getElementsByName("cuentah")[0]
-                remover(select);
-                remover(select1);
-                for (var i = 0; i < data.data.length; i++) {
-                  var option = document.createElement("option");
-                  var option1 = document.createElement("option");
-                  option.value = data.data[i].CodPlanCta;
-                  option.text = data.data[i].Nombre;
-                  option1.value = data.data[i].CodPlanCta;
-                  option1.text = data.data[i].Nombre;
-                  select.add(option);
-                  select1.add(option1);
-                }
-                SelectElement(data.data[0].CodPlanCta, 'cuentad')
-                SelectElement(data.data[0].CodPlanCta, 'cuentah')
-              }
-            }
-    );
+    if (!query.empresa || !query.empresa.length) return;
+    if (!query.periodo || !query.periodo.length) return;
+    // resetear selects
+    u.resetSelect(select_cuentad);
+    u.resetSelect(select_cuentah);
 
-    $('.chosen-select').trigger('chosen:updated');
+    $.ajax({
+      url: api + 'cuenta/select/' + query.empresa + '/' + query.periodo,
+      method: 'GET'
+    }).done(function (d) {
+      //cargar resultados y habilitar options
+      select_cuentad.load(function (cb) {
+        cb(d.data);
+        select_cuentad.enable();
+      });
+
+      select_cuentah.load(function (cb) {
+        cb(d.data);
+        select_cuentah.enable();
+      });
+    }).fail(function () {
+      select_cuentad.load(function (cb) {
+        cb();
+      });
+      select_cuentah.load(function (cb) {
+        cb();
+      });
+    });
   }
 
   function cambiar_anho(a) {
@@ -513,101 +587,78 @@
     $('[name=fechah]').val(a + '-' + vector_hasta[1] + '-' + vector_hasta[2])
   }
 
-  window.onload = function () {
-    Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario': '{{user}}'});
 
-    var today = new Date();
-    var dd = today.getDate();
-    var mm = today.getMonth() + 1; //January is 0!
-    var yyyy = today.getFullYear();
-
-    if (dd < 10) {
-      dd = '0' + dd
-    }
-
-    if (mm < 10) {
-      mm = '0' + mm
-    }
-
-    $('[name=periodo]').val(yyyy)
-
-    today = yyyy + '-' + mm + '-' + dd;
-
-    $('[name=fechad]').val(today)
-    $('[name=fechah]').val(today)
-  };
-
-  function permisos_empresas(data) {
-    if (data.length > 0) {
-      console.log('Hay datos');
-      var vector = []
-      for (var a = 0; a < data.length; a++) {
-        vector.push("'" + data[a].empresa + "'")
-      }
-      var str = JSON.stringify({empresas: vector});
-      $.ajax("http://" + aux1[0] + ":3000/api/v1/empresa/inin/select", {
-        method: 'POST',
-        contentType: 'application/json',
-        data: str
-      }).done(
-              function (data) {
-                if (data != null) {
-                  var select = document.getElementsByName("empresa")[0]
-                  remover(select);
-                  for (var i = 0; i < data.data.length; i++) {
-                    var option = document.createElement("option");
-                    option.value = data.data[i].Cod_Empresa;
-                    option.text = data.data[i].Des_Empresa;
-                    select.add(option);
-                  }
-                  SelectElement(data.data[0].Cod_Empresa, 'empresa')
-
-                  $.get("http://" + aux1[0] + ":3000/api/v1/cuenta/select/" + document.getElementsByName('empresa')[0].value + "/" + document.getElementsByName('periodo')[0].value,
-                          function (data) {
-                            if (data != null) {
-                              var select = document.getElementsByName("cuentad")[0]
-                              var select1 = document.getElementsByName("cuentah")[0]
-                              remover(select);
-                              remover(select1);
-                              for (var i = 0; i < data.data.length; i++) {
-                                var option = document.createElement("option");
-                                var option1 = document.createElement("option");
-                                option.value = data.data[i].CodPlanCta;
-                                option.text = data.data[i].Nombre;
-                                option1.value = data.data[i].CodPlanCta;
-                                option1.text = data.data[i].Nombre;
-                                select.add(option);
-                                select1.add(option1);
-                              }
-                              SelectElement(data.data[0].CodPlanCta, 'cuentad')
-                              SelectElement(data.data[0].CodPlanCta, 'cuentah')
-                            }
-                          }
-                  );
-
-                  $.get("http://" + aux1[0] + ":3000/api/v1/tipoasiento/select/",
-                          function (data) {
-                            if (data != null) {
-                              var select = document.getElementsByName("tipoasiento")[0]
-                              remover(select);
-                              var option = document.createElement("option");
-                              option.text = "NINGUNO";
-                              select.add(option);
-                              for (var i = 0; i < data.data.length; i++) {
-                                var option = document.createElement("option");
-                                option.value = data.data[i].TipoAsiento;
-                                option.text = data.data[i].Descrip;
-                                select.add(option);
-                              }
-                              SelectElement(data.data[0].TipoAsiento, 'tipoasiento')
-                              $('.chosen-select').trigger('chosen:updated');
-                            }
-                          }
-                  );
-                }
-              }
-      );
-    }
-  }
+  {#  function permisos_empresas(data) {#}
+  {#    if (data.length > 0) {#}
+  {#      console.log('Hay datos');#}
+  {#      var vector = []#}
+  {#      for (var a = 0; a < data.length; a++) {#}
+  {#        vector.push("'" + data[a].empresa + "'")#}
+  {#      }#}
+  {#      var str = JSON.stringify({empresas: vector});#}
+  {#      $.ajax("http://" + aux1[0] + ":3000/api/v1/empresa/inin/select", {#}
+  {#        method: 'POST',#}
+  {#        contentType: 'application/json',#}
+  {#        data: str#}
+  {#      }).done(#}
+  {#              function (data) {#}
+  {#                if (data != null) {#}
+  {#                  var select = document.getElementsByName("empresa")[0]#}
+  {#                  remover(select);#}
+  {#                  for (var i = 0; i < data.data.length; i++) {#}
+  {#                    var option = document.createElement("option");#}
+  {#                    option.value = data.data[i].Cod_Empresa;#}
+  {#                    option.text = data.data[i].Des_Empresa;#}
+  {#                    select.add(option);#}
+  {#                  }#}
+  {#                  SelectElement(data.data[0].Cod_Empresa, 'empresa')#}
+  {##}
+  {#                  $.get("http://" + aux1[0] + ":3000/api/v1/cuenta/select/" + document.getElementsByName('empresa')[0].value + "/" + document.getElementsByName('periodo')[0].value,#}
+  {#                          function (data) {#}
+  {#                            if (data != null) {#}
+  {#                              var select = document.getElementsByName("cuentad")[0]#}
+  {#                              var select1 = document.getElementsByName("cuentah")[0]#}
+  {#                              remover(select);#}
+  {#                              remover(select1);#}
+  {#                              for (var i = 0; i < data.data.length; i++) {#}
+  {#                                var option = document.createElement("option");#}
+  {#                                var option1 = document.createElement("option");#}
+  {#                                option.value = data.data[i].CodPlanCta;#}
+  {#                                option.text = data.data[i].Nombre;#}
+  {#                                option1.value = data.data[i].CodPlanCta;#}
+  {#                                option1.text = data.data[i].Nombre;#}
+  {#                                select.add(option);#}
+  {#                                select1.add(option1);#}
+  {#                              }#}
+  {#                              SelectElement(data.data[0].CodPlanCta, 'cuentad')#}
+  {#                              SelectElement(data.data[0].CodPlanCta, 'cuentah')#}
+  {#                            }#}
+  {#                          }#}
+  {#                  );#}
+  {##}
+  {#                  $.get("http://" + aux1[0] + ":3000/api/v1/tipoasiento/select/",#}
+  {#                          function (data) {#}
+  {#                            if (data != null) {#}
+  {#                              var select = document.getElementsByName("tipoasiento")[0]#}
+  {#                              remover(select);#}
+  {#                              var option = document.createElement("option");#}
+  {#                              option.text = "NINGUNO";#}
+  {#                              select.add(option);#}
+  {#                              for (var i = 0; i < data.data.length; i++) {#}
+  {#                                var option = document.createElement("option");#}
+  {#                                option.value = data.data[i].TipoAsiento;#}
+  {#                                option.text = data.data[i].Descrip;#}
+  {#                                select.add(option);#}
+  {#                              }#}
+  {#                              SelectElement(data.data[0].TipoAsiento, 'tipoasiento')#}
+  {#                              $('.chosen-select').trigger('chosen:updated');#}
+  {#                            }#}
+  {#                          }#}
+  {#                  );#}
+  {#                }#}
+  {#              }#}
+  {#      );#}
+  {#    }#}
+  {#  }#}
 </script>
 
