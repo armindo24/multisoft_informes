@@ -1,90 +1,105 @@
-<style>
-
-</style>
-
 <script type="text/javascript">
+  var current_asiento = 0;
+  var total_debito = 0;
+  var total_credito = 0;
+  var total_debito_me = 0;
+  var total_credito_me = 0;
 
-  var aux1 = null
-  var current_asiento = 0
-  var total_debito = 0
-  var total_credito = 0
-  var total_debito_me = 0
-  var total_credito_me = 0
+  var addCommas = u.addCommas;
+  var convertir_rever = u.convertir_rever;
+
+  var $select_empresa, select_empresa;
+  var $select_tipo_asiento, select_tipo_asiento;
+
+  var api = u.getApiUrl();
+  var query = {};
 
   $(document).ready(function () {
-    $('#page-wrapper').css('margin-left', '0px');
-    $('#my-left-menu').toggle(0);
-    var url = window.location.href
-
-    aux = url.toString().split("http://")
-    aux1 = aux[1].toString().split(":8000")
-
-    $(".chosen-select").chosen({
-      disable_search_threshold: 0,
-      no_results_text: "Oops, nothing found!",
-      width: "200px",
-      allow_single_deselect: true
-    });
+    u.hideNav();
+    initDates();
+    initSelects();
   });
 
-  function renewDatePickers() {
-    $('.datepicker').datepicker('destroy');
-    $(".datepicker").datepicker({dateFormat: 'yy-mm-dd'});
+  function initDates() {
+    var $inputDate = $(".input-date .form-control");
+    u.defaultDatepicker();
+    $(".input-daterange").datepicker({
+      todayBtn: "linked",
+      format: "yyyy-mm-dd"
+    });
+
+    $inputDate.datepicker().on('changeDate', function (e) {
+      query[this.name] = this.value;
+      console.log(query);
+    });
+
+    $inputDate.datepicker('setDate', new Date());
+    $inputDate.datepicker('update');
   }
 
-  $(renewDatePickers);
-  $.datepicker.regional['es'] = {
-    closeText: 'Cerrar',
-    prevText: '<Ant',
-    nextText: 'Sig>',
-    currentText: 'Hoy',
-    monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
-    monthNamesShort: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-    dateFormat: 'yy/mm/dd',
-    firstDay: 1,
-    isRTL: false,
-    showMonthAfterYear: false,
-    yearSuffix: ''
-  };
-  $.datepicker.setDefaults($.datepicker.regional["es"]);
+  function initSelects() {
+    $.extend(true, $.fn.selectize.defaults, {
+      onChange: function (value) {
+        query[this.$input.attr('name')] = value;
+      }
+    });
 
-  function remover(selectbox) {
-    var i;
-    for (i = selectbox.options.length - 1; i >= 0; i--) {
-      selectbox.remove(i);
-    }
+    $select_empresa = $('#select-empresa').selectize({
+      valueField: 'Cod_Empresa',
+      labelField: 'Des_Empresa',
+      searchField: 'Des_Empresa'
+    });
+    select_empresa = $select_empresa[0].selectize;
+    select_empresa.load(function (cb) {
+      u.get_empresas({{ user }}, function (res) {
+        cb(res.data);
+      });
+    });
+
+    $select_tipo_asiento = $('#select-tipoAsiento').selectize({
+      valueField: 'TipoAsiento',
+      labelField: 'Descrip',
+      searchField: 'Descrip'
+    });
+    select_tipo_asiento = $select_tipo_asiento[0].selectize;
+    select_tipo_asiento.load(function (cb) {
+      $.ajax({
+        url: api + 'tipoasiento/select',
+        method: 'GET'
+      }).done(function (res) {
+        cb(res.data);
+      });
+    });
+
+    $('#select-autorizado').selectize({
+      options: [
+        {value: 'TO', text: 'Todos'},
+        {value: 'SI', text: 'No'},
+        {value: 'NO', text: 'Si'}
+      ]
+    });
+
+    $('#select-moneda').selectize({
+      options: [
+        {value: 'LO', text: 'Local'},
+        {value: 'EX', text: 'Extranjera'},
+        {value: 'AM', text: 'Ambas'}
+      ]
+    });
   }
 
-  function SelectElement(value, name) {
-    var element = document.getElementsByName(name)[0];
-    element.value = value;
-  }
-
-  function addCommas(nStr) {
-    nStr += '';
-    x = nStr.split('.');
-    x1 = x[0];
-    x2 = x.length > 1 ? ',' + x[1] : '';
-    var rgx = /(\d+)(\d{3})/;
-    while (rgx.test(x1)) {
-      x1 = x1.replace(rgx, '$1' + '.' + '$2');
-    }
-    return x1 + x2;
-  }
-
-
-  function buscar() {
-    var empresa = $("[name=empresa]").val()
-    //var periodo = $("[name=periodo]").val()
-    var desde = $("[name=fechad]").val()
-    var hasta = $("[name=fechah]").val()
-    var tipoasiento = $("[name=tipoasiento]").val()
-    var autorizado = $("[name=autorizado]").val()
-    var moneda = $("[name=moneda]").val()
+  function getInforme() {
+    var empresa = query.empresa;
+    var desde = query.fechad;
+    var hasta = query.fechah;
+    var tipoasiento = query.tipoAsiento
+    var autorizado = query.autorizado;
+    var moneda = query.moneda;
     $('.collapse').collapse('hide')
     $('#table-div').empty()
     $('#table-div').append("<b>Recuperando datos.</b>")
-    $.get("http://" + aux1[0] + ":3000/api/v1/diariocomprobado/list/" + empresa + "/" + tipoasiento + "/" + desde + "/" + hasta + "/" + autorizado,
+    var pathParams = [empresa, tipoasiento, desde, hasta, autorizado];
+    $.get(api + 'diariocomprobado/list/' + pathParams.join('/'),
             function (data) {
               if (data.data.length > 0) {
                 $('#table-div').empty()
@@ -176,85 +191,10 @@
                 total_debito_me = 0
                 total_credito_me = 0
               } else {
-                    $('#table-div').empty()
-                    $('#table-div').append("<b>No se han encontrado datos.</b>")
-                }
+                $('#table-div').empty()
+                $('#table-div').append("<b>No se han encontrado datos.</b>")
+              }
             }
     );
-    //}
-  }
-
-  window.onload = function () {
-    Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario': '{{user}}'});
-
-    var today = new Date();
-    var dd = today.getDate();
-    var mm = today.getMonth() + 1; //January is 0!
-    var yyyy = today.getFullYear();
-
-    if (dd < 10) {
-      dd = '0' + dd
-    }
-
-    if (mm < 10) {
-      mm = '0' + mm
-    }
-
-    today = yyyy + '-' + mm + '-' + dd;
-
-    $('[name=fechad]').val(today)
-    $('[name=fechah]').val(today)
-
-  };
-
-  function permisos_empresas(data) {
-    if (data.length > 0) {
-      console.log('Hay datos');
-      var vector = []
-      for (var a = 0; a < data.length; a++) {
-        vector.push("'" + data[a].empresa + "'")
-      }
-      var str = JSON.stringify({empresas: vector});
-      $.ajax("http://" + aux1[0] + ":3000/api/v1/empresa/inin/select", {
-        method: 'POST',
-        contentType: 'application/json',
-        data: str
-      }).done(
-              function (data) {
-                if (data != null) {
-                  var select = document.getElementsByName("empresa")[0]
-                  remover(select);
-                  for (var i = 0; i < data.data.length; i++) {
-                    var option = document.createElement("option");
-                    option.value = data.data[i].Cod_Empresa;
-                    option.text = data.data[i].Des_Empresa;
-                    select.add(option);
-                  }
-                  SelectElement(data.data[0].Cod_Empresa, 'empresa')
-
-                  $.get("http://" + aux1[0] + ":3000/api/v1/tipoasiento/select/",
-                          function (data) {
-                            if (data != null) {
-                              var select = document.getElementsByName("tipoasiento")[0]
-                              remover(select);
-                              var option = document.createElement("option");
-                              option.text = "NINGUNO";
-                              select.add(option);
-                              for (var i = 0; i < data.data.length; i++) {
-                                var option = document.createElement("option");
-                                option.value = data.data[i].TipoAsiento;
-                                option.text = data.data[i].Descrip;
-                                select.add(option);
-                              }
-                              SelectElement(data.data[0].TipoAsiento, 'tipoasiento')
-                              $('.chosen-select').trigger('chosen:updated');
-                            }
-                          }
-                  );
-
-                }
-              }
-      );
-    }
   }
 </script>
