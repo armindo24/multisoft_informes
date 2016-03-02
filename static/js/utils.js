@@ -214,7 +214,6 @@ u.convertir_rever = function (str) {
         return (nuevo);
     }
 };
-};
 
 u.hideTable = function ($table) {
     if (!$table) return;
