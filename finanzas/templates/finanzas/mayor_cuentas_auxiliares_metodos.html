@@ -23,7 +23,8 @@
   function initDates() {
     u.defaultDatepicker();
     var $year = $('#periodo').find('.form-control');
-    var $desde = $("#fechad").find(".form-control");
+    var $desde = $("#fecha").find(".desde.form-control");
+    var $hasta = $("#fecha").find(".hasta.form-control");
     var $allDates = $(".input-date .form-control");
     $year.datepicker({
       format: "yyyy",
@@ -39,22 +40,34 @@
       maxViewMode: 1
     });
 
-    $desde.datepicker().on('changeDate', function (e) {
+    $hasta.datepicker({
+      format: "yyyy-mm-dd",
+      maxViewMode: 1
+    });
+
+    $('.input-daterange .form-control').on('changeDate', function (e) {
       query[this.name] = this.value;
       console.log(query);
     });
 
     $year.datepicker().on('changeDate', function (e) {
       query.periodo = this.value;
-      var newDate = $desde.datepicker('getDate');
-      var startDate = new Date(this.value, 0, 1);
-      var endDate = new Date(this.value, 11, 31);
-      if (newDate) {
-        newDate.setFullYear(this.value);
+      var desdeNewDate = $desde.datepicker('getDate');
+      var hastaNewDate = $hasta.datepicker('getDate');
+      if (desdeNewDate && hastaNewDate) {
+        var startDate = new Date(this.value, 0, 1);
+        var endDate = new Date(this.value, 11, 31);
+        desdeNewDate.setFullYear(this.value);
         $desde.datepicker('setStartDate', startDate);
         $desde.datepicker('setEndDate', endDate);
-        $desde.datepicker('setDate', newDate);
+        $desde.datepicker('setDate', desdeNewDate);
         $desde.datepicker('update');
+
+        hastaNewDate.setFullYear(this.value);
+        $hasta.datepicker('setStartDate', startDate);
+        $hasta.datepicker('setEndDate', endDate);
+        $hasta.datepicker('setDate', hastaNewDate);
+        $hasta.datepicker('update');
       }
     });
 
