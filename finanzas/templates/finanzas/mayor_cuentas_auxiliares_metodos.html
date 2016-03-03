@@ -1,11 +1,3 @@
-<style>
-  .span3 {
-    height: 500px !important;
-    overflow: scroll;
-  }
-</style>
-
-
 <script type="text/javascript">
   var pad = 0;
   var cuenta = 0;
@@ -33,9 +25,10 @@
 
   function initDates() {
     u.defaultDatepicker();
+    var $range = $("#fecha");
     var $year = $('#periodo').find('.form-control');
-    var $desde = $("#fecha").find(".desde.form-control");
-    var $hasta = $("#fecha").find(".hasta.form-control");
+    var $desde = $range.find(".desde.form-control");
+    var $hasta = $range.find(".hasta.form-control");
     var $allDates = $(".input-date .form-control");
     $year.datepicker({
       format: "yyyy",
@@ -56,13 +49,12 @@
       maxViewMode: 1
     });
 
-    $('#fecha').datepicker({
+    $range.datepicker({
       inputs: [$desde, $hasta]
     });
 
     $('.input-daterange .form-control').on('changeDate', function (e) {
       query[this.name] = this.value;
-      console.log(query);
     });
 
     $year.datepicker().on('changeDate', function (e) {
@@ -667,15 +659,6 @@
     if (!query.cuentad || !query.cuentad.length || !query.cuentah || !query.cuentah.length) return;
     select_cuenta_auxd.enable();
     select_cuenta_auxh.enable();
-  }
-
-
-  function cambiar_anho(a) {
-    var vector_desde = $('[name=fechad]').val().split('-')
-    var vector_hasta = $('[name=fechah]').val().split('-')
-
-    $('[name=fechad]').val(a + '-' + vector_desde[1] + '-' + vector_desde[2])
-    $('[name=fechah]').val(a + '-' + vector_hasta[1] + '-' + vector_hasta[2])
   }
 </script>
 
