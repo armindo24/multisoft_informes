@@ -549,11 +549,10 @@
   }
 
   function buscar_cuenta() {
-    if (!query.empresa || !query.empresa.length) return;
-    if (!query.periodo || !query.periodo.length) return;
     // resetear selects
     u.resetSelect(select_cuentad);
     u.resetSelect(select_cuentah);
+    if (!query.empresa || !query.empresa.length || !query.periodo || !query.periodo.length) return;
 
     $.ajax({
       url: api + 'cuenta/select/' + query.empresa + '/' + query.periodo,
