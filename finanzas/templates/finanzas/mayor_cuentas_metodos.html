@@ -313,7 +313,6 @@
                     }
                   }
                   string4 += '</tr>'
-                  //alert(datos[0].dato1[0].NOMBREPLANCTA)
                   string4 += '<tr>'
                   if (moneda == 'AM') {
                     string4 += '<th colspan="8" style="text-align: right;">Total de la Cuenta ' + datos[0].dato1[0].NOMBREPLANCTA + '</th>' +
@@ -543,12 +542,12 @@
                                 '<th>C&#243;d. Auxiliar</th>' +
                                 '<th>Concepto</th>'
                         if (moneda == 'AM') {
-                          string += '<th style="width:8%">Debe M.L.</th>' +
-                                  '<th style="width:8%">Haber M.L.</th>' +
-                                  '<th style="width:8%">Saldo M.L.</th>' +
-                                  '<th style="width:8%">Debe M.E.</th>' +
-                                  '<th style="width:8%">Haber M.E.</th>' +
-                                  '<th style="width:8%">Saldo M.E.</th>'
+                          string += '<th>Debe M.L.</th>' +
+                                  '<th>Haber M.L.</th>' +
+                                  '<th>Saldo M.L.</th>' +
+                                  '<th>Debe M.E.</th>' +
+                                  '<th>Haber M.E.</th>' +
+                                  '<th>Saldo M.E.</th>'
                         } else {
                           string += '<th>Debe</th>' +
                                   '<th>Haber</th>' +
