@@ -16,7 +16,6 @@
 
   $(document).ready(function () {
     u.hideNav();
-    initDate();
     initSelect();
 
     select_empresa = $select_empresa[0].selectize;
@@ -27,6 +26,7 @@
     select_cuentah = $select_cuentah[0].selectize;
     select_cuentah.disable();
 
+    initDate();
     $('#resultados').DataTable({
       searching: false,
       language: u.spanish_dt,
@@ -92,6 +92,9 @@
         u.get_empresas({{ user }}, function (d) {
           callback(d.data);
         });
+      }, onChange: function (value) {
+        query.empresa = value;
+        buscarCuenta();
       }
     });
 
@@ -316,14 +319,11 @@
   }
 
   function buscarCuenta() {
-    if (!query.empresa || !query.empresa.length) return;
-    if (!query.periodo || !query.periodo.length) return;
-
-    // resetear selects
-    select_cuentad.disable();
-    select_cuentad.clearOptions();
-    select_cuentah.disable();
-    select_cuentah.clearOptions();
+    u.resetSelect(select_cuentad);
+    u.resetSelect(select_cuentah);
+    if (!query.empresa || !query.empresa.length || !query.periodo || !query.periodo.length) {
+      return;
+    }
 
     //consultar api
     $.get(api + 'cuenta/select/' + query.empresa + '/' + query.periodo).done(function (d) {
