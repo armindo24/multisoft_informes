@@ -25,8 +25,8 @@
 
   $(document).ready(function () {
     u.hideNav();
-    initDates();
     initSelects();
+    initDates();
   });
 
   function initDates() {
@@ -116,7 +116,11 @@
     $select_cuentad = $('#select-cuentad').selectize({
       valueField: 'CodPlanCta',
       labelField: 'Nombre',
-      searchField: 'Nombre'
+      searchField: 'Nombre',
+      onChange: function (value) {
+        query.cuentad = value;
+        buscarCuentaAuxiliar();
+      }
     });
     select_cuentad = $select_cuentad[0].selectize;
     select_cuentad.disable();
@@ -124,7 +128,11 @@
     $select_cuentah = $('#select-cuentah').selectize({
       valueField: 'CodPlanCta',
       labelField: 'Nombre',
-      searchField: 'Nombre'
+      searchField: 'Nombre',
+      onChange: function (value) {
+        query.cuentah = value;
+        buscarCuentaAuxiliar();
+      }
     });
     select_cuentah = $select_cuentah[0].selectize;
     select_cuentah.disable();
@@ -137,7 +145,7 @@
           return '<div>' + escape(item.CodPlanAux) + ' - ' + escape(item.Nombre) + '</div>';
         },
         item: function (item, escape) {
-          return '<div>' + escape(item.Nombre) + '</div>';
+          return '<div>' + escape(item.CodPlanAux) + ' - ' + escape(item.Nombre) + '</div>';
         }
       },
       load: function (q, cb) {
@@ -158,9 +166,10 @@
     $select_cuenta_auxh = $('#select-cuenta-aux-h').selectize(selectAux);
 
     select_cuenta_auxd = $select_cuenta_auxd[0].selectize;
-    //select_cuenta_auxd.disable();
+    select_cuenta_auxd.disable();
 
-    select_cuenta_auxh = $select_cuenta_auxd[0].selectize;
+    select_cuenta_auxh = $select_cuenta_auxh[0].selectize;
+    select_cuenta_auxh.disable();
 
     $select_tipo_asiento = $('#select-tipoAsiento').selectize({
       valueField: 'TipoAsiento',
@@ -621,11 +630,10 @@
   }
 
   function buscar_cuenta() {
-    if (!query.empresa || !query.empresa.length) return;
-    if (!query.periodo || !query.periodo.length) return;
     // resetear selects
     u.resetSelect(select_cuentad);
     u.resetSelect(select_cuentah);
+    if (!query.empresa || !query.empresa.length || !query.periodo || !query.periodo.length) return;
 
     $.ajax({
       url: api + 'cuenta/select/' + query.empresa + '/' + query.periodo,
@@ -650,22 +658,12 @@
       });
     });
   }
-
-  function disableCuentaAuxiliar() {
-
-  }
-
-  function buscarCuentaAuxiliar(q, cb) {
-    console.log(q);
-    $.ajax({
-      url: api + 'empresas/' + query.empresa + '/auxiliares',
-      data: {periodo: query.periodo, cuentad: query.cuentad, cuentah: query.cuentah, filter: q},
-      method: 'GET"'
-    }).done(function (res) {
-      cb(res.data);
-    }).fail(function () {
-      cb();
-    });
+  function buscarCuentaAuxiliar() {
+    u.resetSelect(select_cuenta_auxd);
+    u.resetSelect(select_cuenta_auxh);
+    if (!query.cuentad || !query.cuentad.length || !query.cuentah || !query.cuentah.length) return;
+    select_cuenta_auxd.enable();
+    select_cuenta_auxh.enable();
   }
 
 
