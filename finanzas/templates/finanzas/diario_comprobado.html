@@ -4,12 +4,18 @@
 	<link rel="stylesheet" href={% static 'css/jquery-ui.css' %}> 
     <link rel="stylesheet" href={% static 'chosen_v1.4.2/chosen.css' %}>
     <link rel="stylesheet" href={% static 'chosen_v1.4.2/docsupport/prism.css' %}>
+    <link rel="stylesheet" href="{% static 'datatables.net-bs/css/dataTables.bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'datatables.net-scroller-bs/css/scroller.bootstrap.css' %}">
     <script src={% static 'js/jquery-ui.js' %}></script>
     <script src={% static 'js/puntos-decimales.js' %}></script>
     <script src={% static 'js/jquery.maskedinput.min.js' %}></script>
     <script src={% static 'chosen_v1.4.2/chosen.jquery.js' %}></script>
 	<script src={% static 'chosen_v1.4.2/docsupport/prism.js' %}></script>
 	<script src={% static 'dajaxice/dajaxice.core.js' %}></script>
+	<script src="{% static 'datatables.net/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'datatables.net-bs/js/dataTables.bootstrap.js' %}"></script>
+    <script src="{% static 'datatables.net-scroller/js/dataTables.scroller.js' %}"></script>
+    <script src="{% static 'js/utils.js' %}"></script>
 	{% include 'finanzas/diario_comprobado_metodos.html' %}
 {% endblock %}
 
@@ -68,6 +74,10 @@
 	        </div>
 	    </div>
 	</div> 
+	
+	<div id="mensaje-div">
+        
+    </div>
 	
 	<div id="table-div">
     	
