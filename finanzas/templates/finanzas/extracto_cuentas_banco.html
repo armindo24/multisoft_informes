@@ -122,10 +122,9 @@
           });
         }, onChange: function (value) {
           query.empresa = value;
+          u.resetSelect(select_sucursal);
+          u.resetSelect(select_banco);
           if (!value.length) return;
-
-          select_sucursal.disable();
-          select_sucursal.clearOptions();
           select_sucursal.load(function (callback) {
             $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
               select_sucursal.enable();
@@ -134,9 +133,6 @@
               callback();
             });
           });
-
-          select_banco.disable();
-          select_banco.clearOptions();
           select_banco.load(function (callback) {
             $.get(api + 'empresas/' + query.empresa + '/bancos').done(function (res) {
               select_banco.enable();
@@ -160,10 +156,8 @@
         searchField: 'descrip',
         onChange: function (value) {
           query.banco = value;
+          u.resetSelect(select_cuenta);
           if (!value.length) return;
-
-          select_cuenta.disable();
-          select_cuenta.clearOptions();
           select_cuenta.load(function (callback) {
             $.get(api + 'empresas/' + query.empresa + '/cuentas/' + query.banco).done(function (res) {
               select_cuenta.enable();
