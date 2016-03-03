@@ -16,6 +16,7 @@
   var select_cuenta_auxd, $select_cuenta_auxd;
   var select_cuenta_auxh, $select_cuenta_auxh;
   var select_tipo_asiento, $select_tipo_asiento;
+  var $incluir;
 
   var addCommas = u.addCommas;
   var today = new Date();
@@ -27,6 +28,7 @@
     u.hideNav();
     initSelects();
     initDates();
+    $incluir = $('#incluir');
   });
 
   function initDates() {
@@ -536,19 +538,19 @@
   }
 
   function getInforme() {
-    var empresa = $("[name=empresa]").val()
-    var periodo = $("[name=periodo]").val()
-    var cuentad = $("[name=cuentad]").val()
-    var cuentah = $("[name=cuentah]").val()
-    var cuentaad = $("[name=cuentaad]").val()
-    var cuentaah = $("[name=cuentaah]").val()
-    var fechad = $("[name=fechad]").val()
-    var fechah = $("[name=fechah]").val()
-    var moneda = $("[name=moneda]").val()
-    var incluir = document.getElementsByName("incluir")[0]
-    var tipoasiento = $("[name=tipoasiento]").val()
+    var empresa = query.empresa;
+    var periodo = query.periodo;
+    var cuentad = query.cuentad;
+    var cuentah = query.cuentah;
+    var cuentaad = query['cuenta-aux-d'];
+    var cuentaah = query['cuenta-aux-h'];
+    var fechad = query.desde;
+    var fechah = query.hasta;
+    var moneda = query.moneda;
+    var incluir = $incluir.prop('checked');
+    var tipoasiento = query.tipoAsiento;
 
-    if (incluir.checked == true) {
+    if (incluir) {
       incluir = "SI"
     } else {
       incluir = "NO"
@@ -571,7 +573,7 @@
       $('.collapse').collapse('hide')
       $('#table-div').empty()
       $('#table-div').append("<b>Recuperando datos.</b>")
-      $.get("http://" + aux1[0] + ":3000/api/v1/mayorcuentaaux/cab/" + empresa + "/" + periodo + "/" + fechad + "/" + fechah + "/" + tipoasiento + "/" + cuentad + "/" + cuentah + "/" + incluir + "/" + cuentaad + "/" + cuentaah,
+      $.get(api + "mayorcuentaaux/cab/" + empresa + "/" + periodo + "/" + fechad + "/" + fechah + "/" + tipoasiento + "/" + cuentad + "/" + cuentah + "/" + incluir + "/" + cuentaad + "/" + cuentaah,
               function (data) {
                 if (data[1].data2.length > 0) {
                   console.log(data)
@@ -658,6 +660,7 @@
       });
     });
   }
+
   function buscarCuentaAuxiliar() {
     u.resetSelect(select_cuenta_auxd);
     u.resetSelect(select_cuenta_auxh);
@@ -673,55 +676,6 @@
 
     $('[name=fechad]').val(a + '-' + vector_desde[1] + '-' + vector_desde[2])
     $('[name=fechah]').val(a + '-' + vector_hasta[1] + '-' + vector_hasta[2])
-  }
-
-  function search_cuenta(b) {
-    console.log(b)
-    $('#fromcall').val(b)
-    $("#modalCuentas").modal("show");
-    $('#tableCuentas tbody').empty();
-  }
-
-  function filtro_cuenta() {
-    var filtros = null
-    if ($('[name=codigo]').val() == "CO") {
-      filtros = JSON.stringify({codigo: $('[name=filtro]').val()});
-    } else {
-      filtros = JSON.stringify({nombre: $('[name=filtro]').val()});
-    }
-
-    $.ajax("http://" + aux1[0] + ":3000/api/v1/cuentaauxi/query/" + $('[name=periodo]').val() + "/" + $('[name=empresa]').val() + "/" + $('[name=cuentad]').val() + "/" + $('[name=cuentah]').val(), {
-      method: 'POST',
-      contentType: 'application/json',
-      data: filtros
-    }).done(
-            function (data) {
-              if (data != null) {
-                var string = "";
-                for (var i = 0; i < data.data.length; i++) {
-                  string += '<tr id="cuenta-row-' + data.data[i].CodPlanAux + '">' +
-                          '<td class="codigo">' + data.data[i].CodPlanAux + '</td>' +
-                          '<td class="nombre">' + data.data[i].Nombre + '</td>' +
-                          '<td class="padre">' + data.data[i].CodPlanCta + '</td>' +
-                          '<td><a class="btn btn-success btn-sm" onclick="cargar_cuenta(&quot;' + data.data[i].CodPlanAux + '&quot;)" title="Selecionar"><i class="fa fa-check"></i></td>' +
-                          '</tr>';
-                }
-                $('#tableCuentas tbody').html(string);
-              }
-            }
-    );
-  }
-
-  function cargar_cuenta(a) {
-    $("#modalCuentas").modal("hide");
-    console.log($('#fromcall').val())
-    if ($('#fromcall').val() == "cuentaad_name") {
-      $('[name=cuentaad]').val($('#cuenta-row-' + a).children('.codigo').text());
-      $('[name=cuentaad_name]').val($('#cuenta-row-' + a).children('.codigo').text() + ' - ' + $('#cuenta-row-' + a).children('.nombre').text());
-    } else {
-      $('[name=cuentaah]').val($('#cuenta-row-' + a).children('.codigo').text());
-      $('[name=cuentaah_name]').val($('#cuenta-row-' + a).children('.codigo').text() + ' - ' + $('#cuenta-row-' + a).children('.nombre').text());
-    }
   }
 </script>
 
