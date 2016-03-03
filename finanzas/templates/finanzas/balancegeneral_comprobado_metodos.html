@@ -8,7 +8,17 @@
 
   var $select_empresa, select_empresa;
 
-  var addCommas = u.addCommas;
+  function addCommas(nStr) {
+    nStr += '';
+    x = nStr.split('.');
+    x1 = x[0];
+    x2 = x.length > 1 ? ',' + x[1] : '';
+    var rgx = /(\d+)(\d{3})/;
+    while (rgx.test(x1)) {
+        x1 = x1.replace(rgx, '$1' + '.' + '$2');
+    }
+    return x1 + x2;
+}
 
   var api = u.getApiUrl();
   var query = {};
@@ -21,6 +31,8 @@
 
     aux = url.toString().split("http://");
     aux1 = aux[1].toString().split(":8000");
+    
+    $('#table-div').empty()
 
   });
 
@@ -114,30 +126,35 @@
         periodoant = (parseInt(periodo)).toString()
       }
       $('.collapse').collapse('hide')
-      $('#table-div').empty()
-      $('#table-div').append("<b>Recuperando datos.</b>")
+      $('#table-div').hide();
+      $('#mensaje-div').empty();
+      $('#mensaje-div').append("<b>Recuperando datos.</b>");
       $.get(api + "balancecomprobado/list/" + empresa + "/" + periodo + "/" + periodoant + "/" + mes + "/" + mesant + "/" + nivel + "/" + moneda,
               function (data) {
                 if (data.data.length > 0) {
-                  $('#table-div').empty()
-                  var tableta = '<table id="resultados" class="table table-striped table-hover table-bordered table-filter scroll" tyle="width:90%">' +
-                          '<thead>' +
-                          '<tr>' +
-                          '<th style="width:10%">C&#211;DIGO</th>' +
-                          '<th>NOMBRE DE LA CUENTA</th>' +
-                          '<th style="width:15%">SALDO ANTERIOR</th>' +
-                          '<th style="width:15%">D&#201;BITO DEL MES</th>' +
-                          '<th style="width:15%">CR&#201;DITO DEL MES</th>' +
-                          '<th style="width:15%">SALDO ACTUAL</th>' +
-                          '</tr>' +
-                          '</thead>' +
-                          '<tbody></tbody>' +
-                          '</table>'
-                  $('#table-div').append(tableta)
-
-                  console.log(data)
+                  $('#mensaje-div').empty();
+                  $('#table-div').empty();
+                  
+                  var table_string = '<table id ="resultados" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">+
+                                            '<thead>'+
+                                                '<tr>'+
+                                                    '<th style="width:10%;">Código</th>'+
+                                                    '<th style="width:30%;">Nombre de la Cuenta</th>'+
+                                                    '<th style="width:15%;">Saldo Anterior</th>'+
+                                                    '<th style="width:15%;">Débito del Mes</th>'+
+                                                    '<th style="width:15%;">Crédito del Mes</th>'+
+                                                    '<th style="width:15%;">Saldo Actual</th>'+
+                                                '</tr>'+
+                                            '</thead>'+
+                                            '<tbody>'+
+                                            '</tbody>'+
+                                            '<tfoot>'+
+                                            '</tfoot>'+
+                                        '</table>';
+                                $('#table-div').append(table_string);
 
                   var string = ""
+                  var string1 = ""
                   for (var a = 0; a < data.data.length; a++) {
                     if (incluir == "SI") {
                       if (moneda == 'local') {
@@ -249,11 +266,18 @@
                         string += '</tr>'
                       }
                     } else {
+                     if (moneda == 'local') {
+                            total_debito += parseInt(data.data[a].TOTAL_DEBITO)
+                            total_credito += parseInt(data.data[a].TOTAL_CREDITO)
+                            total_saldo += parseInt(data.data[a].SALDO)
+                            total_saldo_anterior += parseInt(data.data[a].SALDO_ANTERIOR)
+                          } else {
+                            total_debito += parseFloat(data.data[a].TOTAL_DEBITO)
+                            total_credito += parseFloat(data.data[a].TOTAL_CREDITO)
+                            total_saldo += parseFloat(data.data[a].SALDO)
+                            total_saldo_anterior += parseFloat(data.data[a].SALDO_ANTERIOR)
+                          }
                       if (data.data[a].SALDO != '0') {
-                        total_debito += parseInt(data.data[a].TOTAL_DEBITO)
-                        total_credito += parseInt(data.data[a].TOTAL_CREDITO)
-                        total_saldo += parseInt(data.data[a].SALDO)
-                        total_saldo_anterior += parseInt(data.data[a].SALDO_ANTERIOR)
                         if (data.data[a].CodPlanCta.length == 1) {
                           string += '<tr>' +
                                   '<td></td>' +
@@ -356,29 +380,48 @@
                   }
 
                   if (total_saldo < 0) {
-                    string += '<tr class="danger" >'
+                    string1 += '<tr class="danger" >'
                   } else {
-                    string += '<tr>'
+                    string1 += '<tr>'
                   }
-                  string += '<td colspan="1"></td>' +
-                          '<td style="text-align: right;"><b>TOTALES</b></td>'
+                  string1 += '<td colspan="2" style="text-align: right;"><b>TOTALES</b></td>'
+                  console.log(total_saldo_anterior,total_debito,total_credito,total_saldo)
                   if (moneda == 'local') {
-                    string += '<td style="text-align: right;"><b>' + convertir_rever(total_saldo_anterior) + '</b></td>' +
+                    string1 += '<td style="text-align: right;"><b>' + convertir_rever(total_saldo_anterior) + '</b></td>' +
                             '<td style="text-align: right;"><b>' + convertir_rever(total_debito) + '</b></td>' +
                             '<td style="text-align: right;"><b>' + convertir_rever(total_credito) + '</b></td>' +
                             '<td style="text-align: right;"><b>' + convertir_rever(total_saldo) + '</b></td>'
                   } else {
-                    string += '<td style="text-align: right;"><b>' + addCommas((Math.round(total_saldo_anterior * 100) / 100).toString()) + '</b></td>' +
+                    string1 += '<td style="text-align: right;"><b>' + addCommas((Math.round(total_saldo_anterior * 100) / 100).toString()) + '</b></td>' +
                             '<td style="text-align: right;"><b>' + addCommas((Math.round(total_debito * 100) / 100).toString()) + '</b></td>' +
                             '<td style="text-align: right;"><b>' + addCommas((Math.round(total_credito * 100) / 100).toString()) + '</b></td>' +
                             '<td style="text-align: right;"><b>' + addCommas((Math.round(total_saldo * 100) / 100).toString()) + '</b></td>'
                   }
-                  string += '</tr>'
-
-                  $('#resultados tbody').html(string)
+                  string1 += '</tr>'
+                  console.log(string1)
+                  $("#resultados > tbody").html("");
+                  $('#resultados tbody').html(string);
+                  $('#resultados > tfoot').html("");
+                  $('#resultados tfoot').html(string1);
+                  $('#resultados').DataTable().destroy();
+                    $('#resultados').DataTable({
+                        searching: false,
+                        language: u.spanish_dt,
+                        paging: false,
+                        ordering: false,
+                        info: false,
+                        scrollCollapse: true,
+                        scrollY: 300,
+                        scrollX: '100%',
+                    });
+                   total_debito = 0
+                   total_credito = 0
+                   total_saldo = 0
+                   total_saldo_anterior = 0
                 } else {
-                  $('#table-div').empty()
-                  $('#table-div').append("<b>No se han encontrado datos.</b>")
+                  $('#table-div').empty();
+                  $('#mensaje-div').empty();
+                  $('#mensaje-div').append("<b>No se han encontrado datos.</b>")
                 }
               }
       );

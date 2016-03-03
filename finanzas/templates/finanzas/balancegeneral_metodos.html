@@ -1,18 +1,18 @@
 <script type="text/javascript">
 
-  var query = {};
-  var api = u.getApiUrl();
+var query = {};
+var api = u.getApiUrl();
 
-  var today = new Date();
-  var total_debito = 0;
-  var total_credito = 0;
-  var total_saldo = 0;
-  var ingreso = 0;
-  var egreso = 0;
+var today = new Date();
+var total_debito = 0;
+var total_credito = 0;
+var total_saldo = 0;
+var ingreso = 0;
+var egreso = 0;
 
-  var select_empresa, $select_empresa;
-  var select_cuentad, $select_cuentad;
-  var select_cuentah, $select_cuentah;
+var select_empresa, $select_empresa;
+var select_cuentad, $select_cuentad;
+var select_cuentah, $select_cuentah;
 
   $(document).ready(function () {
     u.hideNav();
@@ -25,20 +25,11 @@
 
     select_cuentah = $select_cuentah[0].selectize;
     select_cuentah.disable();
-
+    
     initDate();
-    $('#resultados').DataTable({
-      searching: false,
-      language: u.spanish_dt,
-      paging: false,
-      ordering: false,
-      info: false,
-      scrollCollapse: true,
-      scrollY: 300,
-    });
-
-    $('#table-div').hide();
-  });
+    
+    $('#table-div').empty();
+});
 
   function initDate() {
     u.defaultDatepicker();
@@ -92,9 +83,6 @@
         u.get_empresas({{ user }}, function (d) {
           callback(d.data);
         });
-      }, onChange: function (value) {
-        query.empresa = value;
-        buscarCuenta();
       }
     });
 
@@ -118,7 +106,7 @@
     x2 = x.length > 1 ? ',' + x[1] : '';
     var rgx = /(\d+)(\d{3})/;
     while (rgx.test(x1)) {
-      x1 = x1.replace(rgx, '$1' + '.' + '$2');
+        x1 = x1.replace(rgx, '$1' + '.' + '$2');
     }
     return x1 + x2;
   }
@@ -155,168 +143,199 @@
     if (periodo == "" || periodo == null || periodo == " ") {
       alert("No hay datos suficientes para generar el listado");
     } else {
-      total_debito = 0;
-      total_credito = 0;
-      total_saldo = 0;
-      $('.collapse').collapse('hide');
-      $('#table-div').hide();
-      $('#mensaje-div').empty();
-      $('#mensaje-div').append("<b>Recuperando datos.</b>");
-      var pathParams = [empresa, periodo, cuentad, cuentah, mesd, mesh, nivel, incluir, moneda, aux];
-      $.get(api + "balancegeneral/list/" + pathParams.join('/'),
-              function (data) {
-                if (data.data.length > 0) {
-                  $('#mensaje-div').empty();
-                  $('#table-div').show();
-                  var string = "";
-                  var len = data.data.length;
-                  for (var a = 0; a < len; a++) {
-                    if (data.data[a].Nombre == 'INGRESOS') {
-                      if (moneda == 'local') {
+        total_debito = 0;
+        total_credito = 0;
+        total_saldo = 0;
+        $('.collapse').collapse('hide');
+        $('#table-div').hide();
+        $('#mensaje-div').empty();
+        $('#mensaje-div').append("<b>Recuperando datos.</b>");
+        var pathParams = [empresa, periodo, cuentad, cuentah, mesd, mesh, nivel, incluir, moneda, aux];
+        $.get(api + "balancegeneral/list/" + pathParams.join('/'),
+        function (data) {
+            if (data.data.length > 0) {
+                $('#mensaje-div').empty();
+                $('#table-div').empty();
+                
+                
+                var table_string = '<table id ="resultados" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">'+
+                                '<thead>'+
+                                    '<tr>'+
+                                        '<th style="width:25%;">Cuenta</th>'+
+                                        '<th style="width:50%;">Descripción</th>'+
+                                        '<th style="width:25%;">Saldo</th>'+
+                                    '</tr>'+
+                                '</thead>'+
+                                '<tbody>'+
+                                '</tbody>'+
+                                '<tfoot>'+
+                                '</tfoot>'+
+                            '</table>';
+                
+                $('#table-div').append(table_string);
+                
+                var string = "";
+                var string1 = "";
+                var len = data.data.length;
+                for (var a = 0; a < len; a++) {
+                if (data.data[a].Nombre == 'INGRESOS') {
+                    if (moneda == 'local') {
                         var ingreso = parseInt(data.data[a].SALDO);
-                      } else {
+                    } else {
                         var ingreso = parseFloat(data.data[a].SALDO);
-                      }
+                    }
                     }
                     if (data.data[a].Nombre == 'EGRESOS') {
-                      if (moneda == 'local') {
-                        var egreso = parseInt(data.data[a].SALDO);
-                      } else {
-                        var egreso = parseFloat(data.data[a].SALDO);
-                      }
+                        if (moneda == 'local') {
+                            var egreso = parseInt(data.data[a].SALDO);
+                        } else {
+                            var egreso = parseFloat(data.data[a].SALDO);
+                        }
                     }
                     if (moneda == 'local') {
-                      total_debito += parseInt(data.data[a].TOTAL_DEBITO);
-                      total_credito += parseInt(data.data[a].TOTAL_CREDITO);
-                      total_saldo += parseInt(data.data[a].SALDO);
+                        total_debito += parseInt(data.data[a].TOTAL_DEBITO);
+                        total_credito += parseInt(data.data[a].TOTAL_CREDITO);
+                        total_saldo += parseInt(data.data[a].SALDO);
                     } else {
-                      total_debito += parseFloat(data.data[a].TOTAL_DEBITO);
-                      total_credito += parseFloat(data.data[a].TOTAL_CREDITO);
-                      total_saldo += parseFloat(data.data[a].SALDO);
+                        total_debito += parseFloat(data.data[a].TOTAL_DEBITO);
+                        total_credito += parseFloat(data.data[a].TOTAL_CREDITO);
+                        total_saldo += parseFloat(data.data[a].SALDO);
                     }
                     if (data.data[a].CodPlanCta.length == 1) {
-                      string += '<tr>' +
-                              '<td></td>' +
-                              '<td></td>' +
-                              '<td></td>' +
-                              '</tr>'
-                              + '<tr>' +
-                              '<td></td>' +
-                              '<td></td>' +
-                              '<td></td>' +
-                              '</tr>';
-                      if (data.data[a].SALDO < 0) {
-                        string += '<tr class="danger" >';
-                      } else {
-                        string += '<tr>';
-                      }
-                      string += '<td><b>' + data.data[a].CodPlanCta + '</b></td>' +
-                              '<td><b>' + data.data[a].Nombre + '</b></td>';
-                      if (moneda == 'local') {
-                        string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO) + '</b></td>';
-                      } else {
-                        string += '<td style="text-align: right;"><b>' + addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString()) + '</b></td>';
-                      }
-                      string += '</tr>';
+                        string += '<tr>' +
+                                    '<td></td>' +
+                                    '<td></td>' +
+                                    '<td></td>' +
+                                    '</tr>'
+                                    + '<tr>' +
+                                    '<td></td>' +
+                                    '<td></td>' +
+                                    '<td></td>' +
+                                    '</tr>';
+                        if (data.data[a].SALDO < 0) {
+                            string += '<tr class="danger" >';
+                        } else {
+                            string += '<tr>';
+                        }
+                        string += '<td><b>' + data.data[a].CodPlanCta + '</b></td>' +
+                                    '<td><b>' + data.data[a].Nombre + '</b></td>';
+                        if (moneda == 'local') {
+                            string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO) + '</b></td>';
+                        } else {
+                            string += '<td style="text-align: right;"><b>' + addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString()) + '</b></td>';
+                        }
+                        string += '</tr>';
                     } else if (data.data[a].CodPlanCta.length == 2) {
-                      if (data.data[a].SALDO < 0) {
-                        string += '<tr class="danger" >';
-                      } else {
-                        string += '<tr>';
-                      }
-                      string += '<td><b><u>' + data.data[a].CodPlanCta + '</u></b></td>' +
-                              '<td><b>&nbsp;&nbsp;&nbsp;<u>' + data.data[a].Nombre + '</u></b></td>';
-                      if (moneda == 'local') {
-                        string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO) + '</b></td>';
-                      } else {
-                        string += '<td style="text-align: right;"><b>' + addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString()) + '</b></td>';
-                      }
-                      string += '</tr>';
+                        if (data.data[a].SALDO < 0) {
+                            string += '<tr class="danger" >';
+                        } else {
+                            string += '<tr>';
+                        }
+                            string += '<td><b><u>' + data.data[a].CodPlanCta + '</u></b></td>' +
+                                        '<td><b>&nbsp;&nbsp;&nbsp;<u>' + data.data[a].Nombre + '</u></b></td>';
+                        if (moneda == 'local') {
+                            string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO) + '</b></td>';
+                        } else {
+                            string += '<td style="text-align: right;"><b>' + addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString()) + '</b></td>';
+                        }
+                        string += '</tr>';
                     } else if (data.data[a].CodPlanCta.length == 4) {
-                      if (data.data[a].SALDO < 0) {
-                        string += '<tr class="danger" >';
-                      } else {
-                        string += '<tr>';
-                      }
-                      string += '<td><b>' + data.data[a].CodPlanCta + '</b></td>' +
-                              '<td><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + data.data[a].Nombre + '</b></td>';
-                      if (moneda == 'local') {
-                        string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO) + '</b></td>';
-                      } else {
-                        string += '<td style="text-align: right;"><b>' + addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString()) + '</b></td>';
-                      }
-                      string += '</tr>';
+                        if (data.data[a].SALDO < 0) {
+                            string += '<tr class="danger" >';
+                        } else {
+                            string += '<tr>';
+                        }
+                        string += '<td><b>' + data.data[a].CodPlanCta + '</b></td>' +
+                                    '<td><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + data.data[a].Nombre + '</b></td>';
+                        if (moneda == 'local') {
+                            string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO) + '</b></td>';
+                        } else {
+                            string += '<td style="text-align: right;"><b>' + addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString()) + '</b></td>';
+                        }
+                        string += '</tr>';
                     } else if (data.data[a].CodPlanCta.length > 4 && data.data[a].CodPlanCta.length < 10) {
-                      if (data.data[a].SALDO < 0) {
-                        string += '<tr class="danger" >';
-                      } else {
-                        string += '<tr>';
-                      }
-                      string += '<td>' + data.data[a].CodPlanCta + '</td>' +
-                              '<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + data.data[a].Nombre + '</td>';
-                      if (moneda == 'local') {
-                        string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO) + '</b></td>';
-                      } else {
-                        string += '<td style="text-align: right;"><b>' + addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString()) + '</b></td>';
-                      }
-                      string += '</tr>';
+                        if (data.data[a].SALDO < 0) {
+                            string += '<tr class="danger" >';
+                        } else {
+                            string += '<tr>';
+                        }
+                            string += '<td>' + data.data[a].CodPlanCta + '</td>' +
+                                        '<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + data.data[a].Nombre + '</td>';
+                        if (moneda == 'local') {
+                            string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO) + '</b></td>';
+                        } else {
+                            string += '<td style="text-align: right;"><b>' + addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString()) + '</b></td>';
+                        }
+                            string += '</tr>';
                     } else {
-                      var new_codigo = data.data[a].CodPlanCta.toString().split('-');
-                      if (data.data[a].SALDO < 0) {
-                        string += '<tr class="danger" >';
-                      } else {
-                        string += '<tr>';
-                      }
-                      string += '<td></td>' +
-                              '<td style="font-size: 12px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + new_codigo[1] + " - " + data.data[a].Nombre + '</td>';
-                      if (moneda == 'local') {
-                        string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO) + '</b></td>';
-                      } else {
-                        string += '<td style="text-align: right;"><b>' + addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString()) + '</b></td>';
-                      }
-                      string += '</tr>';
+                        var new_codigo = data.data[a].CodPlanCta.toString().split('-');
+                        if (data.data[a].SALDO < 0) {
+                            string += '<tr class="danger" >';
+                        } else {
+                            string += '<tr>';
+                        }
+                        string += '<td></td>' +
+                                    '<td style="font-size: 12px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + new_codigo[1] + " - " + data.data[a].Nombre + '</td>';
+                        if (moneda == 'local') {
+                            string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO) + '</b></td>';
+                        } else {
+                            string += '<td style="text-align: right;"><b>' + addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString()) + '</b></td>';
+                        }
+                        string += '</tr>';
                     }
-                  }
-                  if (total_saldo < 0) {
-                    string += '<tr class="danger" >';
-                  } else {
-                    string += '<tr>';
-                  }
-                  string += '<td></td>' +
-                          '<td><b>TOTALES</b></td>';
-                  if (moneda == 'local') {
-                    string += '<td style="text-align: right;"><b>' + convertir_rever(total_saldo) + '</b></td>';
-                  } else {
-                    string += '<td style="text-align: right;"><b>' + addCommas((Math.round(total_saldo * 100) / 100).toString()) + '</b></td>';
-                  }
-                  string += '</tr>';
-                  if (ingreso - egreso < 0) {
-                    string += '<tr class="danger" >';
-                  } else {
-                    string += '<tr>';
-                  }
-                  if (moneda == 'local') {
-                    if (ingreso == null && egreso == null) {
-                      string += '<td style="text-align: center;" colspan="4"><b>Resultado del Ejercicio: 0</b></td>';
-                    } else {
-                      string += '<td style="text-align: center;" colspan="4"><b>Resultado del Ejercicio: ' + convertir_rever(ingreso - egreso) + '</b></td>';
-                    }
-                  } else {
-                    string += '<td style="text-align: center;" colspan="4"><b>Resultado del Ejercicio: ' + addCommas((Math.round((ingreso - egreso) * 100) / 100).toString()) + '</b></td>';
-                  }
-                  string += '</tr>';
-                  $('#resultados tbody').html(string);
-                  ingreso = 0;
-                  egreso = 0;
-                } else {
-                  $('#table-div').hide();
-                  $('#mensaje-div').empty();
-                  $('#mensaje-div').append("<b>No se han encontrado datos.</b>");
                 }
-              }
-      );
+                if (total_saldo < 0) {
+                    string += '<tr class="danger" >';
+                } else {
+                    string += '<tr>';
+                }
+                string += '<td>&nbsp;</td>' +
+                            '<td><b>TOTALES</b></td>';
+                if (moneda == 'local') {
+                    string += '<td style="text-align: right;"><b>' + convertir_rever(total_saldo) + '</b></td>';
+                } else {
+                    string += '<td style="text-align: right;"><b>' + addCommas((Math.round(total_saldo * 100) / 100).toString()) + '</b></td>';
+                }
+                string += '</tr>';
+                if (ingreso - egreso < 0) {
+                    string1 += '<tr class="danger" >';
+                } else {
+                    string1 += '<tr>';
+                }
+                if (moneda == 'local') {
+                    if (ingreso == null && egreso == null) {
+                        string1 += '<td style="text-align: center;" colspan="3"><b>Resultado del Ejercicio: 0</b></td>';
+                    } else {
+                        string1 += '<td style="text-align: center;" colspan="3"><b>Resultado del Ejercicio: ' + convertir_rever(ingreso - egreso) + '</b></td>';
+                    }
+                } else {
+                    string1 += '<td style="text-align: center;" colspan="3"><b>Resultado del Ejercicio: ' + addCommas((Math.round((ingreso - egreso) * 100) / 100).toString()) + '</b></td>';
+                }
+                string1 += '</tr>';
+                console.log(string)
+                $('#resultados tbody').html(string);
+                $('#resultados tfoot').html(string1);
+                ingreso = 0;
+                egreso = 0;
+                $('#resultados').DataTable().destroy();
+                $('#resultados').DataTable({
+                    searching: false,
+                    language: u.spanish_dt,
+                    paging: false,
+                    ordering: false,
+                    info: false,
+                    scrollCollapse: true,
+                    scrollY: 300,
+                    scrollX: '100%',
+                });
+            } else {
+                $('#table-div').empty();
+                $('#mensaje-div').empty();
+                $('#mensaje-div').append("<b>No se han encontrado datos.</b>");
+            }
+        });
     }
-  }
+}
 
   function buscarCuenta() {
     u.resetSelect(select_cuentad);
