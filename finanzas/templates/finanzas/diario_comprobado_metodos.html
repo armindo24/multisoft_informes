@@ -26,7 +26,8 @@
     u.defaultDatepicker();
     $(".input-daterange").datepicker({
       todayBtn: "linked",
-      format: "yyyy-mm-dd"
+      format: "yyyy-mm-dd",
+      autoclose: true
     });
 
     $inputDate.datepicker().on('changeDate', function (e) {
