@@ -179,6 +179,42 @@ u.resetSelect = function ($select) {
     $select.clearOptions();
 };
 
+u.convertir_rever = function (str) {
+    var negativo = false;
+
+    if (parseInt(str) < 0) {
+        negativo = true;
+        str = parseInt(str) * -1;
+    }
+
+    str = str + "";
+    if (str == "") {
+        //return '0,00'
+        return "";
+    }
+    var vector = str.split(".");
+    var parte_entera = vector[0];
+
+    //var parte_decimal=(vector[1] == "" || vector[1] == null)? "00":((vector[1].length==1)? vector[1]+"0" : vector[1])
+    var cont = 0;
+    var nuevo = "";
+    for (var i = parte_entera.length - 1; i >= 0; i--) {
+        if (cont == 3) {
+            nuevo = parte_entera[i] + "." + nuevo;
+            cont = 0;
+        } else {
+            nuevo = parte_entera[i] + nuevo;
+        }
+        cont++;
+    }
+
+    if (negativo == true) {
+        return ("-" + nuevo);
+    } else {
+        return (nuevo);
+    }
+};
+
 u.hideTable = function ($table) {
     if (!$table) return;
     $table.css("position", "absolute").css("left", -9999);

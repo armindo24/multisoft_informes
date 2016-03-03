@@ -9,6 +9,9 @@
   var select_cuentad, $select_cuentad;
   var select_cuentah, $select_cuentah;
 
+  var select_cuenta_auxd, $select_cuenta_auxd;
+  var select_cuenta_auxh, $select_cuenta_auxh;
+
   $(document).ready(function () {
     u.hideNav();
     initDate();
@@ -41,6 +44,7 @@
 
     $('#periodo .form-control').datepicker().on('changeDate', function (e) {
       query[this.name] = this.value;
+      buscarCuenta();
       console.log(query);
     });
 
@@ -80,10 +84,39 @@
     $select_cuentah = $('#select-cuentah').selectize({
       valueField: 'CodPlanCta',
       labelField: 'Nombre',
-      searchField: 'Nombre'
+      searchField: 'Nombre',
+      onChange: function (value) {
+        query.cuentah = value;
+        if (!value.length) return;
+        u.resetSelect(select_cuenta_auxd);
+        select_cuenta_auxd.load(function (cb) {
+          $.get(api + 'cuentaauxi/select/' + query.empresa + '/' + query.periodo).done(function (res) {
+            cb(res.data);
+            select_cuenta_auxd.enable();
+          }).fail(function () {
+            cb();
+          });
+        });
+      }
     });
     select_cuentah = $select_cuentah[0].selectize;
     select_cuentah.disable();
+
+    $select_cuenta_auxd = $('#select-cuenta-aux-d').selectize({
+      valueField: 'CodPlanCta',
+      searchField: ['Nombre', 'Cod'],
+      render: {
+        option: function (item, escape) {
+          return '<div>' + escape(item.Cod) + ' - ' + escape(item.Nombre) + '</div>';
+        },
+        item: function (item, escape) {
+          return '<div>' + escape(item.Nombre) + '</div>';
+        }
+      }
+    });
+
+    select_cuenta_auxd = $select_cuenta_auxd[0].selectize;
+    select_cuenta_auxd.disable();
   }
 
   function getInforme() {

@@ -267,4 +267,11 @@ router.get('/flowcash/:periodo/:empresa/:mes', function (req, res, next) {
     });
 });
 
+router.get('/empresas/:empresa/auxiliares/', function (req, res, next) {
+    CuentaContable.auxiliar(req.params, req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+
 module.exports = router;

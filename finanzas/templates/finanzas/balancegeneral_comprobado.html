@@ -1,81 +1,76 @@
-{% extends 'admin/base_site.html'%}
-{% load staticfiles %}
-{% block extrahead %}
-	<link rel="stylesheet" href={% static 'css/jquery-ui.css' %}> 
-    <link rel="stylesheet" href={% static 'chosen_v1.4.2/chosen.css' %}>
-    <link rel="stylesheet" href={% static 'chosen_v1.4.2/docsupport/prism.css' %}>
-    <script src={% static 'js/jquery-ui.js' %}></script>
-    <script src={% static 'js/puntos-decimales.js' %}></script>
-    <script src={% static 'js/jquery.maskedinput.min.js' %}></script>
-    <script src={% static 'chosen_v1.4.2/chosen.jquery.js' %}></script>
-	<script src={% static 'chosen_v1.4.2/docsupport/prism.js' %}></script>
-    <script src={% static 'dajaxice/dajaxice.core.js' %}></script>
-	{% include 'finanzas/balancegeneral_comprobado_metodos.html' %}
-{% endblock %}
+{% extends 'finanzas/base.html' %}
 
 {% block header %}
-	Balance de Comprobaci&#243;n: 
+  Balance de Comprobaci&#243;n:
 {% endblock %}
 
-{% block content %}
-	<div class="panel-group" id="accordion" >
-	    <div class="panel panel-default">
-	        <div class="panel-heading"  data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
-	            <h4 class="panel-title">
-	               Filtros
-	            </h4>
-	        </div>
-	        <div id="collapseOne" class="panel-collapse collapse">
-	            <div class="panel-body">
-					<div class="panel-group" id="archivo_accordion" style="margin-bottom: 0px;">
-    					<center>
-    					    <table style="width: auto;" class="table table-striped table-hover table-bordered table-filter scroll">
-                                <tr>
-                                    <th style="text-align: right;"> Empresa: </th>
-                                    <td><select name="empresa" data-placeholder="Empresa..." onchange="buscar_cuenta();" class="chosen-select" tabindex="2"></select></td>
-                                    <th style="text-align: right;"> Per&#237;odo: </th>
-                                    <td><input style="width:50px" type="text" onkeyup="" name="periodo" ></td>
-                                </tr>
-                                <tr>
-                                    <th style="text-align: right;"> Mes: </th>
-                                    <td><select name="mesd" data-placeholder="Mes..." class="chosen-select" tabindex="2">
-                                            <option selected value="01">Enero</option>
-                                            <option value="02">Febrero</option>
-                                            <option value="03">Marzo</option>
-                                            <option value="04">Abril</option>
-                                            <option value="05">Mayo</option>
-                                            <option value="06">Junio</option>
-                                            <option value="07">Julio</option>
-                                            <option value="08">Agosto</option>
-                                            <option value="09">Septiembre</option>
-                                            <option value="10">Octubre</option>
-                                            <option value="11">Noviembre</option>
-                                            <option value="12">Diciembre</option>
-                                        </select>
-                                    </td>
-                                    <th style="text-align: right;"> Nivel: </th>
-                                    <td><input style="width:50px" type="text" value="0" onkeyup="" name="nivel" ></td>
-                                </tr>
-                                <tr>
-                                    <th style="text-align: right;"> Incluir cuentas con saldo cero: </th>
-                                    <td><input type="checkbox" onkeyup="" name="incluir" ></td>
-                                    <th style="text-align: right;"> Moneda Extranjera: </th>
-                                    <td><input type="checkbox" onkeyup="" name="moneda" ></td>
-                                </tr>
-                            </table>
-                        </center>
-					</div>
-				</div>
-	        </div>
-	        <div class="modal-footer">
-		        <a type="button" class="btn btn-primary" onclick="buscar()">Filtrar <i class="fa fa-search"></i></a>
-	        </div>
-	    </div>
-	</div> 
-	
-	<div id="table-div">
-    	
+{% block filters %}
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="empresa" %}
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="periodo" class="col-md-4 control-label">Periodo:</label>
+
+        <div class="col-md-6">
+          <div id="periodo" class="input-date">
+            <input type="text" class="form-control" name="periodo" onkeydown="return false">
+          </div>
+        </div>
+      </div>
     </div>
-    <br>
-	</br>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="mes" class="col-md-4 control-label">Mes:</label>
+
+        <div class="col-md-6">
+          <div id="mes" class="input-date">
+            <input type="text" onkeydown="return false" class="form-control" name="mes">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="nivel" class="col-md-4 control-label">Nivel:</label>
+
+        <div class="col-md-6">
+          <div><input type="text" class="form-control" id="nivel" name="nivel" value="0"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="incluir" class="col-md-4 control-label">Cuentas con saldo cero:</label>
+
+        <div class="col-md-6">
+          <input type="checkbox" name="incluir" id="incluir"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="moneda" class="col-md-4 control-label">Moneda Extranjera:</label>
+
+        <div class="col-md-6">
+          <input type="checkbox" name="moneda" id="moneda"/>
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
+
+{% block inner_content %}
+  <div id="table-div">
+  </div>
+  <br>
+  {% include 'finanzas/balancegeneral_comprobado_metodos.html' %}
 {% endblock %}

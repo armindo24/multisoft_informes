@@ -316,11 +316,16 @@
       if (!$.fn.DataTable.isDataTable('#results')) {
         $('#results').DataTable({
           language: u.spanish_dt,
-          ajax: {
-            url: api + 'empresas/' + query.empresa + '/informes/ventas_resumido',
-            data: function () {
-              return query;
-            }
+          ajax: function (d, cb, s) {
+            $.ajax({
+              method: 'GET',
+              url: api + 'empresas/' + query.empresa + '/informes/ventas_resumido',
+              data: query
+            }).done(function (res) {
+              cb(res);
+            }).fail(function () {
+              cb();
+            });
           },
           deferRender: true,
           scrollY: 400,
@@ -328,7 +333,6 @@
           scroller: {
             displayBuffer: 30,
             loadingIndicator: true
-
           },
           columnDefs: [
             {className: "price-value", targets: "price-label"},
@@ -381,11 +385,11 @@
       } else {
         var table = $('#results').DataTable();
         var $resultado = $('#resultado');
-        table.row(0).scrollTo();
         $resultado.css("position", "absolute").css("left", -9999);
-        table.ajax.url(api + 'empresas/' + query.empresa + '/informes/ventas_resumido').load(function () {
+        table.row(0).scrollTo();
+        table.ajax.reload(function () {
           $resultado.css("position", "relative").css("left", 0);
-        });
+        }, true);
       }
     }
 
