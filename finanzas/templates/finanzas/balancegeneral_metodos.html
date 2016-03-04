@@ -53,13 +53,11 @@ var select_cuentah, $select_cuentah;
 
     $('.input-daterange .form-control').datepicker().on('changeDate', function (e) {
       query[this.name] = e.format('mm');
-      console.log(query);
     });
 
     $('#periodo .form-control').datepicker().on('changeDate', function (e) {
       query[this.name] = this.value;
       buscarCuenta();
-      console.log(query);
     });
 
     $('.input-date .form-control').datepicker('setDate', today);
@@ -70,7 +68,6 @@ var select_cuentah, $select_cuentah;
     $.extend(true, $.fn.selectize.defaults, {
       onChange: function (value) {
         query[this.$input.attr('name')] = value;
-        console.log(query);
       }
     });
 
@@ -312,7 +309,6 @@ var select_cuentah, $select_cuentah;
                     string1 += '<td style="text-align: center;" colspan="3"><b>Resultado del Ejercicio: ' + addCommas((Math.round((ingreso - egreso) * 100) / 100).toString()) + '</b></td>';
                 }
                 string1 += '</tr>';
-                console.log(string)
                 $('#resultados tbody').html(string);
                 $('#resultados tfoot').html(string1);
                 ingreso = 0;

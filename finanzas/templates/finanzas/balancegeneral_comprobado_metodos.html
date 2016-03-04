@@ -63,7 +63,6 @@
 
     $('#periodo .form-control').datepicker().on('changeDate', function (e) {
       query[this.name] = this.value;
-      console.log(query);
     });
 
     $('.input-date .form-control').datepicker('setDate', new Date());
@@ -74,7 +73,6 @@
     $.extend(true, $.fn.selectize.defaults, {
       onChange: function (value) {
         query[this.$input.attr('name')] = value;
-        console.log(query);
       }
     });
 
@@ -385,7 +383,6 @@
                     string1 += '<tr>'
                   }
                   string1 += '<td colspan="2" style="text-align: right;"><b>TOTALES</b></td>'
-                  console.log(total_saldo_anterior,total_debito,total_credito,total_saldo)
                   if (moneda == 'local') {
                     string1 += '<td style="text-align: right;"><b>' + convertir_rever(total_saldo_anterior) + '</b></td>' +
                             '<td style="text-align: right;"><b>' + convertir_rever(total_debito) + '</b></td>' +
@@ -398,7 +395,6 @@
                             '<td style="text-align: right;"><b>' + addCommas((Math.round(total_saldo * 100) / 100).toString()) + '</b></td>'
                   }
                   string1 += '</tr>'
-                  console.log(string1)
                   $('#resultados tbody').html(string);
                   $('#resultados tfoot').html(string1);
                   $('#resultados').DataTable().destroy();

@@ -107,7 +107,7 @@
                 $('#mensaje-div').empty()
                 $('#table-div').empty()
                 var string = ""
-                current_asiento = parseInt(data.data[0].NroTransac)
+                //current_asiento = parseInt(data.data[0].NroTransac)
                 for (var a = 0; a < data.data.length; a++) {
                   if (parseInt(data.data[a].NroTransac) != parseInt(current_asiento)) {
                     string += '<div id="asiento-' + data.data[a].NroTransac + '">' +
@@ -155,12 +155,11 @@
                     }
                     nro_transac_list.push(data.data[a].NroTransac)
                     current_asiento = parseInt(data.data[a].NroTransac)
+                    
                   }
                 }
                 
                 $('#table-div').append(string);
-                
-                console.log(string)
                 
                 $('.tablaaa').DataTable({
                     searching: false,

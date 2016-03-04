@@ -43,7 +43,6 @@
 
     $(".input-daterange .form-control").datepicker().on('changeDate', function (e) {
       query[this.name] = this.value;
-      console.log(query);
     });
 
     $("#periodo .form-control").datepicker().on('changeDate', function (e) {
@@ -59,7 +58,6 @@
     $.extend(true, $.fn.selectize.defaults, {
       onChange: function (value) {
         query[this.$input.attr('name')] = value;
-        console.log(query);
       }
     });
 
@@ -138,7 +136,6 @@
                 var total_credito = 0
                 var total_debitoME = 0
                 var total_creditoME = 0
-                console.log(datos)
                 if (datos[1].dato2.length > 0 && datos[0].dato1.length > 0) {
                   if (moneda == 'AM') {
                     string2 = '<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th>' +
@@ -455,7 +452,6 @@
                   }
                   string4 += '</tr>'
                 }
-                console.log(string2)
                 $('#tabla-' + cuenta + ' thead').append(string2)
                 $('#tabla-' + cuenta + ' tbody').append(string3)
                 $('#tabla-' + cuenta + ' tfoot').append(string4)
@@ -517,9 +513,7 @@
       $('#table-div').append("<b>Recuperando datos.</b>")
       $.get(api + "mayorcuenta/cab/" + empresa + "/" + periodo + "/" + fechad + "/" + fechah + "/" + tipoasiento + "/" + cuentad + "/" + cuentah + "/" + incluir,
               function (data) {
-                console.log(data)
                 if (data[1].data2.length > 0) {
-                  console.log(data)
                   $('#table-div').empty()
                   for (var e = 0; e < data[1].data2.length; e++) {
                     var string = '<div id="pad-' + data[1].data2[e].Codplanctapad + '"><hr size="50" style="height: 0px;margin-top: 0px;margin-bottom: 0px;border-top-width: 5px;padding-bottom: 5px;">' +
@@ -567,7 +561,6 @@
 
                     }
                     $('#table-div').append(string);
-                    console.log(string)
                   }
 
                 } else {
@@ -652,7 +645,6 @@
 
   {#  function permisos_empresas(data) {#}
   {#    if (data.length > 0) {#}
-  {#      console.log('Hay datos');#}
   {#      var vector = []#}
   {#      for (var a = 0; a < data.length; a++) {#}
   {#        vector.push("'" + data[a].empresa + "'")#}

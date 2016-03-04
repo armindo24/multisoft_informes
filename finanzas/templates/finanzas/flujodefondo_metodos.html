@@ -126,7 +126,6 @@
       $('#mensaje').append("<b>Recuperando datos.</b>");
       $.get(api + "flowcash/" + periodo + "/" + empresa + "/" + mes_corte,
               function (data) {
-                console.log(data)
                 if (data.data[0].saldos.length > 0 || data.data[1].movimientos.length > 0 || data.data[2].descuentos.length > 0 || data.data[3].bancos.length > 0) {
                   $('#resultado-table').show();
                   $('#mensaje').empty();

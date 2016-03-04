@@ -247,7 +247,6 @@
             createTable(rows, query.tab, [tot_credito], cols);
             $results.show();
           } else if (query.tab == 'extraccion') {
-            console.log('extraccion');
             for (i = 0; i < d.data.length; i++) {
               row = d.data[i];
               if (parseFloat(row.tot_debito) > 0) {

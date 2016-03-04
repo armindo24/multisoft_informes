@@ -43,7 +43,6 @@
 
     $('.input-daterange .form-control').datepicker().on('changeDate', function (e) {
       query[this.name] = e.format('mm');
-      console.log(query);
     });
 
     $('#periodo .form-control').datepicker().on('changeDate', function (e) {
@@ -59,7 +58,6 @@
     $.extend(true, $.fn.selectize.defaults, {
       onChange: function (value) {
         query[this.$input.attr('name')] = value;
-        console.log(query);
       }
     });
 
@@ -177,7 +175,6 @@
               function (data) {
                 if (data.data.length > 0) {
                   $('#table-div').empty()
-                  console.log(data)
                   $('#table-div').show()
                   $('#table-div').empty()
                   var cols = ['Cuentas']

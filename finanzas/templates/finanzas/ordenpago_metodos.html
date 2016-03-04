@@ -44,7 +44,6 @@
     });
     $('.input-date .form-control').datepicker().on('changeDate', function (e) {
       query[this.name] = this.value;
-      console.log(query);
     });
     $('.input-date .form-control').datepicker('setDate', today);
   }
@@ -53,7 +52,6 @@
     $.extend(true, $.fn.selectize.defaults, {
       onChange: function (value) {
         query[this.$input.attr('name')] = value;
-        console.log(query);
       }
     });
 
