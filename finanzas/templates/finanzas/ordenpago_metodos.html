@@ -19,18 +19,18 @@
     initDates();
     initSelects();
 
-    $('#resultados').DataTable({
-      searching: false,
-      language: u.spanish_dt,
-      paging: false,
-      ordering: false,
-      info: false,
-      scrollCollapse: true,
-      scrollY: 300,
-      scrollX: '100%',
-    });
+//     $('#resultados').DataTable({
+//       searching: false,
+//       language: u.spanish_dt,
+//       paging: false,
+//       ordering: false,
+//       info: false,
+//       scrollCollapse: true,
+//       scrollY: 300,
+//       scrollX: '100%',
+//     });
 
-    $('#table-div').hide();
+    $('#table-div').empty();
   });
 
   function initDates() {
@@ -155,13 +155,30 @@
       alert("No hay datos suficientes para generar el listado")
     } else {
       $('.collapse').collapse('hide')
-      $('#table-div').hide()
+      $('#table-div').empty()
       $('#mensaje-div').empty()
       $('#mensaje-div').append("<b>Recuperando datos.</b>")
       $.get(api + "ordenpago/list/" + empresa + "/" + sucursal + "/" + tipoop + "/" + tipoproveedor + "/" + proveedor + "/" + desde + "/" + hasta,
               function (data) {
                 if (data.data.length > 0) {
                   $('#mensaje-div').empty()
+                  
+                  var table_string = '<table id="resultados" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">'+
+                                          '<thead>'+
+                                          '<tr>'+
+                                            '<th style="width:30%;">Proveedor</th>'+
+                                            '<th style="width:15%;">Sucursal</th>'+
+                                            '<th style="width:20%;">OP_Nro</th>'+
+                                            '<th style="width:15%;">Fecha</th>'+
+                                            '<th style="width:20%;" class="price-label">Total</th>'+
+                                          '</tr>'+
+                                          '</thead>'+
+                                          '<tbody>'+
+                                          '</tbody>'+
+                                        '</table>';
+                    $('#table-div').append(table_string);
+                  
+                  
                   var string = ""
                   for (var i = 0; i < data.data.length; i++) {
                     string += '<tr>' +
@@ -173,9 +190,18 @@
                             '</tr>'
                   }
                   $('#resultados tbody').html(string)
-                  $('#table-div').show()
+                  $('#resultados').DataTable({
+                    searching: false,
+                    language: u.spanish_dt,
+                    paging: false,
+                    ordering: false,
+                    info: false,
+                    scrollCollapse: true,
+                    scrollY: 300,
+                    scrollX: '100%',
+                });
                 } else {
-                  $('#table-div').hide()
+                  $('#table-div').empty()
                   $('#mensaje-div').empty()
                   $('#mensaje-div').append("<b>No se han encontrado datos.</b>")
                 }

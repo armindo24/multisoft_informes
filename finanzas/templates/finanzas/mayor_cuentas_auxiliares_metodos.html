@@ -41,12 +41,14 @@
 
     $desde.datepicker({
       format: "yyyy-mm-dd",
-      maxViewMode: 1
+      maxViewMode: 1,
+      autoclose: true,
     });
 
     $hasta.datepicker({
       format: "yyyy-mm-dd",
-      maxViewMode: 1
+      maxViewMode: 1,
+      autoclose: true,
     });
 
     $range.datepicker({
@@ -384,7 +386,7 @@
                   string4 += '</tr>'
                   string4 += '<tr>'
                   if (moneda == 'AM') {
-                    string2 += '<th colspan="7" style="text-align: right;">Total de la Cuenta ' + datos[0].dato1[0].Auxiliar + '</th>' +
+                    string4 += '<th colspan="7" style="text-align: right;">Total de la Cuenta ' + datos[0].dato1[0].Auxiliar + '</th>' +
                             '<th style="text-align: right;">' + convertir_rever(total_debito_periodo) + '</th>' +
                             '<th style="text-align: right;">' + convertir_rever(total_credito) + '</th>'
                     if (datos[0].dato1[0].tiposaldo == "D") {
@@ -526,6 +528,16 @@
                 $('#tabla-' + cuenta + ' thead').append(string2)
                 $('#tabla-' + cuenta + ' tbody').append(string3)
                 $('#tabla-' + cuenta + ' tfoot').append(string4)
+                $('#tabla-' + cuenta).DataTable({
+                        searching: false,
+                        language: u.spanish_dt,
+                        paging: false,
+                        ordering: false,
+                        info: false,
+                        scrollCollapse: true,
+                        scrollY: 300,
+                        scrollX: '100%',
+                      });
               }
             }
     );
