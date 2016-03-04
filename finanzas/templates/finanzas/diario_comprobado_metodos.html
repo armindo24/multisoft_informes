@@ -32,7 +32,6 @@
 
     $inputDate.datepicker().on('changeDate', function (e) {
       query[this.name] = this.value;
-      console.log(query);
     });
 
     $inputDate.datepicker('setDate', new Date());
@@ -112,33 +111,36 @@
                 for (var a = 0; a < data.data.length; a++) {
                   if (parseInt(data.data[a].NroTransac) != parseInt(current_asiento)) {
                     string += '<div id="asiento-' + data.data[a].NroTransac + '">' +
-                            '<table class="table table-striped table-hover table-bordered table-filter scroll" style="width:100%">' +
-                            '<td style="width:8%"><b>Tipo Cbte.:</b></td>' +
-                            '<td>' + data.data[a].TIPOASIENTO + '</td>' +
-                            '<td style="width:10%"><b>Nro. de Cbte.:</b></td>';
-                    if (data.data[a].NroCompr == null) {
-                      string += '<td style="width:12%">&nbsp;</td>';
-                    } else {
-                      string += '<td style="width:12%">' + data.data[a].NroCompr + '</td>';
-                    }
-                    string += '<td style="width:12%"><b>Nro. De Transac.:</b></td>' +
-                            '<td style="width:8%">' + data.data[a].NroTransac + '</td>' +
-                            '<td style="width:12%"><b>Fecha De Transac.:</b></td>' +
-                            '<td style="width:8%">' + data.data[a].Fecha + '</td>' +
-                            '</table><table id="tabla_' + data.data[a].NroTransac + '" class="table table-striped table-bordered nowrap" cellspacing="0" style="width:100%">'
+                            '<table class="table table-striped table-bordered nowrap tablaaa" style="width:100%"><thead>' +
+                            '<th>Tipo Cbte.:</th>' +
+                            '<th>Nro. de Cbte.:</th>';
+                    string += '<th>Nro. De Transac.:</th>' +
+                            
+                            '<th>Fecha De Transac.:</th>' +
+                            '</thead><tbody><tr>'+
+                            '<td>' + data.data[a].TIPOASIENTO + '</td>' 
+                            if (data.data[a].NroCompr == null) {
+                              string += '<td>&nbsp;</td>';
+                            } else {
+                              string += '<td>' + data.data[a].NroCompr + '</td>';
+                            }
+                            string += '<td>' + data.data[a].NroTransac + '</td>' +
+                            '<td>' + data.data[a].Fecha + '</td>' +
+                            '</tr></tbody></table>'+
+                            '<table id="tabla_' + data.data[a].NroTransac + '" class="table table-striped table-bordered nowrap" cellspacing="0" style="width:100%">'
                     if (moneda == 'AM') {
                       string += '<thead>' +
-                              '<th style="width:3%">Sec.</th>' +
-                              '<th style="width:7%">Cuenta</th>' +
-                              '<th style="width:15%">Nombre</th>' +
-                              '<th style="width:7%">Auxiliar</th>' +
-                              '<th style="width:15%">Nombre</th>' +
-                              '<th style="width:19%">Concepto</th>' +
-                              '<th style="width:8%">Debe M.L.</th>' +
-                              '<th style="width:8%">Haber M.L.</th>' +
-                              '<th style="width:8%">Debe M.E.</th>' +
-                              '<th style="width:8%">Haber M.E.</th>' +
-                              '</tr></thead><tbody></tbody></table>';
+                              '<th>Sec.</th>' +
+                              '<th>Cuenta</th>' +
+                              '<th>Nombre</th>' +
+                              '<th>Auxiliar</th>' +
+                              '<th>Nombre</th>' +
+                              '<th>Concepto</th>' +
+                              '<th>Debe M.L.</th>' +
+                              '<th>Haber M.L.</th>' +
+                              '<th>Debe M.E.</th>' +
+                              '<th>Haber M.E.</th>' +
+                              '</tr></thead><tbody></tbody><tfoot></tfoot></table></div>';
                     } else {
                       string += '<thead>' +
                               '<th>Sec.</th>' +
@@ -149,19 +151,18 @@
                               '<th>Concepto</th>' +
                               '<th>Debe</th>' +
                               '<th>Haber</th>' +
-                              '</tr></thead><tbody></tbody></table>';
+                              '</tr></thead><tbody></tbody><tfoot></tfoot></table></div>';
                     }
                     nro_transac_list.push(data.data[a].NroTransac)
                     current_asiento = parseInt(data.data[a].NroTransac)
                   }
                 }
+                
                 $('#table-div').append(string);
-                for (var a = 0; a < nro_transac_list.length; a++) {
-                  total_debito = 0
-                  total_credito = 0
-                  total_debito_me = 0
-                  total_credito_me = 0
-                  $('#tabla_' + nro_transac_list[a]).DataTable({
+                
+                console.log(string)
+                
+                $('.tablaaa').DataTable({
                     searching: false,
                     language: u.spanish_dt,
                     paging: false,
@@ -169,8 +170,16 @@
                     info: false,
                     scrollCollapse: true,
                     scrollY: 300,
+                    scrollX: '100%',
                   });
+                
+                for (var a = 0; a < nro_transac_list.length; a++) {
+                  total_debito = 0
+                  total_credito = 0
+                  total_debito_me = 0
+                  total_credito_me = 0
                   var string2 = ""
+                  var string3 = ""
                   for (var b = 0; b < data.data.length; b++) {
                     string2 += '<tr>' +
                             '<td>' + data.data[b].Linea + '</td>' +
@@ -203,21 +212,34 @@
                     total_credito_me += parseFloat(data.data[a].CREDITO_ME)
                   }
                   if (moneda == 'AM') {
-                    string2 += '<tr><td colspan="6" style="text-align: right;"><b>TOTALES</b></td>' +
+                    string3 += '<tr><td colspan="6" style="text-align: right;"><b>TOTALES</b></td>' +
                             '<td style="text-align: right;"><b>' + convertir_rever(total_debito) + '</b></td>' +
                             '<td style="text-align: right;"><b>' + convertir_rever(total_credito) + '</b></td>' +
                             '<td style="text-align: right;"><b>' + addCommas((Math.round(total_debito_me * 100) / 100).toString()) + '</b></td>' +
                             '<td style="text-align: right;"><b>' + addCommas((Math.round(total_credito_me * 100) / 100).toString()) + '</b></td></tr>'
                   } else if (moneda == 'LO') {
-                    string2 += '<tr><td colspan="6" style="text-align: right;"><b>TOTALES</b></td>' +
+                    string3 += '<tr><td colspan="6" style="text-align: right;"><b>TOTALES</b></td>' +
                             '<td style="text-align: right;"><b>' + convertir_rever(total_debito) + '</b></td>' +
                             '<td style="text-align: right;"><b>' + convertir_rever(total_credito) + '</b></td></tr>'
                   } else {
-                    string2 += '<tr><td colspan="6" style="text-align: right;"><b>TOTALES</td>' +
+                    string3 += '<tr><td colspan="6" style="text-align: right;"><b>TOTALES</td>' +
                             '<td style="text-align: right;"><b>' + addCommas((Math.round(total_debito_me * 100) / 100).toString()) + '</b></td>' +
                             '<td style="text-align: right;"><b>' + addCommas((Math.round(total_credito_me * 100) / 100).toString()) + '</b></td></tr>'
                   }
-                  $('#tabla_' + nro_transac_list[a]).html(string2)
+                  $('#tabla_' + nro_transac_list[a] + ' tbody').html(string2)
+                  $('#tabla_' + nro_transac_list[a] + ' tfoot').html(string3)
+                  
+                  $('#tabla_' + nro_transac_list[a]).DataTable({
+                    searching: false,
+                    language: u.spanish_dt,
+                    paging: false,
+                    ordering: false,
+                    info: false,
+                    scrollCollapse: true,
+                    scrollY: 300,
+                    scrollX: '100%',
+                  });
+                  
                 }
               } else {
                 $('#table-div').show()

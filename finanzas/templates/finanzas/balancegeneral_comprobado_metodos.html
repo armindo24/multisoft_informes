@@ -126,7 +126,7 @@
         periodoant = (parseInt(periodo)).toString()
       }
       $('.collapse').collapse('hide')
-      $('#table-div').hide();
+      $('#table-div').empty();
       $('#mensaje-div').empty();
       $('#mensaje-div').append("<b>Recuperando datos.</b>");
       $.get(api + "balancecomprobado/list/" + empresa + "/" + periodo + "/" + periodoant + "/" + mes + "/" + mesant + "/" + nivel + "/" + moneda,
@@ -135,7 +135,7 @@
                   $('#mensaje-div').empty();
                   $('#table-div').empty();
                   
-                  var table_string = '<table id ="resultados" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">+
+                  var table_string = '<table id ="resultados" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">'+
                                             '<thead>'+
                                                 '<tr>'+
                                                     '<th style="width:10%;">Código</th>'+
@@ -399,9 +399,7 @@
                   }
                   string1 += '</tr>'
                   console.log(string1)
-                  $("#resultados > tbody").html("");
                   $('#resultados tbody').html(string);
-                  $('#resultados > tfoot').html("");
                   $('#resultados tfoot').html(string1);
                   $('#resultados').DataTable().destroy();
                     $('#resultados').DataTable({
