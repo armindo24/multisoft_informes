@@ -141,7 +141,7 @@ router.get('/mayorcuentaaux/cab/:empresa/:periodo/:fechad/:fechah/:tipoasiento/:
 });
 
 //detalle de movimientos de cuenta libro mayor aux
-router.get('/mayorcuentaaux/det/:empresa/:periodo/:fechad/:fechah/:tipoasiento/:cuenta', function (req, res, next) {
+router.get('/mayorcuentaaux/det/:empresa/:periodo/:fechad/:fechah/:tipoasiento/:cuenta/:path', function (req, res, next) {
     Mayor.cuentasdetalleaux(req.params, function (result) {
         res.json(result);
     });

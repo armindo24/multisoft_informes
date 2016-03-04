@@ -259,7 +259,7 @@ Mayor.cuentasdetalleaux = function (params,cb) {
                  if (params.tipoasiento != 'NINGUNO')
                     string+="AND dba.ASIENTOSCAB.TipoAsiento = '"+params.tipoasiento+"' ";
                  string+="and DBA.PLANAUXI.PERIODO = '"+params.periodo+"' and DBA.PLANAUXI.Imputable = 'S' and DBA.PLANAUXI.Cod_Empresa = '"+params.empresa+"' "+
-                 "and DBA.PLANAUXI.CodPlanAux = '"+params.cuenta+"' and DBA.ASIENTOSCAB.Fecha BETWEEN '"+params.fechad+"' and '"+params.fechah+"' "+
+                 "and DBA.PLANAUXI.CodPlanAux = '"+params.cuenta+"' and DBA.PLANAUXI.CodPlanCta = '"+params.path+"' and DBA.ASIENTOSCAB.Fecha BETWEEN '"+params.fechad+"' and '"+params.fechah+"' "+
                  "ORDER BY DBA.PLANAUXI.CodPlanAux ";
     console.log(string)
     conn.exec(string, function(err, row){
@@ -276,7 +276,7 @@ Mayor.cuentasdetalleaux = function (params,cb) {
                       "and DBA.TIPOASIENTO.TpDef not in( 'N') ";
                       if (params.tipoasiento != 'NINGUNO')
                           string1+="AND dba.ASIENTOSCAB.TipoAsiento = '"+params.tipoasiento+"' ";
-                      string1+="and DBA.PLANAUXI.PERIODO = '"+params.periodo+"' and DBA.PLANAUXI.Imputable = 'S' and DBA.PLANAUXI.Cod_Empresa = '"+params.empresa+"' and DBA.PLANAUXI.CodPlanAux = '"+params.cuenta+"' "+ 
+                      string1+="and DBA.PLANAUXI.PERIODO = '"+params.periodo+"' and DBA.PLANAUXI.Imputable = 'S' and DBA.PLANAUXI.Cod_Empresa = '"+params.empresa+"' and DBA.PLANAUXI.CodPlanAux = '"+params.cuenta+"' and DBA.PLANAUXI.CodPlanCta = '"+params.path+"' "+ 
                                "and DBA.ASIENTOSCAB.Fecha BETWEEN '"+params.periodo+"-01-01' and dateadd(dd,-1,'"+params.fechad+"') GROUP BY DBA.PLANAUXI.CodPlanAux,DBA.PLANCTA.TipoSaldo ORDER BY DBA.PLANAUXI.CodPlanAux";
         console.log(string1)
         conn.exec(string1, function(err, row){
