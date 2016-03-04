@@ -100,12 +100,12 @@
     $('.collapse').collapse('hide')
     $('#mensaje-div').empty()
     $('#mensaje-div').append("<b>Recuperando datos.</b>")
-    $('#table-div').hide()
+    $('#table-div').empty()
     $.get(api + "diariocomprobado/list/" + empresa + "/" + tipoasiento + "/" + desde + "/" + hasta + "/" + autorizado,
             function (data) {
               if (data.data.length > 0) {
                 $('#mensaje-div').empty()
-                $('#table-div').show()
+                $('#table-div').empty()
                 var string = ""
                 current_asiento = parseInt(data.data[0].NroTransac)
                 for (var a = 0; a < data.data.length; a++) {
@@ -242,7 +242,7 @@
                   
                 }
               } else {
-                $('#table-div').show()
+                $('#table-div').empty()
                 $('#mensaje-div').empty()
                 $('#mensaje-div').append("<b>No se han encontrado datos.</b>")
               }
