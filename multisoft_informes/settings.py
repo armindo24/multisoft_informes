@@ -46,7 +46,8 @@ INSTALLED_APPS = (
     'dajaxice',
     'custom_permissions',
     'finanzas',
-    'ventas'
+    'ventas',
+    'compras'
 )
 
 MIDDLEWARE_CLASSES = (
