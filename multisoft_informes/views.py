@@ -56,6 +56,7 @@ def loggedin(request):
         
     iconos = {"Finanzas":"fa fa-university fa-5x",
               "Ventas":"fa fa-file-text-o fa-5x",
+              "Compras": "fa fa-shopping-cart fa-5x",
               "Admin":"fa fa-cogs fa-5x",
               }
     
@@ -78,6 +79,8 @@ def menu(request):
             titulo = 'Ventas'
         elif q == "Finanzas":
             titulo = 'Finanzas'
+        elif q == "Compras":
+            titulo = 'Compras'
         elif q == "Admin":
             titulo = 'Admin'
 

@@ -9,6 +9,11 @@
 					<a href="{% url 'ventas:resumido' %}"> Ventas - Resumido y Detallado </a>
 			    </li>
 		    {% endif %}
+		    {% if  request.session.modulo_seleccionado == "Compras"  %}
+                <li>
+                    <a href="{% url 'compras:ordencompra' %}"> Orden de Compra </a>
+                </li>
+            {% endif %}
 			{% if  request.session.modulo_seleccionado == "Finanzas"  %}
 				<li>
 					<a href="#"> Balances <span class="fa arrow"></span></a>

@@ -42,6 +42,7 @@ urlpatterns = patterns('',
         'django.contrib.auth.views.password_change_done'),
     url(r'^finanzas/', include("finanzas.urls", namespace="finanzas")),
     url(r'^ventas/', include('ventas.urls', namespace='ventas')),
+    url(r'^compras/', include('compras.urls', namespace='compras')),
     url(r'^custom_permissions/', include("custom_permissions.urls", namespace="custom_permissions")),
 )
 

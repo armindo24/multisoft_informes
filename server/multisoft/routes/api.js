@@ -19,6 +19,7 @@ var Rubro = require('../models/rubro');
 var Articulo = require('../models/articulo');
 var Activo = require('../models/activo');
 var FlowCash = require('../models/flowcash');
+var Departamento = require('../models/departamento');
 
 
 var conn = require('../db');
@@ -273,5 +274,11 @@ router.get('/empresas/:empresa/auxiliares/', function (req, res, next) {
     });
 });
 
+//cuentas select option
+router.get('/departamento/select/:empresa/:sucursal', function (req, res, next) {
+    Departamento.all(req.params, function (result) {
+        res.json({data: result});
+    });
+});
 
 module.exports = router;

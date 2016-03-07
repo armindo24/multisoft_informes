@@ -1,0 +1,240 @@
+{% extends 'finanzas/base.html' %}
+
+{% block header %}
+  Orden de Compra:
+{% endblock %}
+
+{% block filters %}
+  {% include 'ventas/_filtro.html' with name="empresa" %}
+  {% include 'ventas/_filtro.html' with name="sucursal" %}
+  {% include 'ventas/_filtro.html' with name="departamento" %}
+  {% include 'ventas/_filtro.html' with name="proveedor" %}
+
+  <div class="col-sm-6">
+    <div class="form-group">
+      <label for="ventas" class="col-md-4 control-label">Ventas:</label>
+      <div class="col-md-6">
+        <div id="ventas" class="input-daterange input-group input-date">
+          <input type="text" class="input-sm form-control" name="start"/>
+          <span class="input-group-addon">hasta</span>
+          <input type="text" class="input-sm form-control" name="end"/>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  {% include 'ventas/_filtro.html' with name="estado" %}
+  
+{% endblock %}
+
+{% block extra_foot %}
+  <script>
+    var query = {};
+
+    var api = u.getApiUrl();
+    var $results = $('#results');
+    var $preview = $('#preview');
+    var today = new Date();
+    var initialize = init;
+    var select_empresa, $select_empresa;
+    var select_sucursal, $select_sucursal;
+    var select_departamento, $select_departamento;
+    var select_proveedor, $select_proveedor;
+    var select_estado, $select_estado;
+    var xhr;
+
+    $(document).ready(function () {
+      u.hideNav();
+      $results.hide();
+      initialize();
+      select_empresa = $select_empresa[0].selectize;
+
+      select_sucursal = $select_sucursal[0].selectize;
+      select_sucursal.disable();
+      select_departamento = $select_departamento[0].selectize;
+      select_departamento.disable();
+      select_proveedor = $select_proveedor[0].selectize;
+      select_proveedor.disable();
+    });
+
+    function init() {
+      $.extend(true, $.fn.selectize.defaults, {
+        onChange: function (value) {
+          query[this.$input.attr('name')] = value;
+          debug();
+        }
+      });
+
+      $select_empresa = $('#select-empresa').selectize({
+        valueField: 'Cod_Empresa',
+        labelField: 'Des_Empresa',
+        searchField: 'Des_Empresa',
+        preload: true,
+        load: function (q, callback) {
+          u.get_empresas({{ user }}, function (d) {
+            callback(d.data);
+          });
+        },
+        onChange: function (value) {
+          query.empresa = value;
+          debug();
+          if (!value.length) return;
+          select_proveedor.disable();
+          select_proveedor.clearOptions();
+          select_proveedor.load(function (callback) {
+            $.ajax({
+              url: api + 'empresas/' + query.empresa + '/proveedores',
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_proveedor.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+          select_sucursal.load(function (callback) {
+            $.ajax({
+              url: api + 'sucursal/select/' + query.empresa,
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_sucursal.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+
+      $select_proveedor = $('#select-proveedor').selectize({
+        valueField: 'CodProv',
+        labelField: 'RazonSocial',
+        searchField: 'RazonSocial',
+        maxItems: null
+      });
+      
+      $select_sucursal = $('#select-sucursal').selectize({
+        valueField: 'Cod_Sucursal',
+        labelField: 'Des_Sucursal',
+        searchField: 'Des_Sucursal',
+        preload: true,
+        onChange: function (value) {
+          query.sucursal = value;
+          debug();
+          if (!value.length) return;
+          select_departamento.disable();
+          select_departamento.clearOptions();
+          select_departamento.load(function (callback) {
+            $.ajax({
+              url: api + 'departamento/select/' + query.empresa + '/' + query.sucursal,
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_departamento.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+      
+      $select_departamento = $('#select-departamento').selectize({
+        valueField: 'CodDpto',
+        labelField: 'Descrip',
+        searchField: 'Descrip'
+      });
+
+      $select_estado = $('#select-estado').selectize({
+        allowEmptyOption: true,
+        options: [
+          {value: 'PE', text: 'Pendiente'},
+          {value: 'AP', text: 'Aprobado'},
+          {value: 'EP', text: 'Entregado al Proveedor'},
+          {value: 'ED', text: 'Enviado a Destino'},
+          {value: 'DE', text: 'En proceso de Despacho'},
+          {value: 'RE', text: 'Recibido en Casa Matriz'},
+          {value: 'CA', text: 'Cancelado'}
+        ]
+      });
+
+      $('.input-daterange').datepicker({
+        todayBtn: "linked",
+        language: "es",
+        format: "yyyy-mm-dd",
+        autoclose: true
+      });
+
+      $('.input-date .form-control').datepicker().on('changeDate', function (e) {
+        query[this.parentElement.id + '_' + this.name] = this.value;
+        debug();
+      });
+
+      $('.input-date .form-control').datepicker('setDate', today);
+      $('.input-date .form-control').datepicker('update');
+    }
+
+    function debug() {
+      $preview.text(JSON.stringify(query));
+    }
+
+    function getInforme() {
+      $('.collapse').collapse('hide');
+      $results.show();
+
+      var revaluable = $("[name=revaluable]")[0].checked;
+      var despreciable = $("[name=despreciable]")[0].checked;
+
+      query.revaluable = revaluable;
+      query.despreciable = despreciable;
+
+      if (!$.fn.DataTable.isDataTable('#results')) {
+        $('#results').DataTable({
+          language: u.spanish_dt,
+          ajax: {
+            url: api + 'empresas/' + query.empresa + '/informes/activo',
+            data: function () {
+              return query;
+            }
+          },
+          deferRender: true,
+          scrollY: 400,
+          scrollCollapse: true,
+          scroller: {
+            displayBuffer: 30,
+            loadingIndicator: true
+          },
+          columnDefs: [
+            {className: "price-value", targets: "price-label"},
+            {render: $.fn.dataTable.render.number('.', ',', 2), targets: "price-label"},
+            {className: "text-center", targets: "text-center"},
+            {visible: false, targets: "grouping-col"}
+          ],
+          columns: [
+            {data: 'codactivo'},
+            {data: 'comentario'},
+            {data: 'estado'},
+            {data: 'RUBROORIGINAL_DESCRIP'},
+            {data: 'SUBRUBROORIGINAL_DESCRIP'},
+            {data: 'fechacompra'},
+            {data: 'costocompra'},
+            {data: 'costocomprame'}
+          ],
+          searching: false,
+          ordering: false,
+        });
+        $results.show();
+      } else {
+        var table = $('#results').DataTable();
+        var $resultado = $('#resultado');
+        table.row(0).scrollTo();
+        $resultado.css("position", "absolute").css("left", -9999);
+        table.ajax.url(api + 'empresas/' + query.empresa + '/informes/activo').load(function () {
+          $resultado.css("position", "relative").css("left", 0);
+        });
+      }
+    }
+  </script>
+{% endblock %}
