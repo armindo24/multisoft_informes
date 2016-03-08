@@ -12,9 +12,9 @@
 
   <div class="col-sm-6">
     <div class="form-group">
-      <label for="ventas" class="col-md-4 control-label">Ventas:</label>
+      <label for="compras" class="col-md-4 control-label">Ventas:</label>
       <div class="col-md-6">
-        <div id="ventas" class="input-daterange input-group input-date">
+        <div id="compras" class="input-daterange input-group input-date">
           <input type="text" class="input-sm form-control" name="start"/>
           <span class="input-group-addon">hasta</span>
           <input type="text" class="input-sm form-control" name="end"/>
@@ -23,6 +23,7 @@
     </div>
   </div>
   
+  {% include 'ventas/_filtro.html' with name="tipooc" title="Tipo Orden"%}
   {% include 'ventas/_filtro.html' with name="estado" %}
   
 {% endblock %}
@@ -40,6 +41,7 @@
     var select_sucursal, $select_sucursal;
     var select_departamento, $select_departamento;
     var select_proveedor, $select_proveedor;
+    var select_tipooc, $select_tipooc;
     var select_estado, $select_estado;
     var xhr;
 
@@ -55,6 +57,8 @@
       select_departamento.disable();
       select_proveedor = $select_proveedor[0].selectize;
       select_proveedor.disable();
+      select_tipooc = $select_tipooc[0].selectize;
+      select_tipooc.disable();
     });
 
     function init() {
@@ -93,6 +97,8 @@
               callback();
             });
           });
+          select_sucursal.disable();
+          select_sucursal.clearOptions();
           select_sucursal.load(function (callback) {
             $.ajax({
               url: api + 'sucursal/select/' + query.empresa,
@@ -105,6 +111,20 @@
               callback();
             });
           });
+          select_tipooc.disable();
+          select_tipooc.clearOptions();
+          select_tipooc.load(function (callback) {
+            $.ajax({
+              url: api + 'tipooc/select/' + query.empresa,
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_tipooc.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
         }
       });
 
@@ -112,7 +132,11 @@
         valueField: 'CodProv',
         labelField: 'RazonSocial',
         searchField: 'RazonSocial',
-        maxItems: null
+        //maxItems: null,
+        onChange: function (value) {
+          query.proveedor = value;
+          debug();
+        }
       });
       
       $select_sucursal = $('#select-sucursal').selectize({
@@ -144,7 +168,21 @@
       $select_departamento = $('#select-departamento').selectize({
         valueField: 'CodDpto',
         labelField: 'Descrip',
-        searchField: 'Descrip'
+        searchField: 'Descrip',
+        onChange: function (value) {
+          query.departamento = value;
+          debug();
+        }
+      });
+      
+      $select_tipooc = $('#select-tipooc').selectize({
+        valueField: 'TipoOrden',
+        labelField: 'Descrip',
+        searchField: 'Descrip',
+        onChange: function (value) {
+          query.tipooc = value;
+          debug();
+        }
       });
 
       $select_estado = $('#select-estado').selectize({
@@ -157,7 +195,11 @@
           {value: 'DE', text: 'En proceso de Despacho'},
           {value: 'RE', text: 'Recibido en Casa Matriz'},
           {value: 'CA', text: 'Cancelado'}
-        ]
+        ],
+        onChange: function (value) {
+          query.estado = value;
+          debug();
+        }
       });
 
       $('.input-daterange').datepicker({
@@ -183,14 +225,17 @@
     function getInforme() {
       $('.collapse').collapse('hide');
       $results.show();
+       
+      alert(query.empresa)
+      alert(query.sucursal)
+      alert(query.departamento)
+      alert(query.proveedor)
+      alert(query.compras_start)
+      alert(query.compras_end)
+      alert(query.tipooc) 
+      alert(query.estado)  
 
-      var revaluable = $("[name=revaluable]")[0].checked;
-      var despreciable = $("[name=despreciable]")[0].checked;
-
-      query.revaluable = revaluable;
-      query.despreciable = despreciable;
-
-      if (!$.fn.DataTable.isDataTable('#results')) {
+      /*if (!$.fn.DataTable.isDataTable('#results')) {
         $('#results').DataTable({
           language: u.spanish_dt,
           ajax: {
@@ -234,7 +279,7 @@
         table.ajax.url(api + 'empresas/' + query.empresa + '/informes/activo').load(function () {
           $resultado.css("position", "relative").css("left", 0);
         });
-      }
+      }*/
     }
   </script>
 {% endblock %}

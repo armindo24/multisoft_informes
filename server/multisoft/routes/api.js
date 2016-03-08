@@ -20,6 +20,7 @@ var Articulo = require('../models/articulo');
 var Activo = require('../models/activo');
 var FlowCash = require('../models/flowcash');
 var Departamento = require('../models/departamento');
+var Tipooc = require('../models/tipooc');
 
 
 var conn = require('../db');
@@ -277,6 +278,13 @@ router.get('/empresas/:empresa/auxiliares/', function (req, res, next) {
 //cuentas select option
 router.get('/departamento/select/:empresa/:sucursal', function (req, res, next) {
     Departamento.all(req.params, function (result) {
+        res.json({data: result});
+    });
+});
+
+//cuentas select option
+router.get('/tipooc/select/:empresa', function (req, res, next) {
+    Tipooc.all(req.params, function (result) {
         res.json({data: result});
     });
 });
