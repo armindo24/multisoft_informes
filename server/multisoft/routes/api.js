@@ -21,7 +21,7 @@ var Activo = require('../models/activo');
 var FlowCash = require('../models/flowcash');
 var Departamento = require('../models/departamento');
 var Tipooc = require('../models/tipooc');
-
+var OrdenCompra = require('../models/ordencompra');
 
 var conn = require('../db');
 
@@ -285,6 +285,12 @@ router.get('/departamento/select/:empresa/:sucursal', function (req, res, next) 
 //cuentas select option
 router.get('/tipooc/select/:empresa', function (req, res, next) {
     Tipooc.all(req.params, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/ordencompra/list', function (req, res, next) {
+    OrdenCompra.all(req.query, function (result) {
         res.json({data: result});
     });
 });

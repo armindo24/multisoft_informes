@@ -28,6 +28,23 @@
   
 {% endblock %}
 
+{% block table %}
+  <thead>
+  <tr>
+    <th class="text-center">N° de Orden</th>
+    <th>Proveedor</th>
+    <th>Fecha</th>
+    <th>Repartamento</th>
+    <th>Responsable</th>
+    <th>Solicitado por</th>
+    <th class="text-center">Moneda</th>
+    <th>N° de Pedido</th>
+    <th class="text-center">Estado</th>
+    <th class="price-label">Total</th>
+  </tr>
+  </thead>
+{% endblock %}
+
 {% block extra_foot %}
   <script>
     var query = {};
@@ -132,7 +149,7 @@
         valueField: 'CodProv',
         labelField: 'RazonSocial',
         searchField: 'RazonSocial',
-        //maxItems: null,
+        maxItems: null,
         onChange: function (value) {
           query.proveedor = value;
           debug();
@@ -179,6 +196,7 @@
         valueField: 'TipoOrden',
         labelField: 'Descrip',
         searchField: 'Descrip',
+        maxItems: null,
         onChange: function (value) {
           query.tipooc = value;
           debug();
@@ -187,6 +205,7 @@
 
       $select_estado = $('#select-estado').selectize({
         allowEmptyOption: true,
+        maxItems: null,
         options: [
           {value: 'PE', text: 'Pendiente'},
           {value: 'AP', text: 'Aprobado'},
@@ -225,21 +244,12 @@
     function getInforme() {
       $('.collapse').collapse('hide');
       $results.show();
-       
-      alert(query.empresa)
-      alert(query.sucursal)
-      alert(query.departamento)
-      alert(query.proveedor)
-      alert(query.compras_start)
-      alert(query.compras_end)
-      alert(query.tipooc) 
-      alert(query.estado)  
 
-      /*if (!$.fn.DataTable.isDataTable('#results')) {
+      if (!$.fn.DataTable.isDataTable('#results')) {
         $('#results').DataTable({
           language: u.spanish_dt,
           ajax: {
-            url: api + 'empresas/' + query.empresa + '/informes/activo',
+            url: api + 'ordencompra/list',
             data: function () {
               return query;
             }
@@ -253,19 +263,21 @@
           },
           columnDefs: [
             {className: "price-value", targets: "price-label"},
-            {render: $.fn.dataTable.render.number('.', ',', 2), targets: "price-label"},
+            {render: $.fn.dataTable.render.number('.', ',', 0), targets: "price-label"},
             {className: "text-center", targets: "text-center"},
             {visible: false, targets: "grouping-col"}
           ],
           columns: [
-            {data: 'codactivo'},
-            {data: 'comentario'},
+            {data: 'nroordcomp'},
+            {data: 'razonsocial'},
+            {data: 'fechaorden'},
+            {data: 'descrip'},
+            {data: 'responsable'},
+            {data: 'solicitadopor'},
+            {data: 'codmoneda'},
+            {data: 'nropedido'},
             {data: 'estado'},
-            {data: 'RUBROORIGINAL_DESCRIP'},
-            {data: 'SUBRUBROORIGINAL_DESCRIP'},
-            {data: 'fechacompra'},
-            {data: 'costocompra'},
-            {data: 'costocomprame'}
+            {data: 'total'}
           ],
           searching: false,
           ordering: false,
@@ -276,10 +288,10 @@
         var $resultado = $('#resultado');
         table.row(0).scrollTo();
         $resultado.css("position", "absolute").css("left", -9999);
-        table.ajax.url(api + 'empresas/' + query.empresa + '/informes/activo').load(function () {
+        table.ajax.url(api + 'ordencompra/list').load(function () {
           $resultado.css("position", "relative").css("left", 0);
         });
-      }*/
+      }
     }
   </script>
 {% endblock %}
