@@ -22,6 +22,7 @@ var FlowCash = require('../models/flowcash');
 var Departamento = require('../models/departamento');
 var Tipooc = require('../models/tipooc');
 var OrdenCompra = require('../models/ordencompra');
+var Usuarios = require('../models/usuarios');
 
 var conn = require('../db');
 
@@ -291,6 +292,18 @@ router.get('/tipooc/select/:empresa', function (req, res, next) {
 
 router.get('/ordencompra/list', function (req, res, next) {
     OrdenCompra.all(req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/compras/:empresa/comprobantes/tipos', function (req, res, next) {
+    Comprobante.compras(req.params, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/compras/:empresa/usuarios', function (req, res, next) {
+    Usuarios.compras(req.params, function (result) {
         res.json({data: result});
     });
 });

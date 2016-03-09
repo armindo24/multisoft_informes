@@ -9,4 +9,12 @@ Comprobante.empresa = function (params, cb) {
     });
 };
 
+
+Comprobante.compras = function (params, cb) {
+    conn.exec("SELECT dba.tpocbte.cod_tp_comp,dba.TPOCBTE.des_tp_comp FROM dba.tpocbte WHERE ( DBA.tpocbte.tp_def IN ( 'CC' , 'CD' , 'NP' ) ) AND ( dba.tpocbte.cod_empresa = '"+params.empresa+"' ) ORDER BY dba.tpocbte.cod_tp_comp", function (err, row) {
+        if (err) throw err;
+        cb(row);
+    });
+};
+
 module.exports = Comprobante;

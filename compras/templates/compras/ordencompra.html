@@ -225,7 +225,8 @@
         todayBtn: "linked",
         language: "es",
         format: "yyyy-mm-dd",
-        autoclose: true
+        autoclose: true,
+        orientation: "bottom auto"
       });
 
       $('.input-date .form-control').datepicker().on('changeDate', function (e) {
@@ -255,7 +256,7 @@
             }
           },
           deferRender: true,
-          scrollY: 400,
+          scrollY: 350,
           scrollCollapse: true,
           scroller: {
             displayBuffer: 30,

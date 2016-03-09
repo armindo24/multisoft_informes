@@ -13,6 +13,9 @@
                 <li>
                     <a href="{% url 'compras:ordencompra' %}"> Orden de Compra </a>
                 </li>
+                <li>
+                    <a href="{% url 'compras:compras' %}"> Compras - Resumido y Detallado </a>
+                </li>
             {% endif %}
 			{% if  request.session.modulo_seleccionado == "Finanzas"  %}
 				<li>
