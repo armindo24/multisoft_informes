@@ -11,3 +11,7 @@ def ordencompra(request):
 #@permission_required('custom_permissions.informe_ordenpago')
 def compras(request):
     return render_to_response('compras/compras.html', {'user':request.user.id}, context_instance=RequestContext(request))
+
+#TODO: customperm
+def presupuesto(request):
+    return render_to_response('compras/presupuesto.html', {'user':request.user.id}, context_instance=RequestContext(request))

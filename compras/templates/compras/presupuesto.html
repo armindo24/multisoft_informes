@@ -1,0 +1,198 @@
+{% extends 'finanzas/base.html' %}
+
+{% block header %}
+  Informe General de Presupuestos:
+{% endblock %}
+
+{% block filters %}
+  {% include 'ventas/_filtro.html' with name="empresa" %}
+  {% include 'ventas/_filtro.html' with name="sucursal" %}
+  <div class="col-sm-6">
+    <div class="form-group">
+      <label for="aprobacion" class="col-md-4 control-label">Fecha de Aprobación:</label>
+
+      <div class="col-md-6">
+        <div id="aprobacion" class="input-daterange input-group input-date">
+          <input type="text" class="input-sm form-control" name="start"/>
+          <span class="input-group-addon">hasta</span>
+          <input type="text" class="input-sm form-control" name="end"/>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% include 'ventas/_filtro.html' with name="tipoCliente" title="Tipo de Cliente" placeholder="Tipo" %}
+  {% include 'ventas/_filtro.html' with name="cliente" %}
+  {% include 'ventas/_filtro.html' with name="tipoComprobante" title="Tipo de Comprobante" placeholder="Tipo" %}
+  <div class="col-sm-6">
+    <div class="form-group">
+      <label for="comprobante" class="col-md-4 control-label">Fecha de Comprobante:</label>
+
+      <div class="col-md-6">
+        <div id="comprobante" class="input-daterange input-group input-date">
+          <input type="text" class="input-sm form-control" name="start"/>
+          <span class="input-group-addon">hasta</span>
+          <input type="text" class="input-sm form-control" name="end"/>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% include 'ventas/_filtro.html' with name="estado" %}
+{% endblock %}
+
+{% block extra_foot %}
+  <script>
+    var query = {};
+    var api = u.getApiUrl();
+
+    var $selectEmpresa, selectEmpresa;
+    var $selectSucursal, selectSucursal;
+    var $selectCliente, selectCliente;
+    var $selectTipoCliente, selectTipoCliente;
+    var $selectTipoComprobante, selectTipoComprobante;
+
+
+    $(document).ready(function () {
+      u.hideNav();
+      initDates();
+      initSelects();
+    });
+
+    function initDates() {
+      var $inputDate = $(".input-date .form-control");
+      u.defaultDatepicker();
+
+      u.defaultDatepicker();
+      $(".input-daterange").datepicker({
+        todayBtn: "linked",
+        format: "yyyy-mm-dd",
+        autoclose: true
+      });
+
+      $inputDate.datepicker().on('changeDate', function (e) {
+        query[this.name] = this.value;
+      });
+
+      $inputDate.datepicker('setDate', new Date());
+      $inputDate.datepicker('update');
+    }
+
+    function initSelects() {
+      $.extend(true, $.fn.selectize.defaults, {
+        onChange: function (value) {
+          query[this.$input.attr('name')] = value;
+        }
+      });
+
+      $selectEmpresa = $('#select-empresa').selectize({
+        valueField: 'Cod_Empresa',
+        labelField: 'Des_Empresa',
+        searchField: 'Des_Empresa',
+        onChange: function (value) {
+          query.empresa = value;
+          u.resetSelect(selectSucursal);
+          u.resetSelect(selectTipoComprobante);
+          if (!value.length) return;
+          selectSucursal.load(function (callback) {
+            $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
+              selectSucursal.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+
+          selectTipoComprobante.load(function (callback) {
+            $.get(api + 'empresas/' + query.empresa + '/comprobantes/tipos').done(function (res) {
+              selectTipoComprobante.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+
+        }
+      });
+      selectEmpresa = $selectEmpresa[0].selectize;
+      selectEmpresa.load(function (cb) {
+        u.get_empresas({{ user }}, function (res) {
+          cb(res.data);
+        });
+      });
+
+      $selectTipoComprobante = $('#select-tipoComprobante').selectize({
+        valueField: 'Cod_Tp_Comp',
+        labelField: 'des_tp_comp',
+        searchField: 'des_tp_comp'
+      });
+      selectTipoComprobante = $selectTipoComprobante[0].selectize;
+      selectTipoComprobante.disable();
+
+
+      $selectSucursal = $('#select-sucursal').selectize({
+        valueField: 'Cod_Sucursal',
+        labelField: 'Des_Sucursal',
+        searchField: 'Des_Sucursal',
+        onChange: function (value) {
+          query.sucursal = value;
+          u.resetSelect(selectTipoCliente);
+          if (!value.length) return;
+          selectTipoCliente.load(function (callback) {
+            $.get(api + 'clientes/tipos/').done(function (res) {
+              selectTipoCliente.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+      selectSucursal = $selectSucursal[0].selectize;
+      selectSucursal.disable();
+
+      $selectTipoCliente = $('#select-tipoCliente').selectize({
+        valueField: 'Cod_Tp_Cliente',
+        labelField: 'Des_Tp_Cliente',
+        searchField: 'Des_Tp_Cliente',
+        onChange: function (value) {
+          query.tipoCliente = value;
+          u.resetSelect(selectCliente);
+          if (!value.length) return;
+          selectCliente.enable();
+        }
+      });
+      selectTipoCliente = $selectTipoCliente[0].selectize;
+      selectTipoCliente.disable();
+
+      $selectCliente = $('#select-cliente').selectize({
+        valueField: 'Cod_Cliente',
+        labelField: 'Razon_Social',
+        searchField: 'Razon_Social',
+        load: function (q, cb) {
+          if (!q.length) return cb();
+          $.get(api + 'empresas/' + query.empresa + '/clientes', {
+            tipo: query.tipoCliente,
+            cliente: q,
+            sucursal: query.sucursal
+          }).done(function (res) {
+            cb(res.data);
+          }).fail(function () {
+            cb();
+          });
+        }
+      });
+      selectCliente = $selectCliente[0].selectize;
+      selectCliente.disable();
+
+      $('#select-estado').selectize({
+        options: [
+          {value: 'AP', text: 'Aprobado'},
+          {value: 'CA', text: 'Cancelado'},
+          {value: 'CA', text: 'Facturado'},
+          {value: 'OF', text: 'Orden de Facturacion'},
+          {value: 'PE', text: 'Pendiente'},
+          {value: 'RE', text: 'Rechazado'}
+        ]
+      });
+    }
+  </script>
+{% endblock %}
