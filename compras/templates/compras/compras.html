@@ -1,0 +1,333 @@
+{% extends 'finanzas/base.html' %}
+
+{% block header %}
+  Orden de Compra:
+{% endblock %}
+
+{% block filters %}
+  {% include 'ventas/_filtro.html' with name="empresa" %}
+  {% include 'ventas/_filtro.html' with name="sucursal" %}
+  {% include 'ventas/_filtro.html' with name="departamento" %}
+  {% include 'ventas/_filtro.html' with name="tipoco" title="Tipo Comprobante" %}
+  {% include 'ventas/_filtro.html' with name="cargado" title="Cargado por" %}
+  {% include 'ventas/_filtro.html' with name="generado" title="Generado por" %}
+  {% include 'ventas/_filtro.html' with name="fechade" title="Fecha De" %}
+
+  <div class="col-sm-6">
+    <div class="form-group">
+      <label for="compras" class="col-md-4 control-label">Ventas:</label>
+      <div class="col-md-6">
+        <div id="compras" class="input-daterange input-group input-date">
+          <input type="text" class="input-sm form-control" name="start"/>
+          <span class="input-group-addon">hasta</span>
+          <input type="text" class="input-sm form-control" name="end"/>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-sm-6">
+    <div class="form-group">
+      <label for="numero" class="col-md-4 control-label">N° Comprobante:</label>
+      <div class="col-md-6">
+        <div id="numero">
+          <input type="text" class="input-sm form-control" name="comprobante"/>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-sm-6">
+    
+  </div>
+{% endblock %}
+
+{% block table %}
+  <thead>
+  <tr>
+    <th class="text-center">N° de Orden</th>
+    <th>Proveedor</th>
+    <th>Fecha</th>
+    <th>Repartamento</th>
+    <th>Responsable</th>
+    <th>Solicitado por</th>
+    <th class="text-center">Moneda</th>
+    <th>N° de Pedido</th>
+    <th class="text-center">Estado</th>
+    <th class="price-label">Total</th>
+  </tr>
+  </thead>
+{% endblock %}
+
+{% block extra_foot %}
+  <script>
+    var query = {};
+
+    var api = u.getApiUrl();
+    var $results = $('#results');
+    var $preview = $('#preview');
+    var today = new Date();
+    var initialize = init;
+    var select_empresa, $select_empresa;
+    var select_sucursal, $select_sucursal;
+    var select_departamento, $select_departamento;
+    var select_fechade, $select_fechade;
+    var select_tipoco, $select_tipoco;
+    var select_cargado, $select_cargado;
+    var select_generado, $select_generado;
+    var xhr;
+
+    $(document).ready(function () {
+      u.hideNav();
+      $results.hide();
+      initialize();
+      select_empresa = $select_empresa[0].selectize;
+
+      select_sucursal = $select_sucursal[0].selectize;
+      select_sucursal.disable();
+      select_departamento = $select_departamento[0].selectize;
+      select_departamento.disable();
+      select_tipoco = $select_tipoco[0].selectize;
+      select_tipoco.disable();
+      select_cargado = $select_cargado[0].selectize;
+      select_cargado.disable();
+      select_generado = $select_generado[0].selectize;
+      select_generado.disable();
+    });
+
+    function init() {
+      $.extend(true, $.fn.selectize.defaults, {
+        onChange: function (value) {
+          query[this.$input.attr('name')] = value;
+          debug();
+        }
+      });
+
+      $select_empresa = $('#select-empresa').selectize({
+        valueField: 'Cod_Empresa',
+        labelField: 'Des_Empresa',
+        searchField: 'Des_Empresa',
+        preload: true,
+        load: function (q, callback) {
+          u.get_empresas({{ user }}, function (d) {
+            callback(d.data);
+          });
+        },
+        onChange: function (value) {
+          query.empresa = value;
+          debug();
+          if (!value.length) return;
+          select_sucursal.disable();
+          select_sucursal.clearOptions();
+          select_sucursal.load(function (callback) {
+            $.ajax({
+              url: api + 'sucursal/select/' + query.empresa,
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_sucursal.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+          select_tipoco.disable();
+          select_tipoco.clearOptions();
+          select_tipoco.load(function (callback) {
+            $.ajax({
+              url: api + 'compras/' + query.empresa + '/comprobantes/tipos',
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_tipoco.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+          select_cargado.disable();
+          select_cargado.clearOptions();
+          select_cargado.load(function (callback) {
+            $.ajax({
+              url: api + 'compras/' + query.empresa + '/usuarios',
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_cargado.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+          select_generado.disable();
+          select_generado.clearOptions();
+          select_generado.load(function (callback) {
+            $.ajax({
+              url: api + 'compras/' + query.empresa + '/usuarios',
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_generado.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+      
+      $select_sucursal = $('#select-sucursal').selectize({
+        valueField: 'Cod_Sucursal',
+        labelField: 'Des_Sucursal',
+        searchField: 'Des_Sucursal',
+        preload: true,
+        onChange: function (value) {
+          query.sucursal = value;
+          debug();
+          if (!value.length) return;
+          select_departamento.disable();
+          select_departamento.clearOptions();
+          select_departamento.load(function (callback) {
+            $.ajax({
+              url: api + 'departamento/select/' + query.empresa + '/' + query.sucursal,
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_departamento.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+      
+      $select_departamento = $('#select-departamento').selectize({
+        valueField: 'CodDpto',
+        labelField: 'Descrip',
+        searchField: 'Descrip',
+        onChange: function (value) {
+          query.departamento = value;
+          debug();
+        }
+      });
+      
+      $select_tipoco = $('#select-tipoco').selectize({
+        valueField: 'cod_tp_comp',
+        labelField: 'des_tp_comp',
+        searchField: 'des_tp_comp',
+        onChange: function (value) {
+          query.tipooc = value;
+          debug();
+        }
+      });
+      
+      $select_generado = $('#select-generado').selectize({
+        valueField: 'cod_usuario',
+        labelField: 'cod_usuario',
+        searchField: 'cod_usuario',
+        onChange: function (value) {
+          query.generado = value;
+          debug();
+        }
+      });
+      
+      $select_cargado = $('#select-cargado').selectize({
+        valueField: 'cod_usuario',
+        labelField: 'cod_usuario',
+        searchField: 'cod_usuario',
+        onChange: function (value) {
+          query.cargado = value;
+          debug();
+        }
+      });
+
+      $select_fechade = $('#select-fechade').selectize({
+        options: [
+          {value: 'EM', text: 'Emisión'},
+          {value: 'CA', text: 'Carga'},
+          {value: 'GE', text: 'Genración'},
+        ],
+        onChange: function (value) {
+          query.fechade = value;
+          debug();
+        }
+      });
+      var selectize = $select_fechade[0].selectize;
+      selectize.setValue('EM');
+
+      $('.input-daterange').datepicker({
+        todayBtn: "linked",
+        language: "es",
+        format: "yyyy-mm-dd",
+        autoclose: true,
+        orientation: "bottom auto"
+      });
+
+      $('.input-date .form-control').datepicker().on('changeDate', function (e) {
+        query[this.parentElement.id + '_' + this.name] = this.value;
+        debug();
+      });
+
+      $('.input-date .form-control').datepicker('setDate', today);
+      $('.input-date .form-control').datepicker('update');
+    }
+
+    function debug() {
+      $preview.text(JSON.stringify(query));
+    }
+
+    function getInforme() {
+      $('.collapse').collapse('hide');
+      $results.show();
+
+      if (!$.fn.DataTable.isDataTable('#results')) {
+        $('#results').DataTable({
+          language: u.spanish_dt,
+          ajax: {
+            url: api + 'ordencompra/list',
+            data: function () {
+              return query;
+            }
+          },
+          deferRender: true,
+          scrollY: 350,
+          scrollCollapse: true,
+          scroller: {
+            displayBuffer: 30,
+            loadingIndicator: true
+          },
+          columnDefs: [
+            {className: "price-value", targets: "price-label"},
+            {render: $.fn.dataTable.render.number('.', ',', 0), targets: "price-label"},
+            {className: "text-center", targets: "text-center"},
+            {visible: false, targets: "grouping-col"}
+          ],
+          columns: [
+            {data: 'nroordcomp'},
+            {data: 'razonsocial'},
+            {data: 'fechaorden'},
+            {data: 'descrip'},
+            {data: 'responsable'},
+            {data: 'solicitadopor'},
+            {data: 'codmoneda'},
+            {data: 'nropedido'},
+            {data: 'estado'},
+            {data: 'total'}
+          ],
+          searching: false,
+          ordering: false,
+        });
+        $results.show();
+      } else {
+        var table = $('#results').DataTable();
+        var $resultado = $('#resultado');
+        table.row(0).scrollTo();
+        $resultado.css("position", "absolute").css("left", -9999);
+        table.ajax.url(api + 'ordencompra/list').load(function () {
+          $resultado.css("position", "relative").css("left", 0);
+        });
+      }
+    }
+  </script>
+{% endblock %}
