@@ -39,10 +39,33 @@
   {% include 'ventas/_filtro.html' with name="estado" %}
 {% endblock %}
 
+{% block table %}
+  <thead>
+  <tr>
+    <th>Sucursal</th>
+    <th>Tipo</th>
+    <th>Nro.</th>
+    <th class="text-center">Fecha Presupuesto</th>
+    <th>Código</th>
+    <th>Razon Social</th>
+    <th class="text-center">Fecha Aprobado</th>
+    <th class="price-label">Monto</th>
+  </tr>
+  </thead>
+  <tfoot>
+  <tr>
+    <th colspan="7" style="text-align:right">Total:</th>
+    <th></th>
+  </tr>
+  </tfoot>
+{% endblock %}
+
 {% block extra_foot %}
   <script>
     var query = {};
     var api = u.getApiUrl();
+    var $results;
+    var numFormat = u.numFormat;
 
     var $selectEmpresa, selectEmpresa;
     var $selectSucursal, selectSucursal;
@@ -55,6 +78,7 @@
       u.hideNav();
       initDates();
       initSelects();
+      $results = $('#results');
     });
 
     function initDates() {
@@ -193,6 +217,90 @@
           {value: 'RE', text: 'Rechazado'}
         ]
       });
+    }
+
+    function getInforme() {
+      $('.collapse').collapse('hide');
+
+      if (!$.fn.DataTable.isDataTable($results)) {
+        $results.DataTable({
+          language: u.spanish_dt,
+          ajax: function (d, cb, s) {
+            $.ajax({
+              method: 'GET',
+              url: api + 'compras/' + query.empresa + '/presupuesto',
+              data: query
+            }).done(function (res) {
+              cb(res);
+            }).fail(function () {
+              cb();
+            });
+          },
+          deferRender: true,
+          scrollY: 400,
+          scrollX: '100%',
+          scrollCollapse: true,
+          scroller: {
+            displayBuffer: 30,
+            loadingIndicator: true
+          },
+          columnDefs: [
+            {className: "price-value", targets: "price-label"},
+            {render: $.fn.dataTable.render.number('.', ',', 2), targets: "price-label"},
+            {className: "text-center", targets: "text-center"},
+            {visible: false, targets: "grouping-col"}
+          ],
+          columns: [
+            {data: 'cod_sucursal'},
+            {data: 'cod_tp_comp'},
+            {data: 'comp_numero'},
+            {data: 'fha_cbte', render: dateFormat},
+            {data: 'cod_cliente'},
+            {data: 'razon_social'},
+            {data: 'aprobadoel', render: dateFormat},
+            {data: 'total_venta'}
+          ],
+          searching: false,
+          ordering: false,
+          footerCallback: footerSum
+        });
+      } else {
+        var table = $results.DataTable();
+        var $resultado = $('#resultado');
+        $resultado.css("position", "absolute").css("left", -9999);
+        table.row(0).scrollTo();
+        table.ajax.reload(function () {
+          $resultado.css("position", "relative").css("left", 0);
+        }, true);
+      }
+    }
+    function footerSum(row, data, start, end, display) {
+      var api = this.api(), data;
+
+      // Remove the formatting to get integer data for summation
+      var parseVal = function (i) {
+        var n = typeof i === 'string' ?
+                parseFloat(i.replace(/[\$]/g, '')) :
+                typeof i === 'number' ?
+                        i : 0;
+        return n;
+      };
+
+      // Total over all pages
+      var total = api.column(-1).data().reduce(function (a, b) {
+        return parseVal(a) + parseVal(b);
+      }, 0);
+
+
+      // Update footer
+      $(api.column(-1).footer()).html(
+              numFormat(total)
+      );
+    }
+
+    function dateFormat(d, t, r) {
+      if (!d) return '';
+      return d.split(' ')[0];
     }
   </script>
 {% endblock %}
