@@ -95,7 +95,11 @@
       });
 
       $inputDate.datepicker().on('changeDate', function (e) {
-        query[this.name] = this.value;
+        var key = this.name;
+        if (this.parentElement.id) {
+          key = this.parentElement.id + '_' + key;
+        }
+        query[key] = this.value;
       });
 
       $inputDate.datepicker('setDate', new Date());
@@ -128,7 +132,7 @@
           });
 
           selectTipoComprobante.load(function (callback) {
-            $.get(api + 'empresas/' + query.empresa + '/comprobantes/tipos').done(function (res) {
+            $.get(api + 'empresas/' + query.empresa + '/comprobantes/presupuesto').done(function (res) {
               selectTipoComprobante.enable();
               callback(res.data);
             }).fail(function () {
@@ -211,12 +215,12 @@
 
       $('#select-estado').selectize({
         options: [
-          {value: 'AP', text: 'Aprobado'},
-          {value: 'CA', text: 'Cancelado'},
-          {value: 'CA', text: 'Facturado'},
-          {value: 'OF', text: 'Orden de Facturacion'},
-          {value: 'PE', text: 'Pendiente'},
-          {value: 'RE', text: 'Rechazado'}
+          {value: 'A', text: 'Aprobado'},
+          {value: 'C', text: 'Cancelado'},
+          {value: 'F', text: 'Facturado'},
+          {value: 'O', text: 'Orden de Facturacion'},
+          {value: 'P', text: 'Pendiente'},
+          {value: 'R', text: 'Rechazado'}
         ]
       });
     }
