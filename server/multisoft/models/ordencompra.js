@@ -21,7 +21,7 @@ OrdenCompra.all = function (filters, cb) {
                 "and ( dba.dpto.cod_sucursal = dba.ordcompcab.cod_sucursal ) and ( dba.dpto.coddpto = dba.ordcompcab.coddpto )) "+ 
                 "WHERE ( dba.ordcompcab.cod_empresa = dba.proveed.cod_empresa ) and ( dba.ordcompcab.codprov = dba.proveed.codprov ) "+ 
                 "and ( dba.ordcompcab.cod_empresa = '"+filters.empresa+"' ) AND ( DATE (dba.ordcompcab.FechaOrden) >= DATE ('"+filters.compras_start+"') ) "+ 
-                "AND ( DATE (dba.ordcompcab.FechaOrden) <= DATE ('"+filters.compras_end+"') ) and ( dba.ORDCOMPCAB.codDpto = '04' ) ";
+                "AND ( DATE (dba.ordcompcab.FechaOrden) <= DATE ('"+filters.compras_end+"') ) and ( dba.ORDCOMPCAB.codDpto = '"+filters.departamento+"' ) and ( dba.ORDCOMPCAB.Cod_Sucursal = '"+filters.sucursal+"' )";
     
     if (filters.proveedor) {
         sql += "AND (dba.ordcompcab.codprov IN " + q.in(filters.proveedor) + ") ";

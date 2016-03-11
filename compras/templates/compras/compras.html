@@ -5,20 +5,16 @@
 {% endblock %}
 
 {% block filters %}
-  <div class="row">
+    <div class="row">
       {% include 'ventas/_filtro.html' with name="empresa" %}
       {% include 'ventas/_filtro.html' with name="sucursal" %}
-  </div> 
-  <div class="row">
+    </div>
+    <div class="row">
       {% include 'ventas/_filtro.html' with name="departamento" %}
       {% include 'ventas/_filtro.html' with name="tipoco" title="Tipo Comprobante" %}
-  </div> 
-  <div class="row">
-      {% include 'ventas/_filtro.html' with name="cargado" title="Cargado por" %}
-      {% include 'ventas/_filtro.html' with name="generado" title="Generado por" %}
-  </div> 
-  <div class="row">
-      {% include 'ventas/_filtro.html' with name="fechade" title="Fecha De" %}
+    </div>
+    <div class="row">
+      {% include 'ventas/_filtro.html' with name="proveedor" %}
       <div class="col-sm-6">
         <div class="form-group">
           <label for="compras" class="col-md-4 control-label">Fecha:</label>
@@ -31,35 +27,29 @@
           </div>
         </div>
       </div>
-  </div>
-  <div class="row">
-      <div class="col-sm-6">
-        <div class="form-group">
-          <label for="numero" class="col-md-4 control-label">N° Comprobante:</label>
-          <div class="col-md-6">
-            <div id="numero">
-              <input type="text" class="input-sm form-control" name="comprobante"/>
-            </div>
-          </div>
-        </div>
-      </div>
-  </div>
-  
+    </div>
+    <div class="row">
+      {% include 'ventas/_filtro.html' with name="agrupar" title="Agrupar por" %}
+      {% include 'ventas/_filtro.html' with name="moneda" %}
+    </div>
 {% endblock %}
 
 {% block table %}
   <thead>
   <tr>
-    <th class="text-center">N° de Orden</th>
+    <th class="text-center">Detalle</th>
+    <th class="text-center">N° de Factura</th>
+    <th>Fecha Emisión</th>
     <th>Proveedor</th>
-    <th>Fecha</th>
-    <th>Repartamento</th>
-    <th>Responsable</th>
-    <th>Solicitado por</th>
-    <th class="text-center">Moneda</th>
-    <th>N° de Pedido</th>
-    <th class="text-center">Estado</th>
+    <th>Ruc</th>
+    <th>Timbrado</th>
+    <th class="price-label">Gravada</th>
+    <th class="price-label">IVA</th>
+    <th class="price-label">Excenta</th>
     <th class="price-label">Total</th>
+    <th>Estado</th>
+    <th>Tipo IVA</th>
+    <th>Retención Renta</th>
   </tr>
   </thead>
 {% endblock %}
@@ -67,6 +57,7 @@
 {% block extra_foot %}
   <script>
     var query = {};
+    var numFormat = $.fn.dataTable.render.number('.', ',', 2).display;
 
     var api = u.getApiUrl();
     var $results = $('#results');
@@ -76,11 +67,19 @@
     var select_empresa, $select_empresa;
     var select_sucursal, $select_sucursal;
     var select_departamento, $select_departamento;
-    var select_fechade, $select_fechade;
     var select_tipoco, $select_tipoco;
-    var select_cargado, $select_cargado;
-    var select_generado, $select_generado;
+    var select_proveedor, $select_proveedor;
+    var select_agrupar, $select_agrupar;
+    var select_moneda, $select_moneda;
     var xhr;
+    
+    function get_render(moneda){
+        if (moneda == "GS"){
+            return $.fn.dataTable.render.number('.', ',', 0)
+        } else {
+            return $.fn.dataTable.render.number('.', ',', 2)
+        }
+    }
 
     $(document).ready(function () {
       u.hideNav();
@@ -94,16 +93,41 @@
       select_departamento.disable();
       select_tipoco = $select_tipoco[0].selectize;
       select_tipoco.disable();
-      select_cargado = $select_cargado[0].selectize;
-      select_cargado.disable();
-      select_generado = $select_generado[0].selectize;
-      select_generado.disable();
+      select_proveedor = $select_proveedor[0].selectize;
+      select_proveedor.disable();
+      select_agrupar = $select_agrupar[0].selectize;
+      select_moneda = $select_moneda[0].selectize;
     });
 
     function init() {
       $.extend(true, $.fn.selectize.defaults, {
         onChange: function (value) {
           query[this.$input.attr('name')] = value;
+          debug();
+        }
+      });
+      
+      $select_agrupar = $('#select-agrupar').selectize({
+        allowEmptyOption: true,
+        options: [
+          {value: 'CO', text: 'Comprobante'},
+          {value: 'PR', text: 'Proveedor'},
+          {value: 'AR', text: 'Articulo'},
+        ],
+        onChange: function (value) {
+          query.estado = value;
+          debug();
+        }
+      });
+      
+      $select_moneda = $('#select-moneda').selectize({
+        allowEmptyOption: true,
+        options: [
+          {value: 'GS', text: 'Local'},
+          {value: 'US', text: 'Extranjera'},
+        ],
+        onChange: function (value) {
+          query.estado = value;
           debug();
         }
       });
@@ -150,34 +174,31 @@
               callback();
             });
           });
-          select_cargado.disable();
-          select_cargado.clearOptions();
-          select_cargado.load(function (callback) {
+          select_proveedor.disable();
+          select_proveedor.clearOptions();
+          select_proveedor.load(function (callback) {
             $.ajax({
-              url: api + 'compras/' + query.empresa + '/usuarios',
+              url: api + 'empresas/' + query.empresa + '/proveedores',
               type: 'GET',
               dataType: 'json'
             }).done(function (res) {
-              select_cargado.enable();
+              select_proveedor.enable();
               callback(res.data);
             }).fail(function () {
               callback();
             });
           });
-          select_generado.disable();
-          select_generado.clearOptions();
-          select_generado.load(function (callback) {
-            $.ajax({
-              url: api + 'compras/' + query.empresa + '/usuarios',
-              type: 'GET',
-              dataType: 'json'
-            }).done(function (res) {
-              select_generado.enable();
-              callback(res.data);
-            }).fail(function () {
-              callback();
-            });
-          });
+        }
+      });
+      
+      $select_proveedor = $('#select-proveedor').selectize({
+        valueField: 'CodProv',
+        labelField: 'RazonSocial',
+        searchField: 'RazonSocial',
+        maxItems: null,
+        onChange: function (value) {
+          query.proveedor = value;
+          debug();
         }
       });
       
@@ -206,7 +227,7 @@
           });
         }
       });
-      
+            
       $select_departamento = $('#select-departamento').selectize({
         valueField: 'CodDpto',
         labelField: 'Descrip',
@@ -247,19 +268,11 @@
         }
       });
 
-      $select_fechade = $('#select-fechade').selectize({
-        options: [
-          {value: 'EM', text: 'Emisión'},
-          {value: 'CA', text: 'Carga'},
-          {value: 'GE', text: 'Genración'},
-        ],
-        onChange: function (value) {
-          query.fechade = value;
-          debug();
-        }
-      });
-      var selectize = $select_fechade[0].selectize;
-      selectize.setValue('EM');
+      var selectize = $select_agrupar[0].selectize;
+      selectize.setValue('CO');
+      
+      var selectize1 = $select_moneda[0].selectize;
+      selectize1.setValue('GS');
 
       $('.input-daterange').datepicker({
         todayBtn: "linked",
@@ -286,7 +299,7 @@
       $('.collapse').collapse('hide');
       $results.show();
       
-      var numero_comprobante = $("[name=comprobante]")[0].val();
+      var numero_comprobante = $("[name=comprobante]").val();
 
       query.numero_comprobante = numero_comprobante;
 
@@ -301,7 +314,7 @@
           ajax: function (d, cb, s) {
             $.ajax({
               method: 'GET',
-              url: api + 'empresas/' + query.empresa + '/informes/ventas_resumido',
+              url: api + 'compras/list',
               data: query
             }).done(function (res) {
               cb(res);
@@ -319,10 +332,10 @@
           },
           columnDefs: [
             {className: "price-value", targets: "price-label"},
-            {render: $.fn.dataTable.render.number('.', ',', 2), targets: "price-label"},
+            {render: get_render(query.moneda), targets: "price-label"},
             {className: "text-center", targets: "text-center"},
             {visible: false, targets: "grouping-col"}
-          ],
+          ], 
           columns: [
             {
               data: null,
@@ -332,17 +345,18 @@
                         "<i class='fa fa-search-plus'></i></a>";
               }
             },
-            {data: 'comp_numero'},
-            {data: 'razon_social'},
+            {data: 'NroFact'},
+            {data: 'FechaFact'},
+            {data: 'RazonSocial'},
             {data: 'ruc'},
-            {data: 'fecha'},
-            {data: 'total_iva'},
-            {data: null, render: calcGravado},
-            {data: 'totaldescuento'},
-            {data: 'to_gravado'},
-            {data: 'des_tp_comp', name: 'cod_tp_comp'},
-            {data: 'razon_social', name: 'cod_cliente'},
-            {data: 'des_vendedor', name: 'cod_vendedor'}
+            {data: 'Timbrado'},
+            {data: 'gravada'},
+            {data: 'IVA'},
+            {data: 'TotalExen'},
+            {data: 'total'},
+            {data: 'estado'},
+            {data: 'TipoIva'},
+            {data: 'retenible_renta'},
           ],
           searching: false,
           ordering: false,
@@ -354,14 +368,14 @@
             var colCount = api.columns().header().length;
 
             console.log(colCount);
-            api.column(query.order + ':name', {page: 'current'}).data().each(function (group, i) {
+            /*api.column(query.order + ':name', {page: 'current'}).data().each(function (group, i) {
               if (last !== group) {
                 $(rows).eq(i).before(
                         '<tr class="group text-center"><td colspan="' + colCount + '"><h4>' + group + '</h4></td></tr>'
                 );
                 last = group;
               }
-            });
+            });*/
           },
         });
         $results.show();
@@ -374,6 +388,34 @@
           $resultado.css("position", "relative").css("left", 0);
         }, true);
       }
+    }
+    
+    function footerSum(row, data, start, end, display) {
+      var api = this.api(), data;
+
+      // Remove the formatting to get integer data for summation
+      var parseVal = function (i) {
+        var n = typeof i === 'string' ?
+                parseFloat(i.replace(/[\$]/g, '')) :
+                typeof i === 'number' ?
+                        i : 0;
+        //console.log(i, n);
+        return n;
+      };
+
+      // Total over all pages
+      var total = api
+              .column(8)
+              .data()
+              .reduce(function (a, b) {
+                return parseVal(a) + parseVal(b);
+              }, 0);
+
+
+      // Update footer
+      $(api.column(8).footer()).html(
+              numFormat(total)
+      );
     }
   </script>
 {% endblock %}
