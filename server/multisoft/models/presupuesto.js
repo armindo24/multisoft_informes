@@ -15,10 +15,36 @@ Presupuesto.general = function (params, query, cb) {
         "dba.presupcab, dba.moneda " +
         "WHERE " +
         "(dba.moneda.codmoneda = dba.presupcab.codmoneda ) " +
-        "AND presupcab.cod_empresa = 'BT' AND (presupcab.estado = 'A') " +
-        "AND ( (Date(PresupCab.AprobadoEl) >= Date('2013-03-10'))  AND (Date(PresupCab.AprobadoEl) <= Date('2016-03-10')) ) ";
+        "AND presupcab.cod_empresa = ? " +
+        "AND ( (Date(PresupCab.AprobadoEl) >= Date(?))  AND (Date(PresupCab.AprobadoEl) <= Date(?)) ) ";
 
-    conn.exec(sql, function (err, result) {
+    var sql_params = [params.empresa, query.aprobacion_start, query.aprobacion_end];
+
+    if (query.estado) {
+        sql += "AND (presupcab.estado = ?) ";
+        sql_params.push(query.estado);
+    }
+
+    if (query.comprobante_start && query.comprobante_end) {
+        sql += "AND (  ( Date(presupcab.fha_cbte) >= Date(?))  AND ( Date(presupcab.fha_cbte) <= Date(?))  ) ";
+        sql_params.push(query.comprobante_start);
+        sql_params.push(query.comprobante_end);
+    }
+
+    if (query.cliente) {
+        sql += "AND ( (PresupCab.cod_cliente = ?) ) ";
+        sql_params.push(query.cliente);
+    }
+
+    if (query.tipoComprobante) {
+        sql += "AND presupcab.cod_tp_comp = ?";
+        sql_params.push(query.tipoComprobante);
+    }
+
+    console.log(sql);
+    console.log(sql_params);
+
+    conn.exec(sql, sql_params, function (err, result) {
         if (err) throw err;
         cb(result);
     });
