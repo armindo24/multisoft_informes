@@ -5,41 +5,46 @@
 {% endblock %}
 
 {% block filters %}
-  {% include 'ventas/_filtro.html' with name="empresa" %}
-  {% include 'ventas/_filtro.html' with name="sucursal" %}
-  {% include 'ventas/_filtro.html' with name="departamento" %}
-  {% include 'ventas/_filtro.html' with name="tipoco" title="Tipo Comprobante" %}
-  {% include 'ventas/_filtro.html' with name="cargado" title="Cargado por" %}
-  {% include 'ventas/_filtro.html' with name="generado" title="Generado por" %}
-  {% include 'ventas/_filtro.html' with name="fechade" title="Fecha De" %}
-
-  <div class="col-sm-6">
-    <div class="form-group">
-      <label for="compras" class="col-md-4 control-label">Ventas:</label>
-      <div class="col-md-6">
-        <div id="compras" class="input-daterange input-group input-date">
-          <input type="text" class="input-sm form-control" name="start"/>
-          <span class="input-group-addon">hasta</span>
-          <input type="text" class="input-sm form-control" name="end"/>
+  <div class="row">
+      {% include 'ventas/_filtro.html' with name="empresa" %}
+      {% include 'ventas/_filtro.html' with name="sucursal" %}
+  </div> 
+  <div class="row">
+      {% include 'ventas/_filtro.html' with name="departamento" %}
+      {% include 'ventas/_filtro.html' with name="tipoco" title="Tipo Comprobante" %}
+  </div> 
+  <div class="row">
+      {% include 'ventas/_filtro.html' with name="cargado" title="Cargado por" %}
+      {% include 'ventas/_filtro.html' with name="generado" title="Generado por" %}
+  </div> 
+  <div class="row">
+      {% include 'ventas/_filtro.html' with name="fechade" title="Fecha De" %}
+      <div class="col-sm-6">
+        <div class="form-group">
+          <label for="compras" class="col-md-4 control-label">Fecha:</label>
+          <div class="col-md-6">
+            <div id="compras" class="input-daterange input-group input-date">
+              <input type="text" class="input-sm form-control" name="start"/>
+              <span class="input-group-addon">hasta</span>
+              <input type="text" class="input-sm form-control" name="end"/>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
   </div>
-  
-  <div class="col-sm-6">
-    <div class="form-group">
-      <label for="numero" class="col-md-4 control-label">N° Comprobante:</label>
-      <div class="col-md-6">
-        <div id="numero">
-          <input type="text" class="input-sm form-control" name="comprobante"/>
+  <div class="row">
+      <div class="col-sm-6">
+        <div class="form-group">
+          <label for="numero" class="col-md-4 control-label">N° Comprobante:</label>
+          <div class="col-md-6">
+            <div id="numero">
+              <input type="text" class="input-sm form-control" name="comprobante"/>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
   </div>
   
-  <div class="col-sm-6">
-    
-  </div>
 {% endblock %}
 
 {% block table %}
@@ -280,18 +285,33 @@
     function getInforme() {
       $('.collapse').collapse('hide');
       $results.show();
+      
+      var numero_comprobante = $("[name=comprobante]")[0].val();
+
+      query.numero_comprobante = numero_comprobante;
+
+      var calcGravado = function (data, type, row) {
+        var gravado = parseFloat(row.to_gravado) - parseFloat(row.total_iva);
+        return numFormat(gravado);
+      };
 
       if (!$.fn.DataTable.isDataTable('#results')) {
         $('#results').DataTable({
           language: u.spanish_dt,
-          ajax: {
-            url: api + 'ordencompra/list',
-            data: function () {
-              return query;
-            }
+          ajax: function (d, cb, s) {
+            $.ajax({
+              method: 'GET',
+              url: api + 'empresas/' + query.empresa + '/informes/ventas_resumido',
+              data: query
+            }).done(function (res) {
+              cb(res);
+            }).fail(function () {
+              cb();
+            });
           },
           deferRender: true,
-          scrollY: 350,
+          scrollY: 400,
+          scrollX: '100%',
           scrollCollapse: true,
           scroller: {
             displayBuffer: 30,
@@ -299,34 +319,60 @@
           },
           columnDefs: [
             {className: "price-value", targets: "price-label"},
-            {render: $.fn.dataTable.render.number('.', ',', 0), targets: "price-label"},
+            {render: $.fn.dataTable.render.number('.', ',', 2), targets: "price-label"},
             {className: "text-center", targets: "text-center"},
             {visible: false, targets: "grouping-col"}
           ],
           columns: [
-            {data: 'nroordcomp'},
-            {data: 'razonsocial'},
-            {data: 'fechaorden'},
-            {data: 'descrip'},
-            {data: 'responsable'},
-            {data: 'solicitadopor'},
-            {data: 'codmoneda'},
-            {data: 'nropedido'},
-            {data: 'estado'},
-            {data: 'total'}
+            {
+              data: null,
+              render: function (d, t, r) {
+                return "<a class='btn btn-primary' data-toggle='modal' data-target='#ventaModal' " +
+                        "data-cabecera='" + JSON.stringify(r) + "'>" +
+                        "<i class='fa fa-search-plus'></i></a>";
+              }
+            },
+            {data: 'comp_numero'},
+            {data: 'razon_social'},
+            {data: 'ruc'},
+            {data: 'fecha'},
+            {data: 'total_iva'},
+            {data: null, render: calcGravado},
+            {data: 'totaldescuento'},
+            {data: 'to_gravado'},
+            {data: 'des_tp_comp', name: 'cod_tp_comp'},
+            {data: 'razon_social', name: 'cod_cliente'},
+            {data: 'des_vendedor', name: 'cod_vendedor'}
           ],
           searching: false,
           ordering: false,
+          footerCallback: footerSum,
+          drawCallback: function (settings) {
+            var api = this.api();
+            var rows = api.rows({page: 'current'}).nodes();
+            var last = null;
+            var colCount = api.columns().header().length;
+
+            console.log(colCount);
+            api.column(query.order + ':name', {page: 'current'}).data().each(function (group, i) {
+              if (last !== group) {
+                $(rows).eq(i).before(
+                        '<tr class="group text-center"><td colspan="' + colCount + '"><h4>' + group + '</h4></td></tr>'
+                );
+                last = group;
+              }
+            });
+          },
         });
         $results.show();
       } else {
         var table = $('#results').DataTable();
         var $resultado = $('#resultado');
-        table.row(0).scrollTo();
         $resultado.css("position", "absolute").css("left", -9999);
-        table.ajax.url(api + 'ordencompra/list').load(function () {
+        table.row(0).scrollTo();
+        table.ajax.reload(function () {
           $resultado.css("position", "relative").css("left", 0);
-        });
+        }, true);
       }
     }
   </script>
