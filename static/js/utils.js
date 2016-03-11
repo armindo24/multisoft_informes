@@ -1,11 +1,39 @@
 'use strict';
 
+$.fn.dataTable.Api.register('processing()', function (show) {
+    return this.iterator('table', function (ctx) {
+        ctx.oApi._fnProcessingDisplay(ctx, show);
+    });
+});
+
 var u = {
     api: {
         port: 3000,
         path: '/api/v1/'
     }
 };
+
+u.dateFormat = function (date) {
+    if (!date) return '';
+    return date.split(/[\s]+/)[0];
+};
+
+u.parseVal = function (i) {
+    var n = typeof i === 'string' ?
+        parseFloat(i.replace(/[\$]/g, '')) :
+        typeof i === 'number' ?
+            i : 0;
+    return n;
+};
+
+$.fn.dataTable.Api.register('sum()', function () {
+    return this.flatten().reduce(function (a, b) {
+        a = u.parseVal(a);
+        b = u.parseVal(b);
+
+        return a + b;
+    }, 0);
+});
 
 u.hideNav = function () {
     $('#page-wrapper').css('margin-left', '0px');
@@ -128,7 +156,7 @@ u.spanish_dt = {
     "thousands": ".",
     "lengthMenu": "Mostrar _MENU_ registros",
     "loadingRecords": "Cargando...",
-    "processing": "Procesando...",
+    "processing": "Cargando datos...",
     "search": "Buscar:",
     "zeroRecords": "No se encontraron resultados",
     "paginate": {
@@ -148,7 +176,8 @@ u.get_empresas = function (user_id, cb) {
     Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario': user_id}, {'cb': cb});
 };
 
-u.numFormat = $.fn.dataTable.render.number('.', ',', 2).display;
+u.numFormatter = $.fn.dataTable.render.number('.', ',', 0);
+u.numFormat = u.numFormatter.display;
 
 u.parseVal = function (i) {
     var n = typeof i === 'string' ?
@@ -170,6 +199,28 @@ u.defaultDatepicker = function () {
     $.extend(true, $.fn.datepicker.defaults, {
         language: "es",
         orientation: "bottom auto"
+    });
+};
+
+u.defaultDT = function () {
+    $.extend(true, $.fn.dataTable.defaults, {
+        language: u.spanish_dt,
+        deferRender: true,
+        scrollY: 300,
+        scrollX: '100%',
+        scrollCollapse: true,
+        scroller: {
+            displayBuffer: 30,
+            loadingIndicator: true
+        },
+        columnDefs: [
+            {className: "price-value", targets: "price-label"},
+            {render: u.numFormatter, targets: "price-label"},
+            {className: "text-center", targets: "text-center"},
+            {visible: false, targets: "grouping-col"}
+        ],
+        searching: false,
+        ordering: false
     });
 };
 
