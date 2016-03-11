@@ -25,3 +25,9 @@ td.multi {
 #filters tr th {
     text-align: right;
 }
+
+#results_processing{
+    z-index: 10;
+    width: 400px;
+    margin-left: -200px;
+}
