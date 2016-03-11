@@ -80,6 +80,7 @@
       initSelects();
       $results = $('#results');
       $resultado = $('#resultado');
+      $resultado.hide();
     });
 
     function initDates() {
@@ -224,6 +225,7 @@
       $('.collapse').collapse('hide');
 
       if (!dataTable) {
+        $resultado.show();
         u.defaultDT();
         dataTable = $results.DataTable({
           ajax: function (d, cb, s) {
