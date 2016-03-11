@@ -62,7 +62,7 @@
 
 {% block extra_foot %}
   <script>
-    var query = {};
+    var query = {empresa: ''};
     var api = u.getApiUrl();
     var $results, $resultado;
     var numFormat = u.numFormatter;
@@ -235,8 +235,10 @@
               data: query
             }).done(function (res) {
               cb(res);
-            }).fail(function () {
-              cb();
+            }).fail(function (err) {
+              console.log(err);
+              dataTable.clear().draw();
+              dataTable.processing(false);
             });
           },
           columns: [
