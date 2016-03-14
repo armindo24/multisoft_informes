@@ -7,28 +7,27 @@
 {% block filters %}
   {% include 'ventas/_filtro.html' with name="empresa" %}
   {% include 'ventas/_filtro.html' with name="sucursal" %}
-  <div class="col-sm-6">
-    <div class="form-group">
-      <label for="aprobacion" class="col-md-4 control-label">Fecha de Aprobación:</label>
+  {% include 'ventas/_filtro.html' with name="Moneda" %}
 
-      <div class="col-md-6">
-        <div id="aprobacion" class="input-daterange input-group input-date">
-          <input type="text" class="input-sm form-control" name="start"/>
-          <span class="input-group-addon">hasta</span>
-          <input type="text" class="input-sm form-control" name="end"/>
-        </div>
-      </div>
-    </div>
-  </div>
+  {% include 'ventas/_filtro.html' with name="calificacion" %}
   {% include 'ventas/_filtro.html' with name="tipoCliente" title="Tipo de Cliente" placeholder="Tipo" %}
   {% include 'ventas/_filtro.html' with name="cliente" %}
-  {% include 'ventas/_filtro.html' with name="tipoComprobante" title="Tipo de Comprobante" placeholder="Tipo" %}
+
+  {% include 'ventas/_filtro.html' with name="cliente" %}
+
+  {% include 'ventas/_filtro.html' with name="movimiento" %}
+  {% include 'ventas/_filtro.html' with name="condicion" title="Condicion de Venta" placeholder="Condicion" %}
+
+  {% include 'ventas/_filtro.html' with name="cobrador" %}
+  {% include 'ventas/_filtro.html' with name="vendedor" %}
+  {% include 'ventas/_filtro.html' with name="zona" title="Zona de Venta" placeholder="Zona" %}
+
   <div class="col-sm-6">
     <div class="form-group">
-      <label for="comprobante" class="col-md-4 control-label">Fecha de Comprobante:</label>
+      <label for="fecha" class="col-md-4 control-label">Fecha:</label>
 
       <div class="col-md-6">
-        <div id="comprobante" class="input-daterange input-group input-date">
+        <div id="fecha" class="input-daterange input-group input-date">
           <input type="text" class="input-sm form-control" name="start"/>
           <span class="input-group-addon">hasta</span>
           <input type="text" class="input-sm form-control" name="end"/>
@@ -36,7 +35,6 @@
       </div>
     </div>
   </div>
-  {% include 'ventas/_filtro.html' with name="estado" %}
 {% endblock %}
 
 {% block table %}
@@ -76,11 +74,11 @@
 
     $(document).ready(function () {
       u.hideNav();
-{#      initDates();#}
-{#      initSelects();#}
-{#      $results = $('#results');#}
-{#      $resultado = $('#resultado');#}
-{#      $resultado.hide();#}
+            initDates();
+      {#      initSelects();#}
+      $results = $('#results');
+      $resultado = $('#resultado');
+      $resultado.hide();
     });
 
     function initDates() {
@@ -96,9 +94,6 @@
 
       $inputDate.datepicker().on('changeDate', function (e) {
         var key = this.name;
-        if (this.parentElement.id) {
-          key = this.parentElement.id + '_' + key;
-        }
         query[key] = this.value;
       });
 
@@ -225,57 +220,57 @@
       });
     }
 
-{#    function getInforme() {#}
-{#      $('.collapse').collapse('hide');#}
-{##}
-{#      if (!dataTable) {#}
-{#        $resultado.show();#}
-{#        u.defaultDT();#}
-{#        dataTable = $results.DataTable({#}
-{#          ajax: function (d, cb, s) {#}
-{#            $.ajax({#}
-{#              method: 'GET',#}
-{#              url: api + 'compras/' + query.empresa + '/presupuesto',#}
-{#              data: query#}
-{#            }).done(function (res) {#}
-{#              cb(res);#}
-{#            }).fail(function (err) {#}
-{#              console.log(err);#}
-{#              dataTable.clear().draw();#}
-{#              dataTable.processing(false);#}
-{#            });#}
-{#          },#}
-{#          columns: [#}
-{#            {data: 'cod_sucursal'},#}
-{#            {data: 'cod_tp_comp'},#}
-{#            {data: 'comp_numero'},#}
-{#            {data: 'fha_cbte', render: u.dateFormat},#}
-{#            {data: 'cod_cliente'},#}
-{#            {data: 'razon_social'},#}
-{#            {data: 'aprobadoel', render: u.dateFormat},#}
-{#            {data: 'total_venta'}#}
-{#          ],#}
-{#          footerCallback: footerSum,#}
-{#          processing: true#}
-{#        });#}
-{#      } else {#}
-{#        dataTable.clear().draw();#}
-{#        dataTable.processing(true);#}
-{#        dataTable.ajax.reload(function () {#}
-{#          dataTable.processing(false);#}
-{#        }, true);#}
-{#      }#}
-{#    }#}
-{#    function footerSum(row, data, start, end, display) {#}
-{#      var api = this.api(), data;#}
-{##}
-{#      // Total over all pages#}
-{#      var total = api.column(-1).data().sum();#}
-{##}
-{#      // Update footer#}
-{#      $(api.column(-1).footer()).html(#}
-{#              numFormat.display(total)#}
-{#      );#}
-{#    }#}
+    {#    function getInforme() {#}
+    {#      $('.collapse').collapse('hide');#}
+    {##}
+    {#      if (!dataTable) {#}
+    {#        $resultado.show();#}
+    {#        u.defaultDT();#}
+    {#        dataTable = $results.DataTable({#}
+    {#          ajax: function (d, cb, s) {#}
+    {#            $.ajax({#}
+    {#              method: 'GET',#}
+    {#              url: api + 'compras/' + query.empresa + '/presupuesto',#}
+    {#              data: query#}
+    {#            }).done(function (res) {#}
+    {#              cb(res);#}
+    {#            }).fail(function (err) {#}
+    {#              console.log(err);#}
+    {#              dataTable.clear().draw();#}
+    {#              dataTable.processing(false);#}
+    {#            });#}
+    {#          },#}
+    {#          columns: [#}
+    {#            {data: 'cod_sucursal'},#}
+    {#            {data: 'cod_tp_comp'},#}
+    {#            {data: 'comp_numero'},#}
+    {#            {data: 'fha_cbte', render: u.dateFormat},#}
+    {#            {data: 'cod_cliente'},#}
+    {#            {data: 'razon_social'},#}
+    {#            {data: 'aprobadoel', render: u.dateFormat},#}
+    {#            {data: 'total_venta'}#}
+    {#          ],#}
+    {#          footerCallback: footerSum,#}
+    {#          processing: true#}
+    {#        });#}
+    {#      } else {#}
+    {#        dataTable.clear().draw();#}
+    {#        dataTable.processing(true);#}
+    {#        dataTable.ajax.reload(function () {#}
+    {#          dataTable.processing(false);#}
+    {#        }, true);#}
+    {#      }#}
+    {#    }#}
+    {#    function footerSum(row, data, start, end, display) {#}
+    {#      var api = this.api(), data;#}
+    {##}
+    {#      // Total over all pages#}
+    {#      var total = api.column(-1).data().sum();#}
+    {##}
+    {#      // Update footer#}
+    {#      $(api.column(-1).footer()).html(#}
+    {#              numFormat.display(total)#}
+    {#      );#}
+    {#    }#}
   </script>
 {% endblock %}
