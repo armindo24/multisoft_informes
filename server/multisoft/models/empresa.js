@@ -35,7 +35,7 @@ Empresa.clientes = function (empresa, query, cb) {
         sql_params.push(query.tipo);
     }
     if (query.sucursal) {
-        sql += " AND Cod_Sucursal = ?";
+        sql += " AND (Cod_Sucursal = ? OR Cod_Sucursal is null)";
         sql_params.push(query.sucursal);
     }
 
