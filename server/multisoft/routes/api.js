@@ -24,8 +24,17 @@ var Tipooc = require('../models/tipooc');
 var OrdenCompra = require('../models/ordencompra');
 var Usuarios = require('../models/usuarios');
 var Compras = require('../models/compras');
+var Presupuesto = require('../models/presupuesto');
+
+
+
+
 
 var conn = require('../db');
+
+var postProcess = function (response, result) {
+    response.json({data: result});
+};
 
 router.use(function (req, res, next) {
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -312,6 +321,18 @@ router.get('/compras/:empresa/usuarios', function (req, res, next) {
 router.get('/compras/list', function (req, res, next) {
     Compras.all(req.query, function (result) {
         res.json({data: result});
+    });
+});
+
+router.get('/compras/:empresa/presupuesto', function (req, res, next) {
+    Presupuesto.general(req.params, req.query, function (result) {
+        postProcess(res, result);
+    });
+});
+
+router.get('/empresas/:empresa/comprobantes/presupuesto', function (req, res, next) {
+    Comprobante.presupuesto(req.params, req.query, function (result) {
+        postProcess(res, result);
     });
 });
 
