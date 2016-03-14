@@ -336,4 +336,10 @@ router.get('/empresas/:empresa/comprobantes/presupuesto', function (req, res, ne
     });
 });
 
+router.get('/empresas/:empresa/comprobantes/cobrar', function (req, res, next) {
+    Comprobante.cobrar(req.params, req.query, function (result) {
+        postProcess(res, result);
+    });
+});
+
 module.exports = router;
