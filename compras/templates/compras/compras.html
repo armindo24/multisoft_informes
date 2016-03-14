@@ -38,26 +38,39 @@
   <thead>
   <tr>
     <th class="text-center">Detalle</th>
-    <th class="text-center">N° de Factura</th>
+    <th class="text-center">Tipo de Comprobante</th>
+    <th class="text-center">N° de Comprobante</th>
     <th>Fecha Emisión</th>
     <th>Proveedor</th>
     <th>Ruc</th>
     <th>Timbrado</th>
-    <th class="price-label">Gravada</th>
-    <th class="price-label">IVA</th>
-    <th class="price-label">Excenta</th>
-    <th class="price-label">Total</th>
+    <th>Gravada</th>
+    <th>IVA</th>
+    <th>Excenta</th>
+    <th>Total</th>
     <th>Estado</th>
     <th>Tipo IVA</th>
     <th>Retención Renta</th>
   </tr>
   </thead>
+  <tfoot>
+  <tr>
+    <th colspan="9" style="text-align:right">Total:</th>
+    <th></th>
+    <th colspan="3"></th>
+  </tr>
+  </tfoot>
 {% endblock %}
 
 {% block extra_foot %}
+  <style>
+    .aling_right{text-align: right;}
+  </style>
   <script>
-    var query = {};
-    var numFormat = $.fn.dataTable.render.number('.', ',', 2).display;
+    var query = {
+        agrupar: 'Cod_Tp_Comp'
+    };
+    //var numFormat = $.fn.dataTable.render.number('.', ',', 2).display;
 
     var api = u.getApiUrl();
     var $results = $('#results');
@@ -73,13 +86,18 @@
     var select_moneda, $select_moneda;
     var xhr;
     
-    function get_render(moneda){
-        if (moneda == "GS"){
-            return $.fn.dataTable.render.number('.', ',', 0)
-        } else {
-            return $.fn.dataTable.render.number('.', ',', 2)
+    function addCommas(nStr) {
+        nStr += '';
+        x = nStr.split('.');
+        x1 = x[0];
+        x2 = x.length > 1 ? ',' + x[1] : '';
+        var rgx = /(\d+)(\d{3})/;
+        while (rgx.test(x1)) {
+            x1 = x1.replace(rgx, '$1' + '.' + '$2');
         }
-    }
+        return x1 + x2;
+      }
+
 
     $(document).ready(function () {
       u.hideNav();
@@ -110,12 +128,12 @@
       $select_agrupar = $('#select-agrupar').selectize({
         allowEmptyOption: true,
         options: [
-          {value: 'CO', text: 'Comprobante'},
-          {value: 'PR', text: 'Proveedor'},
+          {value: 'Cod_Tp_Comp', text: 'Comprobante'},
+          {value: 'RazonSocial', text: 'Proveedor'},
           {value: 'AR', text: 'Articulo'},
         ],
         onChange: function (value) {
-          query.estado = value;
+          query.agrupar = value;
           debug();
         }
       });
@@ -242,6 +260,7 @@
         valueField: 'cod_tp_comp',
         labelField: 'des_tp_comp',
         searchField: 'des_tp_comp',
+        maxItems: null,
         onChange: function (value) {
           query.tipooc = value;
           debug();
@@ -269,7 +288,7 @@
       });
 
       var selectize = $select_agrupar[0].selectize;
-      selectize.setValue('CO');
+      selectize.setValue('Cod_Tp_Comp');
       
       var selectize1 = $select_moneda[0].selectize;
       selectize1.setValue('GS');
@@ -302,12 +321,8 @@
       var numero_comprobante = $("[name=comprobante]").val();
 
       query.numero_comprobante = numero_comprobante;
-
-      var calcGravado = function (data, type, row) {
-        var gravado = parseFloat(row.to_gravado) - parseFloat(row.total_iva);
-        return numFormat(gravado);
-      };
-
+      query.moneda = $('#select-moneda').val();
+        
       if (!$.fn.DataTable.isDataTable('#results')) {
         $('#results').DataTable({
           language: u.spanish_dt,
@@ -323,7 +338,7 @@
             });
           },
           deferRender: true,
-          scrollY: 400,
+          scrollY: 350,
           scrollX: '100%',
           scrollCollapse: true,
           scroller: {
@@ -332,7 +347,7 @@
           },
           columnDefs: [
             {className: "price-value", targets: "price-label"},
-            {render: get_render(query.moneda), targets: "price-label"},
+            {render: $.fn.dataTable.render.number('.', ',', 2), targets: "price-label"},
             {className: "text-center", targets: "text-center"},
             {visible: false, targets: "grouping-col"}
           ], 
@@ -345,15 +360,56 @@
                         "<i class='fa fa-search-plus'></i></a>";
               }
             },
+            {data: 'Des_Tp_Comp', name: 'Cod_Tp_Comp'},
             {data: 'NroFact'},
             {data: 'FechaFact'},
-            {data: 'RazonSocial'},
+            {data: 'RazonSocial', name: 'RazonSocial'},
             {data: 'ruc'},
             {data: 'Timbrado'},
-            {data: 'gravada'},
-            {data: 'IVA'},
-            {data: 'TotalExen'},
-            {data: 'total'},
+            {
+                data: 'gravada',
+                render: function (data) {
+                            if (query.moneda == 'GS'){
+                                return convertir_rever(data);
+                            } else {
+                                return addCommas(data);
+                            }
+                        },
+                "sClass": "aling_right",
+            },
+            {
+                data: 'IVA',
+                render: function (data) {
+                            if (query.moneda == 'GS'){
+                                return convertir_rever(data);
+                            } else {
+                                return addCommas(data);
+                            }
+                        },
+                "sClass": "aling_right",
+            },
+            {
+                data: 'TotalExen',
+                render: function (data) {
+                            if (query.moneda == 'GS'){
+                                return convertir_rever(data);
+                            } else {
+                                return addCommas(data);
+                            }
+                        },
+                "sClass": "aling_right",
+            },
+            {
+                data: 'total',
+                render: function (data) {
+                            if (query.moneda == 'GS'){
+                                return convertir_rever(data);
+                            } else {
+                                return addCommas(data);
+                            }
+                        },
+                "sClass": "aling_right",
+            },
             {data: 'estado'},
             {data: 'TipoIva'},
             {data: 'retenible_renta'},
@@ -368,14 +424,14 @@
             var colCount = api.columns().header().length;
 
             console.log(colCount);
-            /*api.column(query.order + ':name', {page: 'current'}).data().each(function (group, i) {
+            api.column(query.agrupar + ':name', {page: 'current'}).data().each(function (group, i) {
               if (last !== group) {
                 $(rows).eq(i).before(
                         '<tr class="group text-center"><td colspan="' + colCount + '"><h4>' + group + '</h4></td></tr>'
                 );
                 last = group;
               }
-            });*/
+            });
           },
         });
         $results.show();
@@ -405,7 +461,7 @@
 
       // Total over all pages
       var total = api
-              .column(8)
+              .column(9)
               .data()
               .reduce(function (a, b) {
                 return parseVal(a) + parseVal(b);
@@ -413,9 +469,15 @@
 
 
       // Update footer
-      $(api.column(8).footer()).html(
-              numFormat(total)
-      );
+      if ($('#select-moneda').val() == 'GS'){
+        $(api.column(9).footer()).html(
+                convertir_rever(total)
+        );
+      } else {
+        $(api.column(9).footer()).html(
+                addCommas(total)
+        );
+      }
     }
   </script>
 {% endblock %}
