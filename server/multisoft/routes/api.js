@@ -1,5 +1,7 @@
 var express = require('express');
 var router = express.Router();
+
+var Calificacion = require('../models/calificacion');
 var Empresa = require('../models/empresa');
 var Comprobante = require('../models/comprobante');
 var Proveedor = require('../models/proveedor');
@@ -25,9 +27,6 @@ var OrdenCompra = require('../models/ordencompra');
 var Usuarios = require('../models/usuarios');
 var Compras = require('../models/compras');
 var Presupuesto = require('../models/presupuesto');
-
-
-
 
 
 var conn = require('../db');
@@ -159,7 +158,7 @@ router.get('/mayorcuentaaux/det/:empresa/:periodo/:fechad/:fechah/:tipoasiento/:
         res.json(result);
     });
 });
- 
+
 router.post('/clientes/post/lista/', function (req, res, next) {
     console.log(req.body);
     res.json({data: 'funciona'});
@@ -332,6 +331,12 @@ router.get('/compras/:empresa/presupuesto', function (req, res, next) {
 
 router.get('/empresas/:empresa/comprobantes/presupuesto', function (req, res, next) {
     Comprobante.presupuesto(req.params, req.query, function (result) {
+        postProcess(res, result);
+    });
+});
+
+router.get('/calificaciones', function (req, res, next) {
+    Calificacion.all(function (result) {
         postProcess(res, result);
     });
 });
