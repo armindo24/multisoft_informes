@@ -13,8 +13,6 @@
   {% include 'ventas/_filtro.html' with name="tipoCliente" title="Tipo de Cliente" placeholder="Tipo" %}
   {% include 'ventas/_filtro.html' with name="cliente" %}
 
-  {% include 'ventas/_filtro.html' with name="cliente" %}
-
   {% include 'ventas/_filtro.html' with name="movimiento" %}
   {% include 'ventas/_filtro.html' with name="condicion" title="Condicion de Venta" placeholder="Condicion" %}
 
@@ -69,13 +67,14 @@
     var $selectSucursal, selectSucursal;
     var $selectCliente, selectCliente;
     var $selectTipoCliente, selectTipoCliente;
-    var $selectTipoComprobante, selectTipoComprobante;
+    var $selectMovimiento, selectMovimiento;
+    var $selectCalificacion, selectCalificacion;
     var dataTable;
 
     $(document).ready(function () {
       u.hideNav();
-            initDates();
-      {#      initSelects();#}
+      initDates();
+      initSelects();
       $results = $('#results');
       $resultado = $('#resultado');
       $resultado.hide();
@@ -115,7 +114,7 @@
         onChange: function (value) {
           query.empresa = value;
           u.resetSelect(selectSucursal);
-          u.resetSelect(selectTipoComprobante);
+          u.resetSelect(selectMovimiento);
           if (!value.length) return;
           selectSucursal.load(function (callback) {
             $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
@@ -126,9 +125,9 @@
             });
           });
 
-          selectTipoComprobante.load(function (callback) {
-            $.get(api + 'empresas/' + query.empresa + '/comprobantes/presupuesto').done(function (res) {
-              selectTipoComprobante.enable();
+          selectMovimiento.load(function (callback) {
+            $.get(api + 'empresas/' + query.empresa + '/comprobantes/cobrar').done(function (res) {
+              selectMovimiento.enable();
               callback(res.data);
             }).fail(function () {
               callback();
@@ -137,6 +136,7 @@
 
         }
       });
+
       selectEmpresa = $selectEmpresa[0].selectize;
       selectEmpresa.load(function (cb) {
         u.get_empresas({{ user }}, function (res) {
@@ -144,13 +144,21 @@
         });
       });
 
-      $selectTipoComprobante = $('#select-tipoComprobante').selectize({
-        valueField: 'Cod_Tp_Comp',
+      $selectMovimiento = $('#select-movimiento').selectize({
+        valueField: 'cod_tp_comp',
         labelField: 'des_tp_comp',
-        searchField: 'des_tp_comp'
+        searchField: 'des_tp_comp',
+        render: {
+          option: function (item, escape) {
+            return '<div>' + escape(item.cod_tp_comp) + ' - ' + escape(item.des_tp_comp) + '</div>';
+          },
+          item: function (item, escape) {
+            return '<div>' + escape(item.cod_tp_comp) + ' - ' + escape(item.des_tp_comp) + '</div>';
+          }
+        }
       });
-      selectTipoComprobante = $selectTipoComprobante[0].selectize;
-      selectTipoComprobante.disable();
+      selectMovimiento = $selectMovimiento[0].selectize;
+      selectMovimiento.disable();
 
 
       $selectSucursal = $('#select-sucursal').selectize({
@@ -208,15 +216,18 @@
       selectCliente = $selectCliente[0].selectize;
       selectCliente.disable();
 
-      $('#select-estado').selectize({
-        options: [
-          {value: 'A', text: 'Aprobado'},
-          {value: 'C', text: 'Cancelado'},
-          {value: 'F', text: 'Facturado'},
-          {value: 'O', text: 'Orden de Facturacion'},
-          {value: 'P', text: 'Pendiente'},
-          {value: 'R', text: 'Rechazado'}
-        ]
+      $selectCalificacion = $('#select-calificacion').selectize({
+        valueField: 'Cod_Calificacion',
+        labelField: 'Des_Calificacion',
+        searchField: 'Des_Calificacion'
+      });
+      selectCalificacion = $selectCalificacion[0].selectize;
+      selectCalificacion.load(function (cb) {
+        $.get(api + 'calificaciones').done(function (res) {
+          cb(res.data);
+        }).fail(function () {
+          cb();
+        });
       });
     }
 
