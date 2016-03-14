@@ -62,6 +62,81 @@
   </tfoot>
 {% endblock %}
 
+{% block inner_content %}
+  <div class="modal fade" id="compraModal" tabindex="-1" role="dialog" aria-labelledby="compraModal">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                  aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="compraModalLabel">Detalle de Compra</h4>
+        </div>
+        <div class="modal-body">
+          <div class="well well-sm">
+            <dl class="dl-horizontal">
+              <div class="row">
+                <div class="col-md-6">
+                  <dt>Comprobante</dt>
+                  <dd id="comprobanteModal"></dd>
+                </div>
+                <div class="col-md-6">
+                  <dt>Tipo</dt>
+                  <dd id="tipoModal"></dd>
+                </div>
+                <div class="col-md-6">
+                  <dt>Proveedor</dt>
+                  <dd id="proveedorModal"></dd>
+                </div>
+                <div class="col-md-6">
+                  <dt>Fecha</dt>
+                  <dd id="fechaModal"></dd>
+                </div>
+              </div>
+            </dl>
+          </div>
+          <table id="detailTableModal" class="table">
+            <thead>
+            <tr>
+              <th>Art.</th>
+              <th>Descripcion</th>
+              <th>G/E</th>
+              <th class="text-center">Cant.</th>
+              <th class="price-label">Pr. Unit.</th>
+              <th class="price-label">IVA</th>
+              <th class="price-label">Total</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <!-- <div class="well well-sm text-center">
+          <div class="row">
+            <div class="col-sm-3">
+              <dt>Bruto</dt>
+              <dd id="brutoModal"></dd>
+            </div>
+            <div class="col-sm-3">
+              <dt>IVA</dt>
+              <dd id="ivaModal"></dd>
+            </div>
+            <div class="col-sm-3">
+              <dt>Dcto.</dt>
+              <dd id="descuentoModal"></dd>
+            </div>
+            <div class="col-sm-3">
+              <dt>Neto</dt>
+              <dd id="netoModal"></dd>
+            </div>
+          </div>
+        </div> -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
 {% block extra_foot %}
   <style>
     .aling_right{text-align: right;}
@@ -118,6 +193,7 @@
     });
 
     function init() {
+      $('#compraModal').on('show.bs.modal', showModal);
       $.extend(true, $.fn.selectize.defaults, {
         onChange: function (value) {
           query[this.$input.attr('name')] = value;
@@ -355,7 +431,7 @@
             {
               data: null,
               render: function (d, t, r) {
-                return "<a class='btn btn-primary' data-toggle='modal' data-target='#ventaModal' " +
+                return "<a class='btn btn-primary' data-toggle='modal' data-target='#compraModal' " +
                         "data-cabecera='" + JSON.stringify(r) + "'>" +
                         "<i class='fa fa-search-plus'></i></a>";
               }
@@ -444,6 +520,75 @@
           $resultado.css("position", "relative").css("left", 0);
         }, true);
       }
+    }
+    
+    function showModal(event) {
+      var button = $(event.relatedTarget);
+      var cabecera = button.data('cabecera');
+      var item = null;
+      var items = [];
+      var modal = $(this);
+      var table = modal.find('tbody');
+      table.empty();
+      
+      modal.find('#comprobanteModal').text(cabecera.NroFact);
+      modal.find('#tipoModal').text(cabecera.Des_Tp_Comp);
+      modal.find('#proveedorModal').text(cabecera.RazonSocial);
+      modal.find('#fechaModal').text(cabecera.FechaFact);
+
+      //modal.find('#brutoModal').text(u.addCommas(cabecera.to_gravado));
+      //modal.find('#ivaModal').text(u.addCommas(cabecera.total_iva));
+      //modal.find('#descuentoModal').text(u.addCommas(cabecera.totaldescuento));
+      //modal.find('#netoModal').text(u.addCommas(cabecera.to_gravado));
+
+      $.get(api + 'compras/det/' + cabecera.Cod_Empresa + '/' + cabecera.NroFact + '/' + cabecera.Cod_Tp_Comp + '/' + cabecera.CodMoneda + '/' + cabecera.CodProv ).done(function (d) {
+        //modal.find('.modal-title').text('Comprobante ' + cabecera.comp_numero);
+        var totCant = 0.0;
+        for (var i = 0; i < d.data.length; i++) {
+          item = d.data[i];
+          if ($('#select-moneda').val() == 'GS'){
+              items.push("<tr>" +
+                      "<td>" + item.Cod_Articulo + "</td>" +
+                      "<td>" + item.Des_Art + "</td>" +
+                      "<td>" + item.GravExen + "</td>" +
+                      "<td class='text-center'>" + convertir_rever(item.Cantidad) + "</td>" +
+                      "<td class='price-value'>" + convertir_rever(item.Pr_Unit) + "</td>" +
+                      "<td class='price-value'>" + convertir_rever(item.IVA) + "</td>" +
+                      "<td class='price-value'>" + convertir_rever(item.Total) + "</td>" +
+                      "</tr>");
+              totCant += parseInt(item.Cantidad);
+              var summary =
+                        "<tr>" +
+                        "<td colspan='3'></td>" +
+                        "<td class='text-center'><strong>" + convertir_rever(totCant) + "</strong></td>" +
+                        "<td colspan='2'></td>" +
+                        "<td class='price-value'><strong>" + convertir_rever(cabecera.total) + "</strong></td>" +
+                        "</tr>";
+              items.push(summary);
+          } else {
+              items.push("<tr>" +
+                      "<td>" + item.Cod_Articulo + "</td>" +
+                      "<td>" + item.Des_Art + "</td>" +
+                      "<td>" + item.GravExen + "</td>" +
+                      "<td class='text-center'>" + addCommas(item.Cantidad) + "</td>" +
+                      "<td class='price-value'>" + addCommas(item.Pr_Unit) + "</td>" +
+                      "<td class='price-value'>" + addCommas(item.IVA) + "</td>" +
+                      "<td class='price-value'>" + addCommas(item.Total) + "</td>" +
+                      "</tr>");
+              totCant += parseFloat(item.Cantidad);
+              var summary =
+                        "<tr>" +
+                        "<td colspan='3'></td>" +
+                        "<td class='text-center'><strong>" + addCommas(totCant) + "</strong></td>" +
+                        "<td colspan='2'></td>" +
+                        "<td class='price-value'><strong>" + addCommas(cabecera.total) + "</strong></td>" +
+                        "</tr>";
+              items.push(summary);
+          }
+        }
+        
+        table.html(items.join(''));
+      });
     }
     
     function footerSum(row, data, start, end, display) {

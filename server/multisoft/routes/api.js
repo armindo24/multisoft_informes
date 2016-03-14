@@ -324,6 +324,12 @@ router.get('/compras/list', function (req, res, next) {
     });
 });
 
+router.get('/compras/det/:empresa/:factura/:comprobante/:moneda/:proveedor', function (req, res, next) {
+    Compras.detail(req.params, function (result) {
+        res.json({data: result});
+    });
+});
+
 router.get('/compras/:empresa/presupuesto', function (req, res, next) {
     Presupuesto.general(req.params, req.query, function (result) {
         postProcess(res, result);

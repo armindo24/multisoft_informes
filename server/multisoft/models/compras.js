@@ -9,7 +9,7 @@ Compras.all = function (filters, cb) {
     var select = ""
     
     if (filters.moneda == "GS"){
-        select = "case when dba.FACTCAB.anulado = 'N' then 'Activo' else 'Anulado' end as estado,DBA.EMPRESA.Des_Empresa,DBA.FACTCAB.CodProv,DBA.FACTCAB.NroFact,date(DBA.FACTCAB.FechaFact) as FechaFact,DBA.FACTCAB.Cod_Tp_Comp,DBA.TPOCBTE.Des_Tp_Comp,"+ 
+        select = "case when dba.FACTCAB.anulado = 'N' then 'Activo' else 'Anulado' end as estado,DBA.EMPRESA.Cod_Empresa,DBA.EMPRESA.Des_Empresa,DBA.FACTCAB.CodProv,DBA.FACTCAB.NroFact,date(DBA.FACTCAB.FechaFact) as FechaFact,DBA.FACTCAB.Cod_Tp_Comp,DBA.TPOCBTE.Des_Tp_Comp,"+ 
                 "DBA.FACTCAB.Cod_Sucursal,DBA.FACTCAB.CodDpto,DBA.FACTCAB.CodMoneda,DBA.FACTCAB.Dcto,DBA.FACTCAB.TotalGrav,"+ 
                 "cast(DBA.FACTCAB.IVA as decimal (20,0)) as IVA,DBA.FACTCAB.FactCambio,cast(DBA.FACTCAB.TotalExen as decimal (20,0)) as TotalExen,DBA.FACTCAB.IVAIncluido,DBA.DPTO.coddpto,"+ 
                 "DBA.DPTO.descrip,DBA.MONEDA.Descrip,DBA.MONEDA.cantdecimal,DBA.Proveed.RazonSocial,DBA.SUCURSAL.des_sucursal,"+ 
@@ -19,7 +19,7 @@ Compras.all = function (filters, cb) {
                 "isnull(DBA.FactCab.Timbrado,DBA.Proveed.Timbrado,DBA.FactCab.Timbrado) as Timbrado,"+
                 "cast(dba.FACTCAB.IVA+DBA.FACTCAB.TotalExen+(case when FACTCAB.IVAIncluido = 'S' then  DBA.FACTCAB.TotalGrav - DBA.FACTCAB.IVA else DBA.FACTCAB.TotalGrav end) as decimal (20,0)) as total";
     } else {
-        select = "case when dba.FACTCAB.anulado = 'N' then 'Activo' else 'Anulado' end as estado,DBA.EMPRESA.Des_Empresa,DBA.FACTCAB.CodProv,DBA.FACTCAB.NroFact,date(DBA.FACTCAB.FechaFact) as FechaFact,DBA.FACTCAB.Cod_Tp_Comp,DBA.TPOCBTE.Des_Tp_Comp,"+ 
+        select = "case when dba.FACTCAB.anulado = 'N' then 'Activo' else 'Anulado' end as estado,DBA.EMPRESA.Cod_Empresa,DBA.EMPRESA.Des_Empresa,DBA.FACTCAB.CodProv,DBA.FACTCAB.NroFact,date(DBA.FACTCAB.FechaFact) as FechaFact,DBA.FACTCAB.Cod_Tp_Comp,DBA.TPOCBTE.Des_Tp_Comp,"+ 
                 "DBA.FACTCAB.Cod_Sucursal,DBA.FACTCAB.CodDpto,DBA.FACTCAB.CodMoneda,DBA.FACTCAB.Dcto,DBA.FACTCAB.TotalGrav,"+ 
                 "cast(DBA.FACTCAB.IVA as decimal (20,2)) as IVA,DBA.FACTCAB.FactCambio,cast(DBA.FACTCAB.TotalExen as decimal (20,2)) as TotalExen,DBA.FACTCAB.IVAIncluido,DBA.DPTO.coddpto,"+ 
                 "DBA.DPTO.descrip,DBA.MONEDA.Descrip,DBA.MONEDA.cantdecimal,DBA.Proveed.RazonSocial,DBA.SUCURSAL.des_sucursal,"+ 
@@ -39,29 +39,17 @@ Compras.all = function (filters, cb) {
                 "AND (FACTCAB.CodDpto = '"+filters.departamento+"') AND (FACTCAB.CodMoneda = '"+filters.moneda+"') AND ( DATE (DBA.FACTCAB.FechaFact) >= DATE ('"+filters.compras_start+"') ) "+  
                 "AND ( tpocbte.tp_def <> 'RT') AND ( DATE (DBA.FACTCAB.FechaFact) <= DATE ('"+filters.compras_end+"') )";
 
-//     if (filters.cliente) {
-//         where += " and (dba.vtacab.cod_cliente = ?)";
-//         args.push(filters.cliente);
-//     }
-// 
-//     if (filters.sucursal) {
-//         where += " and (dba.vtacab.cod_sucursal = ?)";
-//         args.push(filters.sucursal);
-//     }
-// 
-    console.log(filters.tipooc)
+
+    var sql = util.format("SELECT %s FROM %s WHERE %s", select, from, where);
+    
     if (filters.tipooc) {
         sql += " AND (dba.FACTCAB.Cod_Tp_Comp IN " + q.in(filters.tipooc) + ") ";
     } 
-// 
-//     if (filters.desde && filters.hasta) {
-//         where += " and (dba.vtacab.fha_cbte BETWEEN ? and ?)";
-//         args.push(filters.desde);
-//         args.push(filters.hasta);
-//     }
-
-
-    var sql = util.format("SELECT %s FROM %s WHERE %s", select, from, where);
+    
+    if (filters.proveedor) {
+        sql += " AND (dba.FACTCAB.CodProv IN " + q.in(filters.proveedor) + ") ";
+    } 
+    
     if (filters.agrupar) {
         if (filters.agrupar == "Cod_Tp_Comp") {
             sql += " ORDER BY dba.FACTCAB.Cod_Tp_Comp";
@@ -78,6 +66,37 @@ Compras.all = function (filters, cb) {
         if (err) throw err;
         cb(r);
     });
+};
+
+
+Compras.detail = function (params, cb){
+
+    var sql = ""
+    
+    if (params.moneda = "GS"){
+    
+        sql = "select dba.ARTICULO.Cod_Articulo,dba.ARTICULO.Des_Art,dba.FACTDET.GravExen,dba.FACTDET.Cantidad,"+
+                "cast(dba.FACTDET.Pr_Unit as decimal(20,0)) as Pr_Unit,cast(dba.FACTDET.IVA as decimal(20,0)) as IVA,"+
+                "cast(dba.FACTDET.Total as decimal(20,0)) as Total from dba.FACTDET,dba.ARTICULO "+
+                "where dba.FACTDET.Cod_Articulo = dba.ARTICULO.Cod_Articulo and dba.FACTDET.Cod_Empresa = dba.ARTICULO.Cod_Empresa "+
+                "and dba.FACTDET.Cod_Empresa = '"+params.empresa+"' and dba.FACTDET.NroFact = '"+params.factura+"' "+
+                "and dba.FACTDET.cod_tp_comp = '"+params.comprobante+"' and dba.FACTDET.CodProv = '"+params.proveedor+"'";   
+        
+    } else {
+        
+        sql = "select dba.ARTICULO.Cod_Articulo,dba.ARTICULO.Des_Art,dba.FACTDET.GravExen,dba.FACTDET.Cantidad,"+
+                "cast(dba.FACTDET.Pr_Unit as decimal(20,2)) as Pr_Unit,cast(dba.FACTDET.IVA as decimal(20,2)) as IVA,"+
+                "cast(dba.FACTDET.Total as decimal(20,2)) as Total from dba.FACTDET,dba.ARTICULO,dba.TPOCBTE "+
+                "where dba.FACTDET.Cod_Articulo = dba.ARTICULO.Cod_Articulo and dba.FACTDET.Cod_Empresa = dba.ARTICULO.Cod_Empresa "+
+                "and dba.FACTDET.Cod_Empresa = '"+params.empresa+"' and dba.FACTDET.NroFact = '"+params.factura+"' "+
+                "and dba.FACTDET.cod_tp_comp = '"+params.comprobante+"' and dba.FACTDET.CodProv = '"+params.proveedor+"'";   
+
+        
+    }            
+    conn.exec(sql, function (err, r) {
+        if (err) throw err;
+        cb(r);
+    }) 
 };
 
 module.exports = Compras;
