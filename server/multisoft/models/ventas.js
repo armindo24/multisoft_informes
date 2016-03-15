@@ -95,4 +95,12 @@ Ventas.terminos = function (cb) {
     });
 };
 
+Ventas.zonas = function (cb) {
+    var sql = "SELECT cod_zona, des_zona FROM dba.ZONAVTA";
+    conn.exec(sql, function (err, result) {
+        if (err) throw err;
+        cb(result);
+    });
+};
+
 module.exports = Ventas;

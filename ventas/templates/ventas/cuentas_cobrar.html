@@ -73,6 +73,7 @@
     var $selectCalificacion, selectCalificacion;
     var $selectCobrador, selectCobrador;
     var $selectVendedor, selectVendedor;
+    var $selectZona, selectZona;
     var dataTable;
 
     $(document).ready(function () {
@@ -292,6 +293,20 @@
       });
       selectVendedor = $selectVendedor[0].selectize;
       selectVendedor.disable();
+
+      $selectZona = $('#select-zona').selectize({
+        valueField: 'cod_zona',
+        labelField: 'des_zona',
+        searchField: 'des_cobrador'
+      });
+      selectZona = $selectZona[0].selectize;
+      selectZona.load(function (cb) {
+        $.get(api + 'ventas/zonas').done(function (res) {
+          cb(res.data);
+        }).fail(function () {
+          cb();
+        });
+      });
     }
 
     {#    function getInforme() {#}
