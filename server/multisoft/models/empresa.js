@@ -70,4 +70,19 @@ Empresa.cuentas = function (params, query, cb) {
     });
 };
 
+Empresa.vendedores = function (params, filter, cb) {
+    var sql = "SELECT cod_vendedor, des_vendedor " +
+        "FROM dba.VENDEDOR " +
+        "WHERE estado = 'A' " +
+        "and cod_empresa = ? " +
+        "and (cod_sucursal = ? or cod_sucursal is null) ";
+
+    var sql_params = [params.empresa, filter.sucursal]
+
+    conn.exec(sql, sql_params, function (err, result) {
+        if (err) throw err;
+        cb(result);
+    });
+};
+
 module.exports = Empresa;

@@ -360,6 +360,12 @@ router.get('/cobradores', function (req, res, next) {
     });
 });
 
+router.get('/empresas/:empresa/vendedores', function (req, res, next) {
+    Empresa.vendedores(req.params, req.query, function (result) {
+        postProcess(res, result);
+    });
+});
+
 router.get('/empresas/:empresa/comprobantes/cobrar', function (req, res, next) {
     Comprobante.cobrar(req.params, req.query, function (result) {
         postProcess(res, result);
