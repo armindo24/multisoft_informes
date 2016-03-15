@@ -58,7 +58,7 @@
         <label for="vencimiento" class="col-md-4 control-label">Filtrar por Vencimiento:</label>
 
         <div class="col-md-6">
-          <input type="checkbox" name="vencimiento" id="vencimiento" />
+          <input type="checkbox" name="vencimiento" id="vencimiento"/>
         </div>
       </div>
     </div>
@@ -68,19 +68,19 @@
 {% block table %}
   <thead>
   <tr>
-    <th>Sucursal</th>
-    <th>Tipo</th>
-    <th>Nro.</th>
-    <th class="text-center">Fecha Presupuesto</th>
-    <th>Código</th>
-    <th>Razon Social</th>
-    <th class="text-center">Fecha Aprobado</th>
-    <th class="price-label">Monto</th>
+    <th>Tipo Comprobante</th>
+    <th># Comprobante</th>
+    <th>Cuota</th>
+    <th class="text-center">Fecha Emisión</th>
+    <th class="text-center">Fecha Vencimiento</th>
+    <th class="price-label">Importe</th>
+    <th class="price-label">Saldo</th>
   </tr>
   </thead>
   <tfoot>
   <tr>
-    <th colspan="7" style="text-align:right">Total:</th>
+    <th colspan="5" style="text-align:right">Total:</th>
+    <th></th>
     <th></th>
   </tr>
   </tfoot>
@@ -339,57 +339,60 @@
       });
     }
 
-    {#    function getInforme() {#}
-    {#      $('.collapse').collapse('hide');#}
-    {##}
-    {#      if (!dataTable) {#}
-    {#        $resultado.show();#}
-    {#        u.defaultDT();#}
-    {#        dataTable = $results.DataTable({#}
-    {#          ajax: function (d, cb, s) {#}
-    {#            $.ajax({#}
-    {#              method: 'GET',#}
-    {#              url: api + 'compras/' + query.empresa + '/presupuesto',#}
-    {#              data: query#}
-    {#            }).done(function (res) {#}
-    {#              cb(res);#}
-    {#            }).fail(function (err) {#}
-    {#              console.log(err);#}
-    {#              dataTable.clear().draw();#}
-    {#              dataTable.processing(false);#}
-    {#            });#}
-    {#          },#}
-    {#          columns: [#}
-    {#            {data: 'cod_sucursal'},#}
-    {#            {data: 'cod_tp_comp'},#}
-    {#            {data: 'comp_numero'},#}
-    {#            {data: 'fha_cbte', render: u.dateFormat},#}
-    {#            {data: 'cod_cliente'},#}
-    {#            {data: 'razon_social'},#}
-    {#            {data: 'aprobadoel', render: u.dateFormat},#}
-    {#            {data: 'total_venta'}#}
-    {#          ],#}
-    {#          footerCallback: footerSum,#}
-    {#          processing: true#}
-    {#        });#}
-    {#      } else {#}
-    {#        dataTable.clear().draw();#}
-    {#        dataTable.processing(true);#}
-    {#        dataTable.ajax.reload(function () {#}
-    {#          dataTable.processing(false);#}
-    {#        }, true);#}
-    {#      }#}
-    {#    }#}
-    {#    function footerSum(row, data, start, end, display) {#}
-    {#      var api = this.api(), data;#}
-    {##}
-    {#      // Total over all pages#}
-    {#      var total = api.column(-1).data().sum();#}
-    {##}
-    {#      // Update footer#}
-    {#      $(api.column(-1).footer()).html(#}
-    {#              numFormat.display(total)#}
-    {#      );#}
-    {#    }#}
+    function getInforme() {
+      $('.collapse').collapse('hide');
+
+      if (!dataTable) {
+        $resultado.show();
+        u.defaultDT();
+        dataTable = $results.DataTable({
+          ajax: function (d, cb, s) {
+            $.ajax({
+              method: 'GET',
+              url: api + 'ventas/' + query.empresa + '/cuentas/cobrar',
+              data: query
+            }).done(function (res) {
+              cb(res);
+            }).fail(function (err) {
+              console.log(err);
+              dataTable.clear().draw();
+              dataTable.processing(false);
+            });
+          },
+          columns: [
+            {data: 'cod_tp_comp'},
+            {data: 'comp_numero'},
+            {data: 'cuota_numero'},
+            {data: 'fecha_emi', render: u.dateFormat},
+            {data: 'fecha_ven', render: u.dateFormat},
+            {data: 'importe'},
+            {data: 'saldo'}
+          ],
+          footerCallback: footerSum,
+          processing: true
+        });
+      } else {
+        dataTable.clear().draw();
+        dataTable.processing(true);
+        dataTable.ajax.reload(function () {
+          dataTable.processing(false);
+        }, true);
+      }
+    }
+    function footerSum(row, data, start, end, display) {
+      var api = this.api(), data;
+
+      // Total over all pages
+      var totalImporte = api.column(-2).data().sum();
+      var totalSaldo = api.column(-1).data().sum();
+
+      // Update footer
+      $(api.column(-2).footer()).html(
+              numFormat.display(totalImporte)
+      );
+      $(api.column(-1).footer()).html(
+              numFormat.display(totalSaldo)
+      );
+    }
   </script>
 {% endblock %}
