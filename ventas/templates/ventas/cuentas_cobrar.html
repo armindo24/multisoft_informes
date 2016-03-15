@@ -71,6 +71,7 @@
     var $selectMoneda, selectMoneda;
     var $selectCondicion, selectCondicion;
     var $selectCalificacion, selectCalificacion;
+    var $selectCobrador, selectCobrador;
     var dataTable;
 
     $(document).ready(function () {
@@ -254,6 +255,20 @@
       selectCondicion = $selectCondicion[0].selectize;
       selectCondicion.load(function (cb) {
         $.get(api + 'ventas/terminos').done(function (res) {
+          cb(res.data);
+        }).fail(function () {
+          cb();
+        });
+      });
+
+      $selectCobrador = $('#select-cobrador').selectize({
+        valueField: 'cod_cobrador',
+        labelField: 'des_cobrador',
+        searchField: 'des_cobrador'
+      });
+      selectCobrador = $selectCobrador[0].selectize;
+      selectCobrador.load(function (cb) {
+        $.get(api + 'cobradores').done(function (res) {
           cb(res.data);
         }).fail(function () {
           cb();
