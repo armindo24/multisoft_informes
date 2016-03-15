@@ -28,7 +28,7 @@ var Usuarios = require('../models/usuarios');
 var Compras = require('../models/compras');
 var Presupuesto = require('../models/presupuesto');
 var Moneda = require('../models/moneda');
-
+var Cobrador = require('../models/cobrador');
 
 var conn = require('../db');
 
@@ -350,6 +350,12 @@ router.get('/monedas', function (req, res, next) {
 
 router.get('/ventas/terminos', function (req, res, next) {
     Ventas.terminos(function (result) {
+        postProcess(res, result);
+    });
+});
+
+router.get('/cobradores', function (req, res, next) {
+    Cobrador.list(function (result) {
         postProcess(res, result);
     });
 });
