@@ -7,7 +7,7 @@
 {% block filters %}
   {% include 'ventas/_filtro.html' with name="empresa" %}
   {% include 'ventas/_filtro.html' with name="sucursal" %}
-  {% include 'ventas/_filtro.html' with name="Moneda" %}
+  {% include 'ventas/_filtro.html' with name="moneda" %}
 
   {% include 'ventas/_filtro.html' with name="calificacion" %}
   {% include 'ventas/_filtro.html' with name="tipoCliente" title="Tipo de Cliente" placeholder="Tipo" %}
@@ -68,6 +68,8 @@
     var $selectCliente, selectCliente;
     var $selectTipoCliente, selectTipoCliente;
     var $selectMovimiento, selectMovimiento;
+    var $selectMoneda, selectMoneda;
+    var $selectCondicion, selectCondicion;
     var $selectCalificacion, selectCalificacion;
     var dataTable;
 
@@ -224,6 +226,34 @@
       selectCalificacion = $selectCalificacion[0].selectize;
       selectCalificacion.load(function (cb) {
         $.get(api + 'calificaciones').done(function (res) {
+          cb(res.data);
+        }).fail(function () {
+          cb();
+        });
+      });
+
+      $selectMoneda = $('#select-moneda').selectize({
+        valueField: 'simbolo',
+        labelField: 'descrip',
+        searchField: 'descrip'
+      });
+      selectMoneda = $selectMoneda[0].selectize;
+      selectMoneda.load(function (cb) {
+        $.get(api + 'monedas').done(function (res) {
+          cb(res.data);
+        }).fail(function () {
+          cb();
+        });
+      });
+
+      $selectCondicion = $('#select-condicion').selectize({
+        valueField: 'cod_con_vta',
+        labelField: 'des_con_vta',
+        searchField: 'des_con_vta'
+      });
+      selectCondicion = $selectCondicion[0].selectize;
+      selectCondicion.load(function (cb) {
+        $.get(api + 'ventas/terminos').done(function (res) {
           cb(res.data);
         }).fail(function () {
           cb();
