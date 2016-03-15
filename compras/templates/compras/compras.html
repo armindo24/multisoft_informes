@@ -1,7 +1,7 @@
 {% extends 'finanzas/base.html' %}
 
 {% block header %}
-  Orden de Compra:
+  Compras:
 {% endblock %}
 
 {% block filters %}
@@ -206,7 +206,7 @@
         options: [
           {value: 'Cod_Tp_Comp', text: 'Comprobante'},
           {value: 'RazonSocial', text: 'Proveedor'},
-          {value: 'AR', text: 'Articulo'},
+          //{value: 'AR', text: 'Articulo'},
         ],
         onChange: function (value) {
           query.agrupar = value;
