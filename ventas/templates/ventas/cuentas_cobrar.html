@@ -72,6 +72,7 @@
     var $selectCondicion, selectCondicion;
     var $selectCalificacion, selectCalificacion;
     var $selectCobrador, selectCobrador;
+    var $selectVendedor, selectVendedor;
     var dataTable;
 
     $(document).ready(function () {
@@ -171,6 +172,7 @@
         onChange: function (value) {
           query.sucursal = value;
           u.resetSelect(selectTipoCliente);
+          u.resetSelect(selectVendedor);
           if (!value.length) return;
           selectTipoCliente.load(function (callback) {
             $.get(api + 'clientes/tipos/').done(function (res) {
@@ -178,6 +180,14 @@
               callback(res.data);
             }).fail(function () {
               callback();
+            });
+          });
+          selectVendedor.load(function (cb) {
+            $.get(api + 'empresas/' + query.empresa + '/vendedores', {sucursal: query.sucursal}).done(function (res) {
+              selectVendedor.enable();
+              cb(res.data);
+            }).fail(function () {
+              cb();
             });
           });
         }
@@ -274,6 +284,14 @@
           cb();
         });
       });
+
+      $selectVendedor = $('#select-vendedor').selectize({
+        valueField: 'cod_vendedor',
+        labelField: 'des_vendedor',
+        searchField: 'des_vendedor'
+      });
+      selectVendedor = $selectVendedor[0].selectize;
+      selectVendedor.disable();
     }
 
     {#    function getInforme() {#}
