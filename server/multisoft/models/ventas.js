@@ -158,6 +158,11 @@ Ventas.cuentas.cobrar = function (params, query, cb) {
         sql_params.push(query.cobrador);
     }
 
+    if (query.vendedor) {
+        sql += "AND ( (DBA.Cuotas.cod_vendedor = ?) ) ";
+        sql_params.push(query.vendedor);
+    }
+
     if (query.sucursal) {
         sql += "AND cuotas.cod_sucursal = ? ";
         sql_params.push(query.sucursal);
