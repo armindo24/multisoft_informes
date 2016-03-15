@@ -14,3 +14,7 @@ def presupuesto(request):
 #TODO: customperm
 def cuentas_cobrar(request):
     return render_to_response('ventas/cuentas_cobrar.html', {'user':request.user.id}, context_instance=RequestContext(request))
+
+#TODO: customperm
+def recaudaciones(request):
+    return render_to_response('ventas/recaudaciones.html', {'user':request.user.id}, context_instance=RequestContext(request))
