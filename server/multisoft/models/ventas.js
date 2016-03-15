@@ -124,19 +124,60 @@ Ventas.cuentas.cobrar = function (params, query, cb) {
     if (query.start && query.end) {
         if (query.vencimiento === 'true') {
             sql += "and DATE(cuotas.fecha_ven) >= Date (?) " +
-                "AND DATE(cuotas.fecha_ven) <= Date (?)";
+                "AND DATE(cuotas.fecha_ven) <= Date (?) ";
         } else {
             sql += "and DATE(cuotas.fecha_emi) >= Date (?) " +
-                "AND DATE(cuotas.fecha_emi) <= Date (?)";
+                "AND DATE(cuotas.fecha_emi) <= Date (?) ";
         }
         sql_params.push(query.start);
         sql_params.push(query.end);
+    }
+
+    if (query.cliente) {
+        sql += "AND ((DBA.clientes.cod_cliente = ?)) ";
+        sql_params.push(query.cliente);
+    }
+
+    if (query.calificacion) {
+        sql += "AND ((dba.clientes.cod_calificacion = ?)) ";
+        sql_params.push(query.calificacion);
+    }
+
+    if (query.movimiento) {
+        sql += "AND cuotas.cod_tp_comp = ? ";
+        sql_params.push(query.movimiento);
+    }
+
+    if (query.condicion) {
+        sql += "AND ( (dba.cuotas.cod_con_vta = ?) ) ";
+        sql_params.push(query.condicion);
+    }
+
+    if (query.cobrador) {
+        sql += "AND ( (DBA.Clientes.cod_cobrador = ?) ) ";
+        sql_params.push(query.cobrador);
+    }
+
+    if (query.sucursal) {
+        sql += "AND cuotas.cod_sucursal = ? ";
+        sql_params.push(query.sucursal);
+    }
+
+    if (query.zona) {
+        sql += "AND ((dba.clientes.cod_zona = ?) ) ";
+        sql_params.push(query.zona);
+    }
+
+    if (query.tipoCliente) {
+        sql += "AND ( (dba.clientes.cod_tp_cliente = ?)) ";
+        sql_params.push(query.tipoCliente);
     }
 
     sql += "\nORDER BY dba.cuotas.cod_empresa ASC, dba.cuotas.cod_cliente ASC, " +
         "dba.cuotas.mvto_numero ASC, dba.cuotas.cuota_numero ASC, " +
         "dba.cuotas.fecha_ven ASC ";
     console.log(sql);
+    console.log(sql_params);
     conn.exec(sql, sql_params, function (err, result) {
         if (err) throw err;
         cb(result);
