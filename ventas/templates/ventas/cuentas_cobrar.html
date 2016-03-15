@@ -5,30 +5,60 @@
 {% endblock %}
 
 {% block filters %}
-  {% include 'ventas/_filtro.html' with name="empresa" %}
-  {% include 'ventas/_filtro.html' with name="sucursal" %}
-  {% include 'ventas/_filtro.html' with name="moneda" %}
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="empresa" %}
+    {% include 'ventas/_filtro.html' with name="sucursal" %}
+  </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="moneda" %}
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="cambio" class="col-md-4 control-label">Factor de Cambio:</label>
 
-  {% include 'ventas/_filtro.html' with name="calificacion" %}
-  {% include 'ventas/_filtro.html' with name="tipoCliente" title="Tipo de Cliente" placeholder="Tipo" %}
-  {% include 'ventas/_filtro.html' with name="cliente" %}
+        <div class="col-md-6">
+          <input class="form-control" type="text" name="cambio" id="cambio" value="1,00"/>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  {% include 'ventas/_filtro.html' with name="movimiento" %}
-  {% include 'ventas/_filtro.html' with name="condicion" title="Condicion de Venta" placeholder="Condicion" %}
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="calificacion" %}
+    {% include 'ventas/_filtro.html' with name="tipoCliente" title="Tipo de Cliente" placeholder="Tipo" %}
+  </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="cliente" %}
+    {% include 'ventas/_filtro.html' with name="movimiento" %}
+  </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="condicion" title="Condicion de Venta" placeholder="Condicion" %}
+    {% include 'ventas/_filtro.html' with name="zona" title="Zona de Venta" placeholder="Zona" %}
+  </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="cobrador" %}
+    {% include 'ventas/_filtro.html' with name="vendedor" %}
+  </div>
 
-  {% include 'ventas/_filtro.html' with name="cobrador" %}
-  {% include 'ventas/_filtro.html' with name="vendedor" %}
-  {% include 'ventas/_filtro.html' with name="zona" title="Zona de Venta" placeholder="Zona" %}
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="fecha" class="col-md-4 control-label">Fecha:</label>
 
-  <div class="col-sm-6">
-    <div class="form-group">
-      <label for="fecha" class="col-md-4 control-label">Fecha:</label>
+        <div class="col-md-6">
+          <div id="fecha" class="input-daterange input-group input-date">
+            <input type="text" class="input-sm form-control" name="start"/>
+            <span class="input-group-addon">hasta</span>
+            <input type="text" class="input-sm form-control" name="end"/>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="vencimiento" class="col-md-4 control-label">Filtrar por Vencimiento:</label>
 
-      <div class="col-md-6">
-        <div id="fecha" class="input-daterange input-group input-date">
-          <input type="text" class="input-sm form-control" name="start"/>
-          <span class="input-group-addon">hasta</span>
-          <input type="text" class="input-sm form-control" name="end"/>
+        <div class="col-md-6">
+          <input type="checkbox" name="vencimiento" id="vencimiento" />
         </div>
       </div>
     </div>
