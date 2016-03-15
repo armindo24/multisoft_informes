@@ -1,7 +1,7 @@
 {% extends 'finanzas/base.html' %}
 
 {% block header %}
-  Compras:
+  Compras por Artículo:
 {% endblock %}
 
 {% block filters %}
@@ -29,7 +29,7 @@
       </div>
     </div>
     <div class="row">
-      {% include 'ventas/_filtro.html' with name="agrupar" title="Agrupar por" %}
+      {% include 'ventas/_filtro.html' with name="articulo" title="Artículos" %}
       {% include 'ventas/_filtro.html' with name="moneda" %}
     </div>
 {% endblock %}
@@ -157,7 +157,7 @@
     var select_departamento, $select_departamento;
     var select_tipoco, $select_tipoco;
     var select_proveedor, $select_proveedor;
-    var select_agrupar, $select_agrupar;
+    var select_articulo, $select_articulo;
     var select_moneda, $select_moneda;
     var xhr;
     
@@ -188,7 +188,8 @@
       select_tipoco.disable();
       select_proveedor = $select_proveedor[0].selectize;
       select_proveedor.disable();
-      select_agrupar = $select_agrupar[0].selectize;
+      select_articulo = $select_articulo[0].selectize;
+      select_articulo.disable();
       select_moneda = $select_moneda[0].selectize;
     });
 
@@ -197,19 +198,6 @@
       $.extend(true, $.fn.selectize.defaults, {
         onChange: function (value) {
           query[this.$input.attr('name')] = value;
-          debug();
-        }
-      });
-      
-      $select_agrupar = $('#select-agrupar').selectize({
-        allowEmptyOption: true,
-        options: [
-          {value: 'Cod_Tp_Comp', text: 'Comprobante'},
-          {value: 'RazonSocial', text: 'Proveedor'},
-          //{value: 'AR', text: 'Articulo'},
-        ],
-        onChange: function (value) {
-          query.agrupar = value;
           debug();
         }
       });
@@ -282,6 +270,20 @@
               callback();
             });
           });
+          select_articulo.disable();
+          select_articulo.clearOptions();
+          select_articulo.load(function (callback) {
+            $.ajax({
+              url: api + 'empresas/' + query.empresa + '/articulos',
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_articulo.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
         }
       });
       
@@ -332,6 +334,20 @@
         }
       });
       
+      $select_articulo = $('#select-articulo').selectize({
+        valueField: 'cod_articulo',
+        labelField: 'des_art',
+        searchField: 'des_art',
+        optgroupField: 'cod_familia',
+        optgroupLabelField: 'des_familia',
+        optgroupValueField: 'cod_articulo',
+        plugins: ['optgroup_columns'],
+        onChange: function (value) {
+          query.articulo = value;
+          debug();
+        }
+      });
+      
       $select_tipoco = $('#select-tipoco').selectize({
         valueField: 'cod_tp_comp',
         labelField: 'des_tp_comp',
@@ -363,9 +379,6 @@
         }
       });
 
-      var selectize = $select_agrupar[0].selectize;
-      selectize.setValue('Cod_Tp_Comp');
-      
       var selectize1 = $select_moneda[0].selectize;
       selectize1.setValue('GS');
 

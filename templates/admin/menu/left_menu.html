@@ -14,7 +14,10 @@
                     <a href="{% url 'compras:ordencompra' %}"> Orden de Compra </a>
                 </li>
                 <li>
-                    <a href="{% url 'compras:compras' %}"> Compras - Resumido y Detallado </a>
+                    <a href="{% url 'compras:compras' %}"> Compras - Resumido y Detallado (Comprobante y Proveedor) </a>
+                </li>
+                <li>
+                    <a href="{% url 'compras:compras_articulo' %}"> Compras por Artículos </a>
                 </li>
             {% endif %}
 			{% if  request.session.modulo_seleccionado == "Finanzas"  %}

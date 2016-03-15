@@ -12,3 +12,7 @@ def ordencompra(request):
 def compras(request):
     return render_to_response('compras/compras.html', {'user':request.user.id}, context_instance=RequestContext(request))
 
+#@permission_required('custom_permissions.informe_ordenpago')
+def compras_articulo(request):
+    return render_to_response('compras/compras_articulo.html', {'user':request.user.id}, context_instance=RequestContext(request))
+
