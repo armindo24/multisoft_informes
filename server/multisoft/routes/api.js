@@ -27,6 +27,7 @@ var OrdenCompra = require('../models/ordencompra');
 var Usuarios = require('../models/usuarios');
 var Compras = require('../models/compras');
 var Presupuesto = require('../models/presupuesto');
+var Moneda = require('../models/moneda');
 
 
 var conn = require('../db');
@@ -337,6 +338,12 @@ router.get('/empresas/:empresa/comprobantes/presupuesto', function (req, res, ne
 
 router.get('/calificaciones', function (req, res, next) {
     Calificacion.all(function (result) {
+        postProcess(res, result);
+    });
+});
+
+router.get('/monedas', function (req, res, next) {
+    Moneda.list(function (result) {
         postProcess(res, result);
     });
 });
