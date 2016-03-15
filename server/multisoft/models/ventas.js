@@ -117,15 +117,27 @@ Ventas.cuentas.cobrar = function (params, query, cb) {
         "WHERE (dba.clientes.cod_empresa = dba.cuotas.cod_empresa) " +
         "and (dba.clientes.cod_cliente = dba.cuotas.cod_cliente) " +
         "and (dba.cuotas.saldo > 0) " +
-        "and clientes.cod_empresa = '03' " +
-        "and cuotas.cod_empresa = '03' " +
-        "and DATE(cuotas.fecha_emi) >= Date ('2016-01-01') " +
-        "AND DATE(cuotas.fecha_emi) <= Date ('2016-03-15')\n" +
-        "ORDER BY dba.cuotas.cod_empresa ASC, dba.cuotas.cod_cliente ASC, " +
+        "and cuotas.cod_empresa = ? ";
+
+    var sql_params = [params.empresa];
+
+    if (query.start && query.end) {
+        if (query.vencimiento === 'true') {
+            sql += "and DATE(cuotas.fecha_ven) >= Date (?) " +
+                "AND DATE(cuotas.fecha_ven) <= Date (?)";
+        } else {
+            sql += "and DATE(cuotas.fecha_emi) >= Date (?) " +
+                "AND DATE(cuotas.fecha_emi) <= Date (?)";
+        }
+        sql_params.push(query.start);
+        sql_params.push(query.end);
+    }
+
+    sql += "\nORDER BY dba.cuotas.cod_empresa ASC, dba.cuotas.cod_cliente ASC, " +
         "dba.cuotas.mvto_numero ASC, dba.cuotas.cuota_numero ASC, " +
         "dba.cuotas.fecha_ven ASC ";
     console.log(sql);
-    conn.exec(sql, function (err, result) {
+    conn.exec(sql, sql_params, function (err, result) {
         if (err) throw err;
         cb(result);
     });

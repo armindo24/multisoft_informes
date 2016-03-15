@@ -106,10 +106,12 @@
     var $selectCobrador, selectCobrador;
     var $selectVendedor, selectVendedor;
     var $selectZona, selectZona;
+    var $vencimiento;
     var dataTable;
 
     $(document).ready(function () {
       u.hideNav();
+      $vencimiento = $("#vencimiento");
       initDates();
       initSelects();
       $results = $('#results');
@@ -353,6 +355,8 @@
 
     function getInforme() {
       $('.collapse').collapse('hide');
+
+      query.vencimiento = $vencimiento.prop('checked');
 
       if (!dataTable) {
         $resultado.show();
