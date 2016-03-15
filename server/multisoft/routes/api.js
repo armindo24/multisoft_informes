@@ -348,6 +348,12 @@ router.get('/monedas', function (req, res, next) {
     });
 });
 
+router.get('/ventas/terminos', function (req, res, next) {
+    Ventas.terminos(function (result) {
+        postProcess(res, result);
+    });
+});
+
 router.get('/empresas/:empresa/comprobantes/cobrar', function (req, res, next) {
     Comprobante.cobrar(req.params, req.query, function (result) {
         postProcess(res, result);

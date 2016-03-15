@@ -77,4 +77,22 @@ Ventas.detalle = function (params, filter, cb) {
     });
 };
 
+Ventas.terminos = function (cb) {
+    var sql = "SELECT cod_con_vta, des_con_vta, cuota, dias_credito, descuento, " +
+        "ctrl_limite, efectivo, cheque, tarjeta, listas, " +
+        "SubStr( listas, 1, 1) as L_1, " +
+        "SubStr( listas, 2, 1) as L_2, " +
+        "SubStr( listas, 3, 1) as L_3, " +
+        "SubStr(listas, 4, 1) as L_4, " +
+        "SubStr( listas, 5, 1) as L_5, " +
+        "SubStr( listas, 6, 1) as L_6, " +
+        "porcinteres, porcinteresentrega, 'N' as incluir " +
+        "FROM dba.terminos " +
+        "ORDER BY cod_con_vta ASC";
+    conn.exec(sql, function (err, result) {
+        if (err) throw err;
+        cb(result);
+    });
+};
+
 module.exports = Ventas;
