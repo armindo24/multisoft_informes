@@ -9,18 +9,18 @@
     {% include 'ventas/_filtro.html' with name="empresa" %}
     {% include 'ventas/_filtro.html' with name="sucursal" %}
   </div>
-  <div class="row">
-    {% include 'ventas/_filtro.html' with name="moneda" %}
-    <div class="col-sm-6">
-      <div class="form-group">
-        <label for="cambio" class="col-md-4 control-label">Factor de Cambio:</label>
-
-        <div class="col-md-6">
-          <input class="form-control" type="text" name="cambio" id="cambio" value="1,00"/>
-        </div>
-      </div>
-    </div>
-  </div>
+{#  <div class="row">#}
+{#    {% include 'ventas/_filtro.html' with name="moneda" %}#}
+{#    <div class="col-sm-6">#}
+{#      <div class="form-group">#}
+{#        <label for="cambio" class="col-md-4 control-label">Factor de Cambio:</label>#}
+{##}
+{#        <div class="col-md-6">#}
+{#          <input class="form-control" type="text" name="cambio" id="cambio" value="1,00"/>#}
+{#        </div>#}
+{#      </div>#}
+{#    </div>#}
+{#  </div>#}
 
   <div class="row">
     {% include 'ventas/_filtro.html' with name="calificacion" %}
@@ -288,19 +288,19 @@
         });
       });
 
-      $selectMoneda = $('#select-moneda').selectize({
-        valueField: 'simbolo',
-        labelField: 'descrip',
-        searchField: 'descrip'
-      });
-      selectMoneda = $selectMoneda[0].selectize;
-      selectMoneda.load(function (cb) {
-        $.get(api + 'monedas').done(function (res) {
-          cb(res.data);
-        }).fail(function () {
-          cb();
-        });
-      });
+{#      $selectMoneda = $('#select-moneda').selectize({#}
+{#        valueField: 'simbolo',#}
+{#        labelField: 'descrip',#}
+{#        searchField: 'descrip'#}
+{#      });#}
+{#      selectMoneda = $selectMoneda[0].selectize;#}
+{#      selectMoneda.load(function (cb) {#}
+{#        $.get(api + 'monedas').done(function (res) {#}
+{#          cb(res.data);#}
+{#        }).fail(function () {#}
+{#          cb();#}
+{#        });#}
+{#      });#}
 
       $selectCondicion = $('#select-condicion').selectize({
         valueField: 'cod_con_vta',
