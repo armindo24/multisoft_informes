@@ -102,5 +102,33 @@ Ventas.zonas = function (cb) {
         cb(result);
     });
 };
+Ventas.cuentas = {};
+
+Ventas.cuentas.cobrar = function (params, query, cb) {
+    var sql = "SELECT dba.cuotas.cod_empresa, dba.cuotas.cod_sucursal, " +
+        "dba.cuotas.mvto_numero, dba.cuotas.cuota_numero, dba.cuotas.cod_cliente, " +
+        "dba.cuotas.cod_tp_comp, dba.cuotas.comp_numero, dba.cuotas.fecha_ven, " +
+        "dba.cuotas.importe, dba.cuotas.saldo, dba.clientes.razon_social, " +
+        "dba.clientes.direccion, dba.clientes.email, dba.clientes.telefono1, " +
+        "dba.clientes.telefono2, dba.clientes.fax, dba.clientes.ruc, " +
+        "dba.clientes.contacto, dba.cuotas.fact_cambio, dba.cuotas.fecha_emi, " +
+        "1 as tipo\n" +
+        "FROM dba.cuotas, dba.clientes\n" +
+        "WHERE (dba.clientes.cod_empresa = dba.cuotas.cod_empresa) " +
+        "and (dba.clientes.cod_cliente = dba.cuotas.cod_cliente) " +
+        "and (dba.cuotas.saldo > 0) " +
+        "and clientes.cod_empresa = '03' " +
+        "and cuotas.cod_empresa = '03' " +
+        "and DATE(cuotas.fecha_emi) >= Date ('2016-01-01') " +
+        "AND DATE(cuotas.fecha_emi) <= Date ('2016-03-15')\n" +
+        "ORDER BY dba.cuotas.cod_empresa ASC, dba.cuotas.cod_cliente ASC, " +
+        "dba.cuotas.mvto_numero ASC, dba.cuotas.cuota_numero ASC, " +
+        "dba.cuotas.fecha_ven ASC ";
+    console.log(sql);
+    conn.exec(sql, function (err, result) {
+        if (err) throw err;
+        cb(result);
+    });
+};
 
 module.exports = Ventas;

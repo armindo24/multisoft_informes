@@ -378,4 +378,10 @@ router.get('/empresas/:empresa/comprobantes/cobrar', function (req, res, next) {
     });
 });
 
+router.get('/empresas/:empresa/ventas/cuentas/cobrar', function (req, res, next) {
+    Ventas.cuentas.cobrar(req.params, req.query, function (result) {
+        postProcess(res, result);
+    });
+});
+
 module.exports = router;
