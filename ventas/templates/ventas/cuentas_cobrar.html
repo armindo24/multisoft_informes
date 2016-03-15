@@ -75,11 +75,13 @@
     <th class="text-center">Fecha Vencimiento</th>
     <th class="price-label">Importe</th>
     <th class="price-label">Saldo</th>
+    <th class="price-label">Saldo Acumulado</th>
   </tr>
   </thead>
   <tfoot>
   <tr>
     <th colspan="5" style="text-align:right">Total:</th>
+    <th></th>
     <th></th>
     <th></th>
   </tr>
@@ -114,6 +116,16 @@
       $resultado = $('#resultado');
       $resultado.hide();
     });
+
+    var calcSaldoAcumulado = function (d, t, r, m) {
+      if (m.row === 0) {
+        r.saldoAcumulado = r.saldo;
+      }
+      else {
+        r.saldoAcumulado = u.parseVal(dataTable.cell(m.row - 1, m.col).data()) + u.parseVal(r.saldo);
+      }
+      return u.numFormat(r.saldoAcumulado);
+    };
 
     function initDates() {
       var $inputDate = $(".input-date .form-control");
@@ -366,7 +378,8 @@
             {data: 'fecha_emi', render: u.dateFormat},
             {data: 'fecha_ven', render: u.dateFormat},
             {data: 'importe'},
-            {data: 'saldo'}
+            {data: 'saldo'},
+            {data: 'saldoAcumulado', render: calcSaldoAcumulado}
           ],
           footerCallback: footerSum,
           processing: true
@@ -383,14 +396,14 @@
       var api = this.api(), data;
 
       // Total over all pages
-      var totalImporte = api.column(-2).data().sum();
-      var totalSaldo = api.column(-1).data().sum();
+      var totalImporte = api.column(-3).data().sum();
+      var totalSaldo = api.column(-2).data().sum();
 
       // Update footer
-      $(api.column(-2).footer()).html(
+      $(api.column(-3).footer()).html(
               numFormat.display(totalImporte)
       );
-      $(api.column(-1).footer()).html(
+      $(api.column(-2).footer()).html(
               numFormat.display(totalSaldo)
       );
     }
