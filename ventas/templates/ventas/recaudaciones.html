@@ -10,47 +10,35 @@
     {% include 'ventas/_filtro.html' with name="sucursal" %}
   </div>
 
-{#  <div class="row">#}
-{#    {% include 'ventas/_filtro.html' with name="calificacion" %}#}
-{#    {% include 'ventas/_filtro.html' with name="tipoCliente" title="Tipo de Cliente" placeholder="Tipo" %}#}
-{#  </div>#}
-{#  <div class="row">#}
-{#    {% include 'ventas/_filtro.html' with name="cliente" %}#}
-{#    {% include 'ventas/_filtro.html' with name="movimiento" %}#}
-{#  </div>#}
-{#  <div class="row">#}
-{#    {% include 'ventas/_filtro.html' with name="condicion" title="Condicion de Venta" placeholder="Condicion" %}#}
-{#    {% include 'ventas/_filtro.html' with name="zona" title="Zona de Venta" placeholder="Zona" %}#}
-{#  </div>#}
-{#  <div class="row">#}
-{#    {% include 'ventas/_filtro.html' with name="cobrador" %}#}
-{#    {% include 'ventas/_filtro.html' with name="vendedor" %}#}
-{#  </div>#}
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="cajero" %}
+    {% include 'ventas/_filtro.html' with name="estado" %}
+  </div>
 
-{#  <div class="row">#}
-{#    <div class="col-sm-6">#}
-{#      <div class="form-group">#}
-{#        <label for="fecha" class="col-md-4 control-label">Fecha:</label>#}
-{##}
-{#        <div class="col-md-6">#}
-{#          <div id="fecha" class="input-daterange input-group input-date">#}
-{#            <input type="text" class="input-sm form-control" name="start"/>#}
-{#            <span class="input-group-addon">hasta</span>#}
-{#            <input type="text" class="input-sm form-control" name="end"/>#}
-{#          </div>#}
-{#        </div>#}
-{#      </div>#}
-{#    </div>#}
-{#    <div class="col-sm-6">#}
-{#      <div class="form-group">#}
-{#        <label for="vencimiento" class="col-md-4 control-label">Filtrar por Vencimiento:</label>#}
-{##}
-{#        <div class="col-md-6">#}
-{#          <input type="checkbox" name="vencimiento" id="vencimiento"/>#}
-{#        </div>#}
-{#      </div>#}
-{#    </div>#}
-{#  </div>#}
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="fecha" class="col-md-4 control-label">Fecha:</label>
+
+        <div class="col-md-6">
+          <div id="fecha" class="input-daterange input-group input-date">
+            <input type="text" class="input-sm form-control" name="start"/>
+            <span class="input-group-addon">hasta</span>
+            <input type="text" class="input-sm form-control" name="end"/>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="incluir" class="col-md-4 control-label">Incluir Ventas? :</label>
+
+        <div class="col-md-6">
+          <input type="checkbox" name="incluir" id="incluir"/>
+        </div>
+      </div>
+    </div>
+  </div>
 {% endblock %}
 
 {% block table %}
@@ -79,31 +67,22 @@
 {% block extra_foot %}
   <script>
     var query = {empresa: ''};
-    var api = u.getApiUrl();
     var $results, $resultado;
-    var numFormat = u.numFormatter;
 
     var $selectEmpresa, selectEmpresa;
     var $selectSucursal, selectSucursal;
-    var $selectCliente, selectCliente;
-    var $selectTipoCliente, selectTipoCliente;
-    var $selectMovimiento, selectMovimiento;
-    var $selectMoneda, selectMoneda;
-    var $selectCondicion, selectCondicion;
-    var $selectCalificacion, selectCalificacion;
-    var $selectCobrador, selectCobrador;
-    var $selectVendedor, selectVendedor;
-    var $selectZona, selectZona;
-    var $vencimiento;
+    var $selectSucursal, selectSucursal;
+    var $selectCajero, selectCajero;
+    var $selectEstado, selectEstado;
     var dataTable;
 
     $(document).ready(function () {
       u.hideNav();
-{#      initDates();#}
-{#      initSelects();#}
-{#      $results = $('#results');#}
-{#      $resultado = $('#resultado');#}
-{#      $resultado.hide();#}
+      initDates();
+      initSelects();
+      {#      $results = $('#results');#}
+      {#      $resultado = $('#resultado');#}
+      {#      $resultado.hide();#}
     });
 
     var calcSaldoAcumulado = function (d, t, r, m) {
@@ -150,7 +129,6 @@
         onChange: function (value) {
           query.empresa = value;
           u.resetSelect(selectSucursal);
-          u.resetSelect(selectMovimiento);
           if (!value.length) return;
           selectSucursal.load(function (callback) {
             $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
@@ -160,16 +138,6 @@
               callback();
             });
           });
-
-          selectMovimiento.load(function (callback) {
-            $.get(api + 'empresas/' + query.empresa + '/comprobantes/cobrar').done(function (res) {
-              selectMovimiento.enable();
-              callback(res.data);
-            }).fail(function () {
-              callback();
-            });
-          });
-
         }
       });
 
@@ -180,164 +148,17 @@
         });
       });
 
-      $selectMovimiento = $('#select-movimiento').selectize({
-        valueField: 'cod_tp_comp',
-        labelField: 'des_tp_comp',
-        searchField: 'des_tp_comp',
-        render: {
-          option: function (item, escape) {
-            return '<div>' + escape(item.cod_tp_comp) + ' - ' + escape(item.des_tp_comp) + '</div>';
-          },
-          item: function (item, escape) {
-            return '<div>' + escape(item.cod_tp_comp) + ' - ' + escape(item.des_tp_comp) + '</div>';
-          }
-        }
-      });
-      selectMovimiento = $selectMovimiento[0].selectize;
-      selectMovimiento.disable();
-
-
       $selectSucursal = $('#select-sucursal').selectize({
         valueField: 'Cod_Sucursal',
         labelField: 'Des_Sucursal',
         searchField: 'Des_Sucursal',
         onChange: function (value) {
           query.sucursal = value;
-          u.resetSelect(selectTipoCliente);
-          u.resetSelect(selectVendedor);
           if (!value.length) return;
-          selectTipoCliente.load(function (callback) {
-            $.get(api + 'clientes/tipos/').done(function (res) {
-              selectTipoCliente.enable();
-              callback(res.data);
-            }).fail(function () {
-              callback();
-            });
-          });
-          selectVendedor.load(function (cb) {
-            $.get(api + 'empresas/' + query.empresa + '/vendedores', {sucursal: query.sucursal}).done(function (res) {
-              selectVendedor.enable();
-              cb(res.data);
-            }).fail(function () {
-              cb();
-            });
-          });
         }
       });
       selectSucursal = $selectSucursal[0].selectize;
       selectSucursal.disable();
-
-      $selectTipoCliente = $('#select-tipoCliente').selectize({
-        valueField: 'Cod_Tp_Cliente',
-        labelField: 'Des_Tp_Cliente',
-        searchField: 'Des_Tp_Cliente',
-        onChange: function (value) {
-          query.tipoCliente = value;
-          u.resetSelect(selectCliente);
-          if (!value.length) return;
-          selectCliente.enable();
-        }
-      });
-      selectTipoCliente = $selectTipoCliente[0].selectize;
-      selectTipoCliente.disable();
-
-      $selectCliente = $('#select-cliente').selectize({
-        valueField: 'Cod_Cliente',
-        labelField: 'Razon_Social',
-        searchField: 'Razon_Social',
-        load: function (q, cb) {
-          if (!q.length) return cb();
-          $.get(api + 'empresas/' + query.empresa + '/clientes', {
-            tipo: query.tipoCliente,
-            cliente: q,
-            sucursal: query.sucursal
-          }).done(function (res) {
-            cb(res.data);
-          }).fail(function () {
-            cb();
-          });
-        }
-      });
-      selectCliente = $selectCliente[0].selectize;
-      selectCliente.disable();
-
-      $selectCalificacion = $('#select-calificacion').selectize({
-        valueField: 'Cod_Calificacion',
-        labelField: 'Des_Calificacion',
-        searchField: 'Des_Calificacion'
-      });
-      selectCalificacion = $selectCalificacion[0].selectize;
-      selectCalificacion.load(function (cb) {
-        $.get(api + 'calificaciones').done(function (res) {
-          cb(res.data);
-        }).fail(function () {
-          cb();
-        });
-      });
-
-{#      $selectMoneda = $('#select-moneda').selectize({#}
-{#        valueField: 'simbolo',#}
-{#        labelField: 'descrip',#}
-{#        searchField: 'descrip'#}
-{#      });#}
-{#      selectMoneda = $selectMoneda[0].selectize;#}
-{#      selectMoneda.load(function (cb) {#}
-{#        $.get(api + 'monedas').done(function (res) {#}
-{#          cb(res.data);#}
-{#        }).fail(function () {#}
-{#          cb();#}
-{#        });#}
-{#      });#}
-
-      $selectCondicion = $('#select-condicion').selectize({
-        valueField: 'cod_con_vta',
-        labelField: 'des_con_vta',
-        searchField: 'des_con_vta'
-      });
-      selectCondicion = $selectCondicion[0].selectize;
-      selectCondicion.load(function (cb) {
-        $.get(api + 'ventas/terminos').done(function (res) {
-          cb(res.data);
-        }).fail(function () {
-          cb();
-        });
-      });
-
-      $selectCobrador = $('#select-cobrador').selectize({
-        valueField: 'cod_cobrador',
-        labelField: 'des_cobrador',
-        searchField: 'des_cobrador'
-      });
-      selectCobrador = $selectCobrador[0].selectize;
-      selectCobrador.load(function (cb) {
-        $.get(api + 'cobradores').done(function (res) {
-          cb(res.data);
-        }).fail(function () {
-          cb();
-        });
-      });
-
-      $selectVendedor = $('#select-vendedor').selectize({
-        valueField: 'cod_vendedor',
-        labelField: 'des_vendedor',
-        searchField: 'des_vendedor'
-      });
-      selectVendedor = $selectVendedor[0].selectize;
-      selectVendedor.disable();
-
-      $selectZona = $('#select-zona').selectize({
-        valueField: 'cod_zona',
-        labelField: 'des_zona',
-        searchField: 'des_cobrador'
-      });
-      selectZona = $selectZona[0].selectize;
-      selectZona.load(function (cb) {
-        $.get(api + 'ventas/zonas').done(function (res) {
-          cb(res.data);
-        }).fail(function () {
-          cb();
-        });
-      });
     }
 
     function getInforme() {
