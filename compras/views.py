@@ -16,3 +16,7 @@ def compras(request):
 def compras_articulo(request):
     return render_to_response('compras/compras_articulo.html', {'user':request.user.id}, context_instance=RequestContext(request))
 
+#@permission_required('custom_permissions.informe_ordenpago')
+def saldos_proveedores(request):
+    return render_to_response('compras/saldos_proveedores.html', {'user':request.user.id}, context_instance=RequestContext(request))
+
