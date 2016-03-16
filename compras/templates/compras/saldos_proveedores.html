@@ -6,6 +6,17 @@
 
 {% block filters %}
   {% include 'ventas/_filtro.html' with name="empresa" %}
+  
+  <div class="col-sm-6">
+      <div class="form-group">
+        <label for="periodo" class="col-md-4 control-label">Periodo:</label>
+
+        <div class="col-md-6">
+          <div id="periodo" class="input-date"><input type="text" class="form-control" name="periodo"></div>
+        </div>
+      </div>
+    </div>
+  
   {% include 'ventas/_filtro.html' with name="proveedor" %}
 
   <div class="col-sm-6">
@@ -67,6 +78,19 @@
     });
 
     function init() {
+    
+      $('#periodo .form-control').datepicker({
+        format: "yyyy",
+        startView: 2,
+        minViewMode: 2,
+        maxViewMode: 2,
+        autoclose: true
+      });
+    
+      $('#periodo .form-control').datepicker().on('changeDate', function (e) {
+          query.periodo = this.value;
+      });  
+        
       $.extend(true, $.fn.selectize.defaults, {
         onChange: function (value) {
           query[this.$input.attr('name')] = value;
@@ -163,7 +187,7 @@
         $('#results').DataTable({
           language: u.spanish_dt,
           ajax: {
-            url: api + 'ordencompra/list',
+            url: api + 'cuentas_pagar/list',
             data: function () {
               return query;
             }
@@ -202,7 +226,7 @@
         var $resultado = $('#resultado');
         table.row(0).scrollTo();
         $resultado.css("position", "absolute").css("left", -9999);
-        table.ajax.url(api + 'ordencompra/list').load(function () {
+        table.ajax.url(api + 'cuentas_pagar/list').load(function () {
           $resultado.css("position", "relative").css("left", 0);
         });
       }

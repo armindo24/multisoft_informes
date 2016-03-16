@@ -25,10 +25,7 @@ var OrdenCompra = require('../models/ordencompra');
 var Usuarios = require('../models/usuarios');
 var Compras = require('../models/compras');
 var Presupuesto = require('../models/presupuesto');
-
-
-
-
+var Cuentas_pagar = require('../models/cuentas_pagar');
 
 var conn = require('../db');
 
@@ -346,6 +343,12 @@ router.get('/compras/:empresa/presupuesto', function (req, res, next) {
 router.get('/empresas/:empresa/comprobantes/presupuesto', function (req, res, next) {
     Comprobante.presupuesto(req.params, req.query, function (result) {
         postProcess(res, result);
+    });
+});
+
+router.get('/cuentas_pagar/list', function (req, res, next) {
+    Cuentas_pagar.all(req.query, function (result) {
+        res.json({data: result});
     });
 });
 
