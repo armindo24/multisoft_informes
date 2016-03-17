@@ -1,11 +1,12 @@
 var conn = require('../db');
 var util = require('util');
+var moment = require('moment');
 var q = require('./queryUtils');
 var Cuentas_pagar = {};
 
 var qProcedure = [];
 
-var mSID = null
+var mSID = null;
 var responseCallback;
 var responseData;
 
@@ -17,20 +18,17 @@ Cuentas_pagar.all = function (filters, cb) {
         sql_proveedores += " AND (dba.FACTCAB.CodProv IN " + q.in(filters.proveedor) + ") ";
     }
 
-    var currentdate = new Date();
-    mSID =
-        (currentdate.getDate()).toString() +
-        (currentdate.getMonth() + 1).toString() +
-        (currentdate.getFullYear()).toString() +
-        (currentdate.getHours()).toString() +
-        (currentdate.getMinutes()).toString() +
-        (currentdate.getSeconds()).toString();
+    mSID = moment().format('DDMMYYYYHHmmss');
 
     console.log(mSID);
+
 
     var string_procedure;
     responseCallback = cb;
 
+    cb('hola');
+    console.log('sigO?');
+    return;
     conn.exec(sql_proveedores, function (err, r) {
 
         if (err) throw err;
