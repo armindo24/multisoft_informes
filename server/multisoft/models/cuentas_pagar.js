@@ -6,6 +6,8 @@ var Cuentas_pagar = {};
 var qProcedure = [];
 
 var mSID = null
+var responseCallback;
+var responseData;
 
 Cuentas_pagar.all = function (filters, cb) {
 
@@ -27,9 +29,10 @@ Cuentas_pagar.all = function (filters, cb) {
     console.log(mSID);
 
     var string_procedure;
+    responseCallback = cb;
 
     conn.exec(sql_proveedores, function (err, r) {
-    
+
         if (err) throw err;
         for (var a = 0; a < r.length; a++) {
             string_procedure =
@@ -40,31 +43,34 @@ Cuentas_pagar.all = function (filters, cb) {
             qProcedure.push(string_procedure);
         }
         executeQueue();
-
-        //var string_delete = "DELETE FROM DBA.TmpExtProv WHERE ID ='" + mSID + "'";
-
     })
 };
 
 function executeQueue() {
-    if (qProcedure.length == 0){
+    if (qProcedure.length == 0) {
         console.log('cero');
-        var string_sql = "SELECT DBA.Proveed.Cod_Empresa,DBA.Proveed.CodProv,DBA.TmpExtProv.CodMoneda,DBA.Proveed.RazonSocial,"+
-                 "DBA.TmpExtProv.SaldoAnterior,SUM(DBA.TmpExtProv.Credito) as TotalCredito,SUM(DBA.TmpExtProv.Debito ) as TotalDebito,"+
-                 "DBA.Moneda.Descrip FROM DBA.Proveed,DBA.TmpExtProv,DBA.Moneda WHERE DBA.Proveed.Cod_Empresa = DBA.TmpExtProv.Cod_Empresa "+
-                 "AND DBA.Proveed.CodProv = DBA.TmpExtProv.CodProv AND DBA.TmpExtProv.CodMoneda = DBA.Moneda.CodMoneda AND DBA.TmpExtProv.ID = '" + mSID + "' "+
-                 "GROUP BY DBA.Proveed.Cod_Empresa,DBA.Proveed.CodProv,DBA.TmpExtProv.CodMoneda,DBA.Proveed.RazonSocial,"+
-                 "DBA.TmpExtProv.SaldoAnterior,DBA.Moneda.Descrip";
+        var string_sql = "SELECT DBA.Proveed.Cod_Empresa,DBA.Proveed.CodProv,DBA.TmpExtProv.CodMoneda,DBA.Proveed.RazonSocial," +
+            "DBA.TmpExtProv.SaldoAnterior,SUM(DBA.TmpExtProv.Credito) as TotalCredito,SUM(DBA.TmpExtProv.Debito ) as TotalDebito," +
+            "DBA.Moneda.Descrip FROM DBA.Proveed,DBA.TmpExtProv,DBA.Moneda WHERE DBA.Proveed.Cod_Empresa = DBA.TmpExtProv.Cod_Empresa " +
+            "AND DBA.Proveed.CodProv = DBA.TmpExtProv.CodProv AND DBA.TmpExtProv.CodMoneda = DBA.Moneda.CodMoneda AND DBA.TmpExtProv.ID = '" + mSID + "' " +
+            "GROUP BY DBA.Proveed.Cod_Empresa,DBA.Proveed.CodProv,DBA.TmpExtProv.CodMoneda,DBA.Proveed.RazonSocial," +
+            "DBA.TmpExtProv.SaldoAnterior,DBA.Moneda.Descrip";
+
         conn.exec(string_sql, function (err, r) {
             if (err) throw err;
-            data  = r;
+            responseData = r;
+            var string_delete = "DELETE FROM DBA.TmpExtProv WHERE ID ='" + mSID + "'";
+            conn.exec(string_delete, function (err, r) {
+                if (err) throw err;
+                responseCallback(responseData);
+            });
         })
     } else {
         exec(qProcedure.shift(), executeQueue);
     }
 }
 
-function exec(storedProcedure,cb) {
+function exec(storedProcedure, cb) {
     if (storedProcedure) {
         conn.exec(storedProcedure, function (err, r) {
             if (err) throw err;
