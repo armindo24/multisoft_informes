@@ -5,6 +5,8 @@ var Cuentas_pagar = {};
 
 var qProcedure = [];
 
+var mSID = null
+
 Cuentas_pagar.all = function (filters, cb) {
 
     var sql_proveedores = "SELECT CodProv FROM DBA.Proveed WHERE Cod_Empresa = '" + filters.empresa + "'"
@@ -14,7 +16,7 @@ Cuentas_pagar.all = function (filters, cb) {
     }
 
     var currentdate = new Date();
-    var mSID =
+    mSID =
         (currentdate.getDate()).toString() +
         (currentdate.getMonth() + 1).toString() +
         (currentdate.getFullYear()).toString() +
@@ -27,9 +29,9 @@ Cuentas_pagar.all = function (filters, cb) {
     var string_procedure;
 
     conn.exec(sql_proveedores, function (err, r) {
+    
         if (err) throw err;
         for (var a = 0; a < r.length; a++) {
-            console.log(r[a].CodProv);
             string_procedure =
                 "execute dba.gen_proveed_saldo mSID ='" + mSID + "' , " +
                 "mCodEmpresa ='" + filters.empresa + "' , mPeriodo ='" + filters.periodo + "' , " +
@@ -38,19 +40,34 @@ Cuentas_pagar.all = function (filters, cb) {
             qProcedure.push(string_procedure);
         }
         executeQueue();
-    })
 
+        //var string_delete = "DELETE FROM DBA.TmpExtProv WHERE ID ='" + mSID + "'";
+
+    })
 };
 
 function executeQueue() {
-    exec(qProcedure.shift(), executeQueue);
+    if (qProcedure.length == 0){
+        console.log('cero');
+        var string_sql = "SELECT DBA.Proveed.Cod_Empresa,DBA.Proveed.CodProv,DBA.TmpExtProv.CodMoneda,DBA.Proveed.RazonSocial,"+
+                 "DBA.TmpExtProv.SaldoAnterior,SUM(DBA.TmpExtProv.Credito) as TotalCredito,SUM(DBA.TmpExtProv.Debito ) as TotalDebito,"+
+                 "DBA.Moneda.Descrip FROM DBA.Proveed,DBA.TmpExtProv,DBA.Moneda WHERE DBA.Proveed.Cod_Empresa = DBA.TmpExtProv.Cod_Empresa "+
+                 "AND DBA.Proveed.CodProv = DBA.TmpExtProv.CodProv AND DBA.TmpExtProv.CodMoneda = DBA.Moneda.CodMoneda AND DBA.TmpExtProv.ID = '" + mSID + "' "+
+                 "GROUP BY DBA.Proveed.Cod_Empresa,DBA.Proveed.CodProv,DBA.TmpExtProv.CodMoneda,DBA.Proveed.RazonSocial,"+
+                 "DBA.TmpExtProv.SaldoAnterior,DBA.Moneda.Descrip";
+        conn.exec(string_sql, function (err, r) {
+            if (err) throw err;
+            data  = r;
+        })
+    } else {
+        exec(qProcedure.shift(), executeQueue);
+    }
 }
 
-function exec(storedProcedure, cb) {
+function exec(storedProcedure,cb) {
     if (storedProcedure) {
         conn.exec(storedProcedure, function (err, r) {
             if (err) throw err;
-            console.log(r);
             cb();
         });
     }

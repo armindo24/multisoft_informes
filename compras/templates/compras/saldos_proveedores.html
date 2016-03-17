@@ -32,7 +32,7 @@
     </div>
   </div>
   
-  {% include 'ventas/_filtro.html' with name="estado" %}
+  {% include 'ventas/_filtro.html' with name="tipo" %}
   
 {% endblock %}
 
@@ -64,7 +64,7 @@
     var initialize = init;
     var select_empresa, $select_empresa;
     var select_proveedor, $select_proveedor;
-    var select_estado, $select_estado;
+    var select_tipo, $select_tipo;
     var xhr;
 
     $(document).ready(function () {
@@ -141,7 +141,7 @@
       });
       
 
-      $select_estado = $('#select-estado').selectize({
+      $select_tipo = $('#select-tipo').selectize({
         allowEmptyOption: true,
         maxItems: null,
         options: [
@@ -153,7 +153,7 @@
           {value: 'PC', text: 'Proveedor Caja'},
         ],
         onChange: function (value) {
-          query.estado = value;
+          query.tipo = value;
           debug();
         }
       });
