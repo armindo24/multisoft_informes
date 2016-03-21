@@ -15,20 +15,20 @@ Cuentas_pagar.all = function (filters, cb) {
     var sql_proveedores = "SELECT CodProv FROM DBA.Proveed WHERE Cod_Empresa = '" + filters.empresa + "'"
 
     if (filters.proveedor) {
-        sql_proveedores += " AND (dba.FACTCAB.CodProv IN " + q.in(filters.proveedor) + ") ";
+        sql_proveedores += " AND (DBA.Proveed.CodProv IN " + q.in(filters.proveedor) + ") ";
+    }
+    
+    if (filters.tipo) {
+        sql_proveedores += " AND (DBA.Proveed.TipoProv IN " + q.in(filters.tipo) + ") ";
     }
 
     mSID = moment().format('DDMMYYYYHHmmss');
 
     console.log(mSID);
 
-
     var string_procedure;
+    
     responseCallback = cb;
-
-    cb('hola');
-    console.log('sigO?');
-    return;
     conn.exec(sql_proveedores, function (err, r) {
 
         if (err) throw err;
@@ -46,16 +46,16 @@ Cuentas_pagar.all = function (filters, cb) {
 
 function executeQueue() {
     if (qProcedure.length == 0) {
-        console.log('cero');
-        var string_sql = "SELECT DBA.Proveed.Cod_Empresa,DBA.Proveed.CodProv,DBA.TmpExtProv.CodMoneda,DBA.Proveed.RazonSocial," +
+        var string_sql = "select * from ( SELECT DBA.Proveed.Cod_Empresa,DBA.Proveed.CodProv,DBA.TmpExtProv.CodMoneda,DBA.Proveed.RazonSocial," +
             "DBA.TmpExtProv.SaldoAnterior,SUM(DBA.TmpExtProv.Credito) as TotalCredito,SUM(DBA.TmpExtProv.Debito ) as TotalDebito," +
-            "DBA.Moneda.Descrip FROM DBA.Proveed,DBA.TmpExtProv,DBA.Moneda WHERE DBA.Proveed.Cod_Empresa = DBA.TmpExtProv.Cod_Empresa " +
+            "DBA.Moneda.Descrip,(SaldoAnterior + (TotalCredito - TotalDebito)) as Saldo FROM DBA.Proveed,DBA.TmpExtProv,DBA.Moneda WHERE DBA.Proveed.Cod_Empresa = DBA.TmpExtProv.Cod_Empresa " +
             "AND DBA.Proveed.CodProv = DBA.TmpExtProv.CodProv AND DBA.TmpExtProv.CodMoneda = DBA.Moneda.CodMoneda AND DBA.TmpExtProv.ID = '" + mSID + "' " +
             "GROUP BY DBA.Proveed.Cod_Empresa,DBA.Proveed.CodProv,DBA.TmpExtProv.CodMoneda,DBA.Proveed.RazonSocial," +
-            "DBA.TmpExtProv.SaldoAnterior,DBA.Moneda.Descrip";
-
+            "DBA.TmpExtProv.SaldoAnterior,DBA.Moneda.Descrip ORDER BY DBA.Moneda.Descrip ) as tabla where Saldo > 0 ";
+        console.log(string_sql);
         conn.exec(string_sql, function (err, r) {
             if (err) throw err;
+            console.log(r);
             responseData = r;
             var string_delete = "DELETE FROM DBA.TmpExtProv WHERE ID ='" + mSID + "'";
             conn.exec(string_delete, function (err, r) {

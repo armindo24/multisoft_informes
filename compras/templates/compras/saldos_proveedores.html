@@ -39,23 +39,25 @@
 {% block table %}
   <thead>
   <tr>
-    <th class="text-center">N° de Orden</th>
-    <th>Proveedor</th>
-    <th>Fecha</th>
-    <th>Repartamento</th>
-    <th>Responsable</th>
-    <th>Solicitado por</th>
-    <th class="text-center">Moneda</th>
-    <th>N° de Pedido</th>
-    <th class="text-center">Estado</th>
-    <th class="price-label">Total</th>
+    <th>Cod. Prov.</th>
+    <th>Razón Social</th>
+    <th>Moneda</th>
+    <th>Saldo Anterior</th>
+    <th>Total Débito</th>
+    <th>Total Crédito</th>
+    <th>Saldo</th>
   </tr>
   </thead>
 {% endblock %}
 
 {% block extra_foot %}
+  <style>
+    .aling_right{text-align: right;}
+  </style>
   <script>
-    var query = {};
+    var query = {
+        agrupar: 'Descrip'
+    };
 
     var api = u.getApiUrl();
     var $results = $('#results');
@@ -66,6 +68,18 @@
     var select_proveedor, $select_proveedor;
     var select_tipo, $select_tipo;
     var xhr;
+    
+    function addCommas(nStr) {
+        nStr += '';
+        x = nStr.split('.');
+        x1 = x[0];
+        x2 = x.length > 1 ? ',' + x[1] : '';
+        var rgx = /(\d+)(\d{3})/;
+        while (rgx.test(x1)) {
+            x1 = x1.replace(rgx, '$1' + '.' + '$2');
+        }
+        return x1 + x2;
+      }
 
     $(document).ready(function () {
       u.hideNav();
@@ -186,14 +200,20 @@
       if (!$.fn.DataTable.isDataTable('#results')) {
         $('#results').DataTable({
           language: u.spanish_dt,
-          ajax: {
-            url: api + 'cuentas_pagar/list',
-            data: function () {
-              return query;
-            }
+          ajax: function (d, cb, s) {
+            $.ajax({
+              method: 'GET',
+              url: api + 'cuentas_pagar/list',
+              data: query
+            }).done(function (res) {
+              cb(res);
+            }).fail(function () {
+              cb();
+            });
           },
           deferRender: true,
           scrollY: 350,
+          scrollX: '100%',
           scrollCollapse: true,
           scroller: {
             displayBuffer: 30,
@@ -206,29 +226,82 @@
             {visible: false, targets: "grouping-col"}
           ],
           columns: [
-            {data: 'nroordcomp'},
-            {data: 'razonsocial'},
-            {data: 'fechaorden'},
-            {data: 'descrip'},
-            {data: 'responsable'},
-            {data: 'solicitadopor'},
-            {data: 'codmoneda'},
-            {data: 'nropedido'},
-            {data: 'estado'},
-            {data: 'total'}
+            {data: 'CodProv'},
+            {data: 'RazonSocial'},
+            {data: 'Descrip', name: 'Descrip'},
+            {
+                data: 'SaldoAnterior',
+                render: function (data, type, full, meta) {
+                            if (full.CodMoneda == 'GS'){
+                                return convertir_rever(parseInt(data));
+                            } else {
+                                return addCommas(parseFloat(data).toFixed(2));
+                            }
+                        },
+                "sClass": "aling_right",
+            },
+            {
+                data: 'TotalDebito',
+                render: function (data, type, full, meta) {
+                            if (full.CodMoneda == 'GS'){
+                                return convertir_rever(parseInt(data));
+                            } else {
+                                return addCommas(parseFloat(data).toFixed(2));
+                            }
+                        },
+                "sClass": "aling_right",
+            },
+            {
+                data: 'TotalCredito',
+                render: function (data, type, full, meta) {
+                            if (full.CodMoneda == 'GS'){
+                                return convertir_rever(parseInt(data));
+                            } else {
+                                return addCommas(parseFloat(data).toFixed(2));
+                            }
+                        },
+                "sClass": "aling_right",
+            },
+            {
+                data: 'Saldo',
+                render: function (data, type, full, meta) {
+                            if (full.CodMoneda == 'GS'){
+                                return convertir_rever(parseInt(data));
+                            } else {
+                                return addCommas(parseFloat(data).toFixed(2));
+                            }
+                        },
+                "sClass": "aling_right",
+            },
           ],
           searching: false,
           ordering: false,
+          drawCallback: function (settings) {
+            var api = this.api();
+            var rows = api.rows({page: 'current'}).nodes();
+            var last = null;
+            var colCount = api.columns().header().length;
+
+            console.log(colCount);
+            api.column(query.agrupar + ':name', {page: 'current'}).data().each(function (group, i) {
+              if (last !== group) {
+                $(rows).eq(i).before(
+                        '<tr class="group text-center"><td colspan="' + colCount + '"><h4>' + group + '</h4></td></tr>'
+                );
+                last = group;
+              }
+            });
+          },
         });
         $results.show();
       } else {
         var table = $('#results').DataTable();
         var $resultado = $('#resultado');
-        table.row(0).scrollTo();
         $resultado.css("position", "absolute").css("left", -9999);
-        table.ajax.url(api + 'cuentas_pagar/list').load(function () {
+        table.row(0).scrollTo();
+        table.ajax.reload(function () {
           $resultado.css("position", "relative").css("left", 0);
-        });
+        }, true);
       }
     }
   </script>
