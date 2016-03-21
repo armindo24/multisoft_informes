@@ -20,3 +20,7 @@ def compras_articulo(request):
 def saldos_proveedores(request):
     return render_to_response('compras/saldos_proveedores.html', {'user':request.user.id}, context_instance=RequestContext(request))
 
+#@permission_required('custom_permissions.informe_ordenpago')
+def fondo_fijo(request):
+    return render_to_response('compras/fondo_fijo.html', {'user':request.user.id}, context_instance=RequestContext(request))
+

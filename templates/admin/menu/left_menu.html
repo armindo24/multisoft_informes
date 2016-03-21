@@ -22,6 +22,9 @@
                 <li>
                     <a href="{% url 'compras:saldos_proveedores' %}"> Cuentas por Pagar </a>
                 </li>
+                <li>
+                    <a href="{% url 'compras:fondo_fijo' %}"> Fondo Fijo </a>
+                </li>
             {% endif %}
 			{% if  request.session.modulo_seleccionado == "Finanzas"  %}
 				<li>

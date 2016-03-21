@@ -1,0 +1,383 @@
+{% extends 'finanzas/base.html' %}
+
+{% block header %}
+  Fondo Fijo:
+{% endblock %}
+
+{% block filters %}
+        {% include 'ventas/_filtro.html' with name="empresa" %}
+        {% include 'ventas/_filtro.html' with name="sucursal" %}
+        {% include 'ventas/_filtro.html' with name="departamento" %}
+        <div class="col-sm-6">
+          <div class="form-group">
+            <label for="periodo" class="col-md-4 control-label">Año:</label>
+    
+            <div class="col-md-6">
+              <div id="periodo" class="input-date"><input type="text" onkeydown="return false" class="form-control" name="periodo"></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="form-group">
+            <label for="mes" class="col-md-4 control-label">Mes:</label>
+    
+            <div class="col-md-6">
+              <div id="mes" class="input-date"><input type="text" onkeydown="return false" class="dateclass mes form-control" name="mes"></div>
+            </div>
+          </div>
+        </div>
+{% endblock %}
+
+{% block table %}
+  <thead>
+  <tr>
+    <th>Fecha Emisión</th>
+    <th class="text-center">T. Cbte.</th>
+    <th class="text-center">N° Cbte.</th>
+    <th class="text-center">Moneda</th>    
+    <th>Cod. Prov.</th>
+    <th>Razón Social</th>
+    <th>Cod. Art.</th>
+    <th>Artículo</th>
+    <th>Cantidad</th>
+    <th>P. Uni.</th>
+    <th>P. Neto</th>
+    <th>T. IVA</th>
+    <th>T. Item c/IVA</th>
+    <th>T. Item s/IVA</th>
+  </tr>
+  </thead>
+  <!-- <tfoot>
+  <tr>
+    <th colspan="9" style="text-align:right">Total:</th>
+    <th></th>
+    <th colspan="3"></th>
+  </tr>
+  </tfoot> -->
+{% endblock %}
+
+{% block extra_foot %}
+  <style>
+    .aling_right{text-align: right;}
+  </style>
+  <script>
+    var query = {
+        agrupar: 'Des_Art'
+    };
+    //var numFormat = $.fn.dataTable.render.number('.', ',', 2).display;
+
+    var api = u.getApiUrl();
+    var $results = $('#results');
+    var $preview = $('#preview');
+    var today = new Date();
+    var initialize = init;
+    var select_empresa, $select_empresa;
+    var select_sucursal, $select_sucursal;
+    var select_departamento, $select_departamento;
+    var xhr;
+    
+    function addCommas(nStr) {
+        nStr += '';
+        x = nStr.split('.');
+        x1 = x[0];
+        x2 = x.length > 1 ? ',' + x[1] : '';
+        var rgx = /(\d+)(\d{3})/;
+        while (rgx.test(x1)) {
+            x1 = x1.replace(rgx, '$1' + '.' + '$2');
+        }
+        return x1 + x2;
+      }
+
+
+    $(document).ready(function () {
+      u.hideNav();
+      $results.hide();
+      initialize();
+      select_empresa = $select_empresa[0].selectize;
+
+      select_sucursal = $select_sucursal[0].selectize;
+      select_sucursal.disable();
+      select_departamento = $select_departamento[0].selectize;
+      select_departamento.disable();
+    });
+
+    function init() {
+      //$('#compraModal').on('show.bs.modal', showModal);
+      $.extend(true, $.fn.selectize.defaults, {
+        onChange: function (value) {
+          query[this.$input.attr('name')] = value;
+          debug();
+        }
+      });
+      
+      $select_empresa = $('#select-empresa').selectize({
+        valueField: 'Cod_Empresa',
+        labelField: 'Des_Empresa',
+        searchField: 'Des_Empresa',
+        preload: true,
+        load: function (q, callback) {
+          u.get_empresas({{ user }}, function (d) {
+            callback(d.data);
+          });
+        },
+        onChange: function (value) {
+          query.empresa = value;
+          debug();
+          if (!value.length) return;
+          select_sucursal.disable();
+          select_sucursal.clearOptions();
+          select_sucursal.load(function (callback) {
+            $.ajax({
+              url: api + 'sucursal/select/' + query.empresa,
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_sucursal.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+      
+      $select_sucursal = $('#select-sucursal').selectize({
+        valueField: 'Cod_Sucursal',
+        labelField: 'Des_Sucursal',
+        searchField: 'Des_Sucursal',
+        preload: true,
+        onChange: function (value) {
+          query.sucursal = value;
+          debug();
+          if (!value.length) return;
+          select_departamento.disable();
+          select_departamento.clearOptions();
+          select_departamento.load(function (callback) {
+            $.ajax({
+              url: api + 'departamento/select/' + query.empresa + '/' + query.sucursal,
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_departamento.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+            
+      $select_departamento = $('#select-departamento').selectize({
+        valueField: 'CodDpto',
+        labelField: 'Descrip',
+        searchField: 'Descrip',
+        onChange: function (value) {
+          query.departamento = value;
+          debug();
+        }
+      });
+
+      $('#periodo .form-control').datepicker({
+          format: "yyyy",
+          startView: 2,
+          minViewMode: 2,
+          maxViewMode: 2,
+          autoclose: true
+        });
+        
+    $('.mes').datepicker({
+      autoclose: true,
+      todayBtn: "linked",
+      language: "es",
+      format: "MM",
+      startView: 1,
+      minViewMode: 1,
+      maxViewMode: 1
+    });
+    
+    $('.mes').datepicker().on('changeDate', function (c) {
+      query.mes = c.format('mm');
+    });
+
+       $('#periodo .form-control').datepicker().on('changeDate', function (e) {
+          query[this.name] = this.value;
+        });
+
+      $('.input-date .form-control').datepicker('setDate', today);
+      $('.input-date .form-control').datepicker('update');
+    }
+
+    function debug() {
+      $preview.text(JSON.stringify(query));
+    }
+
+    function getInforme() {
+      $('.collapse').collapse('hide');
+      $results.show();
+      
+      var numero_comprobante = $("[name=comprobante]").val();
+
+      query.numero_comprobante = numero_comprobante;
+      query.moneda = $('#select-moneda').val();
+        
+      if (!$.fn.DataTable.isDataTable('#results')) {
+        $('#results').DataTable({
+          language: u.spanish_dt,
+          ajax: function (d, cb, s) {
+            $.ajax({
+              method: 'GET',
+              url: api + 'compras/articulo/list',
+              data: query
+            }).done(function (res) {
+              cb(res);
+            }).fail(function () {
+              cb();
+            });
+          },
+          deferRender: true,
+          scrollY: 350,
+          scrollX: '100%',
+          scrollCollapse: true,
+          scroller: {
+            displayBuffer: 30,
+            loadingIndicator: true
+          },
+          columnDefs: [
+            {className: "price-value", targets: "price-label"},
+            {render: $.fn.dataTable.render.number('.', ',', 2), targets: "price-label"},
+            {className: "text-center", targets: "text-center"},
+            {visible: false, targets: "grouping-col"}
+          ], 
+          columns: [
+            {data: 'f_emision'},
+            {data: 'Cod_Tp_Comp'},
+            {data: 'NroFact'},
+            {data: 'CodMoneda'},
+            {data: 'CodProv'},
+            {data: 'RazonSocial'},
+            {data: 'Cod_Articulo'},
+            {data: 'Des_Art', name: 'Des_Art'},
+            {data: 'Cantidad'},
+            {
+                data: 'Pr_Unit',
+                render: function (data) {
+                            if (query.moneda == 'GS'){
+                                return convertir_rever(data);
+                            } else {
+                                return addCommas(data);
+                            }
+                        },
+                "sClass": "aling_right",
+            },
+            {
+                data: 'Costo_Neto',
+                render: function (data) {
+                            if (query.moneda == 'GS'){
+                                return convertir_rever(data);
+                            } else {
+                                return addCommas(data);
+                            }
+                        },
+                "sClass": "aling_right",
+            },
+            {
+                data: 'IVA',
+                render: function (data) {
+                            if (query.moneda == 'GS'){
+                                return convertir_rever(data);
+                            } else {
+                                return addCommas(data);
+                            }
+                        },
+                "sClass": "aling_right",
+            },
+            {
+                data: 'total_sin_iva',
+                render: function (data) {
+                            if (query.moneda == 'GS'){
+                                return convertir_rever(data);
+                            } else {
+                                return addCommas(data);
+                            }
+                        },
+                "sClass": "aling_right",
+            },
+            {
+                data: 'total_con_iva',
+                render: function (data) {
+                            if (query.moneda == 'GS'){
+                                return convertir_rever(data);
+                            } else {
+                                return addCommas(data);
+                            }
+                        },
+                "sClass": "aling_right",
+            },
+          ],
+          searching: false,
+          ordering: false,
+          footerCallback: footerSum,
+          drawCallback: function (settings) {
+            var api = this.api();
+            var rows = api.rows({page: 'current'}).nodes();
+            var last = null;
+            var colCount = api.columns().header().length;
+
+            console.log(colCount);
+            api.column(query.agrupar + ':name', {page: 'current'}).data().each(function (group, i) {
+              if (last !== group) {
+                $(rows).eq(i).before(
+                        '<tr class="group text-center"><td colspan="' + colCount + '"><h4>' + group + '</h4></td></tr>'
+                );
+                last = group;
+              }
+            });
+          },
+        });
+        $results.show();
+      } else {
+        var table = $('#results').DataTable();
+        var $resultado = $('#resultado');
+        $resultado.css("position", "absolute").css("left", -9999);
+        table.row(0).scrollTo();
+        table.ajax.reload(function () {
+          $resultado.css("position", "relative").css("left", 0);
+        }, true);
+      }
+    }
+      
+    function footerSum(row, data, start, end, display) {
+      var api = this.api(), data;
+
+      // Remove the formatting to get integer data for summation
+      var parseVal = function (i) {
+        var n = typeof i === 'string' ?
+                parseFloat(i.replace(/[\$]/g, '')) :
+                typeof i === 'number' ?
+                        i : 0;
+        //console.log(i, n);
+        return n;
+      };
+
+      // Total over all pages
+      var total = api
+              .column(9)
+              .data()
+              .reduce(function (a, b) {
+                return parseVal(a) + parseVal(b);
+              }, 0);
+
+
+      // Update footer
+      if ($('#select-moneda').val() == 'GS'){
+        $(api.column(9).footer()).html(
+                convertir_rever(total)
+        );
+      } else {
+        $(api.column(9).footer()).html(
+                addCommas(total)
+        );
+      }
+    }
+  </script>
+{% endblock %}
