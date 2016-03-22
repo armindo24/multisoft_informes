@@ -46,20 +46,27 @@
 {% block table %}
   <thead>
   <tr>
-    <th>Fecha Emisión</th>
+    <th class="text-center">Año</th>
+    <th class="text-center">Mes</th>
+    <th class="text-center">N°</th>
+    <th class="text-center">L. IVA</th>
     <th class="text-center">T. Cbte.</th>
     <th class="text-center">N° Cbte.</th>
-    <th class="text-center">Moneda</th>    
+    <th class="text-center">Timbrado</th>
+    <th class="text-center">Moneda</th>
+    <th class="text-center">Cod. Dpto.</th>
+    <th class="text-center">Dpto.</th>
+    <th>Fecha</th>
+    <th>Tpo. IVA</th>
     <th>Cod. Prov.</th>
     <th>Razón Social</th>
-    <th>Cod. Art.</th>
-    <th>Artículo</th>
-    <th>Cantidad</th>
-    <th>P. Uni.</th>
-    <th>P. Neto</th>
-    <th>T. IVA</th>
-    <th>T. Item c/IVA</th>
-    <th>T. Item s/IVA</th>
+    <th>Cambio</th>
+    <th>Gravado</th>
+    <th>Excento</th>
+    <th>IVA</th>
+    <th>Total</th>
+    <th>Ret. Renta</th>
+    <th>Total Nero</th>
   </tr>
   </thead>
   <!-- <tfoot>
@@ -77,7 +84,7 @@
   </style>
   <script>
     var query = {
-        agrupar: 'Des_Art'
+        agrupar: 'des_moneda'
     };
     //var numFormat = $.fn.dataTable.render.number('.', ',', 2).display;
 
@@ -241,7 +248,7 @@
           ajax: function (d, cb, s) {
             $.ajax({
               method: 'GET',
-              url: api + 'compras/articulo/list',
+              url: api + 'fondo_fijo/list',
               data: query
             }).done(function (res) {
               cb(res);
@@ -264,66 +271,103 @@
             {visible: false, targets: "grouping-col"}
           ], 
           columns: [
-            {data: 'f_emision'},
-            {data: 'Cod_Tp_Comp'},
+            {data: 'AnhoFFijo'},
+            {data: 'MesFFijo'},
+            {data: 'NroFFijo'},
+            {
+                data: 'Gravado',
+                render: function (data) {
+                            if (data == 'S'){
+                                return 'Si';
+                            } else {
+                                return 'No';
+                            }
+                        },
+                //"sClass": "aling_right",
+            },
+            {data: 'Cod_tp_Comp'},
             {data: 'NroFact'},
-            {data: 'CodMoneda'},
+            {data: 'Timbrado'},
+            {data: 'des_moneda', name: 'des_moneda'},
+            {data: 'CodDpto'},
+            {data: 'Descrip'},
+            {data: 'FechaFact'},
+            {
+                data: 'TipoIVA',
+                render: function (data) {
+                            if (data == 'D'){
+                                return 'Desglosado';
+                            } else {
+                                return 'Incluido';
+                            }
+                        },
+                //"sClass": "aling_right",
+            },
             {data: 'CodProv'},
             {data: 'RazonSocial'},
-            {data: 'Cod_Articulo'},
-            {data: 'Des_Art', name: 'Des_Art'},
-            {data: 'Cantidad'},
+            {data: 'FactCambio'},
             {
-                data: 'Pr_Unit',
-                render: function (data) {
-                            if (query.moneda == 'GS'){
-                                return convertir_rever(data);
+                data: 'totalgravado',
+                render: function (data, type, full, meta) {
+                            if (full.CodMoneda == 'GS'){
+                                return convertir_rever(parseInt(data));
                             } else {
-                                return addCommas(data);
+                                return addCommas(parseFloat(data).toFixed(2));
                             }
                         },
                 "sClass": "aling_right",
             },
             {
-                data: 'Costo_Neto',
-                render: function (data) {
-                            if (query.moneda == 'GS'){
-                                return convertir_rever(data);
+                data: 'totalexen1',
+                render: function (data, type, full, meta) {
+                            if (full.CodMoneda == 'GS'){
+                                return convertir_rever(parseInt(data));
                             } else {
-                                return addCommas(data);
+                                return addCommas(parseFloat(data).toFixed(2));
                             }
                         },
                 "sClass": "aling_right",
             },
             {
-                data: 'IVA',
-                render: function (data) {
-                            if (query.moneda == 'GS'){
-                                return convertir_rever(data);
+                data: 'totaliva',
+                render: function (data, type, full, meta) {
+                            if (full.CodMoneda == 'GS'){
+                                return convertir_rever(parseInt(data));
                             } else {
-                                return addCommas(data);
+                                return addCommas(parseFloat(data).toFixed(2));
                             }
                         },
                 "sClass": "aling_right",
             },
             {
-                data: 'total_sin_iva',
-                render: function (data) {
-                            if (query.moneda == 'GS'){
-                                return convertir_rever(data);
+                data: 'total',
+                render: function (data, type, full, meta) {
+                            if (full.CodMoneda == 'GS'){
+                                return convertir_rever(parseInt(data));
                             } else {
-                                return addCommas(data);
+                                return addCommas(parseFloat(data).toFixed(2));
                             }
                         },
                 "sClass": "aling_right",
             },
             {
-                data: 'total_con_iva',
-                render: function (data) {
-                            if (query.moneda == 'GS'){
-                                return convertir_rever(data);
+                data: 'ret_renta',
+                render: function (data, type, full, meta) {
+                            if (full.CodMoneda == 'GS'){
+                                return convertir_rever(parseInt(data));
                             } else {
-                                return addCommas(data);
+                                return addCommas(parseFloat(data).toFixed(2));
+                            }
+                        },
+                "sClass": "aling_right",
+            },
+            {
+                data: 'neto',
+                render: function (data, type, full, meta) {
+                            if (full.CodMoneda == 'GS'){
+                                return convertir_rever(parseInt(data));
+                            } else {
+                                return addCommas(parseFloat(data).toFixed(2));
                             }
                         },
                 "sClass": "aling_right",
@@ -331,7 +375,6 @@
           ],
           searching: false,
           ordering: false,
-          footerCallback: footerSum,
           drawCallback: function (settings) {
             var api = this.api();
             var rows = api.rows({page: 'current'}).nodes();
@@ -358,40 +401,6 @@
         table.ajax.reload(function () {
           $resultado.css("position", "relative").css("left", 0);
         }, true);
-      }
-    }
-      
-    function footerSum(row, data, start, end, display) {
-      var api = this.api(), data;
-
-      // Remove the formatting to get integer data for summation
-      var parseVal = function (i) {
-        var n = typeof i === 'string' ?
-                parseFloat(i.replace(/[\$]/g, '')) :
-                typeof i === 'number' ?
-                        i : 0;
-        //console.log(i, n);
-        return n;
-      };
-
-      // Total over all pages
-      var total = api
-              .column(9)
-              .data()
-              .reduce(function (a, b) {
-                return parseVal(a) + parseVal(b);
-              }, 0);
-
-
-      // Update footer
-      if ($('#select-moneda').val() == 'GS'){
-        $(api.column(9).footer()).html(
-                convertir_rever(total)
-        );
-      } else {
-        $(api.column(9).footer()).html(
-                addCommas(total)
-        );
       }
     }
   </script>
