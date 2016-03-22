@@ -26,6 +26,7 @@ var Usuarios = require('../models/usuarios');
 var Compras = require('../models/compras');
 var Presupuesto = require('../models/presupuesto');
 var Cuentas_pagar = require('../models/cuentas_pagar');
+var Fondo_Fijo = require('../models/fondo_fijo');
 
 var conn = require('../db');
 
@@ -348,6 +349,12 @@ router.get('/empresas/:empresa/comprobantes/presupuesto', function (req, res, ne
 
 router.get('/cuentas_pagar/list', function (req, res, next) {
     Cuentas_pagar.all(req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/fondo_fijo/list', function (req, res, next) {
+    Fondo_Fijo.all(req.query, function (result) {
         res.json({data: result});
     });
 });
