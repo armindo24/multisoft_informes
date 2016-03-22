@@ -40,9 +40,12 @@ router.use(function (req, res, next) {
 
 //empresas select option
 router.get('/empresa/select', function (req, res, next) {
-    Empresa.all(req.query, function (result) {
-        res.json({data: result});
-    });
+    Empresa.all(req.query)
+        .then(function (result) {
+            res.json({data: result});
+        }).catch(function (error) {
+            next(error);
+        });
 });
 
 //empresas select option notin
@@ -156,15 +159,19 @@ router.get('/mayorcuentaaux/det/:empresa/:periodo/:fechad/:fechah/:tipoasiento/:
         res.json(result);
     });
 });
- 
+
 router.post('/clientes/post/lista/', function (req, res, next) {
     console.log(req.body);
     res.json({data: 'funciona'});
 });
 
 router.get('/empresas/:empresa/clientes', function (req, res, next) {
-    Empresa.clientes(req.params.empresa, req.query, function (result) {
+    Empresa.clientes(req.params.empresa, req.query)
+    .then(function (result) {
         res.json({data: result});
+    })
+    .catch(function (error) {
+        next(error);
     });
 });
 

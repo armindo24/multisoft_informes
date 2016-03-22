@@ -1,4 +1,5 @@
-var sqlanywhere = require('sqlanywhere');
+var Promise = require('bluebird');
+var sqlanywhere = Promise.promisifyAll(require('sqlanywhere'));
 var config = require('config');
 
 var dbConfig = config.get('sybase.dbConfig');
@@ -17,9 +18,4 @@ client.discon = function () {
     });
 };
 
-client.test = function () {
-    console.log("Hola Mundo!");
-    return 'hola-mundo';
-};
-
-module.exports = client;
+module.exports = Promise.promisifyAll(client);
