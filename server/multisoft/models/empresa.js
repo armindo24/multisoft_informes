@@ -7,10 +7,7 @@ Empresa.all = function (query, cb) {
     if (query.empresa) {
         sql += " WHERE Des_Empresa LIKE '" + query.empresa + "%'";
     }
-    conn.exec(sql, function (err, row) {
-        if (err) throw err;
-        cb(row);
-    });
+    return conn.execAsync(sql);
 };
 
 Empresa.notin = function (body, cb) {
@@ -45,10 +42,7 @@ Empresa.clientes = function (empresa, query, cb) {
     }
     console.log(sql);
     console.log(sql_params);
-    conn.exec(sql, sql_params, function (err, row) {
-        if (err) throw err;
-        cb(row);
-    });
+    return conn.execAsync(sql, sql_params);
 };
 
 Empresa.bancos = function (params, query, cb) {

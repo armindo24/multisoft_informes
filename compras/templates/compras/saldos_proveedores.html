@@ -1,0 +1,235 @@
+{% extends 'finanzas/base.html' %}
+
+{% block header %}
+  Cuentas por Pagar:
+{% endblock %}
+
+{% block filters %}
+  {% include 'ventas/_filtro.html' with name="empresa" %}
+  
+  <div class="col-sm-6">
+      <div class="form-group">
+        <label for="periodo" class="col-md-4 control-label">Periodo:</label>
+
+        <div class="col-md-6">
+          <div id="periodo" class="input-date"><input type="text" class="form-control" name="periodo"></div>
+        </div>
+      </div>
+    </div>
+  
+  {% include 'ventas/_filtro.html' with name="proveedor" %}
+
+  <div class="col-sm-6">
+    <div class="form-group">
+      <label for="compras" class="col-md-4 control-label">Ventas:</label>
+      <div class="col-md-6">
+        <div id="compras" class="input-daterange input-group input-date">
+          <input type="text" class="input-sm form-control" name="start"/>
+          <span class="input-group-addon">hasta</span>
+          <input type="text" class="input-sm form-control" name="end"/>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  {% include 'ventas/_filtro.html' with name="tipo" %}
+  
+{% endblock %}
+
+{% block table %}
+  <thead>
+  <tr>
+    <th class="text-center">N° de Orden</th>
+    <th>Proveedor</th>
+    <th>Fecha</th>
+    <th>Repartamento</th>
+    <th>Responsable</th>
+    <th>Solicitado por</th>
+    <th class="text-center">Moneda</th>
+    <th>N° de Pedido</th>
+    <th class="text-center">Estado</th>
+    <th class="price-label">Total</th>
+  </tr>
+  </thead>
+{% endblock %}
+
+{% block extra_foot %}
+  <script>
+    var query = {};
+
+    var api = u.getApiUrl();
+    var $results = $('#results');
+    var $preview = $('#preview');
+    var today = new Date();
+    var initialize = init;
+    var select_empresa, $select_empresa;
+    var select_proveedor, $select_proveedor;
+    var select_tipo, $select_tipo;
+    var xhr;
+
+    $(document).ready(function () {
+      u.hideNav();
+      $results.hide();
+      initialize();
+      select_empresa = $select_empresa[0].selectize;
+
+      select_proveedor = $select_proveedor[0].selectize;
+      select_proveedor.disable();
+    });
+
+    function init() {
+    
+      $('#periodo .form-control').datepicker({
+        format: "yyyy",
+        startView: 2,
+        minViewMode: 2,
+        maxViewMode: 2,
+        autoclose: true
+      });
+    
+      $('#periodo .form-control').datepicker().on('changeDate', function (e) {
+          query.periodo = this.value;
+      });  
+        
+      $.extend(true, $.fn.selectize.defaults, {
+        onChange: function (value) {
+          query[this.$input.attr('name')] = value;
+          debug();
+        }
+      });
+
+      $select_empresa = $('#select-empresa').selectize({
+        valueField: 'Cod_Empresa',
+        labelField: 'Des_Empresa',
+        searchField: 'Des_Empresa',
+        preload: true,
+        load: function (q, callback) {
+          u.get_empresas({{ user }}, function (d) {
+            callback(d.data);
+          });
+        },
+        onChange: function (value) {
+          query.empresa = value;
+          debug();
+          if (!value.length) return;
+          select_proveedor.disable();
+          select_proveedor.clearOptions();
+          select_proveedor.load(function (callback) {
+            $.ajax({
+              url: api + 'empresas/' + query.empresa + '/proveedores',
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_proveedor.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+
+      $select_proveedor = $('#select-proveedor').selectize({
+        valueField: 'CodProv',
+        labelField: 'RazonSocial',
+        searchField: 'RazonSocial',
+        maxItems: null,
+        onChange: function (value) {
+          query.proveedor = value;
+          debug();
+        }
+      });
+      
+
+      $select_tipo = $('#select-tipo').selectize({
+        allowEmptyOption: true,
+        maxItems: null,
+        options: [
+          {value: 'PR', text: 'Proveedor Local'},
+          {value: 'PE', text: 'Proveedor Exterior'},
+          {value: 'OP', text: 'Otro Proveedor'},
+          {value: 'DE', text: 'Despachante'},
+          {value: 'EM', text: 'Empleado'},
+          {value: 'PC', text: 'Proveedor Caja'},
+        ],
+        onChange: function (value) {
+          query.tipo = value;
+          debug();
+        }
+      });
+
+      $('.input-daterange').datepicker({
+        todayBtn: "linked",
+        language: "es",
+        format: "yyyy-mm-dd",
+        autoclose: true,
+        orientation: "bottom auto"
+      });
+
+      $('.input-date .form-control').datepicker().on('changeDate', function (e) {
+        query[this.parentElement.id + '_' + this.name] = this.value;
+        debug();
+      });
+
+      $('.input-date .form-control').datepicker('setDate', today);
+      $('.input-date .form-control').datepicker('update');
+    }
+
+    function debug() {
+      $preview.text(JSON.stringify(query));
+    }
+
+    function getInforme() {
+      $('.collapse').collapse('hide');
+      $results.show();
+
+      if (!$.fn.DataTable.isDataTable('#results')) {
+        $('#results').DataTable({
+          language: u.spanish_dt,
+          ajax: {
+            url: api + 'cuentas_pagar/list',
+            data: function () {
+              return query;
+            }
+          },
+          deferRender: true,
+          scrollY: 350,
+          scrollCollapse: true,
+          scroller: {
+            displayBuffer: 30,
+            loadingIndicator: true
+          },
+          columnDefs: [
+            {className: "price-value", targets: "price-label"},
+            {render: $.fn.dataTable.render.number('.', ',', 0), targets: "price-label"},
+            {className: "text-center", targets: "text-center"},
+            {visible: false, targets: "grouping-col"}
+          ],
+          columns: [
+            {data: 'nroordcomp'},
+            {data: 'razonsocial'},
+            {data: 'fechaorden'},
+            {data: 'descrip'},
+            {data: 'responsable'},
+            {data: 'solicitadopor'},
+            {data: 'codmoneda'},
+            {data: 'nropedido'},
+            {data: 'estado'},
+            {data: 'total'}
+          ],
+          searching: false,
+          ordering: false,
+        });
+        $results.show();
+      } else {
+        var table = $('#results').DataTable();
+        var $resultado = $('#resultado');
+        table.row(0).scrollTo();
+        $resultado.css("position", "absolute").css("left", -9999);
+        table.ajax.url(api + 'cuentas_pagar/list').load(function () {
+          $resultado.css("position", "relative").css("left", 0);
+        });
+      }
+    }
+  </script>
+{% endblock %}

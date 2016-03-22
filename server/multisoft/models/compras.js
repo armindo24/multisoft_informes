@@ -73,7 +73,7 @@ Compras.detail = function (params, cb){
 
     var sql = ""
     
-    if (params.moneda = "GS"){
+    if (params.moneda == "GS"){
     
         sql = "select dba.ARTICULO.Cod_Articulo,dba.ARTICULO.Des_Art,dba.FACTDET.GravExen,dba.FACTDET.Cantidad,"+
                 "cast(dba.FACTDET.Pr_Unit as decimal(20,0)) as Pr_Unit,cast(dba.FACTDET.IVA as decimal(20,0)) as IVA,"+
@@ -93,6 +93,65 @@ Compras.detail = function (params, cb){
 
         
     }            
+    conn.exec(sql, function (err, r) {
+        if (err) throw err;
+        cb(r);
+    }) 
+};
+
+Compras.articulo = function (filters, cb){
+  
+  var sql = "";
+  console.log(filters.moneda);
+  if (filters.moneda == "GS"){
+      var sql = "select date(dba.FACTCAB.FechaFact) as f_emision,date(dba.FACTCAB.FechaCarga) as f_carga,dba.FACTDET.Cod_Tp_Comp,dba.FACTDET.NroFact,"+
+                "dba.FACTDET.CodProv,dba.PROVEED.RazonSocial,dba.FACTCAB.CodMoneda,dba.FACTDET.Cod_Articulo,dba.ARTICULO.Des_Art,"+
+                "dba.FACTDET.Cantidad,cast(dba.FACTDET.Pr_Unit as decimal(20,0)) as Pr_Unit,"+
+                "case when dba.TPOCBTE.tp_def = 'NP' then cast(dba.FACTDET.Pr_Unit as decimal(20,0)) else cast(dba.FACTDET.PrecioCosto as decimal(20,0)) end as Costo_Neto,"+
+                "cast(dba.FACTDET.IVA as decimal(20,0)) as IVA,cast(((dba.FACTDET.Pr_Unit*dba.FACTDET.Cantidad) - dba.FACTDET.IVA) as decimal (20,0)) as total_sin_iva,"+
+                "cast((dba.FACTDET.Pr_Unit*dba.FACTDET.Cantidad) as decimal(20,0)) as total_con_iva from dba.FACTDET,dba.FACTCAB,"+
+                "dba.PROVEED,dba.TPOCBTE,dba.ARTICULO WHERE dba.FACTCAB.Cod_Empresa = dba.FACTDET.Cod_Empresa and dba.FACTCAB.CodProv = dba.FACTDET.CodProv "+
+                "and dba.FACTCAB.NroFact = dba.FACTDET.NroFact and dba.FACTCAB.Cod_Tp_Comp = dba.FACTDET.Cod_Tp_Comp and dba.FACTDET.CodProv = dba.PROVEED.CodProv "+
+                "and dba.FACTDET.Cod_Empresa = dba.PROVEED.Cod_Empresa and dba.FACTDET.Cod_Tp_Comp = dba.TPOCBTE.Cod_Tp_Comp and dba.FACTDET.Cod_Empresa = dba.TPOCBTE.Cod_Empresa "+
+                "and dba.FACTDET.Cod_Articulo = dba.ARTICULO.Cod_Articulo and dba.FACTDET.Cod_Empresa = dba.ARTICULO.Cod_Empresa and dba.TPOCBTE.tp_def <> 'RT' "+ 
+                "and dba.FACTDET.Cod_Empresa = '"+filters.empresa+"' and dba.FACTCAB.Cod_Sucursal = '"+filters.sucursal+"' and dba.FACTCAB.CodDpto = '"+filters.departamento+"' "+
+                "and dba.FACTCAB.anulado = 'N' and dba.FACTCAB.CodMoneda = '"+filters.moneda+"' "+
+                "and ( DATE (dba.FACTCAB.FechaFact) >= DATE ('"+filters.compras_start+"') ) "+  
+                "and ( DATE (dba.FACTCAB.FechaFact) <= DATE ('"+filters.compras_end+"') )";
+  } else {
+      var sql = "select date(dba.FACTCAB.FechaFact) as f_emision,date(dba.FACTCAB.FechaCarga) as f_carga,dba.FACTDET.Cod_Tp_Comp,dba.FACTDET.NroFact,"+
+                "dba.FACTDET.CodProv,dba.PROVEED.RazonSocial,dba.FACTCAB.CodMoneda,dba.FACTDET.Cod_Articulo,dba.ARTICULO.Des_Art,"+
+                "dba.FACTDET.Cantidad,cast(dba.FACTDET.Pr_Unit as decimal(20,2)) as Pr_Unit,"+
+                "case when dba.TPOCBTE.tp_def = 'NP' then cast(dba.FACTDET.Pr_Unit as decimal(20,2)) else cast(dba.FACTDET.PrecioCosto as decimal(20,2)) end as Costo_Neto,"+
+                "cast(dba.FACTDET.IVA as decimal(20,2)) as IVA,cast(((dba.FACTDET.Pr_Unit*dba.FACTDET.Cantidad) - dba.FACTDET.IVA) as decimal (20,2)) as total_sin_iva,"+
+                "cast((dba.FACTDET.Pr_Unit*dba.FACTDET.Cantidad) as decimal(20,2)) as total_con_iva from dba.FACTDET,dba.FACTCAB,"+
+                "dba.PROVEED,dba.TPOCBTE,dba.ARTICULO WHERE dba.FACTCAB.Cod_Empresa = dba.FACTDET.Cod_Empresa and dba.FACTCAB.CodProv = dba.FACTDET.CodProv "+
+                "and dba.FACTCAB.NroFact = dba.FACTDET.NroFact and dba.FACTCAB.Cod_Tp_Comp = dba.FACTDET.Cod_Tp_Comp and dba.FACTDET.CodProv = dba.PROVEED.CodProv "+
+                "and dba.FACTDET.Cod_Empresa = dba.PROVEED.Cod_Empresa and dba.FACTDET.Cod_Tp_Comp = dba.TPOCBTE.Cod_Tp_Comp and dba.FACTDET.Cod_Empresa = dba.TPOCBTE.Cod_Empresa "+
+                "and dba.FACTDET.Cod_Articulo = dba.ARTICULO.Cod_Articulo and dba.FACTDET.Cod_Empresa = dba.ARTICULO.Cod_Empresa and dba.TPOCBTE.tp_def <> 'RT' "+ 
+                "and dba.FACTDET.Cod_Empresa = '"+filters.empresa+"' and dba.FACTCAB.Cod_Sucursal = '"+filters.sucursal+"' and dba.FACTCAB.CodDpto = '"+filters.departamento+"' "+
+                "and dba.FACTCAB.anulado = 'N' and dba.FACTCAB.CodMoneda = '"+filters.moneda+"' "+
+                "and ( DATE (dba.FACTCAB.FechaFact) >= DATE ('"+filters.compras_start+"') ) "+  
+                "and ( DATE (dba.FACTCAB.FechaFact) <= DATE ('"+filters.compras_end+"') )";
+  }
+  
+     if (filters.tipooc) {
+        sql += " AND (dba.FACTCAB.Cod_Tp_Comp IN " + q.in(filters.tipooc) + ") ";
+    } 
+    
+    if (filters.proveedor) {
+        sql += " AND (dba.FACTCAB.CodProv IN " + q.in(filters.proveedor) + ") ";
+    } 
+    
+    if (filters.articulo) {
+        sql += " AND (dba.FACTDET.Cod_Articulo IN " + q.in(filters.articulo) + ") ";
+    } 
+    
+    
+    sql += "ORDER BY dba.FACTDET.Cod_Articulo";
+    
+    console.log(sql)
+    
     conn.exec(sql, function (err, r) {
         if (err) throw err;
         cb(r);

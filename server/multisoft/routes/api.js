@@ -27,6 +27,7 @@ var OrdenCompra = require('../models/ordencompra');
 var Usuarios = require('../models/usuarios');
 var Compras = require('../models/compras');
 var Presupuesto = require('../models/presupuesto');
+var Cuentas_pagar = require('../models/cuentas_pagar');
 var Moneda = require('../models/moneda');
 var Cobrador = require('../models/cobrador');
 
@@ -43,9 +44,12 @@ router.use(function (req, res, next) {
 
 //empresas select option
 router.get('/empresa/select', function (req, res, next) {
-    Empresa.all(req.query, function (result) {
-        res.json({data: result});
-    });
+    Empresa.all(req.query)
+        .then(function (result) {
+            res.json({data: result});
+        }).catch(function (error) {
+            next(error);
+        });
 });
 
 //empresas select option notin
@@ -159,15 +163,19 @@ router.get('/mayorcuentaaux/det/:empresa/:periodo/:fechad/:fechah/:tipoasiento/:
         res.json(result);
     });
 });
-
+ 
 router.post('/clientes/post/lista/', function (req, res, next) {
     console.log(req.body);
     res.json({data: 'funciona'});
 });
 
 router.get('/empresas/:empresa/clientes', function (req, res, next) {
-    Empresa.clientes(req.params.empresa, req.query, function (result) {
+    Empresa.clientes(req.params.empresa, req.query)
+    .then(function (result) {
         res.json({data: result});
+    })
+    .catch(function (error) {
+        next(error);
     });
 });
 
@@ -324,6 +332,13 @@ router.get('/compras/list', function (req, res, next) {
     });
 });
 
+router.get('/compras/articulo/list', function (req, res, next) {
+    Compras.articulo(req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+
 router.get('/compras/det/:empresa/:factura/:comprobante/:moneda/:proveedor', function (req, res, next) {
     Compras.detail(req.params, function (result) {
         res.json({data: result});
@@ -387,6 +402,12 @@ router.get('/empresas/:empresa/comprobantes/cobrar', function (req, res, next) {
 router.get('/ventas/:empresa/cuentas/cobrar', function (req, res, next) {
     Ventas.cuentas.cobrar(req.params, req.query, function (result) {
         postProcess(res, result);
+    });
+});
+
+router.get('/cuentas_pagar/list', function (req, res, next) {
+    Cuentas_pagar.all(req.query, function (result) {
+        res.json({data: result});
     });
 });
 
