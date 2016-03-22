@@ -129,7 +129,9 @@
         onChange: function (value) {
           query.empresa = value;
           u.resetSelect(selectSucursal);
+          selectCajero.disable();
           if (!value.length) return;
+          selectCajero.enable();
           selectSucursal.load(function (callback) {
             $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
               selectSucursal.enable();
@@ -159,6 +161,31 @@
       });
       selectSucursal = $selectSucursal[0].selectize;
       selectSucursal.disable();
+
+      $selectCajero = $('#select-cajero').selectize({
+        valueField: 'id',
+        labelField: 'nombre',
+        searchField: 'nombre'
+      });
+      selectCajero = $selectCajero[0].selectize;
+      selectCajero.disable();
+      selectCajero.load(function (callback) {
+        $.get(api + '/usuarios/cajeros').done(function (res) {
+          callback(res.data);
+        }).fail(function () {
+          callback();
+        });
+      });
+
+      $selectEstado = $('#select-estado').selectize({
+        options: [
+          {value: 'AB', text: 'Abierta'},
+          {value: 'CE', text: 'Cerrada'},
+          {value: 'GN', text: 'Generada'},
+          {value: 'TD', text: 'Todos'}
+        ]
+      });
+      selectEstado = $selectEstado[0].selectize;
     }
 
     function getInforme() {

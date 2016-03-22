@@ -163,7 +163,7 @@ router.get('/mayorcuentaaux/det/:empresa/:periodo/:fechad/:fechah/:tipoasiento/:
         res.json(result);
     });
 });
- 
+
 router.post('/clientes/post/lista/', function (req, res, next) {
     console.log(req.body);
     res.json({data: 'funciona'});
@@ -171,12 +171,12 @@ router.post('/clientes/post/lista/', function (req, res, next) {
 
 router.get('/empresas/:empresa/clientes', function (req, res, next) {
     Empresa.clientes(req.params.empresa, req.query)
-    .then(function (result) {
-        res.json({data: result});
-    })
-    .catch(function (error) {
-        next(error);
-    });
+        .then(function (result) {
+            res.json({data: result});
+        })
+        .catch(function (error) {
+            next(error);
+        });
 });
 
 router.get('/empresas/:empresa/bancos', function (req, res, next) {
@@ -409,6 +409,16 @@ router.get('/cuentas_pagar/list', function (req, res, next) {
     Cuentas_pagar.all(req.query, function (result) {
         res.json({data: result});
     });
+});
+
+router.get('/usuarios/cajeros', function (req, res, next) {
+    Usuarios.cajeros(req.params)
+        .then(function (result) {
+            postProcess(res, result);
+        })
+        .catch(function (error) {
+            next(error);
+        });
 });
 
 module.exports = router;
