@@ -130,6 +130,7 @@
           query.empresa = value;
           u.resetSelect(selectSucursal);
           selectCajero.disable();
+          selectCajero.clear();
           if (!value.length) return;
           selectCajero.enable();
           selectSucursal.load(function (callback) {
