@@ -30,6 +30,7 @@ var Presupuesto = require('../models/presupuesto');
 var Cuentas_pagar = require('../models/cuentas_pagar');
 var Moneda = require('../models/moneda');
 var Cobrador = require('../models/cobrador');
+var Recaudacion = require('../models/recaudacion');
 
 var conn = require('../db');
 
@@ -413,6 +414,16 @@ router.get('/cuentas_pagar/list', function (req, res, next) {
 
 router.get('/usuarios/cajeros', function (req, res, next) {
     Usuarios.cajeros(req.params)
+        .then(function (result) {
+            postProcess(res, result);
+        })
+        .catch(function (error) {
+            next(error);
+        });
+});
+
+router.get('/recaudaciones/:empresa/planillas', function (req, res, next) {
+    Recaudacion.planillas(req.params)
         .then(function (result) {
             postProcess(res, result);
         })
