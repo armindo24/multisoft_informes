@@ -34,9 +34,28 @@ Fondo_Fijo.all = function (filters, cb) {
                  "AND ( DBA.FACTCAB.FondoFijo = 'S' ) "+
                  "AND ( DBA.FACTCAB.Anulado = 'N' ) "+
                  "AND ( DBA.FactCAB.Cod_Empresa = DBA.Control.Cod_Empresa ) "+
-                 "AND ( DBA.Control.Periodo = '2015') AND ( FactCab.cod_empresa = '11') "+
-                 "order by des_moneda,AnhoFFijo,MesFFijo,NroFFijo";
-
+                 "AND ( DBA.FactCAB.Cod_Sucursal = '"+filters.sucursal+"' ) ";
+                 if (filters.anho) {
+                   string += "AND ( DBA.FACTCAB.AnhoFFijo = '"+filters.anho+"') ";
+                    }
+                 if (filters.mes) {
+                   string += "AND ( DBA.FACTCAB.MesFFijo = '"+filters.mes+"') ";
+                    }
+                 if ((filters.numero).toString().length > 0) {
+                   string += "AND ( DBA.FACTCAB.NroFFijo = '"+filters.numero+"') ";
+                    }
+        string +="AND ( DBA.Control.Periodo = '"+filters.periodo+"') "+
+                 "AND ( FactCab.cod_empresa = '"+filters.empresa+"') ";
+                 
+                 
+    if (filters.departamento) {
+        string += " AND (dba.FACTCAB.CodDpto IN " + q.in(filters.departamento) + ") ";
+    } 
+    
+    string += "order by des_moneda,AnhoFFijo,MesFFijo,NroFFijo";
+    
+    console.log(string);
+    
     conn.exec(string, function (err, r) {
         if (err) throw err;
         cb(r);

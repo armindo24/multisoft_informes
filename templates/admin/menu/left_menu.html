@@ -25,6 +25,9 @@
                 <li>
                     <a href="{% url 'compras:fondo_fijo' %}"> Fondo Fijo </a>
                 </li>
+                <li>
+                    <a href="{% url 'compras:gastos_rendir' %}"> Gastos por Rendir </a>
+                </li>
             {% endif %}
 			{% if  request.session.modulo_seleccionado == "Finanzas"  %}
 				<li>
