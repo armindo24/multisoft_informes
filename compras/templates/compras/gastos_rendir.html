@@ -12,34 +12,25 @@
                 <label for="periodo" class="col-md-4 control-label">Periodo:</label>
         
                 <div class="col-md-6">
-                  <div id="periodo" class="input-date"><input type="text" onkeydown="return false" class="form-control asd" name="periodo"></div>
+                  <div id="periodo" class="input-date"><input type="text" onkeydown="return false" class="form-control" name="periodo"></div>
                 </div>
               </div>
             </div>
         </div>
         <div class="row">
-            {% include 'ventas/_filtro.html' with name="sucursal" %}
-            {% include 'ventas/_filtro.html' with name="departamento" %}
-        </div>
-        <div class="row">
-            <div class="col-sm-6">
-              <div class="form-group">
-                <label for="anho" class="col-md-4 control-label">Año:</label>
-        
-                <div class="col-md-6">
-                  <div id="anho" class="input-date"><input type="text" onkeydown="return false" class="form-control" name="anho"></div>
+          {% include 'ventas/_filtro.html' with name="proveedor" %}
+          <div class="col-sm-6">
+            <div class="form-group">
+              <label for="compras" class="col-md-4 control-label">Fecha:</label>
+              <div class="col-md-6">
+                <div id="compras" class="input-daterange input-group input-date">
+                  <input type="text" class="input-sm form-control" name="start"/>
+                  <span class="input-group-addon">hasta</span>
+                  <input type="text" class="input-sm form-control" name="end"/>
                 </div>
               </div>
             </div>
-            <div class="col-sm-6">
-              <div class="form-group">
-                <label for="mes" class="col-md-4 control-label">Mes:</label>
-        
-                <div class="col-md-6">
-                  <div id="mes" class="input-date"><input type="text" onkeydown="return false" class="dateclass mes form-control" name="mes"></div>
-                </div>
-              </div>
-            </div>
+          </div>
         </div>
         <div class="row">
             <div class="col-sm-6">
@@ -51,7 +42,9 @@
                 </div>
               </div>
             </div>
+            {% include 'ventas/_filtro.html' with name="asentada" %}
         </div>
+       
 {% endblock %}
 
 {% block table %}
@@ -81,7 +74,7 @@
   </tfoot> -->
 {% endblock %}
 
-{% block inner_content %}
+<!-- {% block inner_content %}
   <div class="modal fade" id="compraModal" tabindex="-1" role="dialog" aria-labelledby="compraModal">
     <div class="modal-dialog modal-lg" role="document">
       <div class="modal-content">
@@ -101,7 +94,7 @@
       </div>
     </div>
   </div>
-{% endblock %}
+{% endblock %} -->
 
 {% block extra_foot %}
   <style>
@@ -109,7 +102,7 @@
   </style>
   <script>
     var query = {
-        agrupar: 'des_moneda'
+    //    agrupar: 'des_moneda'
     };
     //var numFormat = $.fn.dataTable.render.number('.', ',', 2).display;
 
@@ -119,8 +112,8 @@
     var today = new Date();
     var initialize = init;
     var select_empresa, $select_empresa;
-    var select_sucursal, $select_sucursal;
-    var select_departamento, $select_departamento;
+    var select_proveedor, $select_proveedor;
+    var select_asentada, $select_asentada;
     var xhr;
     
     function addCommas(nStr) {
@@ -141,15 +134,13 @@
       $results.hide();
       initialize();
       select_empresa = $select_empresa[0].selectize;
-
-      select_sucursal = $select_sucursal[0].selectize;
-      select_sucursal.disable();
-      select_departamento = $select_departamento[0].selectize;
-      select_departamento.disable();
+      select_proveedor = $select_proveedor[0].selectize;
+      select_proveedor.disable();
+      select_asentada = $select_asentada[0].selectize;
     });
 
     function init() {
-      $('#compraModal').on('show.bs.modal', showModal);
+      //$('#compraModal').on('show.bs.modal', showModal);
       $.extend(true, $.fn.selectize.defaults, {
         onChange: function (value) {
           query[this.$input.attr('name')] = value;
@@ -171,15 +162,15 @@
           query.empresa = value;
           debug();
           if (!value.length) return;
-          select_sucursal.disable();
-          select_sucursal.clearOptions();
-          select_sucursal.load(function (callback) {
+          select_proveedor.disable();
+          select_proveedor.clearOptions();
+          select_proveedor.load(function (callback) {
             $.ajax({
-              url: api + 'sucursal/select/' + query.empresa,
+              url: api + 'empresas/' + query.empresa + '/proveedores',
               type: 'GET',
               dataType: 'json'
             }).done(function (res) {
-              select_sucursal.enable();
+              select_proveedor.enable();
               callback(res.data);
             }).fail(function () {
               callback();
@@ -188,43 +179,30 @@
         }
       });
       
-      $select_sucursal = $('#select-sucursal').selectize({
-        valueField: 'Cod_Sucursal',
-        labelField: 'Des_Sucursal',
-        searchField: 'Des_Sucursal',
-        preload: true,
+      $select_asentada = $('#select-asentada').selectize({
+        allowEmptyOption: true,
+        options: [
+          {value: ' ', text: 'Todas'},
+          {value: 'S', text: 'Si'},
+          {value: 'N', text: 'No'},
+        ],
         onChange: function (value) {
-          query.sucursal = value;
+          query.asentada = value;
           debug();
-          if (!value.length) return;
-          select_departamento.disable();
-          select_departamento.clearOptions();
-          select_departamento.load(function (callback) {
-            $.ajax({
-              url: api + 'departamento/select/' + query.empresa + '/' + query.sucursal,
-              type: 'GET',
-              dataType: 'json'
-            }).done(function (res) {
-              select_departamento.enable();
-              callback(res.data);
-            }).fail(function () {
-              callback();
-            });
-          });
         }
       });
-            
-      $select_departamento = $('#select-departamento').selectize({
-        valueField: 'CodDpto',
-        labelField: 'Descrip',
-        searchField: 'Descrip',
+      
+      $select_proveedor = $('#select-proveedor').selectize({
+        valueField: 'CodProv',
+        labelField: 'RazonSocial',
+        searchField: 'RazonSocial',
         maxItems: null,
         onChange: function (value) {
-          query.departamento = value;
+          query.proveedor = value;
           debug();
         }
       });
-
+      
       $('#periodo .form-control').datepicker({
           format: "yyyy",
           startView: 2,
@@ -233,38 +211,27 @@
           autoclose: true
         });
         
-        $('#anho .form-control').datepicker({
-          format: "yyyy",
-          startView: 2,
-          minViewMode: 2,
-          maxViewMode: 2,
-          autoclose: true
-        });
-        
-    $('.mes').datepicker({
-      autoclose: true,
-      todayBtn: "linked",
-      language: "es",
-      format: "MM",
-      startView: 1,
-      minViewMode: 1,
-      maxViewMode: 1
-    });
     
-    $('.mes').datepicker().on('changeDate', function (c) {
-      query.mes = c.format('mm');
-    });
-
        $('#periodo .form-control').datepicker().on('changeDate', function (e) {
           query[this.name] = this.value;
         });
         
-        $('#anho .form-control').datepicker().on('changeDate', function (e) {
-          query[this.name] = this.value;
-        });
+        $('.input-daterange').datepicker({
+        todayBtn: "linked",
+        language: "es",
+        format: "yyyy-mm-dd",
+        autoclose: true,
+        orientation: "bottom auto"
+      });
 
-      $('.input-date .form-control.asd').datepicker('setDate', today);
-      $('.input-date .form-control.asd').datepicker('update');
+      $('.input-date .form-control').datepicker().on('changeDate', function (e) {
+        query[this.parentElement.id + '_' + this.name] = this.value;
+        debug();
+      });
+
+
+      $('.input-date .form-control').datepicker('setDate', today);
+      $('.input-date .form-control').datepicker('update');
     }
 
     function debug() {
@@ -389,22 +356,22 @@
           ],
           searching: false,
           ordering: false,
-          drawCallback: function (settings) {
-            var api = this.api();
-            var rows = api.rows({page: 'current'}).nodes();
-            var last = null;
-            var colCount = api.columns().header().length;
+          //drawCallback: function (settings) {
+          //  var api = this.api();
+          //  var rows = api.rows({page: 'current'}).nodes();
+          //  var last = null;
+          //  var colCount = api.columns().header().length;
 
-            console.log(colCount);
-            api.column(query.agrupar + ':name', {page: 'current'}).data().each(function (group, i) {
-              if (last !== group) {
-                $(rows).eq(i).before(
-                        '<tr class="group text-center"><td colspan="' + colCount + '"><h4>' + group + '</h4></td></tr>'
-                );
-                last = group;
-              }
-            });
-          },
+          //  console.log(colCount);
+          //  api.column(query.agrupar + ':name', {page: 'current'}).data().each(function (group, i) {
+          //    if (last !== group) {
+          //      $(rows).eq(i).before(
+          //              '<tr class="group text-center"><td colspan="' + colCount + '"><h4>' + group + '</h4></td></tr>'
+          //      );
+          //      last = group;
+          //    }
+          //  });
+          //},
         });
         $results.show();
       } else {
