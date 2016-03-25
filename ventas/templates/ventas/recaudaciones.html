@@ -44,21 +44,16 @@
 {% block table %}
   <thead>
   <tr>
-    <th>Tipo Comprobante</th>
-    <th># Comprobante</th>
-    <th>Cuota</th>
-    <th class="text-center">Fecha Emisión</th>
-    <th class="text-center">Fecha Vencimiento</th>
+    <th class="grouping-col">Tipo</th>
+    <th>Numero</th>
+    <th class="text-center">Fecha</th>
+    <th>Cliente</th>
     <th class="price-label">Importe</th>
-    <th class="price-label">Saldo</th>
-    <th class="price-label">Saldo Acumulado</th>
   </tr>
   </thead>
   <tfoot>
   <tr>
-    <th colspan="5" style="text-align:right">Total:</th>
-    <th></th>
-    <th></th>
+    <th colspan="4" style="text-align:right">Total:</th>
     <th></th>
   </tr>
   </tfoot>
@@ -76,13 +71,15 @@
     var $selectEstado, selectEstado;
     var dataTable;
 
+    var numFormat = u.numFormatter;
+
     $(document).ready(function () {
       u.hideNav();
       initDates();
       initSelects();
-      {#      $results = $('#results');#}
-      {#      $resultado = $('#resultado');#}
-      {#      $resultado.hide();#}
+      $results = $('#results');
+      $resultado = $('#resultado');
+      $resultado.hide();
     });
 
     var calcSaldoAcumulado = function (d, t, r, m) {
@@ -192,8 +189,6 @@
     function getInforme() {
       $('.collapse').collapse('hide');
 
-      query.vencimiento = $vencimiento.prop('checked');
-
       if (!dataTable) {
         $resultado.show();
         u.defaultDT();
@@ -201,7 +196,7 @@
           ajax: function (d, cb, s) {
             $.ajax({
               method: 'GET',
-              url: api + 'ventas/' + query.empresa + '/cuentas/cobrar',
+              url: api + 'recaudaciones/' + query.empresa + '/consolidada',
               data: query
             }).done(function (res) {
               cb(res);
@@ -212,16 +207,30 @@
             });
           },
           columns: [
-            {data: 'cod_tp_comp'},
-            {data: 'comp_numero'},
-            {data: 'cuota_numero'},
-            {data: 'fecha_emi', render: u.dateFormat},
-            {data: 'fecha_ven', render: u.dateFormat},
-            {data: 'importe'},
-            {data: 'saldo'},
-            {data: 'saldoAcumulado', render: calcSaldoAcumulado}
+            {data: 'cod_tp_comp', name: 'tipo'},
+            {data: 'pago_numero'},
+            {data: 'fecha', render: u.dateFormat},
+            {data: 'razon_social', render: function (d, t, r, m){
+              return r['cod_cliente'] + ' - ' + d;
+            }},
+            {data: 'importe'}
           ],
           footerCallback: footerSum,
+          drawCallback: function (settings) {
+            var api = this.api();
+            var rows = api.rows({page: 'current'}).nodes();
+            var last = null;
+            var colCount = api.columns().header().length;
+
+            api.column('tipo:name', {page: 'current'}).data().each(function (group, i) {
+              if (last !== group) {
+                $(rows).eq(i).before(
+                        '<tr class="group text-center"><td colspan="' + colCount + '"><h4>' + group + '</h4></td></tr>'
+                );
+                last = group;
+              }
+            });
+          },
           processing: true
         });
       } else {
@@ -236,15 +245,11 @@
       var api = this.api(), data;
 
       // Total over all pages
-      var totalImporte = api.column(-3).data().sum();
-      var totalSaldo = api.column(-2).data().sum();
+      var totalImporte = api.column(-1).data().sum();
 
       // Update footer
-      $(api.column(-3).footer()).html(
+      $(api.column(-1).footer()).html(
               numFormat.display(totalImporte)
-      );
-      $(api.column(-2).footer()).html(
-              numFormat.display(totalSaldo)
       );
     }
   </script>
