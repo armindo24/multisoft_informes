@@ -42,7 +42,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Register routes
 app.use('/', routes);
-app.use('/users', users);
+app.use('/api/v1/users', users);
 app.use('/api/v1', api);
 
 // catch 404 and forward to error handler

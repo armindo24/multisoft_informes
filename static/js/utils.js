@@ -176,7 +176,9 @@ u.spanish_dt = {
 
 u.get_empresas = function (user_id, cb) {
     console.log("getempresas");
-    Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario': user_id}, {'cb': cb});
+    $.get(api + 'users/' + user_id + '/empresas').done(function (res) {
+        cb(res);
+    });
 };
 
 u.numFormatter = $.fn.dataTable.render.number('.', ',', 0);
