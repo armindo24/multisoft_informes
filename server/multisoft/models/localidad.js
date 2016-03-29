@@ -4,9 +4,9 @@ var Localidad = {};
 
 Localidad.list = function () {
     var sql =
-        "SELECT Cod_Localidad, Des_Localidad " +
+        "SELECT cod_localidad, des_localidad " +
         "FROM dba.LOCALIDA " +
-        "ORDER BY Cod_Localidad ASC";
+        "ORDER BY cod_localidad ASC";
 
     return conn.execAsync(sql);
 };
