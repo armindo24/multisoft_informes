@@ -233,6 +233,13 @@ u.resetSelect = function ($select) {
     $select.clearOptions();
 };
 
+// para selects que se cargan una sola vez
+u.softResetSelect = function ($select) {
+    if (!$select) return;
+    $select.disable();
+    $select.clear();
+};
+
 u.convertir_rever = function (str) {
     var negativo = false;
 

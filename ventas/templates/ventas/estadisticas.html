@@ -11,6 +11,21 @@
   </div>
 
   <div class="row">
+    {% include 'ventas/_filtro.html' with name="tipoCliente" title="Tipo de Cliente" placeholder="Tipo" %}
+    {% include 'ventas/_filtro.html' with name="cliente" %}
+  </div>
+
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="zona" title="Zona de Venta" placeholder="Zona" %}
+    {% include 'ventas/_filtro.html' with name="localidad" %}
+  </div>
+
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="vendedor" %}
+    {% include 'ventas/_filtro.html' with name="tipoComprobante" title="Tipo de Comprobante" placeholder="Tipo" %}
+  </div>
+
+  <div class="row">
     <div class="col-sm-6">
       <div class="form-group">
         <label for="fecha" class="col-md-4 control-label">Fecha:</label>
@@ -52,8 +67,12 @@
 
     var $selectEmpresa, selectEmpresa;
     var $selectSucursal, selectSucursal;
-    var $selectCajero, selectCajero;
-    var $selectEstado, selectEstado;
+    var $selectTipoCliente, selectTipoCliente;
+    var $selectCliente, selectCliente;
+    var $selectVendedor, selectVendedor;
+    var $selectZona, selectZona;
+    var $selectLocalidad, selectLocalidad;
+    var $selectTipoComprobante, selectTipoComprobante;
     var dataTable;
 
     var numFormat = u.numFormatter;
@@ -66,16 +85,6 @@
       $resultado = $('#resultado');
       $resultado.hide();
     });
-
-    var calcSaldoAcumulado = function (d, t, r, m) {
-      if (m.row === 0) {
-        r.saldoAcumulado = r.saldo;
-      }
-      else {
-        r.saldoAcumulado = u.parseVal(dataTable.cell(m.row - 1, m.col).data()) + u.parseVal(r.saldo);
-      }
-      return u.numFormat(r.saldoAcumulado);
-    };
 
     function initDates() {
       var $inputDate = $(".input-date .form-control");
@@ -111,13 +120,25 @@
         onChange: function (value) {
           query.empresa = value;
           u.resetSelect(selectSucursal);
-          selectCajero.disable();
-          selectCajero.clear();
+          u.softResetSelect(selectZona);
+          u.softResetSelect(selectLocalidad);
+          u.resetSelect(selectTipoComprobante);
+
           if (!value.length) return;
-          selectCajero.enable();
+
+          selectZona.enable();
+          selectLocalidad.enable();
           selectSucursal.load(function (callback) {
             $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
               selectSucursal.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+          selectTipoComprobante.load(function (callback) {
+            $.get(api + 'empresas/' + query.empresa + '/comprobantes/cobrar').done(function (res) {
+              selectTipoComprobante.enable();
               callback(res.data);
             }).fail(function () {
               callback();
@@ -139,36 +160,118 @@
         searchField: 'Des_Sucursal',
         onChange: function (value) {
           query.sucursal = value;
+          u.resetSelect(selectTipoCliente);
+          u.resetSelect(selectVendedor);
           if (!value.length) return;
+          selectTipoCliente.load(function (callback) {
+            $.get(api + 'clientes/tipos/').done(function (res) {
+              selectTipoCliente.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+          selectVendedor.load(function (cb) {
+            $.get(api + 'empresas/' + query.empresa + '/vendedores', {sucursal: query.sucursal}).done(function (res) {
+              selectVendedor.enable();
+              cb(res.data);
+            }).fail(function () {
+              cb();
+            });
+          });
         }
       });
       selectSucursal = $selectSucursal[0].selectize;
       selectSucursal.disable();
 
-      $selectCajero = $('#select-cajero').selectize({
-        valueField: 'id',
-        labelField: 'nombre',
-        searchField: 'nombre'
+      $selectTipoCliente = $('#select-tipoCliente').selectize({
+        valueField: 'Cod_Tp_Cliente',
+        labelField: 'Des_Tp_Cliente',
+        searchField: 'Des_Tp_Cliente',
+        onChange: function (value) {
+          query.tipoCliente = value;
+          u.resetSelect(selectCliente);
+          if (!value.length) return;
+          selectCliente.enable();
+        }
       });
-      selectCajero = $selectCajero[0].selectize;
-      selectCajero.disable();
-      selectCajero.load(function (callback) {
-        $.get(api + '/usuarios/cajeros').done(function (res) {
-          callback(res.data);
+      selectTipoCliente = $selectTipoCliente[0].selectize;
+      selectTipoCliente.disable();
+
+      $selectCliente = $('#select-cliente').selectize({
+        valueField: 'Cod_Cliente',
+        labelField: 'Razon_Social',
+        searchField: 'Razon_Social',
+        load: function (q, cb) {
+          if (!q.length) return cb();
+          $.get(api + 'empresas/' + query.empresa + '/clientes', {
+            tipo: query.tipoCliente,
+            cliente: q,
+            sucursal: query.sucursal
+          }).done(function (res) {
+            cb(res.data);
+          }).fail(function () {
+            cb();
+          });
+        }
+      });
+      selectCliente = $selectCliente[0].selectize;
+      selectCliente.disable();
+
+      $selectVendedor = $('#select-vendedor').selectize({
+        valueField: 'cod_vendedor',
+        labelField: 'des_vendedor',
+        searchField: 'des_vendedor'
+      });
+      selectVendedor = $selectVendedor[0].selectize;
+      selectVendedor.disable();
+
+      $selectZona = $('#select-zona').selectize({
+        valueField: 'cod_zona',
+        labelField: 'des_zona',
+        searchField: 'des_cobrador'
+      });
+      selectZona = $selectZona[0].selectize;
+      selectZona.disable();
+      selectZona.load(function (cb) {
+        $.get(api + 'ventas/zonas').done(function (res) {
+          cb(res.data);
         }).fail(function () {
-          callback();
+          cb();
         });
       });
 
-      $selectEstado = $('#select-estado').selectize({
-        options: [
-          {value: 'AB', text: 'Abierta'},
-          {value: 'CE', text: 'Cerrada'},
-          {value: 'GN', text: 'Generada'},
-          {value: 'TD', text: 'Todos'}
-        ]
+      $selectLocalidad = $('#select-localidad').selectize({
+        valueField: 'cod_localidad',
+        labelField: 'des_localidad',
+        searchField: 'des_localidad'
       });
-      selectEstado = $selectEstado[0].selectize;
+      selectLocalidad = $selectLocalidad[0].selectize;
+      selectLocalidad.disable();
+      selectLocalidad.load(function (cb) {
+        $.get(api + 'localidades').done(function (res) {
+          cb(res.data);
+        }).fail(function () {
+          cb();
+        });
+      });
+
+      $selectTipoComprobante = $('#select-tipoComprobante').selectize({
+        valueField: 'cod_tp_comp',
+        labelField: 'des_tp_comp',
+        searchField: 'des_tp_comp',
+        render: {
+          option: function (item, escape) {
+            return '<div>' + escape(item.cod_tp_comp) + ' - ' + escape(item.des_tp_comp) + '</div>';
+          },
+          item: function (item, escape) {
+            return '<div>' + escape(item.cod_tp_comp) + ' - ' + escape(item.des_tp_comp) + '</div>';
+          }
+        }
+      });
+      selectTipoComprobante = $selectTipoComprobante[0].selectize;
+      selectTipoComprobante.disable();
+
     }
 
     function getInforme() {
