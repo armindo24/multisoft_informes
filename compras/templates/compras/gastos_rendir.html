@@ -192,6 +192,15 @@
     function debug() {
       $preview.text(JSON.stringify(query));
     }
+    
+    //META.fn: sortJSON
+    function sortJSON(data, key) {
+        return data.sort(function (a, b) {
+            var x = a[key];
+            var y = b[key];
+            return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+        });
+    };
 
     function getInforme() {
       $('.collapse').collapse('hide');
@@ -203,12 +212,83 @@
             function (datos) {
                 console.log(datos)
                 if (datos.data.length > 0){
-                    var nro_rendicion = 0;
+                    var cod_responsable = 0;
+                    var aresponsable = [];
+                    var aresponsable_rendicion = [];
+                    var aresponsable_rendicion_cbte = [];
+                    var aresponsable_rendicion_cbte_moneda = [];
                     for (var a=0; a < datos.data.length; a++  ){
-                        if (datos.data[a].NroRendicion != nro_rendicion){
-                            alert('a')
-                            nro_rendicion = datos.data[a].NroRendicion;
+                        if (datos.data[a].CodResponsable != cod_responsable){
+                            cod_responsable = datos.data[a].CodResponsable;
+                            aresponsable.push(cod_responsable);
+                            var sdiv = '<div id="res_'+datos.data[a].CodResponsable+'"></div>'                            
+                            $('#resultado').append(sdiv);
                         }
+                    }
+                    var aorder_ren = sortJSON(datos.data, 'NroRendicion');
+                    for (var a=0; a < aresponsable.length; a++  ){
+                        var nro_rendicion = 0;
+                        for (var b=0; b < aorder_ren.length; b++){
+                            if (aresponsable[a] == aorder_ren[b].CodResponsable){
+                                if (nro_rendicion != aorder_ren[b].NroRendicion){
+                                    nro_rendicion = aorder_ren[b].NroRendicion;
+                                    var stable = '<table id="ren_'+aorder_ren[b].NroRendicion+'_res_'+aresponsable[a]+'" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">'+
+                                                    '<tr>'+
+                                                        '<th style="width:10%;">N° Rendición:</th><td style="5%;">'+aorder_ren[b].NroRendicion+'</td>'+    
+                                                        '<th style="width:10%;">Responsable:</th><td>'+aorder_ren[b].CodResponsable+'-'+aorder_ren[b].NombreResp+'</td>';
+                                            if (aorder_ren[b].Asentado == "S"){
+                                               stable+= '<th style="width:10%;">Asentado:</th><td style="5%;">Si</td>';
+                                            } else {
+                                               stable+= '<th style="width:10%;">Asentado:</th><td style="5%;">No</td>'; 
+                                            } 
+                                            if (aorder_ren[b].NroTransac == null){
+                                               stable+= '<th style="width:10%;">N° Asiento:</th><td style="5%;"></td>';
+                                            } else {
+                                               stable+= '<th style="width:10%;">N° Asiento:</th><td style="5%;">'+aorder_ren[b].NroTransac+'</td>'; 
+                                            }     
+                                           stable+= '</tr>'+
+                                                '</table><div id="div_ren_'+aorder_ren[b].NroRendicion+'_res_'+aresponsable[a]+'"></div>';
+                                    $('#res_'+aresponsable[a]).append(stable);
+                                    aresponsable_rendicion.push({ 'res' : aresponsable[a], 'ren' : aorder_ren[b].NroRendicion })
+                                }
+                            }
+                        }
+                    }
+                    var aorder_cbte = sortJSON(datos.data, 'Cod_Tp_Comp');
+                    for (var a=0; a < aresponsable_rendicion.length; a++){
+                        var tpo_cbte = null;
+                        for (var b=0; b < aorder_cbte.length; b++){
+                            if (aresponsable_rendicion[a].res == aorder_cbte[b].CodResponsable && aresponsable_rendicion[a].ren == aorder_cbte[b].NroRendicion){
+                                if (tpo_cbte != aorder_cbte[b].Cod_Tp_Comp){
+                                   tpo_cbte = aorder_cbte[b].Cod_Tp_Comp;
+                                   var sstring = '<div id="div_ren_'+aresponsable_rendicion[a].ren+'_res_'+aresponsable_rendicion[a].res+'_cbte_'+aorder_cbte[b].Cod_Tp_Comp+'"><b>&nbsp;'+aorder_cbte[b].des_tp_comp+'</b></div>';
+                                   $('#div_ren_'+aresponsable_rendicion[a].ren+'_res_'+aresponsable_rendicion[a].res).append(sstring);
+                                   aresponsable_rendicion_cbte.push({ 'res' : aresponsable_rendicion[a].res, 'ren' : aresponsable_rendicion[a].ren, 'cbte' : aorder_cbte[b].Cod_Tp_Comp});
+                                }
+                            }
+                        }
+                    }
+                    var aorder_moneda = sortJSON(datos.data, 'CodMoneda');
+                    for (var a=0; a < aresponsable_rendicion_cbte.length; a++){
+                        var moneda = null;
+                        for (var b=0; b < aorder_moneda.length; b++){
+                            if (aresponsable_rendicion_cbte[a].res == aorder_moneda[b].CodResponsable && aresponsable_rendicion_cbte[a].ren == aorder_moneda[b].NroRendicion && aresponsable_rendicion_cbte[a].cbte == aorder_moneda[b].Cod_Tp_Comp){
+                                if (moneda != aorder_moneda[b].CodMoneda){
+                                    moneda =  aorder_moneda[b].CodMoneda;
+                                    var sstring = '<div id="div_ren_'+aresponsable_rendicion_cbte[a].ren+'_res_'+aresponsable_rendicion_cbte[a].res+'_cbte_'+aresponsable_rendicion_cbte[a].cbte+'_mon_'+aorder_moneda[b].CodMoneda+'"><b>&nbsp;&nbsp;'+aorder_moneda[b].DesMoneda+'</b></div>';
+                                    $('#div_ren_'+aresponsable_rendicion_cbte[a].ren+'_res_'+aresponsable_rendicion_cbte[a].res+'_cbte_'+aresponsable_rendicion_cbte[a].cbte).append(sstring);
+                                    aresponsable_rendicion_cbte_moneda.push({ 'res' : aresponsable_rendicion_cbte[a].res, 'ren' : aresponsable_rendicion_cbte[a].ren, 'cbte': aresponsable_rendicion_cbte[a].cbte, 'mon' : aorder_moneda[b].CodMoneda});
+                                }
+                            }
+                        }
+                    }
+                    for (var a=0; a < aresponsable_rendicion_cbte_moneda.length; a++){
+                        var stable_final = '<table id ="table_res_'+aresponsable_rendicion_cbte_moneda[a].res+
+                                                        '_ren_'+aresponsable_rendicion_cbte_moneda[a].ren+
+                                                        '_cbte_'+aresponsable_rendicion_cbte_moneda[a].cbte+
+                                                        '_mon_'+aresponsable_rendicion_cbte_moneda[a].mon+'" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">'+
+                                           '</table>'; 
+                        $('#div_ren_'+aresponsable_rendicion_cbte_moneda[a].ren+'_res_'+aresponsable_rendicion_cbte_moneda[a].res+'_cbte_'+aresponsable_rendicion_cbte_moneda[a].cbte+'_mon_'+aresponsable_rendicion_cbte_moneda[a].mon).append(stable_final);
                     }
                 }
             });
