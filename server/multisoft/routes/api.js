@@ -29,10 +29,11 @@ var Compras = require('../models/compras');
 var Presupuesto = require('../models/presupuesto');
 var Cuentas_pagar = require('../models/cuentas_pagar');
 var Fondo_Fijo = require('../models/fondo_fijo');
-var Gastos_Rendir = require('../models/gastos');
+//var Gastos_Rendir = require('../models/gastos');
 var Moneda = require('../models/moneda');
 var Cobrador = require('../models/cobrador');
 var Recaudacion = require('../models/recaudacion');
+var Localidad = require('../models/localidad');
 
 var conn = require('../db');
 
@@ -166,7 +167,7 @@ router.get('/mayorcuentaaux/det/:empresa/:periodo/:fechad/:fechah/:tipoasiento/:
         res.json(result);
     });
 });
- 
+
 router.post('/clientes/post/lista/', function (req, res, next) {
     console.log(req.body);
     res.json({data: 'funciona'});
@@ -453,6 +454,14 @@ router.get('/recaudaciones/:empresa/consolidada', function (req, res, next) {
         }).catch(function (error) {
             next(error);
         });
+});
+
+router.get('/localidades', function (req, res, next) {
+    Localidad.list().then(function (result) {
+        postProcess(res, result);
+    }).catch(function (error) {
+        next(error);
+    });
 });
 
 module.exports = router;
