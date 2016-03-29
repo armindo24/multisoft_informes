@@ -96,11 +96,26 @@ Recaudacion.resumido = function (params, query) {
         "recaudcomp.cod_sucursal and recaudcab.nroplanilla = recaudcomp.nroplanilla and " +
         "recaudcomp.cod_empresa = pagoscab.cod_empresa and recaudcomp.cod_tp_comp = " +
         "pagoscab.cod_tp_comp and recaudcomp.pago_numero = pagoscab.pago_numero and " +
-        "pagoscab.cod_empresa = 'BT' AND ( pagoscab.cod_sucursal = '00' ) AND ( ( " +
-        "Date(recaudcab.fecha) >= Date('2013-10-01')) AND ( Date(recaudcab.fecha) <= " +
-        "Date('2013-10-02')) ) AND ( recaudcab.estado = 'CE') ) " +
-        "ORDER BY pagoscab.cod_tp_comp";
-    return conn.execAsync(sql);
+        "pagoscab.cod_empresa = ? ";
+
+    var sqlParams = [params.empresa];
+
+    if (query.sucursal) {
+        sql += " AND ( pagoscab.cod_sucursal = ? ) ";
+        sqlParams.push(query.sucursal);
+    }
+    if (query.start && query.end) {
+        sql += " AND ( ( Date(recaudcab.fecha) >= Date(?)) AND ( Date(recaudcab.fecha) <= Date(?)) ) ";
+        sqlParams.push(query.start, query.end);
+    }
+
+    if (query.estado) {
+        sql += " AND ( recaudcab.estado = ?) ) ";
+        sqlParams.push(query.estado);
+    }
+
+    var sqlOrder = sql + "ORDER BY pagoscab.cod_tp_comp";
+    return conn.execAsync(sqlOrder, sqlParams);
 };
 
 module.exports = Recaudacion;
