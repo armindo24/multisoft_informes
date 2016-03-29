@@ -1,0 +1,243 @@
+{% extends 'finanzas/base.html' %}
+
+{% block header %}
+  Estadísticas de Ventas:
+{% endblock %}
+
+{% block filters %}
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="empresa" %}
+    {% include 'ventas/_filtro.html' with name="sucursal" %}
+  </div>
+
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="fecha" class="col-md-4 control-label">Fecha:</label>
+
+        <div class="col-md-6">
+          <div id="fecha" class="input-daterange input-group input-date">
+            <input type="text" class="input-sm form-control" name="start"/>
+            <span class="input-group-addon">hasta</span>
+            <input type="text" class="input-sm form-control" name="end"/>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{#{% block table %}#}
+{#  <thead>#}
+{#  <tr>#}
+{#    <th class="grouping-col">Tipo</th>#}
+{#    <th>Numero</th>#}
+{#    <th class="text-center">Fecha</th>#}
+{#    <th>Cliente</th>#}
+{#    <th class="price-label">Importe</th>#}
+{#  </tr>#}
+{#  </thead>#}
+{#  <tfoot>#}
+{#  <tr>#}
+{#    <th colspan="4" style="text-align:right">Total:</th>#}
+{#    <th></th>#}
+{#  </tr>#}
+{#  </tfoot>#}
+{#{% endblock %}#}
+
+{% block extra_foot %}
+  <script>
+    var query = {empresa: ''};
+    var $results, $resultado;
+
+    var $selectEmpresa, selectEmpresa;
+    var $selectSucursal, selectSucursal;
+    var $selectCajero, selectCajero;
+    var $selectEstado, selectEstado;
+    var dataTable;
+
+    var numFormat = u.numFormatter;
+
+    $(document).ready(function () {
+      u.hideNav();
+      initDates();
+      initSelects();
+      $results = $('#results');
+      $resultado = $('#resultado');
+      $resultado.hide();
+    });
+
+    var calcSaldoAcumulado = function (d, t, r, m) {
+      if (m.row === 0) {
+        r.saldoAcumulado = r.saldo;
+      }
+      else {
+        r.saldoAcumulado = u.parseVal(dataTable.cell(m.row - 1, m.col).data()) + u.parseVal(r.saldo);
+      }
+      return u.numFormat(r.saldoAcumulado);
+    };
+
+    function initDates() {
+      var $inputDate = $(".input-date .form-control");
+      u.defaultDatepicker();
+
+      u.defaultDatepicker();
+      $(".input-daterange").datepicker({
+        todayBtn: "linked",
+        format: "yyyy-mm-dd",
+        autoclose: true
+      });
+
+      $inputDate.datepicker().on('changeDate', function (e) {
+        var key = this.name;
+        query[key] = this.value;
+      });
+
+      $inputDate.datepicker('setDate', new Date());
+      $inputDate.datepicker('update');
+    }
+
+    function initSelects() {
+      $.extend(true, $.fn.selectize.defaults, {
+        onChange: function (value) {
+          query[this.$input.attr('name')] = value;
+        }
+      });
+
+      $selectEmpresa = $('#select-empresa').selectize({
+        valueField: 'Cod_Empresa',
+        labelField: 'Des_Empresa',
+        searchField: 'Des_Empresa',
+        onChange: function (value) {
+          query.empresa = value;
+          u.resetSelect(selectSucursal);
+          selectCajero.disable();
+          selectCajero.clear();
+          if (!value.length) return;
+          selectCajero.enable();
+          selectSucursal.load(function (callback) {
+            $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
+              selectSucursal.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+
+      selectEmpresa = $selectEmpresa[0].selectize;
+      selectEmpresa.load(function (cb) {
+        u.get_empresas({{ user }}, function (res) {
+          cb(res.data);
+        });
+      });
+
+      $selectSucursal = $('#select-sucursal').selectize({
+        valueField: 'Cod_Sucursal',
+        labelField: 'Des_Sucursal',
+        searchField: 'Des_Sucursal',
+        onChange: function (value) {
+          query.sucursal = value;
+          if (!value.length) return;
+        }
+      });
+      selectSucursal = $selectSucursal[0].selectize;
+      selectSucursal.disable();
+
+      $selectCajero = $('#select-cajero').selectize({
+        valueField: 'id',
+        labelField: 'nombre',
+        searchField: 'nombre'
+      });
+      selectCajero = $selectCajero[0].selectize;
+      selectCajero.disable();
+      selectCajero.load(function (callback) {
+        $.get(api + '/usuarios/cajeros').done(function (res) {
+          callback(res.data);
+        }).fail(function () {
+          callback();
+        });
+      });
+
+      $selectEstado = $('#select-estado').selectize({
+        options: [
+          {value: 'AB', text: 'Abierta'},
+          {value: 'CE', text: 'Cerrada'},
+          {value: 'GN', text: 'Generada'},
+          {value: 'TD', text: 'Todos'}
+        ]
+      });
+      selectEstado = $selectEstado[0].selectize;
+    }
+
+    function getInforme() {
+      $('.collapse').collapse('hide');
+
+      if (!dataTable) {
+        $resultado.show();
+        u.defaultDT();
+        dataTable = $results.DataTable({
+          ajax: function (d, cb, s) {
+            $.ajax({
+              method: 'GET',
+              url: api + 'recaudaciones/' + query.empresa + '/consolidada',
+              data: query
+            }).done(function (res) {
+              cb(res);
+            }).fail(function (err) {
+              console.log(err);
+              dataTable.clear().draw();
+              dataTable.processing(false);
+            });
+          },
+          columns: [
+            {data: 'cod_tp_comp', name: 'tipo'},
+            {data: 'pago_numero'},
+            {data: 'fecha', render: u.dateFormat},
+            {
+              data: 'razon_social', render: function (d, t, r, m) {
+              return r['cod_cliente'] + ' - ' + d;
+            }
+            },
+            {data: 'importe'}
+          ],
+          footerCallback: footerSum,
+          drawCallback: function (settings) {
+            var api = this.api();
+            var rows = api.rows({page: 'current'}).nodes();
+            var last = null;
+            var colCount = api.columns().header().length;
+
+            api.column('tipo:name', {page: 'current'}).data().each(function (group, i) {
+              if (last !== group) {
+                $(rows).eq(i).before(
+                        '<tr class="group text-center"><td colspan="' + colCount + '"><h4>' + group + '</h4></td></tr>'
+                );
+                last = group;
+              }
+            });
+          },
+          processing: true
+        });
+      } else {
+        dataTable.clear().draw();
+        dataTable.processing(true);
+        dataTable.ajax.reload(function () {
+          dataTable.processing(false);
+        }, true);
+      }
+    }
+    function footerSum(row, data, start, end, display) {
+      var api = this.api(), data;
+
+      // Total over all pages
+      var totalImporte = api.column(-1).data().sum();
+
+      // Update footer
+      $(api.column(-1).footer()).html(
+              numFormat.display(totalImporte)
+      );
+    }
+  </script>
+{% endblock %}

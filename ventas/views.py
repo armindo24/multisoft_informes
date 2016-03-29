@@ -18,3 +18,7 @@ def cuentas_cobrar(request):
 #TODO: customperm
 def recaudaciones(request):
     return render_to_response('ventas/recaudaciones.html', {'user':request.user.id}, context_instance=RequestContext(request))
+
+#TODO: customperm
+def estadisticas(request):
+    return render_to_response('ventas/estadisticas.html', {'user':request.user.id}, context_instance=RequestContext(request))
