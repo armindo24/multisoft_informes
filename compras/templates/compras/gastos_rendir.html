@@ -1,0 +1,298 @@
+{% extends 'finanzas/base.html' %}
+
+{% block header %}
+  Fondo Fijo:
+{% endblock %}
+
+{% block filters %}
+        <div class="row">
+            {% include 'ventas/_filtro.html' with name="empresa" %}
+            <div class="col-sm-6">
+              <div class="form-group">
+                <label for="periodo" class="col-md-4 control-label">Periodo:</label>
+        
+                <div class="col-md-6">
+                  <div id="periodo" class="input-date"><input type="text" onkeydown="return false" class="form-control" name="periodo"></div>
+                </div>
+              </div>
+            </div>
+        </div>
+        <div class="row">
+          {% include 'ventas/_filtro.html' with name="proveedor" %}
+          <div class="col-sm-6">
+            <div class="form-group">
+              <label for="compras" class="col-md-4 control-label">Fecha:</label>
+              <div class="col-md-6">
+                <div id="compras" class="input-daterange input-group input-date">
+                  <input type="text" class="input-sm form-control" name="start"/>
+                  <span class="input-group-addon">hasta</span>
+                  <input type="text" class="input-sm form-control" name="end"/>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-6">
+              <div class="form-group">
+                <label for="numero" class="col-md-4 control-label">Número:</label>
+        
+                <div class="col-md-6">
+                  <div><input type="text" class="form-control" id="numero" name="nivel" value=""></div>
+                </div>
+              </div>
+            </div>
+            {% include 'ventas/_filtro.html' with name="asentada" %}
+        </div>
+       
+{% endblock %}
+
+{% block inner_content %}
+    
+{% endblock %}
+
+{% block extra_foot %}
+  <style>
+    .aling_right{text-align: right;}
+  </style>
+  <script>
+    var query = {
+    //    agrupar: 'des_moneda'
+    };
+    //var numFormat = $.fn.dataTable.render.number('.', ',', 2).display;
+
+    var api = u.getApiUrl();
+    var $results = $('#results');
+    var $preview = $('#preview');
+    var today = new Date();
+    var initialize = init;
+    var select_empresa, $select_empresa;
+    var select_proveedor, $select_proveedor;
+    var select_asentada, $select_asentada;
+    var xhr;
+    
+    function addCommas(nStr) {
+        nStr += '';
+        x = nStr.split('.');
+        x1 = x[0];
+        x2 = x.length > 1 ? ',' + x[1] : '';
+        var rgx = /(\d+)(\d{3})/;
+        while (rgx.test(x1)) {
+            x1 = x1.replace(rgx, '$1' + '.' + '$2');
+        }
+        return x1 + x2;
+      }
+
+
+    $(document).ready(function () {
+      u.hideNav();
+      $results.hide();
+      initialize();
+      select_empresa = $select_empresa[0].selectize;
+      select_proveedor = $select_proveedor[0].selectize;
+      select_proveedor.disable();
+      select_asentada = $select_asentada[0].selectize;
+    });
+
+    function init() {
+      //$('#compraModal').on('show.bs.modal', showModal);
+      $.extend(true, $.fn.selectize.defaults, {
+        onChange: function (value) {
+          query[this.$input.attr('name')] = value;
+          debug();
+        }
+      });
+      
+      $select_empresa = $('#select-empresa').selectize({
+        valueField: 'Cod_Empresa',
+        labelField: 'Des_Empresa',
+        searchField: 'Des_Empresa',
+        preload: true,
+        load: function (q, callback) {
+          u.get_empresas({{ user }}, function (d) {
+            callback(d.data);
+          });
+        },
+        onChange: function (value) {
+          query.empresa = value;
+          debug();
+          if (!value.length) return;
+          select_proveedor.disable();
+          select_proveedor.clearOptions();
+          select_proveedor.load(function (callback) {
+            $.ajax({
+              url: api + 'empresas/' + query.empresa + '/proveedores',
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_proveedor.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+      
+      $select_asentada = $('#select-asentada').selectize({
+        allowEmptyOption: true,
+        options: [
+          {value: ' ', text: 'Todas'},
+          {value: 'S', text: 'Si'},
+          {value: 'N', text: 'No'},
+        ],
+        onChange: function (value) {
+          query.asentada = value;
+          debug();
+        }
+      });
+      
+      $select_proveedor = $('#select-proveedor').selectize({
+        valueField: 'CodProv',
+        labelField: 'RazonSocial',
+        searchField: 'RazonSocial',
+        maxItems: null,
+        onChange: function (value) {
+          query.proveedor = value;
+          debug();
+        }
+      });
+      
+      $('#periodo .form-control').datepicker({
+          format: "yyyy",
+          startView: 2,
+          minViewMode: 2,
+          maxViewMode: 2,
+          autoclose: true
+        });
+        
+    
+       $('#periodo .form-control').datepicker().on('changeDate', function (e) {
+          query[this.name] = this.value;
+        });
+        
+        $('.input-daterange').datepicker({
+        todayBtn: "linked",
+        language: "es",
+        format: "yyyy-mm-dd",
+        autoclose: true,
+        orientation: "bottom auto"
+      });
+
+      $('.input-date .form-control').datepicker().on('changeDate', function (e) {
+        query[this.parentElement.id + '_' + this.name] = this.value;
+        debug();
+      });
+
+
+      $('.input-date .form-control').datepicker('setDate', today);
+      $('.input-date .form-control').datepicker('update');
+    }
+
+    function debug() {
+      $preview.text(JSON.stringify(query));
+    }
+    
+    //META.fn: sortJSON
+    function sortJSON(data, key) {
+        return data.sort(function (a, b) {
+            var x = a[key];
+            var y = b[key];
+            return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+        });
+    };
+
+    function getInforme() {
+      $('.collapse').collapse('hide');
+      $.ajax(api + "gastos_rendir/list", {
+      method: 'GET',
+      contentType: 'application/json',
+      data: query,
+    }).done(
+            function (datos) {
+                console.log(datos)
+                if (datos.data.length > 0){
+                    var cod_responsable = 0;
+                    var aresponsable = [];
+                    var aresponsable_rendicion = [];
+                    var aresponsable_rendicion_cbte = [];
+                    var aresponsable_rendicion_cbte_moneda = [];
+                    for (var a=0; a < datos.data.length; a++  ){
+                        if (datos.data[a].CodResponsable != cod_responsable){
+                            cod_responsable = datos.data[a].CodResponsable;
+                            aresponsable.push(cod_responsable);
+                            var sdiv = '<div id="res_'+datos.data[a].CodResponsable+'"></div>'                            
+                            $('#resultado').append(sdiv);
+                        }
+                    }
+                    var aorder_ren = sortJSON(datos.data, 'NroRendicion');
+                    for (var a=0; a < aresponsable.length; a++  ){
+                        var nro_rendicion = 0;
+                        for (var b=0; b < aorder_ren.length; b++){
+                            if (aresponsable[a] == aorder_ren[b].CodResponsable){
+                                if (nro_rendicion != aorder_ren[b].NroRendicion){
+                                    nro_rendicion = aorder_ren[b].NroRendicion;
+                                    var stable = '<table id="ren_'+aorder_ren[b].NroRendicion+'_res_'+aresponsable[a]+'" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">'+
+                                                    '<tr>'+
+                                                        '<th style="width:10%;">N° Rendición:</th><td style="5%;">'+aorder_ren[b].NroRendicion+'</td>'+    
+                                                        '<th style="width:10%;">Responsable:</th><td>'+aorder_ren[b].CodResponsable+'-'+aorder_ren[b].NombreResp+'</td>';
+                                            if (aorder_ren[b].Asentado == "S"){
+                                               stable+= '<th style="width:10%;">Asentado:</th><td style="5%;">Si</td>';
+                                            } else {
+                                               stable+= '<th style="width:10%;">Asentado:</th><td style="5%;">No</td>'; 
+                                            } 
+                                            if (aorder_ren[b].NroTransac == null){
+                                               stable+= '<th style="width:10%;">N° Asiento:</th><td style="5%;"></td>';
+                                            } else {
+                                               stable+= '<th style="width:10%;">N° Asiento:</th><td style="5%;">'+aorder_ren[b].NroTransac+'</td>'; 
+                                            }     
+                                           stable+= '</tr>'+
+                                                '</table><div id="div_ren_'+aorder_ren[b].NroRendicion+'_res_'+aresponsable[a]+'"></div>';
+                                    $('#res_'+aresponsable[a]).append(stable);
+                                    aresponsable_rendicion.push({ 'res' : aresponsable[a], 'ren' : aorder_ren[b].NroRendicion })
+                                }
+                            }
+                        }
+                    }
+                    var aorder_cbte = sortJSON(datos.data, 'Cod_Tp_Comp');
+                    for (var a=0; a < aresponsable_rendicion.length; a++){
+                        var tpo_cbte = null;
+                        for (var b=0; b < aorder_cbte.length; b++){
+                            if (aresponsable_rendicion[a].res == aorder_cbte[b].CodResponsable && aresponsable_rendicion[a].ren == aorder_cbte[b].NroRendicion){
+                                if (tpo_cbte != aorder_cbte[b].Cod_Tp_Comp){
+                                   tpo_cbte = aorder_cbte[b].Cod_Tp_Comp;
+                                   var sstring = '<div id="div_ren_'+aresponsable_rendicion[a].ren+'_res_'+aresponsable_rendicion[a].res+'_cbte_'+aorder_cbte[b].Cod_Tp_Comp+'"><b>&nbsp;'+aorder_cbte[b].des_tp_comp+'</b></div>';
+                                   $('#div_ren_'+aresponsable_rendicion[a].ren+'_res_'+aresponsable_rendicion[a].res).append(sstring);
+                                   aresponsable_rendicion_cbte.push({ 'res' : aresponsable_rendicion[a].res, 'ren' : aresponsable_rendicion[a].ren, 'cbte' : aorder_cbte[b].Cod_Tp_Comp});
+                                }
+                            }
+                        }
+                    }
+                    var aorder_moneda = sortJSON(datos.data, 'CodMoneda');
+                    for (var a=0; a < aresponsable_rendicion_cbte.length; a++){
+                        var moneda = null;
+                        for (var b=0; b < aorder_moneda.length; b++){
+                            if (aresponsable_rendicion_cbte[a].res == aorder_moneda[b].CodResponsable && aresponsable_rendicion_cbte[a].ren == aorder_moneda[b].NroRendicion && aresponsable_rendicion_cbte[a].cbte == aorder_moneda[b].Cod_Tp_Comp){
+                                if (moneda != aorder_moneda[b].CodMoneda){
+                                    moneda =  aorder_moneda[b].CodMoneda;
+                                    var sstring = '<div id="div_ren_'+aresponsable_rendicion_cbte[a].ren+'_res_'+aresponsable_rendicion_cbte[a].res+'_cbte_'+aresponsable_rendicion_cbte[a].cbte+'_mon_'+aorder_moneda[b].CodMoneda+'"><b>&nbsp;&nbsp;'+aorder_moneda[b].DesMoneda+'</b></div>';
+                                    $('#div_ren_'+aresponsable_rendicion_cbte[a].ren+'_res_'+aresponsable_rendicion_cbte[a].res+'_cbte_'+aresponsable_rendicion_cbte[a].cbte).append(sstring);
+                                    aresponsable_rendicion_cbte_moneda.push({ 'res' : aresponsable_rendicion_cbte[a].res, 'ren' : aresponsable_rendicion_cbte[a].ren, 'cbte': aresponsable_rendicion_cbte[a].cbte, 'mon' : aorder_moneda[b].CodMoneda});
+                                }
+                            }
+                        }
+                    }
+                    for (var a=0; a < aresponsable_rendicion_cbte_moneda.length; a++){
+                        var stable_final = '<table id ="table_res_'+aresponsable_rendicion_cbte_moneda[a].res+
+                                                        '_ren_'+aresponsable_rendicion_cbte_moneda[a].ren+
+                                                        '_cbte_'+aresponsable_rendicion_cbte_moneda[a].cbte+
+                                                        '_mon_'+aresponsable_rendicion_cbte_moneda[a].mon+'" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">'+
+                                           '</table>'; 
+                        $('#div_ren_'+aresponsable_rendicion_cbte_moneda[a].ren+'_res_'+aresponsable_rendicion_cbte_moneda[a].res+'_cbte_'+aresponsable_rendicion_cbte_moneda[a].cbte+'_mon_'+aresponsable_rendicion_cbte_moneda[a].mon).append(stable_final);
+                    }
+                }
+            });
+    }
+
+  </script>
+{% endblock %}
