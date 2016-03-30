@@ -232,7 +232,7 @@
                             if (aresponsable[a] == aorder_ren[b].CodResponsable){
                                 if (nro_rendicion != aorder_ren[b].NroRendicion){
                                     nro_rendicion = aorder_ren[b].NroRendicion;
-                                    var stable = '<table id="ren_'+aorder_ren[b].NroRendicion+'_res_'+aresponsable[a]+'" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">'+
+                                    var stable = '<hr><table id="ren_'+aorder_ren[b].NroRendicion+'_res_'+aresponsable[a]+'" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">'+
                                                     '<tr>'+
                                                         '<th style="width:10%;">N° Rendición:</th><td style="5%;">'+aorder_ren[b].NroRendicion+'</td>'+    
                                                         '<th style="width:10%;">Responsable:</th><td>'+aorder_ren[b].CodResponsable+'-'+aorder_ren[b].NombreResp+'</td>';
@@ -261,7 +261,7 @@
                             if (aresponsable_rendicion[a].res == aorder_cbte[b].CodResponsable && aresponsable_rendicion[a].ren == aorder_cbte[b].NroRendicion){
                                 if (tpo_cbte != aorder_cbte[b].Cod_Tp_Comp){
                                    tpo_cbte = aorder_cbte[b].Cod_Tp_Comp;
-                                   var sstring = '<div id="div_ren_'+aresponsable_rendicion[a].ren+'_res_'+aresponsable_rendicion[a].res+'_cbte_'+aorder_cbte[b].Cod_Tp_Comp+'"><b>&nbsp;'+aorder_cbte[b].des_tp_comp+'</b></div>';
+                                   var sstring = '<div id="div_ren_'+aresponsable_rendicion[a].ren+'_res_'+aresponsable_rendicion[a].res+'_cbte_'+aorder_cbte[b].Cod_Tp_Comp+'"><b>&nbsp;&nbsp;'+aorder_cbte[b].des_tp_comp+'</b></div>';
                                    $('#div_ren_'+aresponsable_rendicion[a].ren+'_res_'+aresponsable_rendicion[a].res).append(sstring);
                                    aresponsable_rendicion_cbte.push({ 'res' : aresponsable_rendicion[a].res, 'ren' : aresponsable_rendicion[a].ren, 'cbte' : aorder_cbte[b].Cod_Tp_Comp});
                                 }
@@ -275,7 +275,7 @@
                             if (aresponsable_rendicion_cbte[a].res == aorder_moneda[b].CodResponsable && aresponsable_rendicion_cbte[a].ren == aorder_moneda[b].NroRendicion && aresponsable_rendicion_cbte[a].cbte == aorder_moneda[b].Cod_Tp_Comp){
                                 if (moneda != aorder_moneda[b].CodMoneda){
                                     moneda =  aorder_moneda[b].CodMoneda;
-                                    var sstring = '<div id="div_ren_'+aresponsable_rendicion_cbte[a].ren+'_res_'+aresponsable_rendicion_cbte[a].res+'_cbte_'+aresponsable_rendicion_cbte[a].cbte+'_mon_'+aorder_moneda[b].CodMoneda+'"><b>&nbsp;&nbsp;'+aorder_moneda[b].DesMoneda+'</b></div>';
+                                    var sstring = '<div id="div_ren_'+aresponsable_rendicion_cbte[a].ren+'_res_'+aresponsable_rendicion_cbte[a].res+'_cbte_'+aresponsable_rendicion_cbte[a].cbte+'_mon_'+aorder_moneda[b].CodMoneda+'"><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+aorder_moneda[b].DesMoneda+'</b></div>';
                                     $('#div_ren_'+aresponsable_rendicion_cbte[a].ren+'_res_'+aresponsable_rendicion_cbte[a].res+'_cbte_'+aresponsable_rendicion_cbte[a].cbte).append(sstring);
                                     aresponsable_rendicion_cbte_moneda.push({ 'res' : aresponsable_rendicion_cbte[a].res, 'ren' : aresponsable_rendicion_cbte[a].ren, 'cbte': aresponsable_rendicion_cbte[a].cbte, 'mon' : aorder_moneda[b].CodMoneda});
                                 }
@@ -286,11 +286,105 @@
                         var stable_final = '<table id ="table_res_'+aresponsable_rendicion_cbte_moneda[a].res+
                                                         '_ren_'+aresponsable_rendicion_cbte_moneda[a].ren+
                                                         '_cbte_'+aresponsable_rendicion_cbte_moneda[a].cbte+
-                                                        '_mon_'+aresponsable_rendicion_cbte_moneda[a].mon+'" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">'+
+                                                        '_mon_'+aresponsable_rendicion_cbte_moneda[a].mon+'" class="table table-striped table-bordered nowrap" cellspacing="0" style="width:100%">'+
                                            '<thead><tr>'+
-                                                '<td></td>'
+                                                '<td>Libro</td>'+
+                                                '<td>Tipo</td>'+
+                                                '<td>Número</td>'+
+                                                '<td>Timbrado</td>'+
+                                                '<td>T. IVA</td>'+
+                                                '<td>Fecha</td>'+
+                                                '<td>Cod. Prov.</td>'+
+                                                '<td>Razon Social</td>'+
+                                                '<td>Cambio</td>'+
+                                                '<td>Gravado</td>'+
+                                                '<td>IVA</td>'+
+                                                '<td>Exento</td>'+
+                                                '<td>Ret. Renta</td>'+
+                                                '<td>Total</td>'+
                                            '</tr></thead><tbody></tbody><tfoot></tfoot></table>'; 
                         $('#div_ren_'+aresponsable_rendicion_cbte_moneda[a].ren+'_res_'+aresponsable_rendicion_cbte_moneda[a].res+'_cbte_'+aresponsable_rendicion_cbte_moneda[a].cbte+'_mon_'+aresponsable_rendicion_cbte_moneda[a].mon).append(stable_final);
+                        var stbody = "";
+                        var stfoot = "";
+                        var tgravado = 0;
+                        var tiva = 0;
+                        var texento = 0;
+                        var tretrenta = 0;
+                        var ttotal = 0;
+                        for (var b=0; b < datos.data.length; b++){
+                            if (aresponsable_rendicion_cbte_moneda[a].ren == datos.data[b].NroRendicion && aresponsable_rendicion_cbte_moneda[a].res == datos.data[b].CodResponsable && aresponsable_rendicion_cbte_moneda[a].cbte == datos.data[b].Cod_Tp_Comp && aresponsable_rendicion_cbte_moneda[a].mon == datos.data[b].CodMoneda){
+                                stbody+= '<tr>'
+                                if (datos.data[b].Asentado == "S"){
+                                    stbody+= '<td>Si</td>';
+                                } else {
+                                    stbody+= '<td>No</td>';        
+                                }
+                                    stbody+= '<td>'+datos.data[b].Cod_Tp_Comp+'</td>'+
+                                             '<td>'+datos.data[b].NroFact+'</td>'+
+                                             '<td>'+datos.data[b].Timbrado+'</td>';
+                                if (datos.data[b].TipoIVA == "D"){
+                                    stbody+= '<td>Desglosado</td>';
+                                } else {
+                                    stbody+= '<td>Incluido</td>';        
+                                }
+                                    stbody+= '<td>'+datos.data[b].FechaFact+'</td>'+
+                                             '<td>'+datos.data[b].CodProv+'</td>'+
+                                             '<td>'+datos.data[b].RazonSocial+'</td>'+
+                                             '<td>'+datos.data[b].FactCambio+'</td>';
+                                if (datos.data[b].CodMoneda == "GS"){
+                                    stbody+= '<td style="text-align: right;">'+convertir_rever(parseInt(datos.data[b].calc_gravada))+'</td>'+
+                                             '<td style="text-align: right;">'+convertir_rever(parseInt(datos.data[b].calc_iva))+'</td>'+
+                                             '<td style="text-align: right;">'+convertir_rever(parseInt(datos.data[b].calc_excenta))+'</td>'+
+                                             '<td style="text-align: right;">'+convertir_rever(parseInt(datos.data[b].calc_retrenta))+'</td>'+
+                                             '<td style="text-align: right;">'+convertir_rever(parseInt(datos.data[b].calc_total))+'</td>';
+                                    tgravado+= parseInt(datos.data[b].calc_gravada);
+                                    tiva+= parseInt(datos.data[b].calc_iva);
+                                    texento+= parseInt(datos.data[b].calc_excenta);
+                                    tretrenta+= parseInt(datos.data[b].calc_retrenta);
+                                    ttotal+= parseInt(datos.data[b].calc_total);
+                                } else {
+                                    stbody+= '<td style="text-align: right;">'+addCommas(parseFloat(datos.data[b].calc_gravada).toFixed(2))+'</td>'+
+                                             '<td style="text-align: right;">'+addCommas(parseFloat(datos.data[b].calc_iva).toFixed(2))+'</td>'+
+                                             '<td style="text-align: right;">'+addCommas(parseFloat(datos.data[b].calc_excenta).toFixed(2))+'</td>'+
+                                             '<td style="text-align: right;">'+addCommas(parseFloat(datos.data[b].calc_retrenta).toFixed(2))+'</td>'+
+                                             '<td style="text-align: right;">'+addCommas(parseFloat(datos.data[b].calc_total).toFixed(2))+'</td>';
+                                    tgravado+= parseFloat(datos.data[b].calc_gravada);
+                                    tiva+= parseFloat(datos.data[b].calc_iva);
+                                    texento+= parseFloat(datos.data[b].calc_excenta);
+                                    tretrenta+= parseFloat(datos.data[b].calc_retrenta);
+                                    ttotal+= parseFloat(datos.data[b].calc_total);       
+                                }
+                                stbody+= '</tr>';
+                            }
+                        }
+                        stfoot+= '<tr>'+
+                                    '<th colspan="9" style="text-align: right;">TOTAL MONEDA</th>';
+                        if (aresponsable_rendicion_cbte_moneda[a].mon == "GS"){
+                           stfoot+= '<th style="text-align: right;">'+convertir_rever(parseInt(tgravado))+'</th>'+
+                                    '<th style="text-align: right;">'+convertir_rever(parseInt(tiva))+'</th>'+
+                                    '<th style="text-align: right;">'+convertir_rever(parseInt(texento))+'</th>'+
+                                    '<th style="text-align: right;">'+convertir_rever(parseInt(tretrenta))+'</th>'+
+                                    '<th style="text-align: right;">'+convertir_rever(parseInt(ttotal))+'</th>';
+                        } else {
+                           stfoot+= '<th style="text-align: right;">'+addCommas(parseFloat(tgravado).toFixed(2))+'</th>'+
+                                    '<th style="text-align: right;">'+addCommas(parseFloat(tiva).toFixed(2))+'</th>'+
+                                    '<th style="text-align: right;">'+addCommas(parseFloat(texento).toFixed(2))+'</th>'+
+                                    '<th style="text-align: right;">'+addCommas(parseFloat(tretrenta).toFixed(2))+'</th>'+
+                                    '<th style="text-align: right;">'+addCommas(parseFloat(ttotal).toFixed(2))+'</th>';
+                        }
+                        stfoot+= '</tr>';
+                        $('#table_res_'+aresponsable_rendicion_cbte_moneda[a].res+'_ren_'+aresponsable_rendicion_cbte_moneda[a].ren+'_cbte_'+aresponsable_rendicion_cbte_moneda[a].cbte+'_mon_'+aresponsable_rendicion_cbte_moneda[a].mon+' tbody').html(stbody);
+                        $('#table_res_'+aresponsable_rendicion_cbte_moneda[a].res+'_ren_'+aresponsable_rendicion_cbte_moneda[a].ren+'_cbte_'+aresponsable_rendicion_cbte_moneda[a].cbte+'_mon_'+aresponsable_rendicion_cbte_moneda[a].mon+' tfoot').html(stfoot);
+                        $('#table_res_'+aresponsable_rendicion_cbte_moneda[a].res+'_ren_'+aresponsable_rendicion_cbte_moneda[a].ren+'_cbte_'+aresponsable_rendicion_cbte_moneda[a].cbte+'_mon_'+aresponsable_rendicion_cbte_moneda[a].mon).DataTable({
+                            searching: false,
+                            language: u.spanish_dt,
+                            paging: false,
+                            ordering: false,
+                            info: false,
+                            scrollCollapse: true,
+                            scrollY: 300,
+                            scrollX: '100%',
+                          });
                     }
                 }
             });

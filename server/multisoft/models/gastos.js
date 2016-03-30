@@ -11,7 +11,7 @@ Gastos_Rendir.all = function (filters, cb) {
                     "DBA.FACTCAB.Cod_Tp_Comp,"+
                     "dba.TPOCBTE.des_tp_comp,"+
                     "DBA.FACTCAB.NroFact,"+
-                    "DBA.FACTCAB.FechaFact,"+
+                    "date(DBA.FACTCAB.FechaFact) as FechaFact,"+
                     "DBA.FACTCAB.CodProv,"+
                     "DBA.factcab.RazonSocial,"+ 
                     "DBA.FACTCAB.CodResponsable,"+
@@ -38,7 +38,12 @@ Gastos_Rendir.all = function (filters, cb) {
                     "DBA.tpocbte.tp_def,"+
                     "DBA.TpoCbte.TpoMvto,"+
                     "DBA.Control.porcrrenta,"+
-                    "DBA.factcab.retenible_renta "+ 
+                    "DBA.factcab.retenible_renta,"+
+                    "ROUND(case when DBA.FACTCAB.IVAIncluido = 'S' then DBA.FACTCAB.TotalGrav-DBA.FACTCAB.IVA else DBA.FACTCAB.TotalGrav end,((case when DBA.FACTCAB.CodMoneda = MonedaLocal then 0 else 4 end)* (case when DBA.tpocbte.tp_def = 'RT' then -1 else 1 end))) as calc_gravada,"+
+                    "ROUND(DBA.FACTCAB.IVA, ((case when DBA.FACTCAB.CodMoneda = MonedaLocal then 0 else 2 end)* (case when DBA.tpocbte.tp_def = 'RT' then -1 else 1 end))) as calc_iva,"+
+                    "DBA.FACTCAB.TotalExen * (case when DBA.tpocbte.tp_def = 'RT' then -1 else 1 end) as calc_excenta,"+
+                    "case when DBA.tpocbte.tp_def <> 'RT' and DBA.TpoCbte.TpoMvto = 'AF' and DBA.Control.porcrrenta > 0 and DBA.factcab.retenible_renta = 'S' then ROUND(((calc_excenta*DBA.Control.porcrrenta)/100),0) else 0 end as calc_retrenta,"+
+                    "((calc_gravada+DBA.FACTCAB.TotalExen+calc_iva) - calc_retrenta) *  (case when DBA.tpocbte.tp_def = 'RT' then -1 else 1 end) as calc_total "+  
                 "FROM "+ 
                     "( DBA.FACTCAB LEFT OUTER JOIN DBA.PROVEED P2 ON DBA.FACTCAB.Cod_Empresa = P2.Cod_Empresa "+
                         "AND DBA.FACTCAB.CodResponsable = P2.CodProv ),"+
