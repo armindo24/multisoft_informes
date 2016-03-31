@@ -74,6 +74,14 @@ Gastos_Rendir.all = function (filters, cb) {
         string+= "AND EXISTS (select * from dba.factcab f2 where f2.cod_empresa = dba.factcab.cod_empresa and f2.codresponsable = dba.factcab.codresponsable and f2.nrorendicion = dba.factcab.nrorendicion and f2.Asentado = 'N' ) ";
     }
     
+    if (filters.proveedor) {
+        string+= " AND (dba.FACTCAB.CodProv IN " + q.in(filters.proveedor) + ") ";
+    } 
+    
+    if (filters.numero != null && filters.numero != "") {
+        string+= " AND ( ( FactCab.NroRendicion = "+filters.numero+" ) ) ";
+    }
+    
     string+= "ORDER BY DBA.FACTCAB.CodResponsable";
     console.log(string);
     
