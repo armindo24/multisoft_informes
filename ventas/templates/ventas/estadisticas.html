@@ -71,9 +71,14 @@
 {#{% endblock %}#}
 
 {% block inner_content %}
-  <div id="bar"></div>
-  <div id="test"></div>
-  <div id="pie"></div>
+  <div class="row">
+    <div class="col-lg-6">
+      <div id="bar"></div>
+    </div>
+    <div class="col-lg-6">
+      <div id="pie"></div>
+    </div>
+  </div>
   <div id="chart"></div>
 {% endblock %}
 
@@ -93,6 +98,7 @@
     var dataTable;
 
     var currentClient;
+    var currentYear;
     var $donutTitle;
 
     var numFormat = u.numFormatter;
@@ -392,9 +398,36 @@
           ['2009', 3030]
         ]
       ];
-
+      var monthData = [
+        [
+          ['2012', 100, 140, 140, 400],
+          ['2013', 100, 120, 300, 100],
+          ['2014', 120, 300, 300, 400]
+        ],
+        [
+          ['2012', 1030, 1140, 2140, 4020],
+          ['2013', 1020, 1540, 3100, 1020],
+          ['2014', 1220, 3300, 3400, 4100]
+        ],
+        [
+          ['2012', 1010, 1430, 1340, 4020],
+          ['2013', 1010, 1230, 3300, 1200],
+          ['2014', 1210, 3030, 3300, 4300]
+        ],
+        [
+          ['2012', 1010, 1410, 1140, 4010],
+          ['2013', 1010, 1320, 3100, 1030],
+          ['2014', 1210, 1300, 3030, 4030]
+        ],
+        [
+          ['2007', 1010, 1401, 1420, 4100],
+          ['2008', 1010, 1202, 3010, 1020],
+          ['2009', 1210, 3020, 3010, 4010]
+        ]
+      ];
       var names = ['Audi', 'Volkswagen', 'Mercedes Benz', 'Porsche', 'Ferrari'];
 
+      var lineChart;
       var colors = randomColor({
         luminosity: 'bright',
         count: 9,
@@ -412,6 +445,7 @@
           type: 'donut',
           onclick: function (d, i) {
             console.log("onclick", d, i);
+            bar.load()
           }
         },
         donut: {
@@ -424,8 +458,20 @@
         data: {
           columns: [],
           type: 'donut',
-          onclick: function (d, i) {
-            console.log("onclick", d, i);
+          onclick: function (d, el) {
+            currentYear = d.index;
+            console.log("onclick", d);
+            console.log(currentClient, currentYear);
+            console.log(monthData[currentClient][currentYear]);
+            lineChart.load({
+              unload: true,
+              columns: [
+                ['x'].concat(['01', '02', '03', '04'].map(function (e) {
+                  return '2013-' + e + '-01';
+                })),
+                monthData[currentClient][currentYear]
+              ]
+            });
           }
         },
         donut: {
@@ -496,29 +542,11 @@
        }
        });*/
 
-      var chart = c3.generate({
+      lineChart = c3.generate({
         bindto: '#chart',
-        padding: {
-          right: 50,
-          left: 50
-        },
-        size: {
-          height: 500
-        },
         data: {
           x: 'x',
-          columns: [
-            ['x', '2013-01-01', '2013-02-01', '2013-03-01', '2013-04-01', '2013-05-01', '2013-06-01'],
-            ['Akira', 30, 200, 100, 400, 150, 250],
-            ['Nobu', 130, 340, 200, 500, 250, 350],
-            ['Gustavo', 10, 240, 100, 300, 450, 150],
-            ['Lukaku', 100, 234, 100, 330, 425, 115],
-            ['Mauricio', 10, 23, 10, 33, 42, 11],
-            ['Random', 101, 203, 310, 303, 142, 101],
-            ['Chiqui', 102, 213, 210, 133, 342, 121],
-            ['Pajaro', 101, 223, 110, 333, 42, 111],
-            ['Tacuara', 100, 213, 310, 313, 142, 141]
-          ]
+          columns: []
         },
         axis: {
           x: {
@@ -526,16 +554,11 @@
             tick: {
               format: '%Y-%m'
             }
-          },
-          y: {
-            tick: {
-              count: 5
-            }
           }
         },
-        grid: {
-          x: {show: true},
-          y: {show: true}
+        padding: {
+          left: 25,
+          right: 25
         }
       });
     }
