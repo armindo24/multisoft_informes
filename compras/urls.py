@@ -9,5 +9,5 @@ urlpatterns = patterns('',
     url(r'^saldos_proveedores/$',  'compras.views.saldos_proveedores', name="saldos_proveedores"),
     url(r'^fondo_fijo/$',  'compras.views.fondo_fijo', name="fondo_fijo"),
     url(r'^gastos_rendir/$',  'compras.views.gastos_rendir', name="gastos_rendir"),
-    url(r'^estad/$',  TemplateView.as_view(template_name='compras/chartEjemplo.html'), name="chart_ejemplo")
+    url(r'^estadisticos/$',  'compras.views.compras_estadisticos', name="compras_estadisticos"),
 )
