@@ -467,7 +467,7 @@
               unload: true,
               columns: [
                 ['x'].concat(['01', '02', '03', '04'].map(function (e) {
-                  return '2013-' + e + '-01';
+                  return yearData[currentClient][currentYear][0] + '-' + e + '-01';
                 })),
                 monthData[currentClient][currentYear]
               ]
@@ -494,7 +494,7 @@
           onclick: function (d, elem) {
             currentClient = d.index;
             $donutTitle.html(names[d.index]);
-            pie.flush();
+            lineChart.unload();
             pie.load({
               unload: true,
               columns: yearData[d.index]
@@ -557,8 +557,8 @@
           }
         },
         padding: {
-          left: 25,
-          right: 25
+          left: 50,
+          right: 50
         }
       });
     }
