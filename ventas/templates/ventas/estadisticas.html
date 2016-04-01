@@ -3,7 +3,11 @@
 
 {% block extrahead %}
   {{ block.super }}
-  <script src="{% static 'Chart.js/Chart.min.js' %}"></script>
+  <link href="{% static 'c3/c3.min.css' %}" rel="stylesheet" type="text/css">
+  <script src="{% static 'd3/d3.min.js' %}"></script>
+  <script src="{% static 'pathseg/pathseg.js' %}"></script>
+  <script src="{% static 'c3/c3.min.js' %}"></script>
+  <script src="{% static 'randomcolor/randomColor.js' %}"></script>
 {% endblock %}
 
 {% block header %}
@@ -31,7 +35,7 @@
     {% include 'ventas/_filtro.html' with name="tipoComprobante" title="Tipo de Comprobante" placeholder="Tipo" %}
   </div>
 
-  <div class="row">
+  <div class="row"> q
     <div class="col-sm-6">
       <div class="form-group">
         <label for="fecha" class="col-md-4 control-label">Fecha:</label>
@@ -67,7 +71,10 @@
 {#{% endblock %}#}
 
 {% block inner_content %}
-  <canvas id="chart" width="400" height="400"></canvas>
+  <div id="bar"></div>
+  <div id="test"></div>
+  <div id="pie"></div>
+  <div id="chart"></div>
 {% endblock %}
 
 {% block extra_foot %}
@@ -85,12 +92,15 @@
     var $selectTipoComprobante, selectTipoComprobante;
     var dataTable;
 
+    var currentClient;
+    var $donutTitle;
+
     var numFormat = u.numFormatter;
 
     $(document).ready(function () {
       u.hideNav();
-      initDates();
-      initSelects();
+      {#      initDates();#}
+      {#      initSelects();#}
       initChart();
       $results = $('#results');
       $resultado = $('#resultado');
@@ -355,39 +365,179 @@
     }
 
     function initChart() {
-      // Get context with jQuery - using jQuery's .get() method.
-      var ctx = $("#chart").get(0).getContext("2d");
-
-      var data = {
-        labels: ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio"],
-        datasets: [
-          {
-            label: "Uno",
-            fillColor: "rgba(220,220,220,0.5)",
-            strokeColor: "rgba(220,220,220,0.8)",
-            highlightFill: "rgba(220,220,220,0.75)",
-            highlightStroke: "rgba(220,220,220,1)",
-            data: [65, 59, 80, 81, 56, 55, 40]
-          },
-          {
-            label: "Dos",
-            fillColor: "rgba(151,187,205,0.5)",
-            strokeColor: "rgba(151,187,205,0.8)",
-            highlightFill: "rgba(151,187,205,0.75)",
-            highlightStroke: "rgba(151,187,205,1)",
-            data: [28, 48, 40, 19, 86, 27, 90]
-          }
+      var yearData = [
+        [
+          ['2012', 30],
+          ['2013', 120],
+          ['2014', 300]
+        ],
+        [
+          ['2012', 30],
+          ['2013', 220],
+          ['2014', 400]
+        ],
+        [
+          ['2012', 130],
+          ['2013', 120],
+          ['2014', 300]
+        ],
+        [
+          ['2012', 304],
+          ['2013', 1210],
+          ['2014', 3020]
+        ],
+        [
+          ['2007', 303],
+          ['2008', 1230],
+          ['2009', 3030]
         ]
+      ];
+
+      var names = ['Audi', 'Volkswagen', 'Mercedes Benz', 'Porsche', 'Ferrari'];
+
+      var colors = randomColor({
+        luminosity: 'bright',
+        count: 9,
+        seed: 108
+      });
+
+      var pieSet = {
+        bindto: '#pie',
+        data: {
+          columns: [
+            ['2012', 30],
+            ['2013', 30],
+            ['2014', 30]
+          ],
+          type: 'donut',
+          onclick: function (d, i) {
+            console.log("onclick", d, i);
+          }
+        },
+        donut: {
+          title: 'Cliente'
+        }
       };
 
-      {% verbatim options%}
-        var options = {
-          barShowStroke: false,
-          multiTooltipTemplate: "<%= datasetLabel %> - <%= value %>"
-        };
-      {% endverbatim options %}
+      var pie = c3.generate({
+        bindto: '#pie',
+        data: {
+          columns: [],
+          type: 'donut',
+          onclick: function (d, i) {
+            console.log("onclick", d, i);
+          }
+        },
+        donut: {
+          title: 'Cliente'
+        }
+      });
 
-      var myBarChart = new Chart(ctx).Bar(data, options);
+      $donutTitle = $('.c3-chart-arcs-title');
+
+      var bar = c3.generate({
+        bindto: '#bar',
+        data: {
+          columns: [
+            ['Ventas', 30, 200, 100, 40, 50]
+          ],
+          type: 'bar',
+          color: function (color, d) {
+            return colors[d.index];
+          },
+          onclick: function (d, elem) {
+            currentClient = d.index;
+            $donutTitle.html(names[d.index]);
+            pie.flush();
+            pie.load({
+              unload: true,
+              columns: yearData[d.index]
+            });
+          }
+        },
+        axis: {
+          x: {
+            type: 'category',
+            categories: names
+          }
+        }
+      });
+
+      /*
+       var test = c3.generate({
+       bindto: '#test',
+       data: {
+       x: 'x',
+       columns: [
+       ['x', 'Clientes'],
+       ['Audi', 30],
+       ['Volkswagen', 200],
+       ['Mercedes Benz', 100],
+       ['Porsche', 40],
+       ['Ferrari', 50]
+       ],
+       onclick: function (d, elem) {
+       console.log(d);
+       console.log(elem);
+       pie.load({
+       columns: yearData[d.index]
+       });
+       },
+       type: 'bar'
+       },
+       axis: {
+       x: {
+       type: 'category',
+       categories: ['Ventas']
+       }
+       },
+       tooltip: {
+       grouped: false
+       }
+       });*/
+
+      var chart = c3.generate({
+        bindto: '#chart',
+        padding: {
+          right: 50,
+          left: 50
+        },
+        size: {
+          height: 500
+        },
+        data: {
+          x: 'x',
+          columns: [
+            ['x', '2013-01-01', '2013-02-01', '2013-03-01', '2013-04-01', '2013-05-01', '2013-06-01'],
+            ['Akira', 30, 200, 100, 400, 150, 250],
+            ['Nobu', 130, 340, 200, 500, 250, 350],
+            ['Gustavo', 10, 240, 100, 300, 450, 150],
+            ['Lukaku', 100, 234, 100, 330, 425, 115],
+            ['Mauricio', 10, 23, 10, 33, 42, 11],
+            ['Random', 101, 203, 310, 303, 142, 101],
+            ['Chiqui', 102, 213, 210, 133, 342, 121],
+            ['Pajaro', 101, 223, 110, 333, 42, 111],
+            ['Tacuara', 100, 213, 310, 313, 142, 141]
+          ]
+        },
+        axis: {
+          x: {
+            type: 'timeseries',
+            tick: {
+              format: '%Y-%m'
+            }
+          },
+          y: {
+            tick: {
+              count: 5
+            }
+          }
+        },
+        grid: {
+          x: {show: true},
+          y: {show: true}
+        }
+      });
     }
   </script>
 {% endblock %}
