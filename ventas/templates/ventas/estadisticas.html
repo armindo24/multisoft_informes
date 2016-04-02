@@ -330,60 +330,6 @@
 
     function initChart(data) {
       globData = data;
-      var yearData = [
-        [
-          ['2012', 30],
-          ['2013', 120],
-          ['2014', 300]
-        ],
-        [
-          ['2012', 30],
-          ['2013', 220],
-          ['2014', 400]
-        ],
-        [
-          ['2012', 130],
-          ['2013', 120],
-          ['2014', 300]
-        ],
-        [
-          ['2012', 304],
-          ['2013', 1210],
-          ['2014', 3020]
-        ],
-        [
-          ['2007', 303],
-          ['2008', 1230],
-          ['2009', 3030]
-        ]
-      ];
-      var monthData = [
-        [
-          ['2012', 100, 140, 140, 400],
-          ['2013', 100, 120, 300, 100],
-          ['2014', 120, 300, 300, 400]
-        ],
-        [
-          ['2012', 1030, 1140, 2140, 4020],
-          ['2013', 1020, 1540, 3100, 1020],
-          ['2014', 1220, 3300, 3400, 4100]
-        ],
-        [
-          ['2012', 1010, 1430, 1340, 4020],
-          ['2013', 1010, 1230, 3300, 1200],
-          ['2014', 1210, 3030, 3300, 4300]
-        ],
-        [
-          ['2012', 1010, 1410, 1140, 4010],
-          ['2013', 1010, 1320, 3100, 1030],
-          ['2014', 1210, 1300, 3030, 4030]
-        ],
-        [
-          ['2007', 1010, 1401, 1420, 4100],
-          ['2008', 1010, 1202, 3010, 1020],
-          ['2009', 1210, 3020, 3010, 4010]
-        ]
-      ];
 
       var porCliente = {};
 
@@ -407,8 +353,8 @@
         }
         var datosMonth = datosYear[d.mes];
         datosMonth[d.tipo] = parseFloat(d.total);
-        if (d.tipo === 'VTA') {
-          datosMonth['TOTAL'] = datosMonth['VTA'] - datosMonth['NC'];
+        if (d.tipo === 'venta') {
+          datosMonth['total'] = datosMonth['venta'] - datosMonth['credito'];
         }
       });
 
@@ -418,7 +364,7 @@
 
       _.forIn(porCliente, function (cliente) {
         _.forIn(cliente.datos, function (year) {
-          year.total = _(year.datos).values().sumBy('TOTAL');
+          year.total = _(year.datos).values().sumBy('total');
         });
         cliente.total = _(cliente.datos).values().sumBy('total')
       });
@@ -468,7 +414,7 @@
                 ['x'].concat(_(currentYearData.datos).keys().value().map(function (x) {
                   return [currentYear, x, '01'].join('-');
                 })),
-                [currentYear].concat(_(currentYearData.datos).values().map('TOTAL').value())
+                [currentYear].concat(_(currentYearData.datos).values().map('total').value())
               ]
             });
           }
@@ -526,8 +472,8 @@
           }
         },
         padding: {
-          left: 50,
-          right: 50
+          left: 100,
+          right: 100
         }
       });
     }

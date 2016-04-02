@@ -193,7 +193,7 @@ Ventas.estadisticas = {};
 Ventas.estadisticas.clientes = function (params, query) {
     var sql = "SELECT " +
         "moneda = Trim (dba.vtacab.codmoneda), " +
-        "tipo = 'VTA', vend = Trim(dba.vtacab.cod_cliente), " +
+        "tipo = 'venta', vend = Trim(dba.vtacab.cod_cliente), " +
         "nombre = Trim (dba.clientes.razon_social), " +
         "anho = year (dba.vtacab.fha_cbte), " +
         "mes = month (dba.vtacab.fha_cbte), " +
@@ -211,7 +211,7 @@ Ventas.estadisticas.clientes = function (params, query) {
         "GROUP BY moneda, vend, nombre, anho, mes \n" +
         "UNION " +
         "SELECT moneda = Trim (dba.vtacab.codmoneda), " +
-        "tipo = 'NC', vend = Trim (dba.vtacab.cod_cliente), " +
+        "tipo = 'credito', vend = Trim (dba.vtacab.cod_cliente), " +
         "nombre = Trim(dba.clientes.razon_social), " +
         "anho = year(dba.vtacab.fha_cbte), " +
         "mes = month(dba.vtacab.fha_cbte), " +
