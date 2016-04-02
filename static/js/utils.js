@@ -127,6 +127,11 @@ var spanish = {
     yearSuffix: ''
 };
 
+u.spanishMonths = {
+    short: spanish.monthNamesShort,
+    long: spanish.monthNames
+};
+
 u.translate = function () {
     $.datepicker.setDefaults(spanish);
 };
