@@ -189,4 +189,47 @@ Ventas.cuentas.cobrar = function (params, query, cb) {
     });
 };
 
+Ventas.estadisticas = {};
+Ventas.estadisticas.clientes = function (params, query) {
+    var sql = "SELECT " +
+        "moneda = Trim (dba.vtacab.codmoneda), " +
+        "tipo = 'VTA', vend = Trim(dba.vtacab.cod_cliente), " +
+        "nombre = Trim (dba.clientes.razon_social), " +
+        "anho = year (dba.vtacab.fha_cbte), " +
+        "mes = month (dba.vtacab.fha_cbte), " +
+        "total = sum(dba.vtacab.total_venta) \n" +
+        "FROM dba.clientes, dba.vtacab, dba.tpocbte \n" +
+        "WHERE ( dba.vtacab.cod_cliente = dba.clientes.cod_cliente ) " +
+        "AND ( dba.vtacab.cod_empresa = dba.clientes.cod_empresa ) " +
+        "AND ( dba.vtacab.cod_empresa = dba.tpocbte.cod_empresa ) " +
+        "AND ( dba.vtacab.cod_tp_comp = dba.tpocbte.cod_tp_comp ) " +
+        "AND ( dba.tpocbte.tp_def <> 'NC' ) " +
+        "AND ( dba.vtacab.anulado = 'N' ) " +
+        "AND ( dba.vtacab.cod_empresa = '03' ) " +
+        "AND Date(dba.vtacab.fha_cbte) >= Date ('2012-01-01') " +
+        "AND Date(dba.vtacab.fha_cbte) <= Date ('2013-01-01') " +
+        "GROUP BY moneda, vend, nombre, anho, mes \n" +
+        "UNION " +
+        "SELECT moneda = Trim (dba.vtacab.codmoneda), " +
+        "tipo = 'NC', vend = Trim (dba.vtacab.cod_cliente), " +
+        "nombre = Trim(dba.clientes.razon_social), " +
+        "anho = year(dba.vtacab.fha_cbte), " +
+        "mes = month(dba.vtacab.fha_cbte), " +
+        "total = sum (dba.vtacab.total_venta) \n" +
+        "FROM dba.clientes, dba.vtacab, dba.tpocbte \n" +
+        "WHERE ( dba.vtacab.cod_cliente = dba.clientes.cod_cliente ) \n" +
+        "AND ( dba.vtacab.cod_empresa = dba.clientes.cod_empresa ) " +
+        "AND ( dba.vtacab.cod_empresa = dba.tpocbte.cod_empresa ) " +
+        "AND ( dba.vtacab.cod_tp_comp = dba.tpocbte.cod_tp_comp ) " +
+        "AND ( dba.tpocbte.tp_def = 'NC' ) " +
+        "AND ( dba.vtacab.anulado = 'N' ) " +
+        "AND ( dba.vtacab.cod_empresa = '03' ) " +
+        "AND Date(dba.vtacab.fha_cbte) >= Date ('2012-01-01') " +
+        "AND Date(dba.vtacab.fha_cbte) <= Date ('2013-01-01') \n" +
+        "GROUP BY moneda, vend, nombre, anho, mes \n" +
+        "ORDER BY 1, 3, 4, 5, 2";
+
+    return conn.execAsync(sql);
+};
+
 module.exports = Ventas;
