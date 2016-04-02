@@ -52,23 +52,6 @@
   </div>
 {% endblock %}
 
-{#{% block table %}#}
-{#  <thead>#}
-{#  <tr>#}
-{#    <th class="grouping-col">Tipo</th>#}
-{#    <th>Numero</th>#}
-{#    <th class="text-center">Fecha</th>#}
-{#    <th>Cliente</th>#}
-{#    <th class="price-label">Importe</th>#}
-{#  </tr>#}
-{#  </thead>#}
-{#  <tfoot>#}
-{#  <tr>#}
-{#    <th colspan="4" style="text-align:right">Total:</th>#}
-{#    <th></th>#}
-{#  </tr>#}
-{#  </tfoot>#}
-{#{% endblock %}#}
 
 {% block inner_content %}
   <div class="row">
@@ -315,22 +298,13 @@
         console.log(err);
       });
     }
-    function footerSum(row, data, start, end, display) {
-      var api = this.api(), data;
-
-      // Total over all pages
-      var totalImporte = api.column(-1).data().sum();
-
-      // Update footer
-      $(api.column(-1).footer()).html(
-              numFormat.display(totalImporte)
-      );
-    }
 
     function initChart(data) {
       globData = data;
-
       var porCliente = {};
+      var lineChart;
+      var pie;
+      var bar;
 
       _.each(data, function (d) {
         if (!porCliente.hasOwnProperty(d.nombre)) {
@@ -348,7 +322,7 @@
         }
         var datosYear = cliente.datos[d.anho].datos;
         if (!datosYear.hasOwnProperty(d.mes)) {
-          datosYear[d.mes] = {'NC': 0, 'VTA': 0, 'TOTAL': 0};
+          datosYear[d.mes] = {'credito': 0, 'venta': 0, 'total': 0};
         }
         var datosMonth = datosYear[d.mes];
         datosMonth[d.tipo] = parseFloat(d.total);
@@ -359,7 +333,7 @@
 
       var clientes = _.values(porCliente);
       globCli = clientes;
-      var names = _(globCli).values().map('nombre').value();
+      var names = _(clientes).values().map('nombre').value();
 
       _.forIn(porCliente, function (cliente) {
         _.forIn(cliente.datos, function (year) {
@@ -367,64 +341,9 @@
         });
         cliente.total = _(cliente.datos).values().sumBy('total')
       });
-
-
       console.log(porCliente);
 
-      var lineChart;
-
-      var pieSet = {
-        bindto: '#pie',
-        data: {
-          columns: [
-            ['2012', 30],
-            ['2013', 30],
-            ['2014', 30]
-          ],
-          type: 'donut',
-          onclick: function (d, i) {
-            console.log("onclick", d, i);
-            bar.load()
-          }
-        },
-        donut: {
-          title: 'Cliente'
-        }
-      };
-
-      var pie = c3.generate({
-        bindto: '#pie',
-        data: {
-          columns: [],
-          type: 'donut',
-          onclick: function (d, el) {
-            currentYear = d.id;
-            currentYearData = currentClientData.datos[currentYear];
-            lineChart.load({
-              columns: [
-                ['x'].concat(_(currentYearData.datos).keys().value().map(function (x) {
-                  return [currentYear, x, '01'].join('-');
-                })),
-                ['Total'].concat(_(currentYearData.datos).values().map('total').value()),
-              ]
-            });
-          }
-        },
-        donut: {
-          title: 'Cliente'
-        },
-        tooltip: {
-          format: {
-            value: function (value, ratio, id, index) {
-              return value;
-            }
-          }
-        }
-      });
-
-      $donutTitle = $('.c3-chart-arcs-title');
-
-      var bar = c3.generate({
+      bar = c3.generate({
         bindto: '#bar',
         data: {
           x: 'x',
@@ -457,6 +376,37 @@
         }
       });
 
+      pie = c3.generate({
+        bindto: '#pie',
+        data: {
+          columns: [],
+          type: 'donut',
+          onclick: function (d, el) {
+            currentYear = d.id;
+            currentYearData = currentClientData.datos[currentYear];
+            lineChart.load({
+              columns: [
+                ['x'].concat(_(currentYearData.datos).keys().value().map(function (x) {
+                  return [currentYear, x, '01'].join('-');
+                })),
+                ['Total'].concat(_(currentYearData.datos).values().map('total').value()),
+              ]
+            });
+          }
+        },
+        donut: {
+          title: 'Cliente'
+        },
+        tooltip: {
+          format: {
+            value: function (value, ratio, id, index) {
+              return value;
+            }
+          }
+        }
+      });
+      $donutTitle = $('.c3-chart-arcs-title');
+
       lineChart = c3.generate({
         bindto: '#chart',
         data: {
@@ -481,6 +431,7 @@
         }
       });
     }
+
     function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {
       var $$ = this, config = $$.config,
               titleFormat = config.tooltip_format_title || defaultTitleFormat,
