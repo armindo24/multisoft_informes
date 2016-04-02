@@ -25,7 +25,6 @@
     "selectize": "^0.12.1",
     "Chart.js": "^1.0.2",
     "c3": "^0.4.10",
-    "randomcolor": "randomColor#^0.4.4",
     "pathseg": "^1.0.2",
     "lodash": "^4.7.0"
   }
