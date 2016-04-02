@@ -8,7 +8,6 @@
   <script src="{% static 'd3/d3.min.js' %}"></script>
   <script src="{% static 'pathseg/pathseg.js' %}"></script>
   <script src="{% static 'c3/c3.min.js' %}"></script>
-  <script src="{% static 'randomcolor/randomColor.js' %}"></script>
 {% endblock %}
 
 {% block header %}
@@ -373,11 +372,6 @@
       console.log(porCliente);
 
       var lineChart;
-      var colors = randomColor({
-        luminosity: 'bright',
-        count: 9,
-        seed: 108
-      });
 
       var pieSet = {
         bindto: '#pie',
@@ -406,10 +400,7 @@
           onclick: function (d, el) {
             currentYear = d.id;
             currentYearData = currentClientData.datos[currentYear];
-            console.log("onclick", d);
-            console.log(currentClient, currentYear);
             lineChart.load({
-              unload: true,
               columns: [
                 ['x'].concat(_(currentYearData.datos).keys().value().map(function (x) {
                   return [currentYear, x, '01'].join('-');
@@ -436,17 +427,15 @@
       var bar = c3.generate({
         bindto: '#bar',
         data: {
+          x: 'x',
           columns: [
-            ['Ventas'].concat(_.map(clientes, 'total'))
-          ],
-          type: 'bar',
-          color: function (color, d) {
-            return colors[d.index];
-          },
+            ['x', 'Clientes']].concat(_.map(clientes, function (cliente) {
+                    return [cliente.nombre, cliente.total];
+                  })),
           onclick: function (d, elem) {
-            currentClient = d.index;
-            currentClientData = clientes[currentClient];
-            $donutTitle.html(names[d.index]);
+            currentClient = d.id;
+            currentClientData = porCliente[currentClient];
+            $donutTitle.html(d.id);
             lineChart.unload();
             pie.load({
               unload: true,
@@ -454,13 +443,17 @@
                 return [x[0], x[1].total];
               }).value()
             });
-          }
+          },
+          type: 'bar'
         },
         axis: {
           x: {
             type: 'category',
-            categories: names
+            categories: ['Ventas']
           }
+        },
+        tooltip: {
+          grouped: false
         }
       });
 
