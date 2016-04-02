@@ -4,6 +4,7 @@
 {% block extrahead %}
   {{ block.super }}
   <link href="{% static 'c3/c3.min.css' %}" rel="stylesheet" type="text/css">
+  <script src="{% static 'lodash/dist/lodash.min.js' %}"></script>
   <script src="{% static 'd3/d3.min.js' %}"></script>
   <script src="{% static 'pathseg/pathseg.js' %}"></script>
   <script src="{% static 'c3/c3.min.js' %}"></script>
@@ -35,7 +36,7 @@
     {% include 'ventas/_filtro.html' with name="tipoComprobante" title="Tipo de Comprobante" placeholder="Tipo" %}
   </div>
 
-  <div class="row"> q
+  <div class="row">
     <div class="col-sm-6">
       <div class="form-group">
         <label for="fecha" class="col-md-4 control-label">Fecha:</label>
@@ -98,19 +99,21 @@
     var dataTable;
 
     var currentClient;
+    var currentClientData;
     var currentYear;
+    var currentYearData;
     var $donutTitle;
 
     var numFormat = u.numFormatter;
 
     $(document).ready(function () {
       u.hideNav();
-      {#      initDates();#}
-      {#      initSelects();#}
-      initChart();
-      $results = $('#results');
-      $resultado = $('#resultado');
-      $resultado.hide();
+      initDates();
+      initSelects();
+      {#      initChart();#}
+      {#      $results = $('#results');#}
+      {#      $resultado = $('#resultado');#}
+      {#      $resultado.hide();#}
     });
 
     function initDates() {
@@ -303,60 +306,15 @@
 
     function getInforme() {
       $('.collapse').collapse('hide');
-
-      if (!dataTable) {
-        $resultado.show();
-        u.defaultDT();
-        dataTable = $results.DataTable({
-          ajax: function (d, cb, s) {
-            $.ajax({
-              method: 'GET',
-              url: api + 'recaudaciones/' + query.empresa + '/consolidada',
-              data: query
-            }).done(function (res) {
-              cb(res);
-            }).fail(function (err) {
-              console.log(err);
-              dataTable.clear().draw();
-              dataTable.processing(false);
-            });
-          },
-          columns: [
-            {data: 'cod_tp_comp', name: 'tipo'},
-            {data: 'pago_numero'},
-            {data: 'fecha', render: u.dateFormat},
-            {
-              data: 'razon_social', render: function (d, t, r, m) {
-              return r['cod_cliente'] + ' - ' + d;
-            }
-            },
-            {data: 'importe'}
-          ],
-          footerCallback: footerSum,
-          drawCallback: function (settings) {
-            var api = this.api();
-            var rows = api.rows({page: 'current'}).nodes();
-            var last = null;
-            var colCount = api.columns().header().length;
-
-            api.column('tipo:name', {page: 'current'}).data().each(function (group, i) {
-              if (last !== group) {
-                $(rows).eq(i).before(
-                        '<tr class="group text-center"><td colspan="' + colCount + '"><h4>' + group + '</h4></td></tr>'
-                );
-                last = group;
-              }
-            });
-          },
-          processing: true
-        });
-      } else {
-        dataTable.clear().draw();
-        dataTable.processing(true);
-        dataTable.ajax.reload(function () {
-          dataTable.processing(false);
-        }, true);
-      }
+      $.ajax({
+        method: 'GET',
+        url: api + 'estadisticas/ventas/clientes',
+        data: query
+      }).done(function (res) {
+        initChart(res.data);
+      }).fail(function (err) {
+        console.log(err);
+      });
     }
     function footerSum(row, data, start, end, display) {
       var api = this.api(), data;
@@ -370,7 +328,8 @@
       );
     }
 
-    function initChart() {
+    function initChart(data) {
+      globData = data;
       var yearData = [
         [
           ['2012', 30],
@@ -425,7 +384,47 @@
           ['2009', 1210, 3020, 3010, 4010]
         ]
       ];
-      var names = ['Audi', 'Volkswagen', 'Mercedes Benz', 'Porsche', 'Ferrari'];
+
+      var porCliente = {};
+
+      _.each(data, function (d) {
+        if (!porCliente.hasOwnProperty(d.nombre)) {
+          porCliente[d.nombre] = {
+            nombre: d.nombre,
+            datos: {}
+          };
+        }
+        var cliente = porCliente[d.nombre];
+        if (!cliente.datos.hasOwnProperty(d.anho)) {
+          cliente.datos[d.anho] = {
+            total: 0,
+            datos: {}
+          };
+        }
+        var datosYear = cliente.datos[d.anho].datos;
+        if (!datosYear.hasOwnProperty(d.mes)) {
+          datosYear[d.mes] = {'NC': 0, 'VTA': 0, 'TOTAL': 0};
+        }
+        var datosMonth = datosYear[d.mes];
+        datosMonth[d.tipo] = parseFloat(d.total);
+        if (d.tipo === 'VTA') {
+          datosMonth['TOTAL'] = datosMonth['VTA'] - datosMonth['NC'];
+        }
+      });
+
+      var clientes = _.values(porCliente);
+      globCli = clientes;
+      var names = _(globCli).values().map('nombre').value();
+
+      _.forIn(porCliente, function (cliente) {
+        _.forIn(cliente.datos, function (year) {
+          year.total = _(year.datos).values().sumBy('TOTAL');
+        });
+        cliente.total = _(cliente.datos).values().sumBy('total')
+      });
+
+
+      console.log(porCliente);
 
       var lineChart;
       var colors = randomColor({
@@ -459,17 +458,17 @@
           columns: [],
           type: 'donut',
           onclick: function (d, el) {
-            currentYear = d.index;
+            currentYear = d.id;
+            currentYearData = currentClientData.datos[currentYear];
             console.log("onclick", d);
             console.log(currentClient, currentYear);
-            console.log(monthData[currentClient][currentYear]);
             lineChart.load({
               unload: true,
               columns: [
-                ['x'].concat(['01', '02', '03', '04'].map(function (e) {
-                  return yearData[currentClient][currentYear][0] + '-' + e + '-01';
+                ['x'].concat(_(currentYearData.datos).keys().value().map(function (x) {
+                  return [currentYear, x, '01'].join('-');
                 })),
-                monthData[currentClient][currentYear]
+                [currentYear].concat(_(currentYearData.datos).values().map('TOTAL').value())
               ]
             });
           }
@@ -485,7 +484,7 @@
         bindto: '#bar',
         data: {
           columns: [
-            ['Ventas', 30, 200, 100, 40, 50]
+            ['Ventas'].concat(_.map(clientes, 'total'))
           ],
           type: 'bar',
           color: function (color, d) {
@@ -493,11 +492,14 @@
           },
           onclick: function (d, elem) {
             currentClient = d.index;
+            currentClientData = clientes[currentClient];
             $donutTitle.html(names[d.index]);
             lineChart.unload();
             pie.load({
               unload: true,
-              columns: yearData[d.index]
+              columns: _(currentClientData.datos).entries().map(function (x) {
+                return [x[0], x[1].total];
+              }).value()
             });
           }
         },
@@ -508,39 +510,6 @@
           }
         }
       });
-
-      /*
-       var test = c3.generate({
-       bindto: '#test',
-       data: {
-       x: 'x',
-       columns: [
-       ['x', 'Clientes'],
-       ['Audi', 30],
-       ['Volkswagen', 200],
-       ['Mercedes Benz', 100],
-       ['Porsche', 40],
-       ['Ferrari', 50]
-       ],
-       onclick: function (d, elem) {
-       console.log(d);
-       console.log(elem);
-       pie.load({
-       columns: yearData[d.index]
-       });
-       },
-       type: 'bar'
-       },
-       axis: {
-       x: {
-       type: 'category',
-       categories: ['Ventas']
-       }
-       },
-       tooltip: {
-       grouped: false
-       }
-       });*/
 
       lineChart = c3.generate({
         bindto: '#chart',

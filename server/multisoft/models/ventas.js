@@ -205,9 +205,9 @@ Ventas.estadisticas.clientes = function (params, query) {
         "AND ( dba.vtacab.cod_tp_comp = dba.tpocbte.cod_tp_comp ) " +
         "AND ( dba.tpocbte.tp_def <> 'NC' ) " +
         "AND ( dba.vtacab.anulado = 'N' ) " +
-        "AND ( dba.vtacab.cod_empresa = '03' ) " +
-        "AND Date(dba.vtacab.fha_cbte) >= Date ('2012-01-01') " +
-        "AND Date(dba.vtacab.fha_cbte) <= Date ('2013-01-01') " +
+        "AND ( dba.vtacab.cod_empresa = '10' ) " +
+        "AND Date(dba.vtacab.fha_cbte) >= Date ('2011-01-01') " +
+        "AND Date(dba.vtacab.fha_cbte) <= Date ('2015-01-01') " +
         "GROUP BY moneda, vend, nombre, anho, mes \n" +
         "UNION " +
         "SELECT moneda = Trim (dba.vtacab.codmoneda), " +
@@ -223,9 +223,9 @@ Ventas.estadisticas.clientes = function (params, query) {
         "AND ( dba.vtacab.cod_tp_comp = dba.tpocbte.cod_tp_comp ) " +
         "AND ( dba.tpocbte.tp_def = 'NC' ) " +
         "AND ( dba.vtacab.anulado = 'N' ) " +
-        "AND ( dba.vtacab.cod_empresa = '03' ) " +
-        "AND Date(dba.vtacab.fha_cbte) >= Date ('2012-01-01') " +
-        "AND Date(dba.vtacab.fha_cbte) <= Date ('2013-01-01') \n" +
+        "AND ( dba.vtacab.cod_empresa = '10' ) " +
+        "AND Date(dba.vtacab.fha_cbte) >= Date ('2011-01-01') " +
+        "AND Date(dba.vtacab.fha_cbte) <= Date ('2015-01-01') \n" +
         "GROUP BY moneda, vend, nombre, anho, mes \n" +
         "ORDER BY 1, 3, 4, 5, 2";
 
