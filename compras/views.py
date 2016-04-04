@@ -28,3 +28,6 @@ def fondo_fijo(request):
 def gastos_rendir(request):
     return render_to_response('compras/gastos_rendir.html', {'user':request.user.id}, context_instance=RequestContext(request))
 
+#@permission_required('custom_permissions.informe_ordenpago')
+def compras_estadisticos(request):
+    return render_to_response('compras/estadisticos.html', {'user':request.user.id}, context_instance=RequestContext(request))

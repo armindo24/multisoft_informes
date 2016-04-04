@@ -28,6 +28,9 @@
                 <li>
                     <a href="{% url 'compras:gastos_rendir' %}"> Gastos por Rendir </a>
                 </li>
+                <li>
+                    <a href="{% url 'compras:compras_estadisticos' %}"> Estadísticas </a>
+                </li>
             {% endif %}
 			{% if  request.session.modulo_seleccionado == "Finanzas"  %}
 				<li>

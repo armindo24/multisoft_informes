@@ -1,54 +1,36 @@
 {% extends 'finanzas/base.html' %}
+{% load staticfiles %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <link href="{% static 'c3/c3.min.css' %}" rel="stylesheet" type="text/css">
+  <script src="{% static 'd3/d3.min.js' %}"></script>
+  <script src="{% static 'pathseg/pathseg.js' %}"></script>
+  <script src="{% static 'c3/c3.min.js' %}"></script>
+  <script src="{% static 'randomcolor/randomColor.js' %}"></script>
+{% endblock %}
 
 {% block header %}
-  Fondo Fijo:
+  Estadísticas de Compras:
 {% endblock %}
 
 {% block filters %}
-        <div class="row">
-            {% include 'ventas/_filtro.html' with name="empresa" %}
-            <div class="col-sm-6">
-              <div class="form-group">
-                <label for="periodo" class="col-md-4 control-label">Periodo:</label>
-        
-                <div class="col-md-6">
-                  <div id="periodo" class="input-date"><input type="text" onkeydown="return false" class="form-control" name="periodo"></div>
-                </div>
-              </div>
-            </div>
-        </div>
-        <div class="row">
-          {% include 'ventas/_filtro.html' with name="proveedor" %}
-          <div class="col-sm-6">
-            <div class="form-group">
-              <label for="compras" class="col-md-4 control-label">Fecha:</label>
-              <div class="col-md-6">
-                <div id="compras" class="input-daterange input-group input-date">
-                  <input type="text" class="input-sm form-control" name="start"/>
-                  <span class="input-group-addon">hasta</span>
-                  <input type="text" class="input-sm form-control" name="end"/>
-                </div>
-              </div>
+    {% include 'ventas/_filtro.html' with name="empresa" %}
+    {% include 'ventas/_filtro.html' with name="graficode" title="Gráfico por" %}
+    {% include 'ventas/_filtro.html' with name="proveedor" %}
+    {% include 'ventas/_filtro.html' with name="articulo" title="Artículos" %}
+      <div class="col-sm-6">
+        <div class="form-group">
+          <label for="compras" class="col-md-4 control-label">Fecha:</label>
+          <div class="col-md-6">
+            <div id="compras" class="input-daterange input-group input-date">
+              <input type="text" class="input-sm form-control" name="start"/>
+              <span class="input-group-addon">hasta</span>
+              <input type="text" class="input-sm form-control" name="end"/>
             </div>
           </div>
         </div>
-        <div class="row">
-            <div class="col-sm-6">
-              <div class="form-group">
-                <label for="numero" class="col-md-4 control-label">N° Rendición:</label>
-        
-                <div class="col-md-6">
-                  <div><input type="text" class="form-control" id="numero" name="nivel" value=""></div>
-                </div>
-              </div>
-            </div>
-            {% include 'ventas/_filtro.html' with name="asentada" %}
-        </div>
-       
-{% endblock %}
-
-{% block inner_content %}
-    
+      </div>
 {% endblock %}
 
 {% block extra_foot %}
@@ -68,9 +50,9 @@
     var initialize = init;
     var select_empresa, $select_empresa;
     var select_proveedor, $select_proveedor;
-    var select_asentada, $select_asentada;
+    var select_graficode, $select_graficode;
+    var select_articulo, $select_articulo;
     var xhr;
-    var stfoot_tot = ""
     
     function addCommas(nStr) {
         nStr += '';
@@ -92,7 +74,18 @@
       select_empresa = $select_empresa[0].selectize;
       select_proveedor = $select_proveedor[0].selectize;
       select_proveedor.disable();
-      select_asentada = $select_asentada[0].selectize;
+      select_graficode = $select_graficode[0].selectize;
+      select_articulo = $select_articulo[0].selectize;
+      select_articulo.disable();
+      
+      $('#select-proveedor').parent().parent().parent().hide();
+      $('#select-articulo').parent().parent().parent().hide();
+      
+      show_select();
+      
+      $("#select-graficode").on("change", function(event) { 
+           show_select();
+      } );
     });
 
     function init() {
@@ -132,18 +125,45 @@
               callback();
             });
           });
+          select_articulo.disable();
+          select_articulo.clearOptions();
+          select_articulo.load(function (callback) {
+            $.ajax({
+              url: api + 'empresas/' + query.empresa + '/articulos',
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_articulo.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
         }
       });
       
-      $select_asentada = $('#select-asentada').selectize({
+      $select_graficode = $('#select-graficode').selectize({
         allowEmptyOption: true,
         options: [
-          {value: ' ', text: 'Todas'},
-          {value: 'S', text: 'Si'},
-          {value: 'N', text: 'No'},
+          {value: 'PR', text: 'Proveedor'},
+          {value: 'AR', text: 'Artículo'},
         ],
         onChange: function (value) {
           query.asentada = value;
+          debug();
+        }
+      });
+      
+      var selectize = $select_graficode[0].selectize;
+      selectize.setValue('PR');
+      
+      $select_articulo = $('#select-articulo').selectize({
+        valueField: 'cod_articulo',
+        labelField: 'des_art',
+        searchField: 'des_art',
+        maxItems: 10,
+        onChange: function (value) {
+          query.articulo = value;
           debug();
         }
       });
@@ -152,7 +172,7 @@
         valueField: 'CodProv',
         labelField: 'RazonSocial',
         searchField: 'RazonSocial',
-        maxItems: null,
+        maxItems: 10,
         onChange: function (value) {
           query.proveedor = value;
           debug();
@@ -194,14 +214,17 @@
       $preview.text(JSON.stringify(query));
     }
     
-    function lookup( name, arr ) {
-        for(var i = 0, len = arr.length; i < len; i++) {
-            if( arr[ i ].key === name )
-                return true;
+    function show_select(){
+        var graficode = $('#select-graficode').val();
+        if (graficode == "PR"){
+            $('#select-proveedor').parent().parent().parent().show();
+            $('#select-articulo').parent().parent().parent().hide();
+        } else {
+            $('#select-proveedor').parent().parent().parent().hide();
+            $('#select-articulo').parent().parent().parent().show();
         }
-        return false;
     }
-    
+        
     //META.fn: sortJSON
     function sortJSON(data, key) {
         return data.sort(function (a, b) {
@@ -224,7 +247,7 @@
     }).done(
             function (datos) {
                 if (datos.data.length > 0){
-                    var cod_responsable = 0;
+                    /*var cod_responsable = 0;
                     var aresponsable = [];
                     var aresponsable_rendicion = [];
                     var aresponsable_rendicion_cbte = [];
@@ -511,7 +534,7 @@
                             scrollY: 300,
                             scrollX: '100%',
                         });
-                    }
+                    }*/
                 }
             });
     }
