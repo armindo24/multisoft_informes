@@ -158,4 +158,68 @@ Compras.articulo = function (filters, cb){
     }) 
 };
 
+Compras.ranking_aticulo = function (filters, cb) {
+    //conn.exec("SET ROWCOUNT 100"); //TODO: solucionar resultados muy grandes
+
+    var select = ""
+    
+    if (filters.moneda == "GS"){
+        select = "SELECT top 10 "+
+                    "DBA.FACTDET.Cod_Articulo,"+
+                    "DBA.ARTICULO.Des_Art,"+ 
+                    "cast(SUM(DBA.FACTDET.Cantidad * DBA.FACTDET.Pr_Unit) as decimal (20,0)) AS TotalItem "+ 
+                 "FROM "+ 
+                    "DBA.FACTCAB,"+ 
+                    "DBA.FACTDET,"+ 
+                    "DBA.ARTICULO "+ 
+                 "WHERE "+ 
+                    "DBA.FACTCAB.Cod_empresa = DBA.FACTDET.Cod_empresa "+ 
+                    "AND DBA.FACTCAB.CodProv = DBA.FACTDET.CodProv "+ 
+                    "AND DBA.FACTCAB.Cod_Tp_Comp = DBA.FACTDET.Cod_Tp_Comp "+ 
+                    "AND DBA.FACTCAB.NroFact = DBA.FACTDET.NroFact "+ 
+                    "AND DBA.FACTDET.Cod_empresa = DBA.ARTICULO.Cod_empresa "+ 
+                    "AND DBA.FACTDET.Cod_Articulo = DBA.ARTICULO.Cod_Articulo "+ 
+                    "AND ( DBA.FactCab.cod_empresa = '"+filters.empresa+"') "+ 
+                    "AND Date (FactCab.FechaFact) >= Date ('"+filters.compras_start+"') "+ 
+                    "AND Date (FactCab.FechaFact) <= Date('"+filters.compras_end+"') "+ 
+                    "AND DBA.FACTCAB.CodMoneda = 'GS' ";
+    } else {
+        select = "SELECT top 10 "+
+                    "DBA.FACTDET.Cod_Articulo,"+
+                    "DBA.ARTICULO.Des_Art,"+ 
+                    "cast(SUM(DBA.FACTDET.Cantidad * DBA.FACTDET.Pr_Unit) as decimal (20,2)) AS TotalItem "+ 
+                 "FROM "+ 
+                    "DBA.FACTCAB,"+ 
+                    "DBA.FACTDET,"+ 
+                    "DBA.ARTICULO "+ 
+                 "WHERE "+ 
+                    "DBA.FACTCAB.Cod_empresa = DBA.FACTDET.Cod_empresa "+ 
+                    "AND DBA.FACTCAB.CodProv = DBA.FACTDET.CodProv "+ 
+                    "AND DBA.FACTCAB.Cod_Tp_Comp = DBA.FACTDET.Cod_Tp_Comp "+ 
+                    "AND DBA.FACTCAB.NroFact = DBA.FACTDET.NroFact "+ 
+                    "AND DBA.FACTDET.Cod_empresa = DBA.ARTICULO.Cod_empresa "+ 
+                    "AND DBA.FACTDET.Cod_Articulo = DBA.ARTICULO.Cod_Articulo "+ 
+                    "AND ( DBA.FactCab.cod_empresa = '"+filters.empresa+"') "+ 
+                    "AND Date (FactCab.FechaFact) >= Date ('"+filters.compras_start+"') "+ 
+                    "AND Date (FactCab.FechaFact) <= Date('"+filters.compras_end+"') "+ 
+                    "AND DBA.FACTCAB.CodMoneda = 'US' ";
+    }
+    
+    if (filters.articulo) {
+        select += " AND (dba.FACTDET.Cod_Articulo IN " + q.in(filters.articulo) + ") ";
+    } 
+    
+    select+= "GROUP BY "+ 
+                  "DBA.FACTDET.Cod_Articulo,"+ 
+                  "DBA.ARTICULO.Des_Art "+ 
+              "ORDER BY "+ 
+                  "TotalItem DESC";
+        
+
+    conn.exec(select, function (err, r) {
+        if (err) throw err;
+        cb(r);
+    });
+};
+
 module.exports = Compras;

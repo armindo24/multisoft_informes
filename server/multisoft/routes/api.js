@@ -366,4 +366,11 @@ router.get('/gastos_rendir/list', function (req, res, next) {
     });
 });
 
+router.get('/compras_articulo/ranking', function (req, res, next) {
+    Compras.ranking_aticulo(req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+
 module.exports = router;
