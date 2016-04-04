@@ -1,5 +1,7 @@
 var express = require('express');
 var router = express.Router();
+
+var Calificacion = require('../models/calificacion');
 var Empresa = require('../models/empresa');
 var Comprobante = require('../models/comprobante');
 var Proveedor = require('../models/proveedor');
@@ -27,7 +29,11 @@ var Compras = require('../models/compras');
 var Presupuesto = require('../models/presupuesto');
 var Cuentas_pagar = require('../models/cuentas_pagar');
 var Fondo_Fijo = require('../models/fondo_fijo');
-var Gastos_Rendir = require('../models/gastos');
+//var Gastos_Rendir = require('../models/gastos');
+var Moneda = require('../models/moneda');
+var Cobrador = require('../models/cobrador');
+var Recaudacion = require('../models/recaudacion');
+var Localidad = require('../models/localidad');
 
 var conn = require('../db');
 
@@ -42,9 +48,12 @@ router.use(function (req, res, next) {
 
 //empresas select option
 router.get('/empresa/select', function (req, res, next) {
-    Empresa.all(req.query, function (result) {
-        res.json({data: result});
-    });
+    Empresa.all(req.query)
+        .then(function (result) {
+            res.json({data: result});
+        }).catch(function (error) {
+            next(error);
+        });
 });
 
 //empresas select option notin
@@ -158,16 +167,20 @@ router.get('/mayorcuentaaux/det/:empresa/:periodo/:fechad/:fechah/:tipoasiento/:
         res.json(result);
     });
 });
- 
+
 router.post('/clientes/post/lista/', function (req, res, next) {
     console.log(req.body);
     res.json({data: 'funciona'});
 });
 
 router.get('/empresas/:empresa/clientes', function (req, res, next) {
-    Empresa.clientes(req.params.empresa, req.query, function (result) {
-        res.json({data: result});
-    });
+    Empresa.clientes(req.params.empresa, req.query)
+        .then(function (result) {
+            res.json({data: result});
+        })
+        .catch(function (error) {
+            next(error);
+        });
 });
 
 router.get('/empresas/:empresa/bancos', function (req, res, next) {
@@ -348,6 +361,54 @@ router.get('/empresas/:empresa/comprobantes/presupuesto', function (req, res, ne
     });
 });
 
+router.get('/calificaciones', function (req, res, next) {
+    Calificacion.all(function (result) {
+        postProcess(res, result);
+    });
+});
+
+router.get('/monedas', function (req, res, next) {
+    Moneda.list(function (result) {
+        postProcess(res, result);
+    });
+});
+
+router.get('/ventas/terminos', function (req, res, next) {
+    Ventas.terminos(function (result) {
+        postProcess(res, result);
+    });
+});
+
+router.get('/cobradores', function (req, res, next) {
+    Cobrador.list(function (result) {
+        postProcess(res, result);
+    });
+});
+
+router.get('/empresas/:empresa/vendedores', function (req, res, next) {
+    Empresa.vendedores(req.params, req.query, function (result) {
+        postProcess(res, result);
+    });
+});
+
+router.get('/ventas/zonas', function (req, res, next) {
+    Ventas.zonas(function (result) {
+        postProcess(res, result);
+    });
+});
+
+router.get('/empresas/:empresa/comprobantes/cobrar', function (req, res, next) {
+    Comprobante.cobrar(req.params, req.query, function (result) {
+        postProcess(res, result);
+    });
+});
+
+router.get('/ventas/:empresa/cuentas/cobrar', function (req, res, next) {
+    Ventas.cuentas.cobrar(req.params, req.query, function (result) {
+        postProcess(res, result);
+    });
+});
+
 router.get('/cuentas_pagar/list', function (req, res, next) {
     Cuentas_pagar.all(req.query, function (result) {
         res.json({data: result});
@@ -372,5 +433,42 @@ router.get('/compras_articulo/ranking', function (req, res, next) {
     });
 });
 
+
+router.get('/usuarios/cajeros', function (req, res, next) {
+    Usuarios.cajeros(req.params)
+        .then(function (result) {
+            postProcess(res, result);
+        })
+        .catch(function (error) {
+            next(error);
+        });
+});
+
+router.get('/recaudaciones/:empresa/planillas', function (req, res, next) {
+    Recaudacion.planillas(req.params)
+        .then(function (result) {
+            postProcess(res, result);
+        })
+        .catch(function (error) {
+            next(error);
+        });
+});
+
+router.get('/recaudaciones/:empresa/consolidada', function (req, res, next) {
+    Recaudacion.resumido(req.params, req.query)
+        .then(function (result) {
+            postProcess(res, result);
+        }).catch(function (error) {
+            next(error);
+        });
+});
+
+router.get('/localidades', function (req, res, next) {
+    Localidad.list().then(function (result) {
+        postProcess(res, result);
+    }).catch(function (error) {
+        next(error);
+    });
+});
 
 module.exports = router;

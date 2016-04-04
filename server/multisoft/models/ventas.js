@@ -77,4 +77,159 @@ Ventas.detalle = function (params, filter, cb) {
     });
 };
 
+Ventas.terminos = function (cb) {
+    var sql = "SELECT cod_con_vta, des_con_vta, cuota, dias_credito, descuento, " +
+        "ctrl_limite, efectivo, cheque, tarjeta, listas, " +
+        "SubStr( listas, 1, 1) as L_1, " +
+        "SubStr( listas, 2, 1) as L_2, " +
+        "SubStr( listas, 3, 1) as L_3, " +
+        "SubStr(listas, 4, 1) as L_4, " +
+        "SubStr( listas, 5, 1) as L_5, " +
+        "SubStr( listas, 6, 1) as L_6, " +
+        "porcinteres, porcinteresentrega, 'N' as incluir " +
+        "FROM dba.terminos " +
+        "ORDER BY cod_con_vta ASC";
+    conn.exec(sql, function (err, result) {
+        if (err) throw err;
+        cb(result);
+    });
+};
+
+Ventas.zonas = function (cb) {
+    var sql = "SELECT cod_zona, des_zona FROM dba.ZONAVTA";
+    conn.exec(sql, function (err, result) {
+        if (err) throw err;
+        cb(result);
+    });
+};
+Ventas.cuentas = {};
+
+Ventas.cuentas.cobrar = function (params, query, cb) {
+    var sql = "SELECT dba.cuotas.cod_empresa, dba.cuotas.cod_sucursal, " +
+        "dba.cuotas.mvto_numero, dba.cuotas.cuota_numero, dba.cuotas.cod_cliente, " +
+        "dba.cuotas.cod_tp_comp, dba.cuotas.comp_numero, dba.cuotas.fecha_ven, " +
+        "dba.cuotas.importe, dba.cuotas.saldo, dba.clientes.razon_social, " +
+        "dba.clientes.direccion, dba.clientes.email, dba.clientes.telefono1, " +
+        "dba.clientes.telefono2, dba.clientes.fax, dba.clientes.ruc, " +
+        "dba.clientes.contacto, dba.cuotas.fact_cambio, dba.cuotas.fecha_emi, " +
+        "1 as tipo\n" +
+        "FROM dba.cuotas, dba.clientes\n" +
+        "WHERE (dba.clientes.cod_empresa = dba.cuotas.cod_empresa) " +
+        "and (dba.clientes.cod_cliente = dba.cuotas.cod_cliente) " +
+        "and (dba.cuotas.saldo > 0) " +
+        "and cuotas.cod_empresa = ? ";
+
+    var sql_params = [params.empresa];
+
+    if (query.start && query.end) {
+        if (query.vencimiento === 'true') {
+            sql += "and DATE(cuotas.fecha_ven) >= Date (?) " +
+                "AND DATE(cuotas.fecha_ven) <= Date (?) ";
+        } else {
+            sql += "and DATE(cuotas.fecha_emi) >= Date (?) " +
+                "AND DATE(cuotas.fecha_emi) <= Date (?) ";
+        }
+        sql_params.push(query.start);
+        sql_params.push(query.end);
+    }
+
+    if (query.cliente) {
+        sql += "AND ((DBA.clientes.cod_cliente = ?)) ";
+        sql_params.push(query.cliente);
+    }
+
+    if (query.calificacion) {
+        sql += "AND ((dba.clientes.cod_calificacion = ?)) ";
+        sql_params.push(query.calificacion);
+    }
+
+    if (query.movimiento) {
+        sql += "AND cuotas.cod_tp_comp = ? ";
+        sql_params.push(query.movimiento);
+    }
+
+    if (query.condicion) {
+        sql += "AND ( (dba.cuotas.cod_con_vta = ?) ) ";
+        sql_params.push(query.condicion);
+    }
+
+    if (query.cobrador) {
+        sql += "AND ( (DBA.Clientes.cod_cobrador = ?) ) ";
+        sql_params.push(query.cobrador);
+    }
+
+    if (query.vendedor) {
+        sql += "AND ( (DBA.Cuotas.cod_vendedor = ?) ) ";
+        sql_params.push(query.vendedor);
+    }
+
+    if (query.sucursal) {
+        sql += "AND cuotas.cod_sucursal = ? ";
+        sql_params.push(query.sucursal);
+    }
+
+    if (query.zona) {
+        sql += "AND ((dba.clientes.cod_zona = ?) ) ";
+        sql_params.push(query.zona);
+    }
+
+    if (query.tipoCliente) {
+        sql += "AND ( (dba.clientes.cod_tp_cliente = ?)) ";
+        sql_params.push(query.tipoCliente);
+    }
+
+    sql += "\nORDER BY dba.cuotas.cod_empresa ASC, dba.cuotas.cod_cliente ASC, " +
+        "dba.cuotas.mvto_numero ASC, dba.cuotas.cuota_numero ASC, " +
+        "dba.cuotas.fecha_ven ASC ";
+    console.log(sql);
+    console.log(sql_params);
+    conn.exec(sql, sql_params, function (err, result) {
+        if (err) throw err;
+        cb(result);
+    });
+};
+
+Ventas.estadisticas = {};
+Ventas.estadisticas.clientes = function (params, query) {
+    var sql = "SELECT " +
+        "moneda = Trim (dba.vtacab.codmoneda), " +
+        "tipo = 'venta', vend = Trim(dba.vtacab.cod_cliente), " +
+        "nombre = Trim (dba.clientes.razon_social), " +
+        "anho = year (dba.vtacab.fha_cbte), " +
+        "mes = month (dba.vtacab.fha_cbte), " +
+        "total = sum(dba.vtacab.total_venta) \n" +
+        "FROM dba.clientes, dba.vtacab, dba.tpocbte \n" +
+        "WHERE ( dba.vtacab.cod_cliente = dba.clientes.cod_cliente ) " +
+        "AND ( dba.vtacab.cod_empresa = dba.clientes.cod_empresa ) " +
+        "AND ( dba.vtacab.cod_empresa = dba.tpocbte.cod_empresa ) " +
+        "AND ( dba.vtacab.cod_tp_comp = dba.tpocbte.cod_tp_comp ) " +
+        "AND ( dba.tpocbte.tp_def <> 'NC' ) " +
+        "AND ( dba.vtacab.anulado = 'N' ) " +
+        "AND ( dba.vtacab.cod_empresa = '10' ) " +
+        "AND Date(dba.vtacab.fha_cbte) >= Date ('2011-01-01') " +
+        "AND Date(dba.vtacab.fha_cbte) <= Date ('2015-01-01') " +
+        "GROUP BY moneda, vend, nombre, anho, mes \n" +
+        "UNION " +
+        "SELECT moneda = Trim (dba.vtacab.codmoneda), " +
+        "tipo = 'credito', vend = Trim (dba.vtacab.cod_cliente), " +
+        "nombre = Trim(dba.clientes.razon_social), " +
+        "anho = year(dba.vtacab.fha_cbte), " +
+        "mes = month(dba.vtacab.fha_cbte), " +
+        "total = sum (dba.vtacab.total_venta) \n" +
+        "FROM dba.clientes, dba.vtacab, dba.tpocbte \n" +
+        "WHERE ( dba.vtacab.cod_cliente = dba.clientes.cod_cliente ) \n" +
+        "AND ( dba.vtacab.cod_empresa = dba.clientes.cod_empresa ) " +
+        "AND ( dba.vtacab.cod_empresa = dba.tpocbte.cod_empresa ) " +
+        "AND ( dba.vtacab.cod_tp_comp = dba.tpocbte.cod_tp_comp ) " +
+        "AND ( dba.tpocbte.tp_def = 'NC' ) " +
+        "AND ( dba.vtacab.anulado = 'N' ) " +
+        "AND ( dba.vtacab.cod_empresa = '10' ) " +
+        "AND Date(dba.vtacab.fha_cbte) >= Date ('2011-01-01') " +
+        "AND Date(dba.vtacab.fha_cbte) <= Date ('2015-01-01') \n" +
+        "GROUP BY moneda, vend, nombre, anho, mes \n" +
+        "ORDER BY 1, 3, 4, 5, 2";
+
+    return conn.execAsync(sql);
+};
+
 module.exports = Ventas;

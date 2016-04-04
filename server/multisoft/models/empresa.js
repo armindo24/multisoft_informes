@@ -7,10 +7,7 @@ Empresa.all = function (query, cb) {
     if (query.empresa) {
         sql += " WHERE Des_Empresa LIKE '" + query.empresa + "%'";
     }
-    conn.exec(sql, function (err, row) {
-        if (err) throw err;
-        cb(row);
-    });
+    return conn.execAsync(sql);
 };
 
 Empresa.notin = function (body, cb) {
@@ -35,7 +32,7 @@ Empresa.clientes = function (empresa, query, cb) {
         sql_params.push(query.tipo);
     }
     if (query.sucursal) {
-        sql += " AND Cod_Sucursal = ?";
+        sql += " AND (Cod_Sucursal = ? OR Cod_Sucursal is null)";
         sql_params.push(query.sucursal);
     }
 
@@ -45,10 +42,7 @@ Empresa.clientes = function (empresa, query, cb) {
     }
     console.log(sql);
     console.log(sql_params);
-    conn.exec(sql, sql_params, function (err, row) {
-        if (err) throw err;
-        cb(row);
-    });
+    return conn.execAsync(sql, sql_params);
 };
 
 Empresa.bancos = function (params, query, cb) {
@@ -67,6 +61,21 @@ Empresa.cuentas = function (params, query, cb) {
     conn.exec(sql, sql_params, function (err, row) {
         if (err) throw  err;
         cb(row);
+    });
+};
+
+Empresa.vendedores = function (params, filter, cb) {
+    var sql = "SELECT cod_vendedor, des_vendedor " +
+        "FROM dba.VENDEDOR " +
+        "WHERE estado = 'A' " +
+        "and cod_empresa = ? " +
+        "and (cod_sucursal = ? or cod_sucursal is null) ";
+
+    var sql_params = [params.empresa, filter.sucursal]
+
+    conn.exec(sql, sql_params, function (err, result) {
+        if (err) throw err;
+        cb(result);
     });
 };
 

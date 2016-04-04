@@ -13,6 +13,14 @@ var u = {
     }
 };
 
+u.getApiUrl = function () {
+    var url = window.location;
+    return 'http://' + url.hostname + ':' + u.api.port + u.api.path;
+};
+
+var api = u.getApiUrl();
+var numFormat = u.numFormatter;
+
 u.dateFormat = function (date) {
     if (!date) return '';
     return date.split(/[\s]+/)[0];
@@ -38,11 +46,6 @@ $.fn.dataTable.Api.register('sum()', function () {
 u.hideNav = function () {
     $('#page-wrapper').css('margin-left', '0px');
     $('#my-left-menu').toggle(0);
-};
-
-u.getApiUrl = function () {
-    var url = window.location;
-    return 'http://' + url.hostname + ':' + u.api.port + u.api.path;
 };
 
 u.eByName = function (name) {
@@ -122,6 +125,11 @@ var spanish = {
     isRTL: false,
     showMonthAfterYear: false,
     yearSuffix: ''
+};
+
+u.spanishMonths = {
+    short: spanish.monthNamesShort,
+    long: spanish.monthNames
 };
 
 u.translate = function () {
@@ -228,6 +236,13 @@ u.resetSelect = function ($select) {
     if (!$select) return;
     $select.disable();
     $select.clearOptions();
+};
+
+// para selects que se cargan una sola vez
+u.softResetSelect = function ($select) {
+    if (!$select) return;
+    $select.disable();
+    $select.clear();
 };
 
 u.convertir_rever = function (str) {
