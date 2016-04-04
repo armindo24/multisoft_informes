@@ -18,6 +18,12 @@ permissions_list = (("entrar_finanzas", "Finanzas"),
 #                    ("informe_centrocostos", "Centro de Costos"),
 #                    ("informe_bienactivo", "Bien Activo"),
 #                    ("informe_flujofondo", "Flujo de Fondo"),
+#                    ("informe_ordencompra", "Orden de Compra"),
+#                    ("informe_compras", "Compras"),
+#                    ("informe_saldosproveedores", "Saldo a Proveedores"),
+#                    ("informe_fondofijo", "Fondo Fijo"),
+#                    ("informe_gastosrendir", "Rendicion de Gastos"),
+#                    ("informe_comprasestadisticos", "Estadisticos de Compras"),
                    )
 
 class CustomPermissions(models.Model):
