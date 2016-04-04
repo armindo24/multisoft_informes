@@ -21,21 +21,7 @@
   </div>
 
   <div class="row">
-    {% include 'ventas/_filtro.html' with name="tipoCliente" title="Tipo de Cliente" placeholder="Tipo" %}
-    {% include 'ventas/_filtro.html' with name="cliente" %}
-  </div>
-
-  <div class="row">
-    {% include 'ventas/_filtro.html' with name="zona" title="Zona de Venta" placeholder="Zona" %}
-    {% include 'ventas/_filtro.html' with name="localidad" %}
-  </div>
-
-  <div class="row">
-    {% include 'ventas/_filtro.html' with name="vendedor" %}
-    {% include 'ventas/_filtro.html' with name="tipoComprobante" title="Tipo de Comprobante" placeholder="Tipo" %}
-  </div>
-
-  <div class="row">
+    {% include 'ventas/_filtro.html' with name="agrupacion" title="Agrupar Por" placeholder="Agrupación" %}
     <div class="col-sm-6">
       <div class="form-group">
         <label for="fecha" class="col-md-4 control-label">Fecha:</label>
@@ -49,6 +35,18 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="vendedor" col='12' %}
+  </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="articulo" col='12' %}
+  </div>
+
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="tipoCliente" title="Tipo de Cliente" placeholder="Tipo" %}
+    {% include 'ventas/_filtro.html' with name="cliente" %}
   </div>
 {% endblock %}
 
@@ -71,13 +69,12 @@
     var $results, $resultado;
 
     var $selectEmpresa, selectEmpresa;
+    var $selectAgrupacion, selectAgrupacion;
     var $selectSucursal, selectSucursal;
     var $selectTipoCliente, selectTipoCliente;
     var $selectCliente, selectCliente;
     var $selectVendedor, selectVendedor;
-    var $selectZona, selectZona;
-    var $selectLocalidad, selectLocalidad;
-    var $selectTipoComprobante, selectTipoComprobante;
+    var $selectArticulo, selectArticulo;
     var dataTable;
 
     var currentClient;
@@ -92,11 +89,18 @@
       u.hideNav();
       initDates();
       initSelects();
+      hideSelects();
       {#      initChart();#}
       {#      $results = $('#results');#}
       {#      $resultado = $('#resultado');#}
       {#      $resultado.hide();#}
     });
+
+    function hideSelects() {
+      $selectCliente.parent().parent().parent().parent().hide();
+      $selectVendedor.parent().parent().hide();
+      $selectArticulo.parent().parent().hide();
+    }
 
     function initDates() {
       var $inputDate = $(".input-date .form-control");
@@ -132,25 +136,12 @@
         onChange: function (value) {
           query.empresa = value;
           u.resetSelect(selectSucursal);
-          u.softResetSelect(selectZona);
-          u.softResetSelect(selectLocalidad);
-          u.resetSelect(selectTipoComprobante);
 
           if (!value.length) return;
 
-          selectZona.enable();
-          selectLocalidad.enable();
           selectSucursal.load(function (callback) {
             $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
               selectSucursal.enable();
-              callback(res.data);
-            }).fail(function () {
-              callback();
-            });
-          });
-          selectTipoComprobante.load(function (callback) {
-            $.get(api + 'empresas/' + query.empresa + '/comprobantes/cobrar').done(function (res) {
-              selectTipoComprobante.enable();
               callback(res.data);
             }).fail(function () {
               callback();
@@ -238,52 +229,34 @@
       selectVendedor = $selectVendedor[0].selectize;
       selectVendedor.disable();
 
-      $selectZona = $('#select-zona').selectize({
-        valueField: 'cod_zona',
-        labelField: 'des_zona',
-        searchField: 'des_cobrador'
+      $selectArticulo = $('#select-articulo').selectize({
+        valueField: 'cod_vendedor',
+        labelField: 'des_vendedor',
+        searchField: 'des_vendedor'
       });
-      selectZona = $selectZona[0].selectize;
-      selectZona.disable();
-      selectZona.load(function (cb) {
-        $.get(api + 'ventas/zonas').done(function (res) {
-          cb(res.data);
-        }).fail(function () {
-          cb();
-        });
-      });
+      selectArticulo = $selectArticulo[0].selectize;
+      selectArticulo.disable();
 
-      $selectLocalidad = $('#select-localidad').selectize({
-        valueField: 'cod_localidad',
-        labelField: 'des_localidad',
-        searchField: 'des_localidad'
-      });
-      selectLocalidad = $selectLocalidad[0].selectize;
-      selectLocalidad.disable();
-      selectLocalidad.load(function (cb) {
-        $.get(api + 'localidades').done(function (res) {
-          cb(res.data);
-        }).fail(function () {
-          cb();
-        });
-      });
-
-      $selectTipoComprobante = $('#select-tipoComprobante').selectize({
-        valueField: 'cod_tp_comp',
-        labelField: 'des_tp_comp',
-        searchField: 'des_tp_comp',
-        render: {
-          option: function (item, escape) {
-            return '<div>' + escape(item.cod_tp_comp) + ' - ' + escape(item.des_tp_comp) + '</div>';
-          },
-          item: function (item, escape) {
-            return '<div>' + escape(item.cod_tp_comp) + ' - ' + escape(item.des_tp_comp) + '</div>';
+      $selectAgrupacion = $('#select-agrupacion').selectize({
+        options: [
+          {value: 'cliente', text: 'Cliente'},
+          {value: 'vendedor', text: 'Vendedor'},
+          {value: 'articulo', text: 'Artículo'}
+        ],
+        onChange: function (value) {
+          query.agrupacion = value;
+          hideSelects();
+          if (!value) return;
+          if (value === "cliente") {
+            $selectCliente.parent().parent().parent().parent().show();
+          } else if (value === "vendedor") {
+            $selectVendedor.parent().parent().show();
+          } else if (value === "articulo") {
+            $selectArticulo.parent().parent().show();
           }
         }
       });
-      selectTipoComprobante = $selectTipoComprobante[0].selectize;
-      selectTipoComprobante.disable();
-
+      selectAgrupacion = $selectAgrupacion[0].selectize;
     }
 
     function getInforme() {
