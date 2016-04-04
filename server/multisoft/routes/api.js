@@ -433,6 +433,11 @@ router.get('/compras_articulo/ranking', function (req, res, next) {
     });
 });
 
+router.get('/compras_proveedor/ranking', function (req, res, next) {
+    Compras.ranking_proveedor(req.query, function (result) {
+        res.json({data: result});
+    });
+});
 
 router.get('/usuarios/cajeros', function (req, res, next) {
     Usuarios.cajeros(req.params)

@@ -247,43 +247,28 @@
       $('#resultado').empty();
       var graficode = $('#select-graficode').val();
       if (graficode == "PR"){
-          $.ajax(api + "gastos_rendir/list", {
+          $.ajax(api + "compras_proveedor/ranking", {
           method: 'GET',
           contentType: 'application/json',
           data: query,
             }).done(
                 function (datos) {
                     if (datos.data.length > 0){
-                        
-                    }
-            });
-      } else {
-          $.ajax(api + "compras_articulo/ranking", {
-          method: 'GET',
-          contentType: 'application/json',
-          data: query,
-            }).done(
-                function (datos) {
-                    if (datos.data.length > 0){
-                    //var sdiv='<div class="row"><div class="col-md-6 col-md-offset-3"><div id="chart"></div></div><div>'
-                    //$('#resultado').append(sdiv);
-                    aux_colum = ['Compras']
+                    aux_colum = ['Proveedores']
                     aux_name = []
                     for (var a=0; a<datos.data.length; a++){
-                        aux_colum.push(datos.data[a].TotalItem)
-                        aux_name.push(datos.data[a].Des_Art)
+                        aux_colum.push(datos.data[a].TotalCompras)
+                        aux_name.push(datos.data[a].RazonSocial)
                     }
                     console.log(aux_colum);
                        var chart = c3.generate({
                             bindto: '#resultado',
                             data: {
-                                // iris data from R
                                 columns: [aux_colum],
                                 type : 'bar',
                                 color : function (c, d){
                                     return colors[d.index];
                                 },
-                                //onclick: function (d, i) { console.log("onclick", d, i); },
                                 onmouseover: function (d, i) { console.log("onmouseover", d, i); },
                                 onmouseout: function (d, i) { console.log("onmouseout", d, i); }
                             },
@@ -318,12 +303,72 @@
                             },
                             bar: {
                                 width: {
-                                    ratio: 0.5 // this makes bar width 50% of length between ticks
+                                    ratio: 0.5
                                 }
                             }
-                            //legend: {
-                            //  show: false  
-                            //},
+                    }); 
+                    }
+            });
+      } else {
+          $.ajax(api + "compras_articulo/ranking", {
+          method: 'GET',
+          contentType: 'application/json',
+          data: query,
+            }).done(
+                function (datos) {
+                    if (datos.data.length > 0){
+                    aux_colum = ['Compras']
+                    aux_name = []
+                    for (var a=0; a<datos.data.length; a++){
+                        aux_colum.push(datos.data[a].TotalItem)
+                        aux_name.push(datos.data[a].Des_Art)
+                    }
+                    console.log(aux_colum);
+                       var chart = c3.generate({
+                            bindto: '#resultado',
+                            data: {
+                                columns: [aux_colum],
+                                type : 'bar',
+                                color : function (c, d){
+                                    return colors[d.index];
+                                },
+                                onmouseover: function (d, i) { console.log("onmouseover", d, i); },
+                                onmouseout: function (d, i) { console.log("onmouseout", d, i); }
+                            },
+                            axis: {
+                                x: {
+                                    type: 'category',
+                                    categories: aux_name
+                                },
+                                y : {
+                                    tick: {
+                                        format: function (d) { 
+                                            if ($('#select-moneda').val() == 'GS'){
+                                                return 'Gs. ' + convertir_rever(d);
+                                            } else {
+                                                return 'U$s. ' + addCommas(parseFloat((d)).toFixed(2));
+                                            } 
+                                        }
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                grouped: false,
+                                format: {
+                                    value: function (value, ratio, id) {
+                                        if ($('#select-moneda').val() == 'GS'){
+                                            return 'Gs. '+convertir_rever(value);
+                                        } else {
+                                            return 'U$s. ' + addCommas(parseFloat((value)).toFixed(2));
+                                        }
+                                    }
+                                }
+                            },
+                            bar: {
+                                width: {
+                                    ratio: 0.5
+                                }
+                            }
                     }); 
                     }
             });
