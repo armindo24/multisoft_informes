@@ -147,6 +147,7 @@
               callback();
             });
           });
+
         }
       });
 
@@ -165,6 +166,7 @@
           query.sucursal = value;
           u.resetSelect(selectTipoCliente);
           u.resetSelect(selectVendedor);
+          u.resetSelect(selectArticulo);
           if (!value.length) return;
           selectTipoCliente.load(function (callback) {
             $.get(api + 'clientes/tipos/').done(function (res) {
@@ -177,6 +179,14 @@
           selectVendedor.load(function (cb) {
             $.get(api + 'empresas/' + query.empresa + '/vendedores', {sucursal: query.sucursal}).done(function (res) {
               selectVendedor.enable();
+              cb(res.data);
+            }).fail(function () {
+              cb();
+            });
+          });
+          selectArticulo.load(function (cb) {
+            $.get(api + 'empresas/' + query.empresa + '/articulos').done(function (res) {
+              selectArticulo.enable();
               cb(res.data);
             }).fail(function () {
               cb();
@@ -230,9 +240,9 @@
       selectVendedor.disable();
 
       $selectArticulo = $('#select-articulo').selectize({
-        valueField: 'cod_vendedor',
-        labelField: 'des_vendedor',
-        searchField: 'des_vendedor'
+        valueField: 'cod_articulo',
+        labelField: 'des_art',
+        searchField: 'des_art'
       });
       selectArticulo = $selectArticulo[0].selectize;
       selectArticulo.disable();
