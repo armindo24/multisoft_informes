@@ -215,7 +215,8 @@ Compras.ranking_aticulo = function (filters, cb) {
               "ORDER BY "+ 
                   "TotalItem DESC";
         
-
+    console.log(select);
+    
     conn.exec(select, function (err, r) {
         if (err) throw err;
         cb(r);
