@@ -476,4 +476,10 @@ router.get('/localidades', function (req, res, next) {
     });
 });
 
+router.get('/recaudaciones/planillas', function (req, res, next) {
+    Recaudacion.planillaConsolidada(req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
 module.exports = router;
