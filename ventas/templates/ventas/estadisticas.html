@@ -55,21 +55,22 @@
 
 
 {% block inner_content %}
-  <div class="row">
-    <div class="col-lg-6">
-      <div id="bar"></div>
+  <div id="charts">
+    <div class="row">
+      <div class="col-lg-6">
+        <div id="bar"></div>
+      </div>
+      <div class="col-lg-6">
+        <div id="pie"></div>
+      </div>
     </div>
-    <div class="col-lg-6">
-      <div id="pie"></div>
-    </div>
+    <div id="chart"></div>
   </div>
-  <div id="chart"></div>
 {% endblock %}
 
 {% block extra_foot %}
   <script>
     var query = {empresa: ''};
-    var $results, $resultado;
 
     var $selectEmpresa, selectEmpresa;
     var $selectAgrupacion, selectAgrupacion;
@@ -86,6 +87,7 @@
     var currentYear;
     var currentYearData;
     var $donutTitle;
+    var $charts;
 
     var gs = $.fn.dataTable.render.number('.', ',', 0, 'G ').display;
     var us = $.fn.dataTable.render.number('.', ',', 2, '$ ').display;
@@ -97,6 +99,7 @@
 
     $(document).ready(function () {
       u.hideNav();
+      $charts = $('#charts');
       initDates();
       initSelects();
       hideSelects();
@@ -296,12 +299,16 @@
     function getInforme() {
       if (!query.agrupacion) return;
       $('.collapse').collapse('hide');
+      $charts.hide();
       $.ajax({
         method: 'GET',
         url: api + 'estadisticas/ventas/' + query.agrupacion,
         data: query
       }).done(function (res) {
-        initChart(res.data);
+        if (res.data.length > 0) {
+          $charts.show();
+          initChart(res.data);
+        }
       }).fail(function (err) {
         console.log(err);
       });
