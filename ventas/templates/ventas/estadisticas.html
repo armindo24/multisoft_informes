@@ -21,7 +21,7 @@
   </div>
 
   <div class="row">
-    {% include 'ventas/_filtro.html' with name="agrupacion" title="Agrupar Por" placeholder="Agrupación" %}
+    {% include 'ventas/_filtro.html' with name="agrupacion" title="Graficar Por" placeholder="Gráfico" %}
     <div class="col-sm-6">
       <div class="form-group">
         <label for="fecha" class="col-md-4 control-label">Fecha:</label>
@@ -282,60 +282,66 @@
 
     function initChart(data) {
       globData = data;
-      var porCliente = {};
+      var indexedData = {};
       var lineChart;
       var pie;
       var bar;
 
+      // parsear datos e indexar por item
       _.each(data, function (d) {
-        if (!porCliente.hasOwnProperty(d.nombre)) {
-          porCliente[d.nombre] = {
+        // index por nombre
+        if (!indexedData.hasOwnProperty(d.nombre)) {
+          indexedData[d.nombre] = {
             nombre: d.nombre,
             datos: {}
           };
         }
-        var cliente = porCliente[d.nombre];
-        if (!cliente.datos.hasOwnProperty(d.anho)) {
-          cliente.datos[d.anho] = {
+        var item = indexedData[d.nombre];
+        // index por anho
+        if (!item.datos.hasOwnProperty(d.anho)) {
+          item.datos[d.anho] = {
             total: 0,
             datos: {}
           };
         }
-        var datosYear = cliente.datos[d.anho].datos;
+        var datosYear = item.datos[d.anho].datos;
+        // index por mes
         if (!datosYear.hasOwnProperty(d.mes)) {
           datosYear[d.mes] = {'credito': 0, 'venta': 0, 'total': 0};
         }
         var datosMonth = datosYear[d.mes];
+        // index por tipo
         datosMonth[d.tipo] = parseFloat(d.total);
         if (d.tipo === 'venta') {
           datosMonth['total'] = datosMonth['venta'] - datosMonth['credito'];
         }
       });
 
-      var clientes = _.values(porCliente);
-      globCli = clientes;
-      var names = _(clientes).values().map('nombre').value();
+      var itemsArray = _.values(indexedData); // Utilizar array para mantener el mismo orden
+      globCli = itemsArray;
+      var names = _(itemsArray).values().map('nombre').value(); // Leyendas de los items
 
-      _.forIn(porCliente, function (cliente) {
+      // Calcular totales
+      _.forIn(indexedData, function (cliente) {
         _.forIn(cliente.datos, function (year) {
-          year.total = _(year.datos).values().sumBy('total');
+          year.total = _(year.datos).values().sumBy('total'); // total anual
         });
-        cliente.total = _(cliente.datos).values().sumBy('total')
+        cliente.total = _(cliente.datos).values().sumBy('total') // total general
       });
-      console.log(porCliente);
+      console.log(indexedData);
 
       bar = c3.generate({
         bindto: '#bar',
         data: {
           x: 'x',
           columns: [
-            ['x', 'Clientes']].concat(_.map(clientes, function (cliente) {
-                    return [cliente.nombre, cliente.total];
+            ['x', _.capitalize(query.agrupacion)]].concat(_.map(itemsArray, function (item) {
+                    return [item.nombre, item.total];
                   })),
           onclick: function (d, elem) {
             currentClient = d.id;
-            currentClientData = porCliente[currentClient];
-            $donutTitle.html(d.id);
+            currentClientData = indexedData[currentClient];
+            $donutTitle.html(_.truncate(d.id, {length: 25, 'separator': /,? +/}));
             lineChart.unload();
             pie.load({
               unload: true,
@@ -376,7 +382,7 @@
           }
         },
         donut: {
-          title: 'Cliente'
+          title: _.capitalize(query.agrupacion)
         },
         tooltip: {
           format: {
