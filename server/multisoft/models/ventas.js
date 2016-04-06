@@ -261,4 +261,64 @@ Ventas.estadisticas.articulos = function (params, query) {
     return conn.execAsync(sql);
 };
 
+Ventas.estadisticas.vendedores = function (params, query) {
+    var sql =
+        "SELECT moneda = Trim ( dba.vtacab.codmoneda ), " +
+        "vend = Trim ( dba.vtacab.cod_vendedor ), " +
+        "tipo = if dba.tpocbte.tp_def = 'NC' then 'credito' else 'venta' endif, " +
+        "nombre = Trim ( dba.vendedor.des_vendedor), " +
+        "anho = year ( dba.vtacab.fha_cbte ), " +
+        "mes = month ( dba.vtacab.fha_cbte ), " +
+        "total = sum ( dba.vtacab.total_venta ) " +
+        "FROM dba.vendedor, dba.vtacab, dba.tpocbte, dba.clientes " +
+        "WHERE (dba.vtacab.cod_vendedor = dba.vendedor.cod_vendedor) " +
+        "AND (dba.vtacab.cod_empresa = dba.tpocbte.cod_empresa) " +
+        "AND (dba.vtacab.cod_tp_comp = dba.tpocbte.cod_tp_comp) " +
+        "AND (dba.vtacab.cod_empresa = dba.clientes.cod_empresa) " +
+        "AND (dba.vtacab.cod_cliente = dba.clientes.cod_cliente) " +
+        "AND (dba.vtacab.anulado = 'N') " +
+        "AND (dba.vtacab.cod_empresa = 'BT') " +
+        "AND Date(dba.vtacab.fha_cbte) >= Date ('2012-01-01') " +
+        "AND Date(dba.vtacab.fha_cbte) <= Date ('2012-05-31') " +
+        "GROUP BY moneda, vend, tipo, nombre, anho, mes " +
+        "ORDER BY 1, 2, 3, 4, 5";
+
+    var sql2 = "SELECT moneda = Trim ( dba.vtacab.codmoneda ), vend = Trim ( " +
+        "dba.vtacab.cod_vendedor ), tipo = 'venta', nombre = Trim ( " +
+        "dba.vendedor.des_vendedor), anho = year ( dba.vtacab.fha_cbte ), mes = month ( " +
+        "dba.vtacab.fha_cbte ), total = sum ( dba.vtacab.total_venta ) " +
+        "FROM dba.vendedor, dba.vtacab, dba.tpocbte, dba.clientes " +
+        "WHERE (dba.vtacab.cod_vendedor = dba.vendedor.cod_vendedor ) " +
+        "AND (dba.vtacab.cod_empresa = dba.tpocbte.cod_empresa) " +
+        "AND (dba.vtacab.cod_tp_comp = dba.tpocbte.cod_tp_comp) " +
+        "AND (dba.vtacab.cod_empresa = dba.clientes.cod_empresa) " +
+        "AND (dba.vtacab.cod_cliente = dba.clientes.cod_cliente) " +
+        "AND (dba.vtacab.anulado = 'N') " +
+        "AND (dba.tpocbte.tp_def <> 'NC') " +
+        "AND (dba.vtacab.cod_empresa = 'BT') " +
+        "AND Date(dba.vtacab.fha_cbte) >= Date ('2012-01-01') " +
+        "AND Date(dba.vtacab.fha_cbte) <= Date ('2012-05-31') " +
+        "GROUP BY moneda, vend, nombre, anho, mes " +
+        "UNION " +
+        "SELECT moneda = Trim ( dba.vtacab.codmoneda ), vend = " +
+        "Trim ( dba.vtacab.cod_vendedor ), tipo = 'credito', nombre = Trim ( " +
+        "dba.vendedor.des_vendedor), anho = year ( dba.vtacab.fha_cbte ), mes = month ( " +
+        "dba.vtacab.fha_cbte ), total = sum ( dba.vtacab.total_venta ) " +
+        "FROM dba.vendedor, dba.vtacab, dba.tpocbte, dba.clientes " +
+        "WHERE ( dba.vtacab.cod_vendedor = dba.vendedor.cod_vendedor ) " +
+        "AND ( dba.vtacab.cod_empresa = dba.tpocbte.cod_empresa ) " +
+        "AND (dba.vtacab.cod_tp_comp = dba.tpocbte.cod_tp_comp ) " +
+        "AND (dba.vtacab.cod_empresa = dba.clientes.cod_empresa ) " +
+        "AND (dba.vtacab.cod_cliente = dba.clientes.cod_cliente ) " +
+        "AND ( dba.vtacab.anulado = 'N' ) " +
+        "AND ( dba.tpocbte.tp_def = 'NC' ) " +
+        "AND ( dba.vtacab.cod_empresa = 'BT' ) " +
+        "AND Date(dba.vtacab.fha_cbte) >= Date ('2012-01-01') " +
+        "AND Date(dba.vtacab.fha_cbte) <= Date ('2012-05-31') " +
+        "GROUP BY moneda, vend, nombre, anho, mes " +
+        "ORDER BY 1, 2, 3, 4, 5";
+
+    return conn.execAsync(sql);
+};
+
 module.exports = Ventas;
