@@ -41,7 +41,24 @@
   </div>
 {% endblock %}
 
-{% block table %}
+{% block inner_content %}
+  <ul class="nav nav-pills">
+    <li role="presentation" class="active" id="planilla"><a href="#">Planilla de Recaudaciones</a></li>
+    <li role="presentation" id="resumido"><a href="#">Comprobantes - Resumido</a></li>
+    <li role="presentation" id="detallado"><a href="#">Comprobantes - Detallado</a></li>
+    <li role="presentation" id="ajustes"><a href="#">Ajustes</a></li>
+    <li role="presentation" id="depositos"><a href="#">Depósitos</a></li>
+  </ul>
+
+  <div class="results">
+    <div class="result-group">
+      <div class="result-header"></div>
+        <div id="bodytab"><div>
+    </div>
+  </div>
+{% endblock %}
+
+<!-- {% block table %}
   <thead>
   <tr>
     <th class="grouping-col">Tipo</th>
@@ -57,11 +74,14 @@
     <th></th>
   </tr>
   </tfoot>
-{% endblock %}
+{% endblock %} -->
 
 {% block extra_foot %}
   <script>
-    var query = {empresa: ''};
+    var query = {
+        empresa: '',
+        tab: 'planilla'
+        };
     var $results, $resultado;
 
     var $selectEmpresa, selectEmpresa;
@@ -188,8 +208,10 @@
 
     function getInforme() {
       $('.collapse').collapse('hide');
+      $resultado.show();
+      $('#bodytab').empty()
 
-      if (!dataTable) {
+      /*if (!dataTable) {
         $resultado.show();
         u.defaultDT();
         dataTable = $results.DataTable({
@@ -239,7 +261,7 @@
         dataTable.ajax.reload(function () {
           dataTable.processing(false);
         }, true);
-      }
+      }*/
     }
     function footerSum(row, data, start, end, display) {
       var api = this.api(), data;

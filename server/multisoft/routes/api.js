@@ -441,6 +441,11 @@ router.get('/compras_articulo/ranking', function (req, res, next) {
     });
 });
 
+router.get('/compras_proveedor/ranking', function (req, res, next) {
+    Compras.ranking_proveedor(req.query, function (result) {
+        res.json({data: result});
+    });
+});
 
 router.get('/usuarios/cajeros', function (req, res, next) {
     Usuarios.cajeros(req.params)
@@ -476,6 +481,12 @@ router.get('/localidades', function (req, res, next) {
         postProcess(res, result);
     }).catch(function (error) {
         next(error);
+    });
+});
+
+router.get('/recaudaciones/planillas', function (req, res, next) {
+    Recaudacion.planillaConsolidada(req.query, function (result) {
+        res.json({data: result});
     });
 });
 

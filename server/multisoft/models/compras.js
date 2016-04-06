@@ -215,11 +215,76 @@ Compras.ranking_aticulo = function (filters, cb) {
               "ORDER BY "+ 
                   "TotalItem DESC";
         
-
+    console.log(select);
+    
     conn.exec(select, function (err, r) {
         if (err) throw err;
         cb(r);
     });
 };
+    
+Compras.ranking_proveedor = function (filters, cb) {
+    //conn.exec("SET ROWCOUNT 100"); //TODO: solucionar resultados muy grandes
+
+    var select = ""
+    
+    if (filters.moneda == "GS"){
+        select = "SELECT top 10 "+
+                    "DBA.Proveed.CodProv,"+ 
+                    "DBA.Proveed.RazonSocial,"+ 
+                    "cast(SUM ( (DBA.FACTCAB.TotalExen + (DBA.FACTCAB.TotalGrav - IF ( DBA.FACTCAB.IVAIncluido = 'S' ) THEN DBA.FACTCAB.IVA ELSE 0 ENDIF)) * if (dba.tpocbte.tp_def = 'NP' ) then - 1 else    1 endif) as decimal (20,0)) AS TotalCompras "+ 
+                 "FROM "+ 
+                    "DBA.proveed,"+ 
+                    "DBA.FACTCAB,"+ 
+                    "DBA.TPOCBTE "+ 
+                 "WHERE "+ 
+                    "( DBA.FACTCAB.Cod_Empresa = DBA.Proveed.Cod_Empresa ) "+ 
+                    "AND ( DBA.FACTCAB.CodProv = DBA.Proveed.CodProv ) "+ 
+                    "AND ( DBA.FACTCAB.Asentado = 'S' ) "+ 
+                    "AND ( DBA.FACTCAB.COD_EMPRESA = DBA.TPOCBTE.COD_EMPRESA) "+ 
+                    "AND ( DBA.FACTCAB.COD_TP_COMP = DBA.TPOCBTE.COD_TP_COMP) "+ 
+                    "AND ( FactCab.cod_empresa = '"+filters.empresa+"') "+ 
+                    "AND Date (FactCab.FechaFact) >= Date ('"+filters.compras_start+"') "+ 
+                    "AND Date (FactCab.FechaFact) <= Date('"+filters.compras_end+"') "+ 
+                    "AND dba.factcab.codmoneda = 'GS' "; 
+    } else {
+        select = "SELECT top 10 "+
+                    "DBA.Proveed.CodProv,"+ 
+                    "DBA.Proveed.RazonSocial,"+ 
+                    "cast(SUM ( (DBA.FACTCAB.TotalExen + (DBA.FACTCAB.TotalGrav - IF ( DBA.FACTCAB.IVAIncluido = 'S' ) THEN DBA.FACTCAB.IVA ELSE 0 ENDIF)) * if (dba.tpocbte.tp_def = 'NP' ) then - 1 else    1 endif) as decimal (20,2)) AS TotalCompras "+ 
+                 "FROM "+ 
+                    "DBA.proveed,"+ 
+                    "DBA.FACTCAB,"+ 
+                    "DBA.TPOCBTE "+ 
+                 "WHERE "+ 
+                    "( DBA.FACTCAB.Cod_Empresa = DBA.Proveed.Cod_Empresa ) "+ 
+                    "AND ( DBA.FACTCAB.CodProv = DBA.Proveed.CodProv ) "+ 
+                    "AND ( DBA.FACTCAB.Asentado = 'S' ) "+ 
+                    "AND ( DBA.FACTCAB.COD_EMPRESA = DBA.TPOCBTE.COD_EMPRESA) "+ 
+                    "AND ( DBA.FACTCAB.COD_TP_COMP = DBA.TPOCBTE.COD_TP_COMP) "+ 
+                    "AND ( FactCab.cod_empresa = '"+filters.empresa+"') "+ 
+                    "AND Date (FactCab.FechaFact) >= Date ('"+filters.compras_start+"') "+ 
+                    "AND Date (FactCab.FechaFact) <= Date('"+filters.compras_end+"') "+ 
+                    "AND dba.factcab.codmoneda = 'US' "; 
+    }
+    
+    if (filters.proveedor) {
+        select += " AND (dba.FACTCAB.CodProv IN " + q.in(filters.proveedor) + ") ";
+    } 
+    
+    select+= "GROUP BY "+ 
+                  "DBA.Proveed.CodProv,"+  
+                  "DBA.Proveed.RazonSocial "+ 
+              "ORDER BY "+ 
+                  "TotalCompras DESC";
+        
+    console.log(select);
+    
+    conn.exec(select, function (err, r) {
+        if (err) throw err;
+        cb(r);
+    });
+};
+
 
 module.exports = Compras;

@@ -8,6 +8,15 @@
 				<li>
 					<a href="{% url 'ventas:resumido' %}"> Ventas - Resumido y Detallado </a>
 			    </li>
+			    <li>
+                    <a href="{% url 'ventas:presupuesto' %}"> Presupuestos </a>
+                </li>
+                <li>
+                    <a href="{% url 'ventas:cuentas_comprar' %}"> Cuentas por Cobrar a Clientes </a>
+                </li>
+                <li>
+                    <a href="{% url 'ventas:recaudaciones' %}"> Planillas de Recaudaciones </a>
+                </li>
 		    {% endif %}
 		    {% if  request.session.modulo_seleccionado == "Compras"  %}
                 <li>
@@ -29,7 +38,7 @@
                     <a href="{% url 'compras:gastos_rendir' %}"> Gastos por Rendir </a>
                 </li>
                 <li>
-                    <a href="{% url 'compras:compras_estadisticos' %}"> Estadísticas </a>
+                    <a href="{% url 'compras:compras_estadisticos' %}"> Estadísticas de Compras </a>
                 </li>
             {% endif %}
 			{% if  request.session.modulo_seleccionado == "Finanzas"  %}

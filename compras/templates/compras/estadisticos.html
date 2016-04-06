@@ -31,6 +31,7 @@
           </div>
         </div>
       </div>
+    {% include 'ventas/_filtro.html' with name="moneda" %}
 {% endblock %}
 
 {% block extra_foot %}
@@ -49,6 +50,7 @@
     var select_proveedor, $select_proveedor;
     var select_graficode, $select_graficode;
     var select_articulo, $select_articulo;
+    var select_moneda, $select_moneda;
     var xhr;
     
     function addCommas(nStr) {
@@ -74,6 +76,7 @@
       select_graficode = $select_graficode[0].selectize;
       select_articulo = $select_articulo[0].selectize;
       select_articulo.disable();
+      select_moneda = $select_moneda[0].selectize;
       
       $('#select-proveedor').parent().parent().parent().hide();
       $('#select-articulo').parent().parent().parent().hide();
@@ -137,6 +140,21 @@
           });
         }
       });
+      
+      $select_moneda = $('#select-moneda').selectize({
+        allowEmptyOption: true,
+        options: [
+          {value: 'GS', text: 'Local'},
+          {value: 'US', text: 'Extranjera'},
+        ],
+        onChange: function (value) {
+          query.moneda = value;
+          debug();
+        }
+      });
+      
+      var selectize1 = $select_moneda[0].selectize;
+      selectize1.setValue('GS');
       
       $select_graficode = $('#select-graficode').selectize({
         allowEmptyOption: true,
@@ -207,6 +225,12 @@
             $('#select-articulo').parent().parent().parent().show();
         }
     }
+    
+    var colors = randomColor({
+        luminosity: 'bright',
+        count: 10,
+        seed: 108
+    });
         
     //META.fn: sortJSON
     function sortJSON(data, key) {
@@ -223,14 +247,66 @@
       $('#resultado').empty();
       var graficode = $('#select-graficode').val();
       if (graficode == "PR"){
-          $.ajax(api + "gastos_rendir/list", {
+          $.ajax(api + "compras_proveedor/ranking", {
           method: 'GET',
           contentType: 'application/json',
           data: query,
             }).done(
                 function (datos) {
                     if (datos.data.length > 0){
-                        
+                    aux_colum = ['Proveedores']
+                    aux_name = []
+                    for (var a=0; a<datos.data.length; a++){
+                        aux_colum.push(datos.data[a].TotalCompras)
+                        aux_name.push(datos.data[a].RazonSocial)
+                    }
+                    console.log(aux_colum);
+                       var chart = c3.generate({
+                            bindto: '#resultado',
+                            data: {
+                                columns: [aux_colum],
+                                type : 'bar',
+                                color : function (c, d){
+                                    return colors[d.index];
+                                },
+                                onmouseover: function (d, i) { console.log("onmouseover", d, i); },
+                                onmouseout: function (d, i) { console.log("onmouseout", d, i); }
+                            },
+                            axis: {
+                                x: {
+                                    type: 'category',
+                                    categories: aux_name
+                                },
+                                y : {
+                                    tick: {
+                                        format: function (d) { 
+                                            if ($('#select-moneda').val() == 'GS'){
+                                                return 'Gs. ' + convertir_rever(d);
+                                            } else {
+                                                return 'U$s. ' + addCommas(parseFloat((d)).toFixed(2));
+                                            } 
+                                        }
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                grouped: false,
+                                format: {
+                                    value: function (value, ratio, id) {
+                                        if ($('#select-moneda').val() == 'GS'){
+                                            return 'Gs. '+convertir_rever(value);
+                                        } else {
+                                            return 'U$s. ' + addCommas(parseFloat((value)).toFixed(2));
+                                        }
+                                    }
+                                }
+                            },
+                            bar: {
+                                width: {
+                                    ratio: 0.5
+                                }
+                            }
+                    }); 
                     }
             });
       } else {
@@ -241,7 +317,59 @@
             }).done(
                 function (datos) {
                     if (datos.data.length > 0){
-                        
+                    aux_colum = ['Compras']
+                    aux_name = []
+                    for (var a=0; a<datos.data.length; a++){
+                        aux_colum.push(datos.data[a].TotalItem)
+                        aux_name.push(datos.data[a].Des_Art)
+                    }
+                    console.log(aux_colum);
+                       var chart = c3.generate({
+                            bindto: '#resultado',
+                            data: {
+                                columns: [aux_colum],
+                                type : 'bar',
+                                color : function (c, d){
+                                    return colors[d.index];
+                                },
+                                onmouseover: function (d, i) { console.log("onmouseover", d, i); },
+                                onmouseout: function (d, i) { console.log("onmouseout", d, i); }
+                            },
+                            axis: {
+                                x: {
+                                    type: 'category',
+                                    categories: aux_name
+                                },
+                                y : {
+                                    tick: {
+                                        format: function (d) { 
+                                            if ($('#select-moneda').val() == 'GS'){
+                                                return 'Gs. ' + convertir_rever(d);
+                                            } else {
+                                                return 'U$s. ' + addCommas(parseFloat((d)).toFixed(2));
+                                            } 
+                                        }
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                grouped: false,
+                                format: {
+                                    value: function (value, ratio, id) {
+                                        if ($('#select-moneda').val() == 'GS'){
+                                            return 'Gs. '+convertir_rever(value);
+                                        } else {
+                                            return 'U$s. ' + addCommas(parseFloat((value)).toFixed(2));
+                                        }
+                                    }
+                                }
+                            },
+                            bar: {
+                                width: {
+                                    ratio: 0.5
+                                }
+                            }
+                    }); 
                     }
             });
       }

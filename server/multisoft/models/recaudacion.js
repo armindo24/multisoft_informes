@@ -12,66 +12,61 @@ Recaudacion.planillas = function (params, query) {
 };
 
 Recaudacion.planillaConsolidada = function (params, query) {
-    var sql = "SELECT dba.recaudcab.cod_empresa, dba.recaudcab.cod_sucursal, " +
-        "dba.recaudcab.nroplanilla, dba.recaudcab.estado, dba.recaudop.nrooperacion, " +
-        "dba.recauddet.linea, dba.recaudcab.cod_cajero, dba.recauddet.cod_tp_pago, " +
-        "dba.recauddet.codmoneda, dba.recauddet.fact_cambio, dba.recauddet.importe, " +
-        "dba.recaudcab.fecha, dba.tporecaudacion.operador, " +
-        "dba.tporecaudacion.agrupacion FROM dba.recaudcab, dba.recauddet, dba.recaudop, " +
-        "dba.tporecaudacion WHERE dba.recaudop.cod_empresa = dba.recaudcab.cod_empresa " +
-        "and dba.recaudop.cod_sucursal = dba.recaudcab.cod_sucursal and " +
-        "dba.recaudop.nroplanilla = dba.recaudcab.nroplanilla and " +
-        "dba.recaudop.cod_empresa = dba.recauddet.cod_empresa and " +
-        "dba.recaudop.cod_sucursal = dba.recauddet.cod_sucursal and " +
-        "dba.recaudop.nroplanilla = dba.recauddet.nroplanilla and " +
-        "dba.recaudop.nrooperacion = dba.recauddet.nrooperacion and " +
-        "dba.tporecaudacion.cod_empresa = dba.recauddet.cod_empresa and " +
-        "dba.tporecaudacion.cod_tp_pago = dba.recauddet.cod_tp_pago  " +
-        "and recaudcab.cod_empresa = 'BT'  " +
-        "AND ( recaudcab.cod_sucursal = '00' )  " +
-        "AND ((Date(recaudcab.fecha) >= Date('2013-10-01')) AND (Date(recaudcab.fecha) <= Date('2013-10-16'))) " +
-        "AND ( recaudcab.estado = 'CE') \n" +
-        "UNION  SELECT dba.pagoscab.cod_empresa, dba.recaudcomp.cod_sucursal, " +
-        "dba.recaudcomp.nroplanilla, dba.recaudcab.estado, dba.pagoscab.pago_numero, " +
-        "dba.pagosrec.linea, dba.pagoscab.cod_cajero, dba.pagosrec.cod_tp_pago, " +
-        "dba.pagosrec.codmoneda, dba.pagosrec.fact_cambio, dba.pagosrec.importe, " +
-        "dba.pagoscab.fecha, dba.tporecaudacion.operador, dba.tporecaudacion.agrupacion " +
-        "FROM dba.pagoscab, dba.pagosrec, dba.recaudcomp, dba.tporecaudacion, " +
-        "dba.recaudcab WHERE dba.pagosrec.cod_empresa = dba.pagoscab.cod_empresa  and " +
-        "dba.pagosrec.cod_tp_comp = dba.pagoscab.cod_tp_comp and " +
-        "dba.pagosrec.pago_numero = dba.pagoscab.pago_numero and " +
-        "dba.recaudcomp.cod_empresa = dba.pagoscab.cod_empresa and " +
-        "dba.recaudcomp.cod_tp_comp = dba.pagoscab.cod_tp_comp and " +
-        "dba.recaudcomp.pago_numero = dba.pagoscab.pago_numero and " +
-        "dba.recaudcomp.cod_empresa = dba.recaudcab.cod_empresa and " +
-        "dba.recaudcomp.cod_sucursal = dba.recaudcab.cod_sucursal and " +
-        "dba.recaudcomp.nroplanilla = dba.recaudcab.nroplanilla and " +
-        "dba.tporecaudacion.cod_empresa = dba.pagosrec.cod_empresa and " +
-        "dba.tporecaudacion.cod_tp_pago = dba.pagosrec.cod_tp_pago  and " +
-        "dba.recaudcomp.aplicacion = 'N' and recaudcab.cod_empresa = 'BT'  " +
-        "AND (recaudcab.cod_sucursal = '00' ) " +
-        "AND ((Date(recaudcab.fecha) >= Date('2013-10-01')) " +
-        "AND (Date(recaudcab.fecha) <= Date('2013-10-16')))  " +
-        "AND (recaudcab.estado = 'CE') \n" +
-        "UNION SELECT dba.pagoscab.cod_empresa, dba.recaudcomp.cod_sucursal, " +
-        "dba.recaudcomp.nroplanilla, dba.recaudcab.estado, dba.pagoscab.pago_numero, " +
-        "dba.recaudcomp.linea, dba.pagoscab.cod_cajero, if ( tpocbte.tp_def = 'RD' ) " +
-        "then 'RECIBOS' ELSE 'NOTAS DE CREDITO' ENDIF, dba.pagoscab.codmoneda, " +
-        "dba.pagoscab.fact_cambio, dba.recaudcomp.importe, dba.pagoscab.fecha, 'P', " +
-        "'Aplicaciones' FROM dba.pagoscab, dba.recaudcomp, dba.recaudcab, dba.tpocbte " +
-        "WHERE dba.recaudcomp.cod_empresa = dba.pagoscab.cod_empresa and " +
-        "dba.recaudcomp.cod_tp_comp = dba.pagoscab.cod_tp_comp and " +
-        "dba.recaudcomp.pago_numero = dba.pagoscab.pago_numero and " +
-        "dba.recaudcomp.cod_empresa = dba.recaudcab.cod_empresa and " +
-        "dba.recaudcomp.cod_sucursal = dba.recaudcab.cod_sucursal and " +
-        "dba.recaudcomp.nroplanilla = dba.recaudcab.nroplanilla and " +
-        "dba.tpocbte.cod_empresa = dba.pagoscab.cod_empresa and dba.tpocbte.cod_tp_comp " +
-        "= dba.pagoscab.cod_tp_comp and dba.recaudcomp.aplicacion = 'S' and " +
-        "recaudcab.cod_empresa = 'BT' AND ( recaudcab.cod_sucursal = '00' ) AND " +
-        "((Date(recaudcab.fecha) >= Date('2013-10-01')) AND (Date(recaudcab.fecha) <= " +
-        "Date('2013-10-16'))) AND ( recaudcab.estado = 'CE') ";
-
-    return conn.execAsync(sql);
+    var sql = "SELECT "+
+                "dba.recaudcab.cod_empresa,dba.recaudcab.cod_sucursal,dba.recaudcab.nroplanilla,dba.recaudcab.estado,"+           
+                "dba.recaudop.nrooperacion,dba.recauddet.linea,dba.recaudcab.cod_cajero,dba.recauddet.cod_tp_pago,"+            
+                "dba.recauddet.codmoneda,dba.recauddet.fact_cambio,"+            
+                "case when dba.recauddet.codmoneda = 'GS' then char(cast(dba.recauddet.importe as decimal (20,0))) else char(cast(dba.recauddet.importe as decimal (20,2))) end as importe,"+                
+                "dba.recaudcab.fecha,dba.tporecaudacion.operador,dba.tporecaudacion.agrupacion "     
+              "FROM "+ 
+                "dba.recaudcab,dba.recauddet,dba.recaudop,dba.tporecaudacion "+    
+              "WHERE "+ 
+                "dba.recaudop.cod_empresa = dba.recaudcab.cod_empresa and dba.recaudop.cod_sucursal = dba.recaudcab.cod_sucursal "+ 
+                "and dba.recaudop.nroplanilla = dba.recaudcab.nroplanilla and dba.recaudop.cod_empresa = dba.recauddet.cod_empresa "+ 
+                "and dba.recaudop.cod_sucursal = dba.recauddet.cod_sucursal and dba.recaudop.nroplanilla = dba.recauddet.nroplanilla "+ 
+                "and dba.recaudop.nrooperacion = dba.recauddet.nrooperacion and dba.tporecaudacion.cod_empresa = dba.recauddet.cod_empresa "+ 
+                "and dba.tporecaudacion.cod_tp_pago = dba.recauddet.cod_tp_pago and dba.recaudcab.cod_empresa = 'BT' "+
+                "AND (( Date(dba.recaudcab.fecha) >= Date('2013-01-01')) AND ( Date(dba.recaudcab.fecha) <= Date('2013-01-31'))) "+ 
+              "UNION SELECT "+ 
+                "dba.pagoscab.cod_empresa,dba.recaudcomp.cod_sucursal,dba.recaudcomp.nroplanilla,dba.recaudcab.estado,"+
+                "dba.pagoscab.pago_numero,dba.pagosrec.linea,dba.pagoscab.cod_cajero,dba.pagosrec.cod_tp_pago,"
+                "dba.pagosrec.codmoneda,dba.pagosrec.fact_cambio,"+
+                "case when dba.pagosrec.codmoneda = 'GS' then string(cast(dba.pagosrec.importe as decimal (20,0))) else string(cast(dba.pagosrec.importe as decimal (20,2))) end as importe,"                
+                "dba.pagoscab.fecha,dba.tporecaudacion.operador,dba.tporecaudacion.agrupacion "+
+              "FROM "+ 
+                "dba.pagoscab,dba.pagosrec,dba.recaudcomp,dba.tporecaudacion,dba.recaudcab "+    
+              "WHERE "+ 
+                "dba.pagosrec.cod_empresa = dba.pagoscab.cod_empresa and dba.pagosrec.cod_tp_comp = dba.pagoscab.cod_tp_comp "+    
+                "and dba.pagosrec.pago_numero = dba.pagoscab.pago_numero and dba.recaudcomp.cod_empresa = dba.pagoscab.cod_empresa "+    
+                "and dba.recaudcomp.cod_tp_comp = dba.pagoscab.cod_tp_comp and dba.recaudcomp.pago_numero = dba.pagoscab.pago_numero "+    
+                "and dba.recaudcomp.cod_empresa = dba.recaudcab.cod_empresa and dba.recaudcomp.cod_sucursal = dba.recaudcab.cod_sucursal "+  
+                "and dba.recaudcomp.nroplanilla = dba.recaudcab.nroplanilla and dba.tporecaudacion.cod_empresa = dba.pagosrec.cod_empresa "+ 
+                "and dba.tporecaudacion.cod_tp_pago = dba.pagosrec.cod_tp_pago and dba.recaudcomp.aplicacion = 'N' "+    
+                "and dba.recaudcab.cod_empresa = 'BT' AND (( Date(dba.recaudcab.fecha) >= Date('2013-01-01')) "+  
+                "AND ( Date(dba.recaudcab.fecha) <= Date('2013-01-31'))) "+  
+              "UNION SELECT "+ 
+                "dba.pagoscab.cod_empresa,dba.recaudcomp.cod_sucursal,dba.recaudcomp.nroplanilla,dba.recaudcab.estado,"+
+                "dba.pagoscab.pago_numero,dba.recaudcomp.linea,dba.pagoscab.cod_cajero,"+
+                "if ( tpocbte.tp_def = 'RD' ) then 'RECIBOS' ELSE 'NOTAS DE CREDITO' ENDIF,"+
+                    "dba.pagoscab.codmoneda,dba.pagoscab.fact_cambio,"+ 
+                    "case when dba.pagoscab.codmoneda = 'GS' then string(cast(dba.recaudcomp.importe as decimal (20,0))) else string(cast(dba.recaudcomp.importe as decimal (20,2))) end as importe,"+                
+                "dba.pagoscab.Fecha,'P','Aplicaciones' "+  
+              "FROM "+  
+                "dba.pagoscab,dba.recaudcomp,dba.recaudcab,dba.tpocbte "+    
+              "WHERE "+ 
+                "dba.recaudcomp.cod_empresa = dba.pagoscab.cod_empresa and dba.recaudcomp.cod_tp_comp = dba.pagoscab.cod_tp_comp "+
+                "and dba.recaudcomp.pago_numero = dba.pagoscab.pago_numero and dba.recaudcomp.cod_empresa = dba.recaudcab.cod_empresa "+   
+                "and dba.recaudcomp.cod_sucursal = dba.recaudcab.cod_sucursal and dba.recaudcomp.nroplanilla = dba.recaudcab.nroplanilla "+   
+                "and dba.tpocbte.cod_empresa = dba.pagoscab.cod_empresa and dba.tpocbte.cod_tp_comp = dba.pagoscab.cod_tp_comp "+    
+                "and dba.recaudcomp.aplicacion = 'S' and dba.recaudcab.cod_empresa = 'BT' "+ 
+                "AND (( Date(dba.recaudcab.fecha) >= Date('2013-01-01')) AND ( Date(dba.recaudcab.fecha) <= Date('2013-01-31')))";
+    
+    console.log(sql);
+    
+    conn.exec(sql, function (err, r) {
+        if (err) throw err;
+        cb(r);
+    }) 
 };
 
 Recaudacion.resumido = function (params, query) {
@@ -114,7 +109,9 @@ Recaudacion.resumido = function (params, query) {
         sqlParams.push(query.estado);
     }
 
-    var sqlOrder = sql + "ORDER BY pagoscab.cod_tp_comp";
+    var sqlOrder = sql + ") ORDER BY pagoscab.cod_tp_comp";
+    
+    console.log(sqlOrder);
     return conn.execAsync(sqlOrder, sqlParams);
 };
 
