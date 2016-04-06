@@ -20,4 +20,12 @@ router.get('/ventas/clientes', function (req, res, next) {
     });
 });
 
+router.get('/ventas/articulos', function (req, res, next) {
+    Ventas.estadisticas.articulos(req.params, req.query).then(function (result) {
+        postProcess(res, result);
+    }).catch(function (err) {
+        next(err);
+    });
+});
+
 module.exports = router;

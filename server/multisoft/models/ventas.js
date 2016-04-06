@@ -234,4 +234,31 @@ Ventas.estadisticas.clientes = function (params, query) {
     return conn.execAsync(sql, sqlParams.concat(sqlParams));
 };
 
+Ventas.estadisticas.articulos = function (params, query) {
+    var sql =
+        "SELECT vend = Trim (dba.vtadet.cod_articulo), tipo = if dba.tpocbte.tp_def = " +
+        "'NC' then 'NC' else 'VTA' endif, nombre = Trim (dba.articulo.des_art ), anho = " +
+        "year (dba.vtacab.fha_cbte ), mes = month (dba.vtacab.fha_cbte ), total = sum " +
+        "(dba.vtadet.cantidad ), familia = dba.articulo.cod_familia\n" +
+        "FROM dba.articulo, dba.vtacab, dba.vtadet, dba.tpocbte, dba.clientes\n" +
+        "WHERE (dba.vtadet.cod_empresa = dba.vtacab.cod_empresa ) AND " +
+        "( dba.vtadet.cod_tp_comp = dba.vtacab.cod_tp_comp ) AND " +
+        "( dba.vtadet.comp_numero = dba.vtacab.comp_numero ) AND " +
+        "( dba.vtacab.cod_cliente = dba.clientes.cod_cliente ) AND " +
+        "( dba.vtacab.cod_empresa = dba.clientes.cod_empresa ) AND " +
+        "( dba.vtadet.cod_articulo = dba.articulo.cod_articulo ) AND " +
+        "( dba.vtadet.cod_empresa = dba.articulo.cod_empresa ) AND " +
+        "( dba.vtacab.cod_empresa = dba.tpocbte.cod_empresa ) AND " +
+        "( dba.vtacab.cod_tp_comp = dba.tpocbte.cod_tp_comp )\n" +
+        "AND ( dba.vtacab.anulado = 'N' ) " +
+        "AND ( dba.vtacab.cod_empresa = 'BT' ) " +
+        "AND ((dba.vtadet.cod_articulo = '02026047')) " +
+        "AND ( vtadet.cod_sucursal = '00' ) " +
+        "AND Date(dba.vtacab.fha_cbte) >= Date ('2012-01-01') " +
+        "AND Date(dba.vtacab.fha_cbte) <= Date ('2014-01-31')\n" +
+        "GROUP BY vend, tipo, nombre, anho, mes, familia\n" +
+        "ORDER BY 1, 2, 3, 4";
+    return conn.execAsync(sql);
+};
+
 module.exports = Ventas;
