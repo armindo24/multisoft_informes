@@ -180,14 +180,7 @@
               cb();
             });
           });
-          selectArticulo.load(function (cb) {
-            $.get(api + 'empresas/' + query.empresa + '/articulos').done(function (res) {
-              selectArticulo.enable();
-              cb(res.data);
-            }).fail(function () {
-              cb();
-            });
-          });
+          selectArticulo.enable();
         }
       });
       selectSucursal = $selectSucursal[0].selectize;
@@ -231,7 +224,8 @@
       $selectVendedor = $('#select-vendedor').selectize({
         valueField: 'cod_vendedor',
         labelField: 'des_vendedor',
-        searchField: 'des_vendedor'
+        searchField: 'des_vendedor',
+        maxItems: 10
       });
       selectVendedor = $selectVendedor[0].selectize;
       selectVendedor.disable();
@@ -241,6 +235,17 @@
         labelField: 'des_art',
         searchField: 'des_art',
         maxItems: 10,
+        load: function (q, cb) {
+          if (q.length < 2) return cb();
+          $.get(api + 'ventas/' + query.empresa + '/articulos', {
+            articulo: q,
+            sucursal: query.sucursal
+          }).done(function (res) {
+            cb(res.data);
+          }).fail(function () {
+            cb();
+          });
+        }
       });
       selectArticulo = $selectArticulo[0].selectize;
       selectArticulo.disable();
@@ -318,7 +323,7 @@
         }
       });
 
-      var itemsArray = _.values(indexedData); // Utilizar array para mantener el mismo orden
+      var itemsArray = _.values(indexedData).slice(0, 10); // Utilizar array para mantener el mismo orden
       globCli = itemsArray;
       var names = _(itemsArray).values().map('nombre').value(); // Leyendas de los items
 
