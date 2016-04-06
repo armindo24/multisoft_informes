@@ -467,6 +467,14 @@ router.get('/recaudaciones/:empresa/planillas', function (req, res, next) {
         });
 });
 
+router.get('/recaudaciones/:empresa/detallado', function (req, res, next) {
+    Recaudacion.detallado(req.params).then(function (result) {
+        postProcess(res, result);
+    }).catch(function (err) {
+        next(err);
+    });
+});
+
 router.get('/recaudaciones/:empresa/consolidada', function (req, res, next) {
     Recaudacion.resumido(req.params, req.query)
         .then(function (result) {
