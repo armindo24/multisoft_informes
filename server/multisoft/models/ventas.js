@@ -215,7 +215,7 @@ Ventas.cuentas.cobrar = function (params, query, cb) {
 
 Ventas.estadisticas = {};
 Ventas.estadisticas.clientes = function (params, query) {
-    if (!query.empresa || !query.cliente || !query.start || !query.end) return Promise.reject();
+    if (!query.empresa || !query.cliente || !query.start || !query.end || !query.moneda) return Promise.reject();
     var clientes = query.cliente.slice(0, maxSelect);
     var conditions = "AND ( dba.vtacab.anulado = 'N' ) " +
         "AND ( dba.vtacab.cod_empresa = ? ) " +
@@ -223,6 +223,7 @@ Ventas.estadisticas.clientes = function (params, query) {
         "AND (  dba.clientes.cod_cliente IN " + q.in(clientes) + " )" +
         "AND Date(dba.vtacab.fha_cbte) >= Date (?) " +
         "AND Date(dba.vtacab.fha_cbte) <= Date (?) " +
+        "AND (moneda = ?)\n" +
         "GROUP BY moneda, vend, nombre, anho, mes \n";
     var sql = "SELECT " +
         "moneda = Trim (dba.vtacab.codmoneda), " +
@@ -253,7 +254,7 @@ Ventas.estadisticas.clientes = function (params, query) {
         "AND ( dba.tpocbte.tp_def = 'NC' ) " +
         conditions +
         "ORDER BY 1, 3, 4, 5, 2";
-    var sqlParams = [query.empresa, query.sucursal, query.start, query.end];
+    var sqlParams = [query.empresa, query.sucursal, query.start, query.end, query.moneda];
 
     return conn.execAsync(sql, sqlParams.concat(sqlParams));
 };
@@ -289,7 +290,7 @@ Ventas.estadisticas.articulos = function (params, query) {
 };
 
 Ventas.estadisticas.vendedores = function (params, query) {
-    if (!query.empresa || !query.sucursal || !query.start || !query.end || !query.vendedor) return Promise.reject();
+    if (!query.empresa || !query.sucursal || !query.start || !query.end || !query.vendedor || !query.moneda) return Promise.reject();
     var vendedores = query.vendedor.slice(0, maxSelect);
     var sql =
         "SELECT moneda = Trim ( dba.vtacab.codmoneda ),\n" +
@@ -311,10 +312,11 @@ Ventas.estadisticas.vendedores = function (params, query) {
         "AND ( dba.vtacab.cod_vendedor IN " + q.in(vendedores) + " ) " +
         "AND Date(dba.vtacab.fha_cbte) >= Date (?) " +
         "AND Date(dba.vtacab.fha_cbte) <= Date (?) " +
+        "AND (moneda = ?)\n" +
         "GROUP BY moneda, vend, tipo, nombre, anho, mes\n" +
         "ORDER BY 1, 2, 3, 4, 5";
 
-    var sqlParams = [query.empresa, query.sucursal, query.start, query.end];
+    var sqlParams = [query.empresa, query.sucursal, query.start, query.end, query.moneda];
 
     return conn.execAsync(sql, sqlParams);
 };

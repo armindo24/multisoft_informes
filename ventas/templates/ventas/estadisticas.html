@@ -91,7 +91,7 @@
     var us = $.fn.dataTable.render.number('.', ',', 2, '$ ').display;
     var numFormat = function (num) {
       if (query.agrupacion === 'articulos') return num;
-      if (query.moneda === 'extranjera') return us(num);
+      if (query.moneda === 'US') return us(num);
       return gs(num);
     };
 
@@ -286,8 +286,8 @@
 
       $selectMoneda = $('#select-moneda').selectize({
         options: [
-          {value: 'local', text: 'Local'},
-          {value: 'extranjera', text: 'Extranjera'}
+          {value: 'GS', text: 'Local'},
+          {value: 'US', text: 'Extranjera'}
         ]
       });
       selectMoneda = $selectMoneda[0].selectize;
