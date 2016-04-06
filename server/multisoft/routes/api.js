@@ -274,6 +274,14 @@ router.get('/empresas/:empresa/articulos', function (req, res, next) {
     });
 });
 
+router.get('/ventas/:empresa/articulos', function (req, res, next) {
+    Ventas.articulos(req.params, req.query).then(function (result) {
+        res.json({data: result});
+    }).catch(function (err) {
+        next(err);
+    });
+});
+
 router.get('/empresas/:empresa/proveedores', function (req, res, next) {
     Proveedor.list(req.params, req.query, function (result) {
         res.json({data: result});

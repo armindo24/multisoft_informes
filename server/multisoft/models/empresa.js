@@ -25,6 +25,7 @@ Empresa.inin = function (body, cb) {
 };
 
 Empresa.clientes = function (empresa, query, cb) {
+    if (!query.cliente || query.cliente.length < 2) return Promise.resolve({});
     var sql = "select Cod_Cliente, Razon_Social, Cod_Tp_Cliente from dba.Clientes WHERE Cod_Empresa = ?";
     var sql_params = [empresa];
     if (query.tipo) {
@@ -71,7 +72,7 @@ Empresa.vendedores = function (params, filter, cb) {
         "and cod_empresa = ? " +
         "and (cod_sucursal = ? or cod_sucursal is null) ";
 
-    var sql_params = [params.empresa, filter.sucursal]
+    var sql_params = [params.empresa, filter.sucursal];
 
     conn.exec(sql, sql_params, function (err, result) {
         if (err) throw err;

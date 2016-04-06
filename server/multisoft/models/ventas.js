@@ -3,6 +3,8 @@ var util = require('util');
 var q = require('./queryUtils');
 var Ventas = {};
 
+var maxSelect = 10;
+
 Ventas.all = function (params, filters, cb) {
     //conn.exec("SET ROWCOUNT 100"); //TODO: solucionar resultados muy grandes
 
@@ -94,6 +96,27 @@ Ventas.terminos = function (cb) {
         if (err) throw err;
         cb(result);
     });
+};
+
+Ventas.articulos = function (params, query) {
+    if (!query.articulo || query.articulo.length < 2) return Promise.resolve({});
+    var sql = "SELECT cod_articulo, des_art\n" +
+        "FROM dba.articulo\n" +
+        "WHERE cod_empresa = ?\n";
+    var sqlParams = [params.empresa];
+    if (query.sucursal) {
+        sql += "AND (cod_sucursal = ? or cod_sucursal is null)\n";
+        sqlParams.push(query.sucursal);
+    }
+    if (query.tipoArticulo) {
+        sql += "AND (articulo.cod_tp_art = ?)\n";
+        sqlParams.push(query.tipoArticulo);
+    }
+    if (query.articulo) {
+        sql += "AND des_art LIKE '" + query.articulo + "%'\n";
+    }
+
+    return conn.execAsync(sql, sqlParams);
 };
 
 Ventas.zonas = function (cb) {
@@ -193,10 +216,11 @@ Ventas.cuentas.cobrar = function (params, query, cb) {
 Ventas.estadisticas = {};
 Ventas.estadisticas.clientes = function (params, query) {
     if (!query.empresa || !query.cliente || !query.start || !query.end) return Promise.reject();
+    var clientes = query.cliente.slice(0, maxSelect);
     var conditions = "AND ( dba.vtacab.anulado = 'N' ) " +
         "AND ( dba.vtacab.cod_empresa = ? ) " +
         "AND ( dba.vtacab.cod_sucursal = ? ) " +
-        "AND (  dba.clientes.cod_cliente IN " + q.in(query.cliente) + " )" +
+        "AND (  dba.clientes.cod_cliente IN " + q.in(clientes) + " )" +
         "AND Date(dba.vtacab.fha_cbte) >= Date (?) " +
         "AND Date(dba.vtacab.fha_cbte) <= Date (?) " +
         "GROUP BY moneda, vend, nombre, anho, mes \n";
@@ -235,6 +259,7 @@ Ventas.estadisticas.clientes = function (params, query) {
 };
 
 Ventas.estadisticas.articulos = function (params, query) {
+    var articulos = query.articulo.slice(0, maxSelect);
     var sql =
         "SELECT vend = Trim (dba.vtadet.cod_articulo), tipo = if dba.tpocbte.tp_def = " +
         "'NC' then 'credito' else 'venta' endif, nombre = Trim (dba.articulo.des_art ), anho = " +
@@ -251,74 +276,47 @@ Ventas.estadisticas.articulos = function (params, query) {
         "( dba.vtacab.cod_empresa = dba.tpocbte.cod_empresa ) AND " +
         "( dba.vtacab.cod_tp_comp = dba.tpocbte.cod_tp_comp )\n" +
         "AND ( dba.vtacab.anulado = 'N' ) " +
-        "AND ( dba.vtacab.cod_empresa = 'BT' ) " +
-        "AND ((dba.vtadet.cod_articulo = '02026047')) " +
-        "AND ( vtadet.cod_sucursal = '00' ) " +
-        "AND Date(dba.vtacab.fha_cbte) >= Date ('2012-01-01') " +
-        "AND Date(dba.vtacab.fha_cbte) <= Date ('2014-01-31')\n" +
+        "AND ( dba.vtacab.cod_empresa = ? ) " +
+        "AND ((dba.vtadet.cod_articulo IN " + q.in(articulos) + " )) " +
+        "AND ( vtadet.cod_sucursal = ? ) " +
+        "AND Date(dba.vtacab.fha_cbte) >= Date (?) " +
+        "AND Date(dba.vtacab.fha_cbte) <= Date (?)\n" +
         "GROUP BY vend, tipo, nombre, anho, mes, familia\n" +
         "ORDER BY 1, 2, 3, 4";
-    return conn.execAsync(sql);
+
+    var sqlParams = [query.empresa, query.sucursal, query.start, query.end];
+    return conn.execAsync(sql, sqlParams);
 };
 
 Ventas.estadisticas.vendedores = function (params, query) {
+    if (!query.empresa || !query.sucursal || !query.start || !query.end || !query.vendedor) return Promise.reject();
+    var vendedores = query.vendedor.slice(0, maxSelect);
     var sql =
-        "SELECT moneda = Trim ( dba.vtacab.codmoneda ), " +
+        "SELECT moneda = Trim ( dba.vtacab.codmoneda ),\n" +
         "vend = Trim ( dba.vtacab.cod_vendedor ), " +
         "tipo = if dba.tpocbte.tp_def = 'NC' then 'credito' else 'venta' endif, " +
         "nombre = Trim ( dba.vendedor.des_vendedor), " +
         "anho = year ( dba.vtacab.fha_cbte ), " +
         "mes = month ( dba.vtacab.fha_cbte ), " +
         "total = sum ( dba.vtacab.total_venta ) " +
-        "FROM dba.vendedor, dba.vtacab, dba.tpocbte, dba.clientes " +
-        "WHERE (dba.vtacab.cod_vendedor = dba.vendedor.cod_vendedor) " +
+        "FROM dba.vendedor, dba.vtacab, dba.tpocbte, dba.clientes\n" +
+        "WHERE (dba.vtacab.cod_vendedor = dba.vendedor.cod_vendedor)\n" +
         "AND (dba.vtacab.cod_empresa = dba.tpocbte.cod_empresa) " +
         "AND (dba.vtacab.cod_tp_comp = dba.tpocbte.cod_tp_comp) " +
         "AND (dba.vtacab.cod_empresa = dba.clientes.cod_empresa) " +
         "AND (dba.vtacab.cod_cliente = dba.clientes.cod_cliente) " +
         "AND (dba.vtacab.anulado = 'N') " +
-        "AND (dba.vtacab.cod_empresa = 'BT') " +
-        "AND Date(dba.vtacab.fha_cbte) >= Date ('2012-01-01') " +
-        "AND Date(dba.vtacab.fha_cbte) <= Date ('2012-05-31') " +
-        "GROUP BY moneda, vend, tipo, nombre, anho, mes " +
+        "AND (dba.vtacab.cod_empresa = ?) " +
+        "AND (dba.vtacab.cod_sucursal = ?) " +
+        "AND ( dba.vtacab.cod_vendedor IN " + q.in(vendedores) + " ) " +
+        "AND Date(dba.vtacab.fha_cbte) >= Date (?) " +
+        "AND Date(dba.vtacab.fha_cbte) <= Date (?) " +
+        "GROUP BY moneda, vend, tipo, nombre, anho, mes\n" +
         "ORDER BY 1, 2, 3, 4, 5";
 
-    var sql2 = "SELECT moneda = Trim ( dba.vtacab.codmoneda ), vend = Trim ( " +
-        "dba.vtacab.cod_vendedor ), tipo = 'venta', nombre = Trim ( " +
-        "dba.vendedor.des_vendedor), anho = year ( dba.vtacab.fha_cbte ), mes = month ( " +
-        "dba.vtacab.fha_cbte ), total = sum ( dba.vtacab.total_venta ) " +
-        "FROM dba.vendedor, dba.vtacab, dba.tpocbte, dba.clientes " +
-        "WHERE (dba.vtacab.cod_vendedor = dba.vendedor.cod_vendedor ) " +
-        "AND (dba.vtacab.cod_empresa = dba.tpocbte.cod_empresa) " +
-        "AND (dba.vtacab.cod_tp_comp = dba.tpocbte.cod_tp_comp) " +
-        "AND (dba.vtacab.cod_empresa = dba.clientes.cod_empresa) " +
-        "AND (dba.vtacab.cod_cliente = dba.clientes.cod_cliente) " +
-        "AND (dba.vtacab.anulado = 'N') " +
-        "AND (dba.tpocbte.tp_def <> 'NC') " +
-        "AND (dba.vtacab.cod_empresa = 'BT') " +
-        "AND Date(dba.vtacab.fha_cbte) >= Date ('2012-01-01') " +
-        "AND Date(dba.vtacab.fha_cbte) <= Date ('2012-05-31') " +
-        "GROUP BY moneda, vend, nombre, anho, mes " +
-        "UNION " +
-        "SELECT moneda = Trim ( dba.vtacab.codmoneda ), vend = " +
-        "Trim ( dba.vtacab.cod_vendedor ), tipo = 'credito', nombre = Trim ( " +
-        "dba.vendedor.des_vendedor), anho = year ( dba.vtacab.fha_cbte ), mes = month ( " +
-        "dba.vtacab.fha_cbte ), total = sum ( dba.vtacab.total_venta ) " +
-        "FROM dba.vendedor, dba.vtacab, dba.tpocbte, dba.clientes " +
-        "WHERE ( dba.vtacab.cod_vendedor = dba.vendedor.cod_vendedor ) " +
-        "AND ( dba.vtacab.cod_empresa = dba.tpocbte.cod_empresa ) " +
-        "AND (dba.vtacab.cod_tp_comp = dba.tpocbte.cod_tp_comp ) " +
-        "AND (dba.vtacab.cod_empresa = dba.clientes.cod_empresa ) " +
-        "AND (dba.vtacab.cod_cliente = dba.clientes.cod_cliente ) " +
-        "AND ( dba.vtacab.anulado = 'N' ) " +
-        "AND ( dba.tpocbte.tp_def = 'NC' ) " +
-        "AND ( dba.vtacab.cod_empresa = 'BT' ) " +
-        "AND Date(dba.vtacab.fha_cbte) >= Date ('2012-01-01') " +
-        "AND Date(dba.vtacab.fha_cbte) <= Date ('2012-05-31') " +
-        "GROUP BY moneda, vend, nombre, anho, mes " +
-        "ORDER BY 1, 2, 3, 4, 5";
+    var sqlParams = [query.empresa, query.sucursal, query.start, query.end];
 
-    return conn.execAsync(sql);
+    return conn.execAsync(sql, sqlParams);
 };
 
 module.exports = Ventas;
