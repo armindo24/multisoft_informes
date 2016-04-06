@@ -239,7 +239,8 @@
       $selectArticulo = $('#select-articulo').selectize({
         valueField: 'cod_articulo',
         labelField: 'des_art',
-        searchField: 'des_art'
+        searchField: 'des_art',
+        maxItems: 10,
       });
       selectArticulo = $selectArticulo[0].selectize;
       selectArticulo.disable();
