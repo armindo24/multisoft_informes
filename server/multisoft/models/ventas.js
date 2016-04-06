@@ -237,7 +237,7 @@ Ventas.estadisticas.clientes = function (params, query) {
 Ventas.estadisticas.articulos = function (params, query) {
     var sql =
         "SELECT vend = Trim (dba.vtadet.cod_articulo), tipo = if dba.tpocbte.tp_def = " +
-        "'NC' then 'NC' else 'VTA' endif, nombre = Trim (dba.articulo.des_art ), anho = " +
+        "'NC' then 'credito' else 'venta' endif, nombre = Trim (dba.articulo.des_art ), anho = " +
         "year (dba.vtacab.fha_cbte ), mes = month (dba.vtacab.fha_cbte ), total = sum " +
         "(dba.vtadet.cantidad ), familia = dba.articulo.cod_familia\n" +
         "FROM dba.articulo, dba.vtacab, dba.vtadet, dba.tpocbte, dba.clientes\n" +

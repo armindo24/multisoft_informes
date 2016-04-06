@@ -246,19 +246,19 @@
 
       $selectAgrupacion = $('#select-agrupacion').selectize({
         options: [
-          {value: 'cliente', text: 'Cliente'},
-          {value: 'vendedor', text: 'Vendedor'},
-          {value: 'articulo', text: 'Artículo'}
+          {value: 'clientes', text: 'Cliente'},
+          {value: 'vendedores', text: 'Vendedor'},
+          {value: 'articulos', text: 'Artículo'}
         ],
         onChange: function (value) {
           query.agrupacion = value;
           hideSelects();
           if (!value) return;
-          if (value === "cliente") {
+          if (value === "clientes") {
             $selectCliente.parent().parent().parent().parent().show();
-          } else if (value === "vendedor") {
+          } else if (value === "vendedores") {
             $selectVendedor.parent().parent().show();
-          } else if (value === "articulo") {
+          } else if (value === "articulos") {
             $selectArticulo.parent().parent().show();
           }
         }
@@ -267,10 +267,11 @@
     }
 
     function getInforme() {
+      if (!query.agrupacion) return;
       $('.collapse').collapse('hide');
       $.ajax({
         method: 'GET',
-        url: api + 'estadisticas/ventas/clientes',
+        url: api + 'estadisticas/ventas/' + query.agrupacion,
         data: query
       }).done(function (res) {
         initChart(res.data);
