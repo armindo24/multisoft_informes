@@ -48,6 +48,9 @@
     {% include 'ventas/_filtro.html' with name="tipoCliente" title="Tipo de Cliente" placeholder="Tipo" %}
     {% include 'ventas/_filtro.html' with name="cliente" %}
   </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="moneda" %}
+  </div>
 {% endblock %}
 
 
@@ -75,6 +78,7 @@
     var $selectCliente, selectCliente;
     var $selectVendedor, selectVendedor;
     var $selectArticulo, selectArticulo;
+    var $selectMoneda, selectMoneda;
     var dataTable;
 
     var currentClient;
@@ -83,7 +87,13 @@
     var currentYearData;
     var $donutTitle;
 
-    var numFormat = u.numFormatter;
+    var gs = $.fn.dataTable.render.number('.', ',', 0, 'Gs ').display;
+    var us = $.fn.dataTable.render.number('.', ',', 2, '$ ').display;
+    var numFormat = function (num) {
+      if (query.agrupacion === 'articulos') return num;
+      if (query.moneda === 'extranjera') return us(num);
+      return gs(num);
+    };
 
     $(document).ready(function () {
       u.hideNav();
@@ -94,6 +104,7 @@
 
     function hideSelects() {
       $selectCliente.parent().parent().parent().parent().hide();
+      $selectMoneda.parent().parent().parent().hide();
       $selectVendedor.parent().parent().hide();
       $selectArticulo.parent().parent().hide();
     }
@@ -262,14 +273,24 @@
           if (!value) return;
           if (value === "clientes") {
             $selectCliente.parent().parent().parent().parent().show();
+            $selectMoneda.parent().parent().parent().show();
           } else if (value === "vendedores") {
             $selectVendedor.parent().parent().show();
+            $selectMoneda.parent().parent().parent().show();
           } else if (value === "articulos") {
             $selectArticulo.parent().parent().show();
           }
         }
       });
       selectAgrupacion = $selectAgrupacion[0].selectize;
+
+      $selectMoneda = $('#select-moneda').selectize({
+        options: [
+          {value: 'local', text: 'Local'},
+          {value: 'extranjera', text: 'Extranjera'}
+        ]
+      });
+      selectMoneda = $selectMoneda[0].selectize;
     }
 
     function getInforme() {
@@ -362,10 +383,21 @@
           x: {
             type: 'category',
             categories: ['Ventas']
+
+          },
+          y: {
+            tick: {
+              format: numFormat
+            }
           }
         },
         tooltip: {
-          grouped: false
+          grouped: false,
+          format: {
+            value: function (value) {
+              return numFormat(value);
+            }
+          }
         }
       });
 
@@ -393,7 +425,7 @@
         tooltip: {
           format: {
             value: function (value, ratio, id, index) {
-              return value;
+              return numFormat(value);
             }
           }
         }
@@ -411,6 +443,11 @@
             type: 'timeseries',
             tick: {
               format: '%Y-%m'
+            }
+          },
+          y: {
+            tick: {
+              format: numFormat
             }
           }
         },
@@ -453,15 +490,15 @@
 
         text += "<tr class='" + $$.CLASS.tooltipName + "-" + d[i].id + "'>";
         text += "<td class='name'><span style='background-color:" + bgcolor + "'></span>" + name + "</td>";
-        text += "<td class='value'>" + value + "</td>";
+        text += "<td class='value'>" + numFormat(value) + "</td>";
         text += "</tr>";
         text += "<tr class='" + $$.CLASS.tooltipName + "-" + d[i].id + "'>";
         text += "<td class='name'><span style='background-color:" + bgcolor + "'></span>" + 'Venta' + "</td>";
-        text += "<td class='value'>" + currentYearData.datos[month].venta + "</td>";
+        text += "<td class='value'>" + numFormat(currentYearData.datos[month].venta) + "</td>";
         text += "</tr>";
         text += "<tr class='" + $$.CLASS.tooltipName + "-" + d[i].id + "'>";
         text += "<td class='name'><span style='background-color:" + bgcolor + "'></span>" + 'Nota Credito' + "</td>";
-        text += "<td class='value'>" + currentYearData.datos[month].credito + "</td>";
+        text += "<td class='value'>" + numFormat(currentYearData.datos[month].credito) + "</td>";
         text += "</tr>";
       }
       return text + "</table>";
