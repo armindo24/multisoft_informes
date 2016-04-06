@@ -205,11 +205,82 @@
       });
       selectEstado = $selectEstado[0].selectize;
     }
+    
+    //META.fn: sortJSON
+    function sortJSON(data, key) {
+        return data.sort(function (a, b) {
+            var x = a[key];
+            var y = b[key];
+            return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+        });
+    };
 
     function getInforme() {
       $('.collapse').collapse('hide');
-      $resultado.show();
+      $resultado.hide();
       $('#bodytab').empty()
+      
+      $.get(api + 'recaudaciones/planillas', query).done(function (d) {
+        if (d.data.length > 0) {
+            console.log(d.data)
+            var aplanilla = []
+            var aplanilla_moneda = []
+            var nro_planilla = 0;
+            var aorder_ren = sortJSON(d.data, 'nroplanilla');
+            for (var a=0; a < aorder_ren.length; a++){
+                if (aorder_ren[a].nroplanilla != nro_planilla){
+                    var sdiv_planilla = '<div id="pla_'+aorder_ren[a].nroplanilla+'">'+
+                                            '<h4>PLANILLA DE RECAUDACIONES - CONSOLIDADA - '+aorder_ren[a].nroplanilla+' - ';
+                        if (aorder_ren[a].estado == 'CE'){
+                            sdiv_planilla+= 'CERRADO';
+                        } else {
+                            sdiv_planilla+= 'ABIERTO'; 
+                        }
+                            sdiv_planilla+= '</h4>'+
+                                        '</div>';
+                    $('#bodytab').append(sdiv_planilla);
+                    aplanilla.push(aorder_ren[a].nroplanilla);
+                    nro_planilla = aorder_ren[a].nroplanilla;
+                } 
+            }
+            var aorder_pla = sortJSON(d.data, 'codmoneda');
+            for (var a=0;a < aplanilla.length; a++){
+                var moneda = ""
+                for (var b=0; b < aorder_pla.length; b++){
+                    if (aplanilla[a] == aorder_pla[b].nroplanilla){
+                        console.log(aorder_pla[b].nroplanilla,aorder_pla[b].codmoneda);
+                        if (moneda != aorder_pla[b].codmoneda){
+                            var sdiv_moneda = '<div id="pla_mon_'+aplanilla[a]+'_'+aorder_pla[b].codmoneda+'">';
+                            if (aorder_pla[b].codmoneda == "GS"){
+                                    sdiv_moneda+= '<h5>GUARANIES</h5>';
+                            } else {
+                                    sdiv_moneda+= '<h5>DOLARES</h5>';
+                            }
+                                sdiv_moneda+= '</div>';
+                            $('#pla_'+aplanilla[a]).append(sdiv_moneda);
+                            aplanilla_moneda.push({'plan' : aplanilla[a] ,'mon' : aorder_pla[b].codmoneda});
+                            moneda = aorder_pla[b].codmoneda;
+                        }   
+                    }
+                }
+            }
+        }
+        
+      });
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
 
       /*if (!dataTable) {
         $resultado.show();

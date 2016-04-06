@@ -11,13 +11,13 @@ Recaudacion.planillas = function (params, query) {
     return conn.execAsync(sql, sql_params);
 };
 
-Recaudacion.planillaConsolidada = function (params, query) {
+Recaudacion.planillaConsolidada = function (query, cb) {
     var sql = "SELECT "+
                 "dba.recaudcab.cod_empresa,dba.recaudcab.cod_sucursal,dba.recaudcab.nroplanilla,dba.recaudcab.estado,"+           
                 "dba.recaudop.nrooperacion,dba.recauddet.linea,dba.recaudcab.cod_cajero,dba.recauddet.cod_tp_pago,"+            
                 "dba.recauddet.codmoneda,dba.recauddet.fact_cambio,"+            
                 "case when dba.recauddet.codmoneda = 'GS' then char(cast(dba.recauddet.importe as decimal (20,0))) else char(cast(dba.recauddet.importe as decimal (20,2))) end as importe,"+                
-                "dba.recaudcab.fecha,dba.tporecaudacion.operador,dba.tporecaudacion.agrupacion "     
+                "dba.recaudcab.fecha,dba.tporecaudacion.operador,dba.tporecaudacion.agrupacion " +
               "FROM "+ 
                 "dba.recaudcab,dba.recauddet,dba.recaudop,dba.tporecaudacion "+    
               "WHERE "+ 
@@ -26,12 +26,12 @@ Recaudacion.planillaConsolidada = function (params, query) {
                 "and dba.recaudop.cod_sucursal = dba.recauddet.cod_sucursal and dba.recaudop.nroplanilla = dba.recauddet.nroplanilla "+ 
                 "and dba.recaudop.nrooperacion = dba.recauddet.nrooperacion and dba.tporecaudacion.cod_empresa = dba.recauddet.cod_empresa "+ 
                 "and dba.tporecaudacion.cod_tp_pago = dba.recauddet.cod_tp_pago and dba.recaudcab.cod_empresa = 'BT' "+
-                "AND (( Date(dba.recaudcab.fecha) >= Date('2013-01-01')) AND ( Date(dba.recaudcab.fecha) <= Date('2013-01-31'))) "+ 
+                "AND (( Date(dba.recaudcab.fecha) >= Date('2013-01-01')) AND ( Date(dba.recaudcab.fecha) <= Date('2013-01-07'))) "+ 
               "UNION SELECT "+ 
                 "dba.pagoscab.cod_empresa,dba.recaudcomp.cod_sucursal,dba.recaudcomp.nroplanilla,dba.recaudcab.estado,"+
-                "dba.pagoscab.pago_numero,dba.pagosrec.linea,dba.pagoscab.cod_cajero,dba.pagosrec.cod_tp_pago,"
+                "dba.pagoscab.pago_numero,dba.pagosrec.linea,dba.pagoscab.cod_cajero,dba.pagosrec.cod_tp_pago,"+
                 "dba.pagosrec.codmoneda,dba.pagosrec.fact_cambio,"+
-                "case when dba.pagosrec.codmoneda = 'GS' then string(cast(dba.pagosrec.importe as decimal (20,0))) else string(cast(dba.pagosrec.importe as decimal (20,2))) end as importe,"                
+                "case when dba.pagosrec.codmoneda = 'GS' then string(cast(dba.pagosrec.importe as decimal (20,0))) else string(cast(dba.pagosrec.importe as decimal (20,2))) end as importe,"+        
                 "dba.pagoscab.fecha,dba.tporecaudacion.operador,dba.tporecaudacion.agrupacion "+
               "FROM "+ 
                 "dba.pagoscab,dba.pagosrec,dba.recaudcomp,dba.tporecaudacion,dba.recaudcab "+    
@@ -43,7 +43,7 @@ Recaudacion.planillaConsolidada = function (params, query) {
                 "and dba.recaudcomp.nroplanilla = dba.recaudcab.nroplanilla and dba.tporecaudacion.cod_empresa = dba.pagosrec.cod_empresa "+ 
                 "and dba.tporecaudacion.cod_tp_pago = dba.pagosrec.cod_tp_pago and dba.recaudcomp.aplicacion = 'N' "+    
                 "and dba.recaudcab.cod_empresa = 'BT' AND (( Date(dba.recaudcab.fecha) >= Date('2013-01-01')) "+  
-                "AND ( Date(dba.recaudcab.fecha) <= Date('2013-01-31'))) "+  
+                "AND ( Date(dba.recaudcab.fecha) <= Date('2013-01-07'))) "+  
               "UNION SELECT "+ 
                 "dba.pagoscab.cod_empresa,dba.recaudcomp.cod_sucursal,dba.recaudcomp.nroplanilla,dba.recaudcab.estado,"+
                 "dba.pagoscab.pago_numero,dba.recaudcomp.linea,dba.pagoscab.cod_cajero,"+
@@ -59,7 +59,7 @@ Recaudacion.planillaConsolidada = function (params, query) {
                 "and dba.recaudcomp.cod_sucursal = dba.recaudcab.cod_sucursal and dba.recaudcomp.nroplanilla = dba.recaudcab.nroplanilla "+   
                 "and dba.tpocbte.cod_empresa = dba.pagoscab.cod_empresa and dba.tpocbte.cod_tp_comp = dba.pagoscab.cod_tp_comp "+    
                 "and dba.recaudcomp.aplicacion = 'S' and dba.recaudcab.cod_empresa = 'BT' "+ 
-                "AND (( Date(dba.recaudcab.fecha) >= Date('2013-01-01')) AND ( Date(dba.recaudcab.fecha) <= Date('2013-01-31')))";
+                "AND (( Date(dba.recaudcab.fecha) >= Date('2013-01-01')) AND ( Date(dba.recaudcab.fecha) <= Date('2013-01-07')))";
     
     console.log(sql);
     
