@@ -57,15 +57,17 @@
   </ul>
 
   <div class="results">
-  <div class="result-group">
-  <div class="result-header"></div>
-  <div id="bodytab">
-    <div>
+    <div class="result-group">
+      <div class="result-header"></div>
+      <div id="bodytab">
+        <div>
+        </div>
+      </div>
     </div>
   </div>
 {% endblock %}
 
-<!-- {% block table %}
+{% block table %}
   <thead>
   <tr>
     <th class="grouping-col">Tipo</th>
@@ -81,13 +83,16 @@
     <th></th>
   </tr>
   </tfoot>
-{% endblock %} -->
+{% endblock %}
 
 {% block extra_foot %}
   <script>
     var query = {
-      empresa: '',
-      tab: 'planilla'
+      empresa: 'BT',
+      sucursal: '00',
+      start: '2013-01-28',
+      end: '2013-01-29',
+      estado: 'CE'
     };
     var $results, $resultado;
 
@@ -98,10 +103,19 @@
     var $selectEstado, selectEstado;
     var dataTable;
 
+    var $tabs;
     var numFormat = u.numFormatter;
 
     $(document).ready(function () {
       u.hideNav();
+      $tabs = $(".nav.nav-pills li");
+      $tabs.on("click", function (e) {
+        $tabs.removeClass("active");
+        $(this).addClass('active');
+        if (this.id === query.tab) return;
+        query.tab = this.id;
+        getInforme(this.id);
+      });
       initDates();
       initSelects();
       $results = $('#results');
@@ -135,7 +149,7 @@
         query[key] = this.value;
       });
 
-      $inputDate.datepicker('setDate', new Date());
+      $inputDate.datepicker('setDate', new Date(2013,0, 28));
       $inputDate.datepicker('update');
     }
 
@@ -153,8 +167,7 @@
         onChange: function (value) {
           query.empresa = value;
           u.resetSelect(selectSucursal);
-          selectCajero.disable();
-          selectCajero.clear();
+          u.softResetSelect(selectCajero);
           if (!value.length) return;
           selectCajero.enable();
           selectSucursal.load(function (callback) {
@@ -181,7 +194,6 @@
         searchField: 'Des_Sucursal',
         onChange: function (value) {
           query.sucursal = value;
-          if (!value.length) return;
         }
       });
       selectSucursal = $selectSucursal[0].selectize;
@@ -213,11 +225,42 @@
       selectEstado = $selectEstado[0].selectize;
     }
 
-    function getInforme() {
-      var abreviaturas;
-      var agrupado;
-      var totalGS, totalUS;
+    //META.fn: sortJSON
+    function sortJSON(data, key) {
+      return data.sort(function (a, b) {
+        var x = a[key];
+        var y = b[key];
+        return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+      });
+    }
+
+    function addCommas(nStr) {
+      nStr += '';
+      var x = nStr.split('.');
+      var x1 = x[0];
+      var x2 = x.length > 1 ? ',' + x[1] : '';
+      var rgx = /(\d+)(\d{3})/;
+      while (rgx.test(x1)) {
+        x1 = x1.replace(rgx, '$1' + '.' + '$2');
+      }
+      return x1 + x2;
+    }
+
+    function getInforme(informe) {
       $('.collapse').collapse('hide');
+      $resultado.hide();
+      $('#bodytab').empty();
+      if (!informe) {
+        query.tab = informe = 'planilla';
+        $tabs.removeClass('active');
+        $tabs.first().addClass('active');
+      }
+
+      if (informe === 'planilla') {
+        $.get(api + 'recaudaciones/planillas', query).done(function (d) {
+          {% include 'ventas/_recaudaciones_resumen.js' %}
+        });
+      }
       $resultado.show();
       $('#bodytab').empty()
       $.ajax({
@@ -267,24 +310,63 @@
        var last = null;
        var colCount = api.columns().header().length;
 
-       api.column('tipo:name', {page: 'current'}).data().each(function (group, i) {
-       if (last !== group) {
-       $(rows).eq(i).before(
-       '<tr class="group text-center"><td colspan="' + colCount + '"><h4>' + group + '</h4></td></tr>'
-       );
-       last = group;
-       }
-       });
-       },
-       processing: true
-       });
-       } else {
-       dataTable.clear().draw();
-       dataTable.processing(true);
-       dataTable.ajax.reload(function () {
-       dataTable.processing(false);
-       }, true);
-       }*/
+
+      //esta parte era la que hiciste jordan
+      else if (informe === 'resumido') {
+        if (!dataTable) {
+          $resultado.show();
+          u.defaultDT();
+          dataTable = $results.DataTable({
+            ajax: function (d, cb, s) {
+              $.ajax({
+                method: 'GET',
+                url: api + 'recaudaciones/' + query.empresa + '/consolidada',
+                data: query
+              }).done(function (res) {
+                cb(res);
+              }).fail(function (err) {
+                console.log(err);
+                dataTable.clear().draw();
+                dataTable.processing(false);
+              });
+            },
+            columns: [
+              {data: 'cod_tp_comp', name: 'tipo'},
+              {data: 'pago_numero'},
+              {data: 'fecha', render: u.dateFormat},
+              {
+                data: 'razon_social', render: function (d, t, r, m) {
+                return r['cod_cliente'] + ' - ' + d;
+              }
+              },
+              {data: 'importe'}
+            ],
+            footerCallback: footerSum,
+            drawCallback: function (settings) {
+              var api = this.api();
+              var rows = api.rows({page: 'current'}).nodes();
+              var last = null;
+              var colCount = api.columns().header().length;
+
+              api.column('tipo:name', {page: 'current'}).data().each(function (group, i) {
+                if (last !== group) {
+                  $(rows).eq(i).before(
+                          '<tr class="group text-center"><td colspan="' + colCount + '"><h4>' + group + '</h4></td></tr>'
+                  );
+                  last = group;
+                }
+              });
+            },
+            processing: true
+          });
+        } else {
+          dataTable.clear().draw();
+          dataTable.processing(true);
+          dataTable.ajax.reload(function () {
+            dataTable.processing(false);
+          }, true);
+        }
+      }
     }
     function footerSum(row, data, start, end, display) {
       var api = this.api(), data;
