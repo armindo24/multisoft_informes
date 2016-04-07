@@ -216,6 +216,7 @@
     function getInforme() {
       var abreviaturas;
       var agrupado;
+      var totalGS, totalUS;
       $('.collapse').collapse('hide');
       $resultado.show();
       $('#bodytab').empty()
@@ -228,6 +229,8 @@
         console.log("traido");
         abreviaturas = _(res.data).map('abreviatura').uniq().value().sort();
         agrupado = _(globData.data).groupBy('cod_tp_comp').value();
+        totalGS = _(globData.data).filter(['codmoneda', 'GS']).map('importe').map(_.parseInt).sum();
+        totalUS = _(globData.data).filter(['codmoneda', 'US']).map('importe').map(_.parseInt).sum();
         console.log(agrupado);
         console.log(abreviaturas);
       });
