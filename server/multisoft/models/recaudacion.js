@@ -81,24 +81,24 @@ Recaudacion.resumido = function (params, query) {
         "DBA.pagoscab.pago_numero , DBA.pagoscab.fecha , DBA.pagoscab.cod_cliente , " +
         "DBA.clientes.razon_social , dba.pagosrec.cod_tp_pago , dba.pagosrec.codmoneda " +
         ", dba.pagosrec.importe , DBA.pagoscab.tot_efectivo , " +
-        "dba.tporecaudacion.abreviatura, dba.moneda.descrip , dba.moneda.cantdecimal " +
-        "FROM dba.pagosrec  " +
+        "dba.tporecaudacion.abreviatura, dba.moneda.descrip , dba.moneda.cantdecimal\n" +
+        "FROM dba.pagosrec \n" +
         "RIGHT OUTER JOIN DBA.pagoscab ON dba.pagosrec.cod_empresa = " +
         "DBA.pagoscab.cod_empresa AND dba.pagosrec.cod_tp_comp = " +
         "DBA.pagoscab.cod_tp_comp AND dba.pagosrec.pago_numero = " +
         "DBA.pagoscab.pago_numero, DBA.clientes , DBA.tpocbte , dba.tporecaudacion , " +
-        "dba.moneda  " +
+        "dba.moneda \n" +
         "WHERE clientes.cod_empresa = pagoscab.cod_empresa and " +
         "clientes.cod_cliente = pagoscab.cod_cliente and tpocbte.cod_empresa = " +
         "pagoscab.cod_empresa and tpocbte.cod_tp_comp = pagoscab.cod_tp_comp and " +
         "pagosrec.cod_empresa = tporecaudacion.cod_empresa and pagosrec.cod_tp_pago = " +
-        "tporecaudacion.cod_tp_pago and pagosrec.codmoneda = moneda.codmoneda and " +
+        "tporecaudacion.cod_tp_pago and pagosrec.codmoneda = moneda.codmoneda and \n" +
         "exists ( select * from dba.recaudcab, dba.recaudcomp Where " +
         "recaudcab.cod_empresa = recaudcomp.cod_empresa and recaudcab.cod_sucursal = " +
         "recaudcomp.cod_sucursal and recaudcab.nroplanilla = recaudcomp.nroplanilla and " +
         "recaudcomp.cod_empresa = pagoscab.cod_empresa and recaudcomp.cod_tp_comp = " +
         "pagoscab.cod_tp_comp and recaudcomp.pago_numero = pagoscab.pago_numero and " +
-        "pagoscab.cod_empresa = ? ";
+        "pagoscab.cod_empresa = ? \n";
 
     var sqlParams = [params.empresa];
 
@@ -112,11 +112,11 @@ Recaudacion.resumido = function (params, query) {
     }
 
     if (query.estado) {
-        sql += " AND ( recaudcab.estado = ?) ) ";
+        sql += " AND ( recaudcab.estado = ?) ";
         sqlParams.push(query.estado);
     }
 
-    var sqlOrder = sql + ") ORDER BY pagoscab.cod_tp_comp";
+    var sqlOrder = sql + ") \nORDER BY pagoscab.cod_tp_comp";
     
     console.log(sqlOrder);
     return conn.execAsync(sqlOrder, sqlParams);
