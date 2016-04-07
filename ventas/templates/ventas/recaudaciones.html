@@ -149,7 +149,7 @@
         query[key] = this.value;
       });
 
-      $inputDate.datepicker('setDate', new Date(2013,0, 28));
+      $inputDate.datepicker('setDate', new Date(2013, 0, 28));
       $inputDate.datepicker('update');
     }
 
@@ -261,57 +261,22 @@
           {% include 'ventas/_recaudaciones_resumen.js' %}
         });
       }
-      $resultado.show();
-      $('#bodytab').empty()
-      $.ajax({
-        method: 'GET',
-        url: api + 'recaudaciones/' + query.empresa + '/detallado',
-        data: query
-      }).done(function (res) {
-        globData = res;
-        console.log("traido");
-        abreviaturas = _(res.data).map('abreviatura').uniq().value().sort();
-        agrupado = _(globData.data).groupBy('cod_tp_comp').value();
-        totalGS = _(globData.data).filter(['codmoneda', 'GS']).map('importe').map(_.parseInt).sum();
-        totalUS = _(globData.data).filter(['codmoneda', 'US']).map('importe').map(_.parseInt).sum();
-        console.log(agrupado);
-        console.log(abreviaturas);
-      });
-      /*if (!dataTable) {
-       $resultado.show();
-       u.defaultDT();
-       dataTable = $results.DataTable({
-       ajax: function (d, cb, s) {
-       $.ajax({
-       method: 'GET',
-       url: api + 'recaudaciones/' + query.empresa + '/consolidada',
-       data: query
-       }).done(function (res) {
-       cb(res);
-       }).fail(function (err) {
-       console.log(err);
-       dataTable.clear().draw();
-       dataTable.processing(false);
-       });
-       },
-       columns: [
-       {data: 'cod_tp_comp', name: 'tipo'},
-       {data: 'pago_numero'},
-       {data: 'fecha', render: u.dateFormat},
-       {data: 'razon_social', render: function (d, t, r, m){
-       return r['cod_cliente'] + ' - ' + d;
-       }},
-       {data: 'importe'}
-       ],
-       footerCallback: footerSum,
-       drawCallback: function (settings) {
-       var api = this.api();
-       var rows = api.rows({page: 'current'}).nodes();
-       var last = null;
-       var colCount = api.columns().header().length;
-
-
-      //esta parte era la que hiciste jordan
+      else if (informe === 'detallado') {
+        $.ajax({
+          method: 'GET',
+          url: api + 'recaudaciones/' + query.empresa + '/detallado',
+          data: query
+        }).done(function (res) {
+          globData = res;
+          console.log("traido");
+          abreviaturas = _(res.data).map('abreviatura').uniq().value().sort();
+          agrupado = _(globData.data).groupBy('cod_tp_comp').value();
+          totalGS = _(globData.data).filter(['codmoneda', 'GS']).map('importe').map(_.parseInt).sum();
+          totalUS = _(globData.data).filter(['codmoneda', 'US']).map('importe').map(_.parseInt).sum();
+          console.log(agrupado);
+          console.log(abreviaturas);
+        });
+      }
       else if (informe === 'resumido') {
         if (!dataTable) {
           $resultado.show();
