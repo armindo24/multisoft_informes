@@ -130,7 +130,6 @@
     var $selectSucursal, selectSucursal;
     var $selectCajero, selectCajero;
     var $selectEstado, selectEstado;
-    var dataTable;
 
     var dtDeposito, divDeposito;
     var dtAjustes, divAjustes;
@@ -291,6 +290,7 @@
       $resultado.hide();
       divDeposito.hide();
       divResumido.hide();
+      divAjustes.hide();
       $('#bodytab').empty();
       if (!informe) {
         query.tab = informe = 'planilla';
@@ -303,27 +303,36 @@
           {% include 'ventas/_recaudaciones_resumen.js' %}
         });
       } else if (informe === 'ajustes') {
-        $('#tabla_ajustes').DataTable({
-          ajax: function (d, cb, s) {
-            $.ajax({
-              method: 'GET',
-              url: api + 'recaudaciones/' + query.empresa + '/ajustes',
-              data: query
-            }).done(function (res) {
-              cb(res);
-            }).fail(function (err) {
-              console.log(err);
-            });
-          },
-          columns: [
-            {data: 'codmoneda'},
-            {data: 'cod_sucursal'},
-            {data: 'cod_cajero'},
-            {data: 'fecha', render: u.dateFormat},
-            {data: 'observ'},
-            {data: 'importe'},
-          ]
-        });
+        divAjustes.show();
+        if (!dtAjustes) {
+          dtAjustes = divAjustes.find('table').DataTable({
+            ajax: function (d, cb, s) {
+              $.ajax({
+                method: 'GET',
+                url: api + 'recaudaciones/' + query.empresa + '/ajustes',
+                data: query
+              }).done(function (res) {
+                cb(res);
+              }).fail(function (err) {
+                console.log(err);
+              });
+            },
+            columns: [
+              {data: 'codmoneda'},
+              {data: 'cod_sucursal'},
+              {data: 'cod_cajero'},
+              {data: 'fecha', render: u.dateFormat},
+              {data: 'observ'},
+              {data: 'importe'}
+            ], processing: true
+          });
+        } else {
+          dtAjustes.clear().draw();
+          dtAjustes.processing(true);
+          dtAjustes.ajax.reload(function () {
+            dtAjustes.processing(false);
+          }, true);
+        }
       } else if (informe === 'depositos') {
         divDeposito.show();
         if (!dtDeposito) {
@@ -454,8 +463,8 @@
                 cb(res);
               }).fail(function (err) {
                 console.log(err);
-                dataTable.clear().draw();
-                dataTable.processing(false);
+                dtResumido.clear().draw();
+                dtResumido.processing(false);
               });
             },
             columns: [
@@ -469,7 +478,11 @@
               },
               {data: 'importe'}
             ],
-            footerCallback: footerSum,
+            footerCallback: function (row, data, start, end, display) {
+              var api = this.api(), data;
+              var totalImporte = api.column(-1).data().sum();
+              $(api.column(-1).footer()).html(numFormat.display(totalImporte));
+            },
             drawCallback: function (settings) {
               var api = this.api();
               var rows = api.rows({page: 'current'}).nodes();
@@ -495,17 +508,6 @@
           }, true);
         }
       }
-    }
-    function footerSum(row, data, start, end, display) {
-      var api = this.api(), data;
-
-      // Total over all pages
-      var totalImporte = api.column(-1).data().sum();
-
-      // Update footer
-      $(api.column(-1).footer()).html(
-              numFormat.display(totalImporte)
-      );
     }
   </script>
 {% endblock %}
