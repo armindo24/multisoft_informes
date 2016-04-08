@@ -59,6 +59,7 @@
 
   <div id="div_detallado">
   </div>
+
   <div id="div_deposito">
     <table id="tabla_deposito" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
       <thead>
@@ -134,6 +135,7 @@
     var dtDeposito, divDeposito;
     var dtAjustes, divAjustes;
     var dtResumido, divResumido;
+    var divDetallado;
 
     var $tabs;
     var numFormat = u.numFormatter;
@@ -160,6 +162,8 @@
       divAjustes.hide();
       divResumido = $('#div_resumido');
       divResumido.hide();
+      divDetallado = $('#div_detallado');
+      divDetallado.hide();
     });
 
     var calcSaldoAcumulado = function (d, t, r, m) {
@@ -291,6 +295,9 @@
       divDeposito.hide();
       divResumido.hide();
       divAjustes.hide();
+      divDetallado.hide();
+      divDetallado.find('table').DataTable().destroy();
+      divDetallado.empty();
       $('#bodytab').empty();
       if (!informe) {
         query.tab = informe = 'planilla';
@@ -376,7 +383,7 @@
           url: api + 'recaudaciones/' + query.empresa + '/detallado',
           data: query
         }).done(function (res) {
-          u.defaultDT();
+          divDetallado.show();
           var newTable = function (html, title, id) {
             return '<h1>' + title + '</h1>' +
                     '<table '
@@ -394,7 +401,6 @@
           var agrupado = _(res.data).groupBy('cod_tp_comp').value();
           var totalGS = _(res.data).filter(['codmoneda', 'GS']).map('importe').map(_.parseInt).sum();
           var totalUS = _(res.data).filter(['codmoneda', 'US']).map('importe').map(_.parseInt).sum();
-          var $tablaDetallado = $('#div_detallado');
           var headers = ['Cliente', 'Fecha', '# Comp.'];
 
           var n = abreviaturas.length;
@@ -431,7 +437,7 @@
             for (var i = 0; i < n; i++)
               bigSum[i] += sums[i];
 
-            $tablaDetallado.append(newTable(table, group, group));
+            divDetallado.append(newTable(table, group, group));
           });
           var totalTable =
                   "<thead><tr><th class='price-label'>" + abreviaturas.join("</th><th class='price-label'>") + "</th></tr><thead>" +
@@ -446,9 +452,10 @@
                   "<th colspan='" + (n - 1) + "'>" + u.usFormatter.display(totalUS) + "</th>" +
                   "</tr>" +
                   "</tfoot>";
-          $tablaDetallado.append(newTable(totalTable, 'Total', 'total'));
-          $('#div_detallado table').DataTable();
-          {#          $resultado.show();#}
+          divDetallado.append(newTable(totalTable, 'Total', 'total'));
+          divDetallado.find('table').DataTable({
+            info: false
+          });
         });
       } else if (informe === 'resumido') {
         divResumido.show();
