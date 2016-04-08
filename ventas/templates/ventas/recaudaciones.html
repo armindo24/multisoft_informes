@@ -88,6 +88,20 @@
       </tfoot>
     </table>
   </div>
+  <div id="div_ajustes">
+    <table id="tabla_ajustes" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+      <thead>
+      <tr>
+        <th>Moneda</th>
+        <th>Sucursal</th>
+        <th>Cajero</th>
+        <th>Fecha</th>
+        <th>Concepto</th>
+        <th class="price-label">Importe</th>
+      </tr>
+      </thead>
+    </table>
+  </div>
 {% endblock %}
 
 {% block table %}
@@ -281,6 +295,28 @@
       if (informe === 'planilla') {
         $.get(api + 'recaudaciones/planillas', query).done(function (d) {
           {% include 'ventas/_recaudaciones_resumen.js' %}
+        });
+      } else if (informe === 'ajuste') {
+        $('#tabla_ajustes').DataTable({
+          ajax: function (d, cb, s) {
+            $.ajax({
+              method: 'GET',
+              url: api + 'recaudaciones/' + query.empresa + '/ajustes',
+              data: query
+            }).done(function (res) {
+              cb(res);
+            }).fail(function (err) {
+              console.log(err);
+            });
+          },
+          columns: [
+            {data: 'codmoneda'},
+            {data: 'cod_sucursal'},
+            {data: 'cod_cajero'},
+            {data: 'fecha', render: u.dateFormat},
+            {data: 'observ'},
+            {data: 'importe'},
+          ]
         });
       } else if (informe === 'depositos') {
         u.defaultDT();
