@@ -183,18 +183,20 @@ Recaudacion.ajuste = function (params, query) {
 };
 
 Recaudacion.deposito = function (params, query) {
-    var sql = "SELECT dba.depcuentadet.nrodeposito, dba.depcuentadet.tot_efectivo, " +
-        "dba.bancos.descrip , dba.depcuentadet.fechaacreditacion , " +
-        "dba.cuentabancaria.codmoneda, dba.moneda.descrip, dba.moneda.cantdecimal FROM " +
+    var sql = "SELECT dba.depcuentadet.nrodeposito," +
+        "importe_gs = if (dba.moneda.codmoneda = 'GS') then dba.depcuentadet.tot_efectivo else 0 endif," +
+        "importe_us = if (dba.moneda.codmoneda = 'US') then dba.depcuentadet.tot_efectivo else 0 endif," +
+        "dba.bancos.descrip , dba.depcuentadet.fechaacreditacion fecha, dba.cuentabancaria.codmoneda\n" +
+        "FROM " +
         "dba.depcuentadet, dba.bancos, dba.cuentabancaria, dba.moneda where " +
         "dba.depcuentadet.cod_empresa = dba.cuentabancaria.cod_empresa and " +
         "dba.depcuentadet.codbanco = dba.cuentabancaria.codbanco and " +
         "dba.depcuentadet.cuentabanco = dba.cuentabancaria.cuentabanco and " +
         "dba.depcuentadet.codbanco = dba.bancos.codbanco and " +
         "dba.cuentabancaria.codmoneda = dba.moneda.codmoneda\n" +
-        "AND ( depcuentadet.cod_empresa = 'BT' )";
-
-    return conn.execAsync(sql);
+        "AND ( depcuentadet.cod_empresa = ? )";
+    var sqlParams = [params.empresa];
+    return conn.execAsync(sql, sqlParams);
 };
 
 module.exports = Recaudacion;

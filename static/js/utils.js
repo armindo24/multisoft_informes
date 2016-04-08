@@ -186,6 +186,7 @@ u.get_empresas = function (user_id, cb) {
 
 u.numFormatter = $.fn.dataTable.render.number('.', ',', 0);
 u.numFormat = u.numFormatter.display;
+u.usFormatter = $.fn.dataTable.render.number('.', ',', 2);
 
 u.parseVal = function (i) {
     var n = typeof i === 'string' ?
@@ -223,7 +224,9 @@ u.defaultDT = function () {
         },
         columnDefs: [
             {className: "price-value", targets: "price-label"},
+            {className: "price-value", targets: "us-price-label"},
             {render: u.numFormatter, targets: "price-label"},
+            {render: u.usFormatter, targets: "us-price-label"},
             {className: "text-center", targets: "text-center"},
             {visible: false, targets: "grouping-col"}
         ],

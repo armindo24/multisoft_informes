@@ -6,6 +6,10 @@
     text-align: right;
 }
 
+.us-price-label {
+    text-align: right;
+}
+
 div.DTS tbody tr.odd {
     background-color: #f9f9f9;
 }

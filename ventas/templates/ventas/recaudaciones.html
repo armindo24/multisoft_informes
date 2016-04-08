@@ -67,6 +67,26 @@
   </div>
 
   <div id="tablas_detallado"></div>
+  <div id="div_deposito">
+    <table id="tabla_deposito" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+      <thead>
+      <tr>
+        <th># Depósito</th>
+        <th>Banco</th>
+        <th>Fecha</th>
+        <th class="price-label">Importe GS</th>
+        <th class="us-price-label">Importe US</th>
+      </tr>
+      </thead>
+      <tfoot>
+      <tr>
+        <th colspan="3" style="text-align:right">Total:</th>
+        <th></th>
+        <th></th>
+      </tr>
+      </tfoot>
+    </table>
+  </div>
 {% endblock %}
 
 {% block table %}
@@ -263,7 +283,43 @@
           {% include 'ventas/_recaudaciones_resumen.js' %}
         });
       }
-      else if (informe === 'detallado') {
+      else if (informe === 'depositos') {
+        u.defaultDT();
+        $('#tabla_deposito').DataTable({
+          ajax: function (d, cb, s) {
+            $.ajax({
+              method: 'GET',
+              url: api + 'recaudaciones/' + query.empresa + '/depositos',
+              data: query
+            }).done(function (res) {
+              cb(res);
+            }).fail(function (err) {
+              console.log(err);
+            });
+          },
+          columns: [
+            {data: 'nrodeposito'},
+            {data: 'descrip'},
+            {data: 'fecha', render: u.dateFormat},
+            {data: 'importe_gs'},
+            {data: 'importe_us'}
+          ],
+          footerCallback: function (row, data, start, end, display) {
+            var api = this.api(), data;
+
+            // Total over all pages
+            var totalUS = api.column(-1).data().sum();
+            var totalGS = api.column(-2).data().sum();
+            // Update footer
+            $(api.column(-1).footer()).html(
+                    u.usFormatter.display(totalUS)
+            );
+            $(api.column(-2).footer()).html(
+                    numFormat.display(totalGS)
+            );
+          }
+        });
+      } else if (informe === 'detallado') {
         $.ajax({
           method: 'GET',
           url: api + 'recaudaciones/' + query.empresa + '/detallado',
