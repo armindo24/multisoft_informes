@@ -125,7 +125,7 @@ Recaudacion.resumido = function (params, query) {
 Recaudacion.detallado = function (params, query) {
     var sql =
         "SELECT DBA.pagoscab.cod_empresa,  DBA.pagoscab.cod_tp_comp, " +
-        "DBA.pagoscab.pago_numero, DBA.pagoscab.fecha, DBA.pagoscab.cod_cliente, " +
+        "DBA.pagoscab.pago_numero, DATE(DBA.pagoscab.fecha) fecha, DBA.pagoscab.cod_cliente, " +
         "DBA.clientes.razon_social, dba.pagosrec.cod_tp_pago, dba.pagosrec.codmoneda, " +
         "dba.pagosrec.importe, DBA.pagoscab.tot_efectivo, " +
         "dba.tporecaudacion.abreviatura, dba.moneda.descrip, dba.moneda.cantdecimal \n" +
