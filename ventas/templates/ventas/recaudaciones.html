@@ -261,8 +261,7 @@
         options: [
           {value: 'AB', text: 'Abierta'},
           {value: 'CE', text: 'Cerrada'},
-          {value: 'GN', text: 'Generada'},
-          {value: 'TD', text: 'Todos'}
+          {value: 'GN', text: 'Generada'}
         ]
       });
       selectEstado = $selectEstado[0].selectize;
@@ -404,8 +403,8 @@
           var headers = ['Cliente', 'Fecha', '# Comp.'];
 
           var n = abreviaturas.length;
-          var bigSum = _.fill(Array(n), 0);
-          var sums = Array(n);
+          var bigSum = _.fill(new Array(n), 0);
+          var sums = new Array(n);
 
           var thead = "<thead><tr><th>" + headers.join('</th><th>') + '</th>'
                   + '<th class="price-label">' + abreviaturas.join('</th><th class="price-label">') + "</th></tr><thead>";
@@ -477,7 +476,7 @@
             columns: [
               {data: 'cod_tp_comp', name: 'tipo'},
               {data: 'pago_numero'},
-              {data: 'fecha', render: u.dateFormat},
+              {data: 'fecha'},
               {
                 data: 'razon_social', render: function (d, t, r, m) {
                 return r['cod_cliente'] + ' - ' + d;

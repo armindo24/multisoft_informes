@@ -26,7 +26,14 @@ Recaudacion.planillaConsolidada = function (query, cb) {
         "and dba.recaudop.cod_sucursal = dba.recauddet.cod_sucursal and dba.recaudop.nroplanilla = dba.recauddet.nroplanilla " +
         "and dba.recaudop.nrooperacion = dba.recauddet.nrooperacion and dba.tporecaudacion.cod_empresa = dba.recauddet.cod_empresa " +
         "and dba.tporecaudacion.cod_tp_pago = dba.recauddet.cod_tp_pago and dba.recaudcab.cod_empresa = '" + query.empresa + "' " +
-        "and dba.recaudop.cod_sucursal = '" + query.sucursal + "' " +
+        "and dba.recaudop.cod_sucursal = '" + query.sucursal + "' ";
+    if (query.estado) {
+        sql += "AND (recaudcab.estado = '" + query.estado + "')";
+    }
+    if (query.cajero) {
+        sql += " and dba.recaudcab.cod_cajero = '" + query.cajero + "'";
+    }
+    sql +=
         "AND (( Date(dba.recaudcab.fecha) >= Date('" + query.start + "')) AND ( Date(dba.recaudcab.fecha) <= Date('" + query.end + "'))) " +
         "UNION SELECT " +
         "dba.pagoscab.cod_empresa,dba.recaudcomp.cod_sucursal,dba.recaudcomp.nroplanilla,dba.recaudcab.estado," +
@@ -43,7 +50,14 @@ Recaudacion.planillaConsolidada = function (query, cb) {
         "and dba.recaudcomp.cod_empresa = dba.recaudcab.cod_empresa and dba.recaudcomp.cod_sucursal = dba.recaudcab.cod_sucursal " +
         "and dba.recaudcomp.nroplanilla = dba.recaudcab.nroplanilla and dba.tporecaudacion.cod_empresa = dba.pagosrec.cod_empresa " +
         "and dba.tporecaudacion.cod_tp_pago = dba.pagosrec.cod_tp_pago and dba.recaudcomp.aplicacion = 'N' " +
-        "and dba.recaudcab.cod_empresa = '" + query.empresa + "' and dba.recaudcomp.cod_sucursal = '" + query.sucursal + "' " +
+        "and dba.recaudcab.cod_empresa = '" + query.empresa + "' and dba.recaudcomp.cod_sucursal = '" + query.sucursal + "' ";
+    if (query.estado) {
+        sql += "AND (recaudcab.estado = '" + query.estado + "')";
+    }
+    if (query.cajero) {
+        sql += " and dba.recaudcab.cod_cajero = '" + query.cajero + "'";
+    }
+    sql +=
         "AND (( Date(dba.recaudcab.fecha) >= Date('" + query.start + "')) AND ( Date(dba.recaudcab.fecha) <= Date('" + query.end + "'))) " +
         "UNION SELECT " +
         "dba.pagoscab.cod_empresa,dba.recaudcomp.cod_sucursal,dba.recaudcomp.nroplanilla,dba.recaudcab.estado," +
@@ -60,13 +74,16 @@ Recaudacion.planillaConsolidada = function (query, cb) {
         "and dba.recaudcomp.pago_numero = dba.pagoscab.pago_numero and dba.recaudcomp.cod_empresa = dba.recaudcab.cod_empresa " +
         "and dba.recaudcomp.cod_sucursal = dba.recaudcab.cod_sucursal and dba.recaudcomp.nroplanilla = dba.recaudcab.nroplanilla " +
         "and dba.tpocbte.cod_empresa = dba.pagoscab.cod_empresa and dba.tpocbte.cod_tp_comp = dba.pagoscab.cod_tp_comp " +
-        "and dba.recaudcomp.aplicacion = 'S' and dba.recaudcab.cod_empresa = '" + query.empresa + "' and dba.recaudcomp.cod_sucursal = '" + query.sucursal + "' " +
-        "AND (( Date(dba.recaudcab.fecha) >= Date('" + query.start + "')) AND ( Date(dba.recaudcab.fecha) <= Date('" + query.end + "'))) " +
-        ") as tableta ";//where nroplanilla = 10017";
-
-    if (query.cajero) {
-        sql += " where cod_cajero = " + query.cajero;
+        "and dba.recaudcomp.aplicacion = 'S' and dba.recaudcab.cod_empresa = '" + query.empresa + "' and dba.recaudcomp.cod_sucursal = '" + query.sucursal + "' ";
+    if (query.estado) {
+        sql += "AND (recaudcab.estado = '" + query.estado + "')";
     }
+    if (query.cajero) {
+        sql += " and dba.recaudcab.cod_cajero = '" + query.cajero + "'";
+    }
+    sql += "AND (( Date(dba.recaudcab.fecha) >= Date('" + query.start + "')) AND ( Date(dba.recaudcab.fecha) <= Date('" + query.end + "'))) " +
+        ") as tableta \n";
+
 
     console.log(sql);
 
@@ -77,6 +94,63 @@ Recaudacion.planillaConsolidada = function (query, cb) {
 };
 
 Recaudacion.resumido = function (params, query) {
+    if (!query.start || !query.end) return Promise.resolve([]);
+    var sql = "SELECT DBA.pagoscab.cod_empresa , DBA.pagoscab.cod_tp_comp , " +
+        "DBA.pagoscab.pago_numero , Date(DBA.pagoscab.fecha) fecha , DBA.pagoscab.cod_cliente , " +
+        "DBA.clientes.razon_social , dba.pagosrec.cod_tp_pago , dba.pagosrec.codmoneda " +
+        ", dba.pagosrec.importe , DBA.pagoscab.tot_efectivo , " +
+        "dba.tporecaudacion.abreviatura, dba.moneda.descrip , dba.moneda.cantdecimal\n" +
+        "FROM dba.pagosrec \n" +
+        "RIGHT OUTER JOIN DBA.pagoscab ON dba.pagosrec.cod_empresa = " +
+        "DBA.pagoscab.cod_empresa AND dba.pagosrec.cod_tp_comp = " +
+        "DBA.pagoscab.cod_tp_comp AND dba.pagosrec.pago_numero = " +
+        "DBA.pagoscab.pago_numero, DBA.clientes , DBA.tpocbte , dba.tporecaudacion , " +
+        "dba.moneda \n" +
+        "WHERE clientes.cod_empresa = pagoscab.cod_empresa and " +
+        "clientes.cod_cliente = pagoscab.cod_cliente and tpocbte.cod_empresa = " +
+        "pagoscab.cod_empresa and tpocbte.cod_tp_comp = pagoscab.cod_tp_comp and " +
+        "pagosrec.cod_empresa = tporecaudacion.cod_empresa and pagosrec.cod_tp_pago = " +
+        "tporecaudacion.cod_tp_pago and pagosrec.codmoneda = moneda.codmoneda and \n" +
+        "exists ( select * from dba.recaudcab, dba.recaudcomp Where " +
+        "recaudcab.cod_empresa = recaudcomp.cod_empresa and recaudcab.cod_sucursal = " +
+        "recaudcomp.cod_sucursal and recaudcab.nroplanilla = recaudcomp.nroplanilla and " +
+        "recaudcomp.cod_empresa = pagoscab.cod_empresa and recaudcomp.cod_tp_comp = " +
+        "pagoscab.cod_tp_comp and recaudcomp.pago_numero = pagoscab.pago_numero and " +
+        "pagoscab.cod_empresa = ? \n";
+
+    var sqlParams = [params.empresa];
+
+    if (query.sucursal) {
+        sql += " AND ( pagoscab.cod_sucursal = ? ) ";
+        sqlParams.push(query.sucursal);
+    }
+
+    if (query.start && query.end) {
+        sql += " AND ( ( Date(recaudcab.fecha) >= Date(?)) AND ( Date(recaudcab.fecha) <= Date(?)) ) ";
+        sqlParams.push(query.start, query.end);
+    }
+
+    if (query.estado) {
+        sql += " AND ( recaudcab.estado = ?) ";
+        sqlParams.push(query.estado);
+    }
+
+    if (query.cajero) {
+        sql += " AND ( recaudcab.cod_cajero = ?) ";
+        sqlParams.push(query.cajero);
+    }
+
+    var sqlOrder = sql + ") \n";
+    if (query.tab == 'resumido') {
+        sqlOrder += "ORDER BY pagoscab.cod_tp_comp";
+    }
+
+    console.log(sqlOrder);
+    return conn.execAsync(sqlOrder, sqlParams);
+};
+
+Recaudacion.detallado = function (params, query) {
+    if (!query.start || !query.end) return Promise.resolve([]);
     var sql = "SELECT DBA.pagoscab.cod_empresa , DBA.pagoscab.cod_tp_comp , " +
         "DBA.pagoscab.pago_numero , DBA.pagoscab.fecha , DBA.pagoscab.cod_cliente , " +
         "DBA.clientes.razon_social , dba.pagosrec.cod_tp_pago , dba.pagosrec.codmoneda " +
@@ -106,6 +180,7 @@ Recaudacion.resumido = function (params, query) {
         sql += " AND ( pagoscab.cod_sucursal = ? ) ";
         sqlParams.push(query.sucursal);
     }
+
     if (query.start && query.end) {
         sql += " AND ( ( Date(recaudcab.fecha) >= Date(?)) AND ( Date(recaudcab.fecha) <= Date(?)) ) ";
         sqlParams.push(query.start, query.end);
@@ -116,48 +191,19 @@ Recaudacion.resumido = function (params, query) {
         sqlParams.push(query.estado);
     }
 
-    var sqlOrder = sql + ") \nORDER BY pagoscab.cod_tp_comp";
+    if (query.cajero) {
+        sql += " AND ( recaudcab.cod_cajero = ?) ";
+        sqlParams.push(query.cajero);
+    }
+
+    var sqlOrder = sql + ")";
 
     console.log(sqlOrder);
     return conn.execAsync(sqlOrder, sqlParams);
 };
 
-Recaudacion.detallado = function (params, query) {
-    var sql =
-        "SELECT DBA.pagoscab.cod_empresa,  DBA.pagoscab.cod_tp_comp, " +
-        "DBA.pagoscab.pago_numero, DATE(DBA.pagoscab.fecha) fecha, DBA.pagoscab.cod_cliente, " +
-        "DBA.clientes.razon_social, dba.pagosrec.cod_tp_pago, dba.pagosrec.codmoneda, " +
-        "dba.pagosrec.importe, DBA.pagoscab.tot_efectivo, " +
-        "dba.tporecaudacion.abreviatura, dba.moneda.descrip, dba.moneda.cantdecimal \n" +
-        "FROM dba.pagosrec  \n" +
-        "RIGHT OUTER JOIN DBA.pagoscab ON dba.pagosrec.cod_empresa = " +
-        "DBA.pagoscab.cod_empresa AND dba.pagosrec.cod_tp_comp = " +
-        "DBA.pagoscab.cod_tp_comp AND dba.pagosrec.pago_numero = " +
-        "DBA.pagoscab.pago_numero,  " +
-        "DBA.clientes, DBA.tpocbte, dba.tporecaudacion, dba.moneda  " +
-        "WHERE clientes.cod_empresa = pagoscab.cod_empresa and \n" +
-        "clientes.cod_cliente = pagoscab.cod_cliente  and " +
-        "tpocbte.cod_empresa  = pagoscab.cod_empresa  and tpocbte.cod_tp_comp  = " +
-        "pagoscab.cod_tp_comp  and pagosrec.cod_empresa = tporecaudacion.cod_empresa " +
-        "and pagosrec.cod_tp_pago = tporecaudacion.cod_tp_pago and pagosrec.codmoneda " +
-        "= moneda.codmoneda  \n" +
-        "and exists (   " +
-        "	select * from dba.recaudcab, dba.recaudcomp\n" +
-        "	Where recaudcab.cod_empresa  = recaudcomp.cod_empresa  and " +
-        "	recaudcab.cod_sucursal = recaudcomp.cod_sucursal and  recaudcab.nroplanilla  = " +
-        "	recaudcomp.nroplanilla and recaudcomp.cod_empresa = pagoscab.cod_empresa " +
-        "	and recaudcomp.cod_tp_comp = pagoscab.cod_tp_comp    and " +
-        "	recaudcomp.pago_numero = pagoscab.pago_numero and  " +
-        "	pagoscab.cod_empresa  = 'BT' " +
-        "	AND ((Date(recaudcab.fecha) >= Date('2013-01-28')) " +
-        "	AND (Date(recaudcab.fecha) <= Date('2013-01-29')))  " +
-        "	AND ( recaudcab.estado = 'CE')" +
-        ")";
-    return conn.execAsync(sql);
-};
-
-Recaudacion.ajuste = function (params, query) {
-    if (!query.start || !query.end) return Promise.resolve({});
+Recaudacion.ajustes = function (params, query) {
+    if (!query.start || !query.end) return Promise.resolve([]);
     var sql = "SELECT dba.recaudcab.cod_empresa, dba.recaudcab.cod_sucursal, " +
         "dba.recaudcab.nroplanilla, dba.recaudcab.cod_cajero, dba.recaudcab.fecha, " +
         "dba.recaudop.nrooperacion, dba.recauddet.linea, dba.recauddet.cod_tp_pago, " +
@@ -179,8 +225,20 @@ Recaudacion.ajuste = function (params, query) {
         "dba.moneda.codmoneda )\n" +
         "AND ( recaudcab.cod_empresa = ? ) " +
         "AND ( (Date(recaudcab.fecha) >= Date(?))  " +
-        "AND ( Date(recaudcab.fecha) <= Date(?)) )";
+        "AND ( Date(recaudcab.fecha) <= Date(?)) )\n";
     var sqlParams = [params.empresa, query.start, query.end];
+    if (query.sucursal) {
+        sql += "AND ( recaudcab.cod_sucursal = ? )\n";
+        sqlParams.push(query.sucursal);
+    }
+    if (query.estado) {
+        sql += "AND ( recaudcab.estado = ?)\n"
+        sqlParams.push(query.estado);
+    }
+    if (query.cajero) {
+        sql += "AND (dba.recaudcab.cod_cajero = ?)\n";
+        sqlParams.push(query.cajero);
+    }
     return conn.execAsync(sql, sqlParams);
 };
 
@@ -196,8 +254,12 @@ Recaudacion.deposito = function (params, query) {
         "dba.depcuentadet.cuentabanco = dba.cuentabancaria.cuentabanco and " +
         "dba.depcuentadet.codbanco = dba.bancos.codbanco and " +
         "dba.cuentabancaria.codmoneda = dba.moneda.codmoneda\n" +
-        "AND ( depcuentadet.cod_empresa = ? )";
+        "AND ( depcuentadet.cod_empresa = ? )\n";
     var sqlParams = [params.empresa];
+    if (query.sucursal) {
+        sql += "AND ( depcuentadet.cod_sucursal = ? )\n";
+        sqlParams.push(query.sucursal);
+    }
     return conn.execAsync(sql, sqlParams);
 };
 

@@ -468,15 +468,15 @@ router.get('/recaudaciones/:empresa/planillas', function (req, res, next) {
 });
 
 router.get('/recaudaciones/:empresa/detallado', function (req, res, next) {
-    Recaudacion.detallado(req.params).then(function (result) {
+    Recaudacion.resumido(req.params, req.query).then(function (result) {
         postProcess(res, result);
     }).catch(function (err) {
         next(err);
     });
 });
 
-router.get('/recaudaciones/:empresa/ajuste', function (req, res, next) {
-    Recaudacion.ajuste(req.params, req.query).then(function (result) {
+router.get('/recaudaciones/:empresa/ajustes', function (req, res, next) {
+    Recaudacion.ajustes(req.params, req.query).then(function (result) {
         postProcess(res, result);
     }).catch(function (err) {
         next(err);
