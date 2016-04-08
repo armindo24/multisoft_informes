@@ -119,13 +119,9 @@
 {% block extra_foot %}
   <script>
     var query = {
-      empresa: 'BT',
-      sucursal: '00',
-      start: '2013-01-28',
-      end: '2013-01-29',
-      estado: 'CE'
+      empresa: '',
     };
-    var $results, $resultado;
+    var $resultado;
 
     var $selectEmpresa, selectEmpresa;
     var $selectSucursal, selectSucursal;
@@ -152,7 +148,6 @@
       });
       initDates();
       initSelects();
-      $results = $('#results');
       $resultado = $('#resultado');
       $resultado.hide();
       u.defaultDT();
@@ -192,7 +187,7 @@
         query[key] = this.value;
       });
 
-      $inputDate.datepicker('setDate', new Date(2013, 0, 28));
+      $inputDate.datepicker('setDate', new Date());
       $inputDate.datepicker('update');
     }
 
@@ -235,9 +230,6 @@
         valueField: 'Cod_Sucursal',
         labelField: 'Des_Sucursal',
         searchField: 'Des_Sucursal',
-        onChange: function (value) {
-          query.sucursal = value;
-        }
       });
       selectSucursal = $selectSucursal[0].selectize;
       selectSucursal.disable();
@@ -289,6 +281,7 @@
     }
 
     function getInforme(informe) {
+      if (!query.empresa) return;
       $('.collapse').collapse('hide');
       $resultado.hide();
       divDeposito.hide();
@@ -383,6 +376,10 @@
           data: query
         }).done(function (res) {
           divDetallado.show();
+          if (res.data.length === 0) {
+            divDetallado.html('<h1>No hay datos disponibles</h1>');
+            return;
+          }
           var newTable = function (html, title, id) {
             return '<h1>' + title + '</h1>' +
                     '<table '
