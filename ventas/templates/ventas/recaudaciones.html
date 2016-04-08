@@ -324,9 +324,10 @@
           url: api + 'recaudaciones/' + query.empresa + '/detallado',
           data: query
         }).done(function (res) {
-          var newTable = function (html, title) {
+          var newTable = function (html, title, id) {
             return '<h1>' + title + '</h1>' +
                     '<table '
+                    + (id ? 'id="' + id + '" ' : '')
                     + 'class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">'
                     + html
                     + '</table>';
@@ -376,7 +377,7 @@
                     "</tfoot>";
             table += tfoot;
             console.log(sums);
-            $tablaDetallado.append(newTable(table, group));
+            $tablaDetallado.append(newTable(table, group, group));
           });
           $resultado.show();
         });
