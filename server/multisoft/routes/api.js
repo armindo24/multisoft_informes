@@ -475,6 +475,22 @@ router.get('/recaudaciones/:empresa/detallado', function (req, res, next) {
     });
 });
 
+router.get('/recaudaciones/:empresa/ajuste', function (req, res, next) {
+    Recaudacion.ajuste(req.params, req.query).then(function (result) {
+        postProcess(res, result);
+    }).catch(function (err) {
+        next(err);
+    });
+});
+
+router.get('/recaudaciones/:empresa/depositos', function (req, res, next) {
+    Recaudacion.deposito(req.params, req.query).then(function (result) {
+        postProcess(res, result);
+    }).catch(function (e) {
+        next(e);
+    });
+});
+
 router.get('/recaudaciones/:empresa/consolidada', function (req, res, next) {
     Recaudacion.resumido(req.params, req.query)
         .then(function (result) {

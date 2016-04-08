@@ -156,4 +156,45 @@ Recaudacion.detallado = function (params, query) {
     return conn.execAsync(sql);
 };
 
+Recaudacion.ajuste = function (params, query) {
+    var sql = "SELECT dba.recaudcab.cod_empresa, dba.recaudcab.cod_sucursal, " +
+        "dba.recaudcab.nroplanilla, dba.recaudcab.cod_cajero, dba.recaudcab.fecha, " +
+        "dba.recaudop.nrooperacion, dba.recauddet.linea, dba.recauddet.cod_tp_pago, " +
+        "dba.recauddet.codmoneda, dba.recauddet.importe, dba.recauddet.observ, " +
+        "dba.tporecaudacion.operador, dba.tporecaudacion.agrupacion, " +
+        "dba.moneda.cantdecimal\n" +
+        "FROM dba.recaudcab, dba.recauddet, dba.recaudop, " +
+        "dba.tporecaudacion, dba.moneda\n" +
+        "WHERE ( dba.recaudop.cod_empresa = " +
+        "dba.recaudcab.cod_empresa ) and ( dba.recaudop.cod_sucursal = " +
+        "dba.recaudcab.cod_sucursal ) and ( dba.recaudop.nroplanilla = " +
+        "dba.recaudcab.nroplanilla ) and ( dba.recaudop.cod_empresa = " +
+        "dba.recauddet.cod_empresa ) and ( dba.recaudop.cod_sucursal = " +
+        "dba.recauddet.cod_sucursal ) and ( dba.recaudop.nroplanilla = " +
+        "dba.recauddet.nroplanilla ) and ( dba.recaudop.nrooperacion = " +
+        "dba.recauddet.nrooperacion ) and ( dba.tporecaudacion.cod_empresa = " +
+        "dba.recauddet.cod_empresa ) and ( dba.tporecaudacion.cod_tp_pago = " +
+        "dba.recauddet.cod_tp_pago ) and ( dba.recauddet.codmoneda = " +
+        "dba.moneda.codmoneda )\n" +
+        "AND ( recaudcab.cod_empresa = 'BT' ) " +
+        "AND ( (Date(recaudcab.fecha) >= Date('2013-01-01'))  " +
+        "AND ( Date(recaudcab.fecha) <= Date('2013-01-07')) )";
+    return conn.execAsync(sql);
+};
+
+Recaudacion.deposito = function (params, query) {
+    var sql = "SELECT dba.depcuentadet.nrodeposito, dba.depcuentadet.tot_efectivo, " +
+        "dba.bancos.descrip , dba.depcuentadet.fechaacreditacion , " +
+        "dba.cuentabancaria.codmoneda, dba.moneda.descrip, dba.moneda.cantdecimal FROM " +
+        "dba.depcuentadet, dba.bancos, dba.cuentabancaria, dba.moneda where " +
+        "dba.depcuentadet.cod_empresa = dba.cuentabancaria.cod_empresa and " +
+        "dba.depcuentadet.codbanco = dba.cuentabancaria.codbanco and " +
+        "dba.depcuentadet.cuentabanco = dba.cuentabancaria.cuentabanco and " +
+        "dba.depcuentadet.codbanco = dba.bancos.codbanco and " +
+        "dba.cuentabancaria.codmoneda = dba.moneda.codmoneda\n" +
+        "AND ( depcuentadet.cod_empresa = 'BT' )";
+
+    return conn.execAsync(sql);
+};
+
 module.exports = Recaudacion;
