@@ -282,8 +282,7 @@
         $.get(api + 'recaudaciones/planillas', query).done(function (d) {
           {% include 'ventas/_recaudaciones_resumen.js' %}
         });
-      }
-      else if (informe === 'depositos') {
+      } else if (informe === 'depositos') {
         u.defaultDT();
         $('#tabla_deposito').DataTable({
           ajax: function (d, cb, s) {
@@ -381,8 +380,7 @@
           });
           $resultado.show();
         });
-      }
-      else if (informe === 'resumido') {
+      } else if (informe === 'resumido') {
         if (!dataTable) {
           $resultado.show();
           u.defaultDT();
