@@ -130,6 +130,10 @@
     var $selectEstado, selectEstado;
     var dataTable;
 
+    var dtDeposito, divDeposito;
+    var dtAjustes, divAjustes;
+    var dtResumen, divResumen;
+
     var $tabs;
     var numFormat = u.numFormatter;
 
@@ -148,6 +152,11 @@
       $results = $('#results');
       $resultado = $('#resultado');
       $resultado.hide();
+      u.defaultDT();
+      divDeposito = $('#div_deposito');
+      divDeposito.hide();
+      divAjustes = $('#div_ajustes');
+      divAjustes.hide();
     });
 
     var calcSaldoAcumulado = function (d, t, r, m) {
@@ -276,6 +285,7 @@
     function getInforme(informe) {
       $('.collapse').collapse('hide');
       $resultado.hide();
+      divDeposito.hide();
       $('#bodytab').empty();
       if (!informe) {
         query.tab = informe = 'planilla';
@@ -287,7 +297,7 @@
         $.get(api + 'recaudaciones/planillas', query).done(function (d) {
           {% include 'ventas/_recaudaciones_resumen.js' %}
         });
-      } else if (informe === 'ajuste') {
+      } else if (informe === 'ajustes') {
         $('#tabla_ajustes').DataTable({
           ajax: function (d, cb, s) {
             $.ajax({
@@ -310,41 +320,42 @@
           ]
         });
       } else if (informe === 'depositos') {
-        u.defaultDT();
-        $('#tabla_deposito').DataTable({
-          ajax: function (d, cb, s) {
-            $.ajax({
-              method: 'GET',
-              url: api + 'recaudaciones/' + query.empresa + '/depositos',
-              data: query
-            }).done(function (res) {
-              cb(res);
-            }).fail(function (err) {
-              console.log(err);
-            });
-          },
-          columns: [
-            {data: 'nrodeposito'},
-            {data: 'descrip'},
-            {data: 'fecha', render: u.dateFormat},
-            {data: 'importe_gs'},
-            {data: 'importe_us'}
-          ],
-          footerCallback: function (row, data, start, end, display) {
-            var api = this.api(), data;
-
-            // Total over all pages
-            var totalUS = api.column(-1).data().sum();
-            var totalGS = api.column(-2).data().sum();
-            // Update footer
-            $(api.column(-1).footer()).html(
-                    u.usFormatter.display(totalUS)
-            );
-            $(api.column(-2).footer()).html(
-                    numFormat.display(totalGS)
-            );
-          }
-        });
+        divDeposito.show();
+        if (!dtDeposito) {
+          dtDeposito = divDeposito.find('table').DataTable({
+            ajax: function (d, cb, s) {
+              $.ajax({
+                method: 'GET',
+                url: api + 'recaudaciones/' + query.empresa + '/depositos',
+                data: query
+              }).done(function (res) {
+                cb(res);
+              }).fail(function (err) {
+                console.log(err);
+              });
+            },
+            columns: [
+              {data: 'nrodeposito'},
+              {data: 'descrip'},
+              {data: 'fecha', render: u.dateFormat},
+              {data: 'importe_gs'},
+              {data: 'importe_us'}
+            ],
+            footerCallback: function (row, data, start, end, display) {
+              var api = this.api(), data;
+              var totalUS = api.column(-1).data().sum();
+              var totalGS = api.column(-2).data().sum();
+              $(api.column(-1).footer()).html(u.usFormatter.display(totalUS));
+              $(api.column(-2).footer()).html(numFormat.display(totalGS));
+            }, processing: true
+          });
+        } else {
+          dtDeposito.clear().draw();
+          dtDeposito.processing(true);
+          dtDeposito.ajax.reload(function () {
+            dtDeposito.processing(false);
+          }, true);
+        }
       } else if (informe === 'detallado') {
         $.ajax({
           method: 'GET',

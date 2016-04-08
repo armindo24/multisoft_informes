@@ -156,7 +156,7 @@ var permisos_empresas = function (data, args) {
 
 u.spanish_dt = {
     "decimal": ",",
-    "emptyTable": "Ningún dato disponible en esta tabla",
+    "emptyTable": "No hay datos disponibles",
     "info": "Mostrando registros del _START_ al _END_ de _TOTAL_ registros",
     "infoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
     "infoFiltered": "(filtrado de un total de _MAX_ entradas)",
