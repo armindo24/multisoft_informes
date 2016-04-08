@@ -157,6 +157,7 @@ Recaudacion.detallado = function (params, query) {
 };
 
 Recaudacion.ajuste = function (params, query) {
+    if (!query.start || !query.end) return Promise.resolve({});
     var sql = "SELECT dba.recaudcab.cod_empresa, dba.recaudcab.cod_sucursal, " +
         "dba.recaudcab.nroplanilla, dba.recaudcab.cod_cajero, dba.recaudcab.fecha, " +
         "dba.recaudop.nrooperacion, dba.recauddet.linea, dba.recauddet.cod_tp_pago, " +
@@ -176,10 +177,11 @@ Recaudacion.ajuste = function (params, query) {
         "dba.recauddet.cod_empresa ) and ( dba.tporecaudacion.cod_tp_pago = " +
         "dba.recauddet.cod_tp_pago ) and ( dba.recauddet.codmoneda = " +
         "dba.moneda.codmoneda )\n" +
-        "AND ( recaudcab.cod_empresa = 'BT' ) " +
-        "AND ( (Date(recaudcab.fecha) >= Date('2013-01-01'))  " +
-        "AND ( Date(recaudcab.fecha) <= Date('2013-01-07')) )";
-    return conn.execAsync(sql);
+        "AND ( recaudcab.cod_empresa = ? ) " +
+        "AND ( (Date(recaudcab.fecha) >= Date(?))  " +
+        "AND ( Date(recaudcab.fecha) <= Date(?)) )";
+    var sqlParams = [params.empresa, query.start, query.end];
+    return conn.execAsync(sql, sqlParams);
 };
 
 Recaudacion.deposito = function (params, query) {
