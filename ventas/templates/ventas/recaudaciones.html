@@ -67,8 +67,6 @@
   </div>
 
   <div id="div_detallado">
-    <table id="tabla_detallado" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
-    </table>
   </div>
   <div id="div_deposito">
     <table id="tabla_deposito" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
@@ -327,13 +325,16 @@
           data: query
         }).done(function (res) {
           u.defaultDT();
+          var newTable = function (html, title, id) {
+            return '<h1>' + title + '</h1>' +
+                    '<table '
+                    + (id ? 'id="' + id + '" ' : '')
+                    + 'class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">'
+                    + html
+                    + '</table>';
+          };
           globData = res;
           abreviaturas = _(res.data).map('abreviatura').uniq().value().sort();
-          var columns = _.map(abreviaturas, function (a) {
-            return {title: a, className: 'price-value'}
-          });
-          columns = [{title: 'Clientes'}, {title: 'Fecha'}, {title: '# Comp.'}].concat(columns);
-          console.log(columns);
           var abreviaturaMap = {};
           var i = 1;
           _(abreviaturas).each(function (a) {
@@ -343,57 +344,42 @@
           agrupado = _(globData.data).groupBy('cod_tp_comp').value();
           totalGS = _(globData.data).filter(['codmoneda', 'GS']).map('importe').map(_.parseInt).sum();
           totalUS = _(globData.data).filter(['codmoneda', 'US']).map('importe').map(_.parseInt).sum();
-          var $tablaDetallado = $('#tabla_detallado');
-          var n = abreviaturas.length;
-          var before, after, col;
-          var array = Array(n);
+          var $tablaDetallado = $('#div_detallado');
+          var headers = ['Cliente', 'Fecha', '# Comp.'];
 
-          var dataset = _(res.data).map(function (x) {
-            _.fill(array, 0);
-            col = abreviaturaMap[x.abreviatura];
-            array[col - 1] = u.numFormat(x.importe);
-            return [_(_(x.razon_social).truncate(30)).padEnd(30), x.fecha, x.pago_numero].concat(array);
-          }).value();
-
-          $tablaDetallado.DataTable({
-            data: dataset,
-            columns: columns,
-            columnDefs: []
-          });
-          return;
           var n = abreviaturas.length;
           var sums = Array(n);
+          var thead = "<thead><tr><th>" + headers.join('</th><th>') + '</th>'
+                  + '<th class="price-label">' + abreviaturas.join('</th><th class="price-label">') + "</th></tr><thead>";
           _.each(agrupado, function (data, group) {
-            var table = "<thead><tr><th>" + headers.join('</th><th>') + "</th></tr><thead>";
+            var table = thead + "<tbody>";
             var before, after, col;
-            var rows = "";
             _.fill(sums, 0);
             _(data).each(function (row) {
               col = abreviaturaMap[row.abreviatura];
               before = col - 1;
               after = n - col;
-              rows += "<tr>" +
+              table += "<tr>" +
                       "<td>" + row.razon_social + "</td>" +
-                      "<td>" + row.fecha.split(' ')[0] + "</td>" +
+                      "<td>" + row.fecha + "</td>" +
                       "<td>" + row.pago_numero + "</td>" +
                       _.repeat("<td>0</td>", before) +
-                      "<td>" + numFormat.display(row.importe) + "</td>" +
+                      "<td>" + row.importe + "</td>" +
                       _.repeat("<td>0</td>", after) +
                       "</tr>";
               sums[col - 1] += parseInt(row.importe);
             });
-            table += "<tbody>" + rows + "</tbody>";
-            var tfoot = "<tfoot>" +
+            table += "</tbody>";
+            table += "<tfoot>" +
                     "<tr>" +
                     "<th colspan='3' style='text-align:right'>Totales</th>" +
-                    "<th>" + sums.join("</th><th>") + "</th>" +
+                    "<th>" + _(sums).map(numFormat.display).join("</th><th>") + "</th>" +
                     "</tr>" +
                     "</tfoot>";
-            table += tfoot;
-            console.log(sums);
             $tablaDetallado.append(newTable(table, group, group));
+            $tablaDetallado.children().last().DataTable();
           });
-          $resultado.show();
+          {#          $resultado.show();#}
         });
       } else if (informe === 'resumido') {
         if (!dataTable) {
