@@ -333,22 +333,22 @@
                     + html
                     + '</table>';
           };
-          globData = res;
-          abreviaturas = _(res.data).map('abreviatura').uniq().value().sort();
+          var abreviaturas = _(res.data).map('abreviatura').uniq().value().sort();
           var abreviaturaMap = {};
           var i = 1;
           _(abreviaturas).each(function (a) {
             abreviaturaMap[a] = i++;
           });
-          abmap = abreviaturaMap;
-          agrupado = _(globData.data).groupBy('cod_tp_comp').value();
-          totalGS = _(globData.data).filter(['codmoneda', 'GS']).map('importe').map(_.parseInt).sum();
-          totalUS = _(globData.data).filter(['codmoneda', 'US']).map('importe').map(_.parseInt).sum();
+          var agrupado = _(res.data).groupBy('cod_tp_comp').value();
+          var totalGS = _(res.data).filter(['codmoneda', 'GS']).map('importe').map(_.parseInt).sum();
+          var totalUS = _(res.data).filter(['codmoneda', 'US']).map('importe').map(_.parseInt).sum();
           var $tablaDetallado = $('#div_detallado');
           var headers = ['Cliente', 'Fecha', '# Comp.'];
 
           var n = abreviaturas.length;
+          var bigSum = _.fill(Array(n), 0);
           var sums = Array(n);
+
           var thead = "<thead><tr><th>" + headers.join('</th><th>') + '</th>'
                   + '<th class="price-label">' + abreviaturas.join('</th><th class="price-label">') + "</th></tr><thead>";
           _.each(agrupado, function (data, group) {
@@ -376,9 +376,26 @@
                     "<th>" + _(sums).map(numFormat.display).join("</th><th>") + "</th>" +
                     "</tr>" +
                     "</tfoot>";
+            for (var i = 0; i < n; i++)
+              bigSum[i] += sums[i];
+
             $tablaDetallado.append(newTable(table, group, group));
-            $tablaDetallado.children().last().DataTable();
           });
+          var totalTable =
+                  "<thead><tr><th class='price-label'>" + abreviaturas.join("</th><th class='price-label'>") + "</th></tr><thead>" +
+                  "<tbody><tr><td>" + _(bigSum).join("</td><td>") + "</td></tr></tbody>" +
+                  "<tfoot>" +
+                  "<tr>" +
+                  "<th style='text-align:right'>Total GS</th>" +
+                  "<th colspan='" + (n - 1) + "' style='text-align:left'>" + numFormat.display(totalGS) + "</th>" +
+                  "</tr>" +
+                  "<tr>" +
+                  "<th style='text-align:right'>Total US</th>" +
+                  "<th colspan='" + (n - 1) + "'>" + u.usFormatter.display(totalUS) + "</th>" +
+                  "</tr>" +
+                  "</tfoot>";
+          $tablaDetallado.append(newTable(totalTable, 'Total', 'total'));
+          $('#div_detallado table').DataTable();
           {#          $resultado.show();#}
         });
       } else if (informe === 'resumido') {
