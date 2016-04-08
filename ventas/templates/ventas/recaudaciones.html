@@ -1,4 +1,4 @@
-{% extends 'finanzas/base.html' %}
+{% extends 'ventas/baseWithoutTable.html' %}
 {% load staticfiles %}
 
 {% block extrahead %}
@@ -93,24 +93,26 @@
       </thead>
     </table>
   </div>
-{% endblock %}
+  <div id="div_resumido">
+    <table id="tabla_resumido" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+      <thead>
+      <tr>
+        <th class="grouping-col">Tipo</th>
+        <th>Numero</th>
+        <th class="text-center">Fecha</th>
+        <th>Cliente</th>
+        <th class="price-label">Importe</th>
+      </tr>
+      </thead>
+      <tfoot>
+      <tr>
+        <th colspan="4" style="text-align:right">Total:</th>
+        <th></th>
+      </tr>
+      </tfoot>
+    </table>
+  </div>
 
-{% block table %}
-  <thead>
-  <tr>
-    <th class="grouping-col">Tipo</th>
-    <th>Numero</th>
-    <th class="text-center">Fecha</th>
-    <th>Cliente</th>
-    <th class="price-label">Importe</th>
-  </tr>
-  </thead>
-  <tfoot>
-  <tr>
-    <th colspan="4" style="text-align:right">Total:</th>
-    <th></th>
-  </tr>
-  </tfoot>
 {% endblock %}
 
 {% block extra_foot %}
@@ -132,7 +134,7 @@
 
     var dtDeposito, divDeposito;
     var dtAjustes, divAjustes;
-    var dtResumen, divResumen;
+    var dtResumido, divResumido;
 
     var $tabs;
     var numFormat = u.numFormatter;
@@ -157,6 +159,8 @@
       divDeposito.hide();
       divAjustes = $('#div_ajustes');
       divAjustes.hide();
+      divResumido = $('#div_resumido');
+      divResumido.hide();
     });
 
     var calcSaldoAcumulado = function (d, t, r, m) {
@@ -286,6 +290,7 @@
       $('.collapse').collapse('hide');
       $resultado.hide();
       divDeposito.hide();
+      divResumido.hide();
       $('#bodytab').empty();
       if (!informe) {
         query.tab = informe = 'planilla';
@@ -437,10 +442,9 @@
           {#          $resultado.show();#}
         });
       } else if (informe === 'resumido') {
-        if (!dataTable) {
-          $resultado.show();
-          u.defaultDT();
-          dataTable = $results.DataTable({
+        divResumido.show();
+        if (!dtResumido) {
+          dtResumido = divResumido.find('table').DataTable({
             ajax: function (d, cb, s) {
               $.ajax({
                 method: 'GET',
@@ -484,10 +488,10 @@
             processing: true
           });
         } else {
-          dataTable.clear().draw();
-          dataTable.processing(true);
-          dataTable.ajax.reload(function () {
-            dataTable.processing(false);
+          dtResumido.clear().draw();
+          dtResumido.processing(true);
+          dtResumido.ajax.reload(function () {
+            dtResumido.processing(false);
           }, true);
         }
       }
