@@ -17,6 +17,9 @@
                 <li>
                     <a href="{% url 'ventas:recaudaciones' %}"> Planillas de Recaudaciones </a>
                 </li>
+                <li>
+                    <a href="{% url 'ventas:estadisticas' %}"> Estadísticas de Ventas </a>
+                </li>
 		    {% endif %}
 		    {% if  request.session.modulo_seleccionado == "Compras"  %}
                 <li>
