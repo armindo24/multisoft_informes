@@ -239,10 +239,10 @@
               data: query
             }).done(function (res) {
               cb(res);
-            }).fail(function (err) {
-              console.log(err);
+            }).fail(function (e) {
               dataTable.clear().draw();
               dataTable.processing(false);
+              u.serverDown(e);
             });
           },
           columns: [

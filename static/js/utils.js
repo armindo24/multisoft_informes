@@ -229,7 +229,8 @@ u.defaultDT = function () {
             {visible: false, targets: "grouping-col"}
         ],
         searching: false,
-        ordering: false
+        ordering: false,
+        processing: true
     });
 };
 
@@ -293,6 +294,9 @@ u.showTable = function ($table) {
 };
 
 u.serverDown = function (e) {
-    alert("Error del servidor");
-    console.log(e);
+    if (e.status) {
+        console.log(e);
+    } else {
+        alert("Error del servidor");
+    }
 };
