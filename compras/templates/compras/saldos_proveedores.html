@@ -6,22 +6,23 @@
 
 {% block filters %}
   {% include 'ventas/_filtro.html' with name="empresa" %}
-  
-  <div class="col-sm-6">
-      <div class="form-group">
-        <label for="periodo" class="col-md-4 control-label">Periodo:</label>
 
-        <div class="col-md-6">
-          <div id="periodo" class="input-date"><input type="text" class="form-control" name="periodo"></div>
-        </div>
+  <div class="col-sm-6">
+    <div class="form-group">
+      <label for="periodo" class="col-md-4 control-label">Periodo:</label>
+
+      <div class="col-md-6">
+        <div id="periodo" class="input-date"><input type="text" class="form-control" name="periodo"></div>
       </div>
     </div>
-  
+  </div>
+
   {% include 'ventas/_filtro.html' with name="proveedor" %}
 
   <div class="col-sm-6">
     <div class="form-group">
       <label for="compras" class="col-md-4 control-label">Ventas:</label>
+
       <div class="col-md-6">
         <div id="compras" class="input-daterange input-group input-date">
           <input type="text" class="input-sm form-control" name="start"/>
@@ -31,9 +32,9 @@
       </div>
     </div>
   </div>
-  
+
   {% include 'ventas/_filtro.html' with name="tipo" %}
-  
+
 {% endblock %}
 
 {% block table %}
@@ -52,15 +53,18 @@
 
 {% block extra_foot %}
   <style>
-    .aling_right{text-align: right;}
+    .aling_right {
+      text-align: right;
+    }
   </style>
   <script>
     var query = {
-        agrupar: 'Descrip'
+      agrupar: 'Descrip'
     };
 
     var api = u.getApiUrl();
-    var $results = $('#results');
+    var $results = $('#resultado');
+    var dataTable;
     var $preview = $('#preview');
     var today = new Date();
     var initialize = init;
@@ -68,18 +72,18 @@
     var select_proveedor, $select_proveedor;
     var select_tipo, $select_tipo;
     var xhr;
-    
+
     function addCommas(nStr) {
-        nStr += '';
-        x = nStr.split('.');
-        x1 = x[0];
-        x2 = x.length > 1 ? ',' + x[1] : '';
-        var rgx = /(\d+)(\d{3})/;
-        while (rgx.test(x1)) {
-            x1 = x1.replace(rgx, '$1' + '.' + '$2');
-        }
-        return x1 + x2;
+      nStr += '';
+      x = nStr.split('.');
+      x1 = x[0];
+      x2 = x.length > 1 ? ',' + x[1] : '';
+      var rgx = /(\d+)(\d{3})/;
+      while (rgx.test(x1)) {
+        x1 = x1.replace(rgx, '$1' + '.' + '$2');
       }
+      return x1 + x2;
+    }
 
     $(document).ready(function () {
       u.hideNav();
@@ -92,7 +96,7 @@
     });
 
     function init() {
-    
+
       $('#periodo .form-control').datepicker({
         format: "yyyy",
         startView: 2,
@@ -100,11 +104,11 @@
         maxViewMode: 2,
         autoclose: true
       });
-    
+
       $('#periodo .form-control').datepicker().on('changeDate', function (e) {
-          query.periodo = this.value;
-      });  
-        
+        query.periodo = this.value;
+      });
+
       $.extend(true, $.fn.selectize.defaults, {
         onChange: function (value) {
           query[this.$input.attr('name')] = value;
@@ -153,7 +157,7 @@
           debug();
         }
       });
-      
+
 
       $select_tipo = $('#select-tipo').selectize({
         allowEmptyOption: true,
@@ -195,10 +199,9 @@
 
     function getInforme() {
       $('.collapse').collapse('hide');
-      $results.show();
 
-      if (!$.fn.DataTable.isDataTable('#results')) {
-        $('#results').DataTable({
+      if (!dataTable) {
+        dataTable = $results.find('table').DataTable({
           language: u.spanish_dt,
           ajax: function (d, cb, s) {
             $.ajax({
@@ -207,8 +210,10 @@
               data: query
             }).done(function (res) {
               cb(res);
-            }).fail(function () {
-              cb();
+            }).fail(function (e) {
+              dataTable.clear().draw();
+              dataTable.processing(false);
+              u.serverDown(e);
             });
           },
           deferRender: true,
@@ -230,52 +235,53 @@
             {data: 'RazonSocial'},
             {data: 'Descrip', name: 'Descrip'},
             {
-                data: 'SaldoAnterior',
-                render: function (data, type, full, meta) {
-                            if (full.CodMoneda == 'GS'){
-                                return convertir_rever(parseInt(data));
-                            } else {
-                                return addCommas(parseFloat(data).toFixed(2));
-                            }
-                        },
-                "sClass": "aling_right",
+              data: 'SaldoAnterior',
+              render: function (data, type, full, meta) {
+                if (full.CodMoneda == 'GS') {
+                  return convertir_rever(parseInt(data));
+                } else {
+                  return addCommas(parseFloat(data).toFixed(2));
+                }
+              },
+              "sClass": "aling_right",
             },
             {
-                data: 'TotalDebito',
-                render: function (data, type, full, meta) {
-                            if (full.CodMoneda == 'GS'){
-                                return convertir_rever(parseInt(data));
-                            } else {
-                                return addCommas(parseFloat(data).toFixed(2));
-                            }
-                        },
-                "sClass": "aling_right",
+              data: 'TotalDebito',
+              render: function (data, type, full, meta) {
+                if (full.CodMoneda == 'GS') {
+                  return convertir_rever(parseInt(data));
+                } else {
+                  return addCommas(parseFloat(data).toFixed(2));
+                }
+              },
+              "sClass": "aling_right",
             },
             {
-                data: 'TotalCredito',
-                render: function (data, type, full, meta) {
-                            if (full.CodMoneda == 'GS'){
-                                return convertir_rever(parseInt(data));
-                            } else {
-                                return addCommas(parseFloat(data).toFixed(2));
-                            }
-                        },
-                "sClass": "aling_right",
+              data: 'TotalCredito',
+              render: function (data, type, full, meta) {
+                if (full.CodMoneda == 'GS') {
+                  return convertir_rever(parseInt(data));
+                } else {
+                  return addCommas(parseFloat(data).toFixed(2));
+                }
+              },
+              "sClass": "aling_right",
             },
             {
-                data: 'Saldo',
-                render: function (data, type, full, meta) {
-                            if (full.CodMoneda == 'GS'){
-                                return convertir_rever(parseInt(data));
-                            } else {
-                                return addCommas(parseFloat(data).toFixed(2));
-                            }
-                        },
-                "sClass": "aling_right",
-            },
+              data: 'Saldo',
+              render: function (data, type, full, meta) {
+                if (full.CodMoneda == 'GS') {
+                  return convertir_rever(parseInt(data));
+                } else {
+                  return addCommas(parseFloat(data).toFixed(2));
+                }
+              },
+              "sClass": "aling_right"
+            }
           ],
           searching: false,
           ordering: false,
+          processing: true,
           drawCallback: function (settings) {
             var api = this.api();
             var rows = api.rows({page: 'current'}).nodes();
@@ -291,16 +297,14 @@
                 last = group;
               }
             });
-          },
+          }
         });
         $results.show();
       } else {
-        var table = $('#results').DataTable();
-        var $resultado = $('#resultado');
-        $resultado.css("position", "absolute").css("left", -9999);
-        table.row(0).scrollTo();
-        table.ajax.reload(function () {
-          $resultado.css("position", "relative").css("left", 0);
+        dataTable.clear().draw();
+        dataTable.processing(true);
+        dataTable.ajax.reload(function () {
+          dataTable.processing(false);
         }, true);
       }
     }
