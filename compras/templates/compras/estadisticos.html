@@ -1,4 +1,4 @@
-{% extends 'finanzas/base.html' %}
+{% extends 'ventas/baseWithoutTable.html' %}
 {% load staticfiles %}
 
 {% block extrahead %}
@@ -15,28 +15,42 @@
 {% endblock %}
 
 {% block filters %}
-    {% include 'ventas/_filtro.html' with name="empresa" %}
-    {% include 'ventas/_filtro.html' with name="graficode" title="Gráfico por" %}
-    {% include 'ventas/_filtro.html' with name="proveedor" %}
-    {% include 'ventas/_filtro.html' with name="articulo" title="Artículos" %}
-      <div class="col-sm-6">
-        <div class="form-group">
-          <label for="compras" class="col-md-4 control-label">Fecha:</label>
-          <div class="col-md-6">
-            <div id="compras" class="input-daterange input-group input-date">
-              <input type="text" class="input-sm form-control" name="start"/>
-              <span class="input-group-addon">hasta</span>
-              <input type="text" class="input-sm form-control" name="end"/>
-            </div>
-          </div>
+  {% include 'ventas/_filtro.html' with name="empresa" %}
+  {% include 'ventas/_filtro.html' with name="graficode" title="Gráfico por" %}
+  {% include 'ventas/_filtro.html' with name="proveedor" %}
+  {% include 'ventas/_filtro.html' with name="articulo" title="Artículos" %}
+  <div class="col-sm-6">
+    <div class="form-group">
+      <label for="compras" class="col-md-4 control-label">Fecha:</label>
+
+      <div class="col-md-6">
+        <div id="compras" class="input-daterange input-group input-date">
+          <input type="text" class="input-sm form-control" name="start"/>
+          <span class="input-group-addon">hasta</span>
+          <input type="text" class="input-sm form-control" name="end"/>
         </div>
       </div>
-    {% include 'ventas/_filtro.html' with name="moneda" %}
+    </div>
+  </div>
+  {% include 'ventas/_filtro.html' with name="moneda" %}
+{% endblock %}
+
+{% block inner_content %}
+  <div class="text-center" id="messages">
+    <h3 id="loading" style="display: none;">Cargando...</h3>
+
+    <h3 id="empty" style="display: none;">No hay datos disponibles</h3>
+  </div>
+  <div id="resultado">
+
+  </div>
 {% endblock %}
 
 {% block extra_foot %}
   <style>
-    .aling_right{text-align: right;}
+    .aling_right {
+      text-align: right;
+    }
   </style>
   <script>
     var query = {};
@@ -44,6 +58,7 @@
     var api = u.getApiUrl();
     var $results = $('#results');
     var $preview = $('#preview');
+    var $messages, $loading, $empty;
     var today = new Date();
     var initialize = init;
     var select_empresa, $select_empresa;
@@ -52,23 +67,26 @@
     var select_articulo, $select_articulo;
     var select_moneda, $select_moneda;
     var xhr;
-    
+
     function addCommas(nStr) {
-        nStr += '';
-        x = nStr.split('.');
-        x1 = x[0];
-        x2 = x.length > 1 ? ',' + x[1] : '';
-        var rgx = /(\d+)(\d{3})/;
-        while (rgx.test(x1)) {
-            x1 = x1.replace(rgx, '$1' + '.' + '$2');
-        }
-        return x1 + x2;
+      nStr += '';
+      x = nStr.split('.');
+      x1 = x[0];
+      x2 = x.length > 1 ? ',' + x[1] : '';
+      var rgx = /(\d+)(\d{3})/;
+      while (rgx.test(x1)) {
+        x1 = x1.replace(rgx, '$1' + '.' + '$2');
       }
+      return x1 + x2;
+    }
 
 
     $(document).ready(function () {
       u.hideNav();
       $results.hide();
+      $messages = $("#messages");
+      $loading = $messages.find("#loading");
+      $empty = $messages.find("#empty");
       initialize();
       select_empresa = $select_empresa[0].selectize;
       select_proveedor = $select_proveedor[0].selectize;
@@ -77,15 +95,15 @@
       select_articulo = $select_articulo[0].selectize;
       select_articulo.disable();
       select_moneda = $select_moneda[0].selectize;
-      
+
       $('#select-proveedor').parent().parent().parent().hide();
       $('#select-articulo').parent().parent().parent().hide();
-      
+
       show_select();
-      
-      $("#select-graficode").on("change", function(event) { 
-           show_select();
-      } );
+
+      $("#select-graficode").on("change", function (event) {
+        show_select();
+      });
     });
 
     function init() {
@@ -95,7 +113,7 @@
           debug();
         }
       });
-      
+
       $select_empresa = $('#select-empresa').selectize({
         valueField: 'Cod_Empresa',
         labelField: 'Des_Empresa',
@@ -140,7 +158,7 @@
           });
         }
       });
-      
+
       $select_moneda = $('#select-moneda').selectize({
         allowEmptyOption: true,
         options: [
@@ -152,10 +170,10 @@
           debug();
         }
       });
-      
+
       var selectize1 = $select_moneda[0].selectize;
       selectize1.setValue('GS');
-      
+
       $select_graficode = $('#select-graficode').selectize({
         allowEmptyOption: true,
         options: [
@@ -167,10 +185,10 @@
           debug();
         }
       });
-      
+
       var selectize = $select_graficode[0].selectize;
       selectize.setValue('PR');
-      
+
       $select_articulo = $('#select-articulo').selectize({
         valueField: 'cod_articulo',
         labelField: 'des_art',
@@ -181,7 +199,7 @@
           debug();
         }
       });
-      
+
       $select_proveedor = $('#select-proveedor').selectize({
         valueField: 'CodProv',
         labelField: 'RazonSocial',
@@ -192,7 +210,7 @@
           debug();
         }
       });
-             
+
       $('.input-daterange').datepicker({
         todayBtn: "linked",
         language: "es",
@@ -214,164 +232,171 @@
     function debug() {
       $preview.text(JSON.stringify(query));
     }
-    
-    function show_select(){
-        var graficode = $('#select-graficode').val();
-        if (graficode == "PR"){
-            $('#select-proveedor').parent().parent().parent().show();
-            $('#select-articulo').parent().parent().parent().hide();
-        } else {
-            $('#select-proveedor').parent().parent().parent().hide();
-            $('#select-articulo').parent().parent().parent().show();
-        }
+
+    function show_select() {
+      var graficode = $('#select-graficode').val();
+      if (graficode == "PR") {
+        $('#select-proveedor').parent().parent().parent().show();
+        $('#select-articulo').parent().parent().parent().hide();
+      } else {
+        $('#select-proveedor').parent().parent().parent().hide();
+        $('#select-articulo').parent().parent().parent().show();
+      }
     }
-    
+
     var colors = randomColor({
-        luminosity: 'bright',
-        count: 10,
-        seed: 108
+      luminosity: 'bright',
+      count: 10,
+      seed: 108
     });
-        
+
     //META.fn: sortJSON
     function sortJSON(data, key) {
-        return data.sort(function (a, b) {
-            var x = a[key];
-            var y = b[key];
-            return ((x < y) ? -1 : ((x > y) ? 1 : 0));
-        });
-    };
+      return data.sort(function (a, b) {
+        var x = a[key];
+        var y = b[key];
+        return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+      });
+    }
 
     function getInforme() {
-    
       $('.collapse').collapse('hide');
+      $loading.show();
+      $empty.hide();
       $('#resultado').empty();
       var graficode = $('#select-graficode').val();
-      if (graficode == "PR"){
-          $.ajax(api + "compras_proveedor/ranking", {
+      if (graficode == "PR") {
+        $.ajax(api + "compras_proveedor/ranking", {
           method: 'GET',
           contentType: 'application/json',
-          data: query,
-            }).done(
-                function (datos) {
-                    if (datos.data.length > 0){
-                    aux_colum = ['Proveedores']
-                    aux_name = []
-                    for (var a=0; a<datos.data.length; a++){
-                        aux_colum.push(datos.data[a].TotalCompras)
-                        aux_name.push(datos.data[a].RazonSocial)
+          data: query
+        }).done(function (datos) {
+          if (datos.data.length > 0) {
+            var aux_colum = ['Proveedores'];
+            var aux_name = [];
+            for (var a = 0; a < datos.data.length; a++) {
+              aux_colum.push(datos.data[a].TotalCompras);
+              aux_name.push(datos.data[a].RazonSocial);
+            }
+            console.log(aux_colum);
+            var chart = c3.generate({
+              bindto: '#resultado',
+              data: {
+                columns: [aux_colum],
+                type: 'bar',
+                color: function (c, d) {
+                  return colors[d.index];
+                }
+              },
+              axis: {
+                x: {
+                  type: 'category',
+                  categories: aux_name
+                },
+                y: {
+                  tick: {
+                    format: function (d) {
+                      if ($('#select-moneda').val() == 'GS') {
+                        return 'Gs. ' + convertir_rever(d);
+                      } else {
+                        return 'U$s. ' + addCommas(parseFloat((d)).toFixed(2));
+                      }
                     }
-                    console.log(aux_colum);
-                       var chart = c3.generate({
-                            bindto: '#resultado',
-                            data: {
-                                columns: [aux_colum],
-                                type : 'bar',
-                                color : function (c, d){
-                                    return colors[d.index];
-                                },
-                                onmouseover: function (d, i) { console.log("onmouseover", d, i); },
-                                onmouseout: function (d, i) { console.log("onmouseout", d, i); }
-                            },
-                            axis: {
-                                x: {
-                                    type: 'category',
-                                    categories: aux_name
-                                },
-                                y : {
-                                    tick: {
-                                        format: function (d) { 
-                                            if ($('#select-moneda').val() == 'GS'){
-                                                return 'Gs. ' + convertir_rever(d);
-                                            } else {
-                                                return 'U$s. ' + addCommas(parseFloat((d)).toFixed(2));
-                                            } 
-                                        }
-                                    }
-                                }
-                            },
-                            tooltip: {
-                                grouped: false,
-                                format: {
-                                    value: function (value, ratio, id) {
-                                        if ($('#select-moneda').val() == 'GS'){
-                                            return 'Gs. '+convertir_rever(value);
-                                        } else {
-                                            return 'U$s. ' + addCommas(parseFloat((value)).toFixed(2));
-                                        }
-                                    }
-                                }
-                            },
-                            bar: {
-                                width: {
-                                    ratio: 0.5
-                                }
-                            }
-                    }); 
+                  }
+                }
+              },
+              tooltip: {
+                grouped: false,
+                format: {
+                  value: function (value, ratio, id) {
+                    if ($('#select-moneda').val() == 'GS') {
+                      return 'Gs. ' + convertir_rever(value);
+                    } else {
+                      return 'U$s. ' + addCommas(parseFloat((value)).toFixed(2));
                     }
+                  }
+                }
+              },
+              bar: {
+                width: {
+                  ratio: 0.5
+                }
+              }
             });
+          } else {
+            $empty.show();
+          }
+          $loading.hide();
+        });
       } else {
-          $.ajax(api + "compras_articulo/ranking", {
+        $.ajax(api + "compras_articulo/ranking", {
           method: 'GET',
           contentType: 'application/json',
-          data: query,
-            }).done(
-                function (datos) {
-                    if (datos.data.length > 0){
-                    aux_colum = ['Compras']
-                    aux_name = []
-                    for (var a=0; a<datos.data.length; a++){
-                        aux_colum.push(datos.data[a].TotalItem)
-                        aux_name.push(datos.data[a].Des_Art)
+          data: query
+        }).done(function (datos) {
+          if (datos.data.length > 0) {
+            var aux_colum = ['Compras'];
+            var aux_name = [];
+            for (var a = 0; a < datos.data.length; a++) {
+              aux_colum.push(datos.data[a].TotalItem);
+              aux_name.push(datos.data[a].Des_Art);
+            }
+            console.log(aux_colum);
+            var chart = c3.generate({
+              bindto: '#resultado',
+              data: {
+                columns: [aux_colum],
+                type: 'bar',
+                color: function (c, d) {
+                  return colors[d.index];
+                },
+                onmouseover: function (d, i) {
+                  console.log("onmouseover", d, i);
+                },
+                onmouseout: function (d, i) {
+                  console.log("onmouseout", d, i);
+                }
+              },
+              axis: {
+                x: {
+                  type: 'category',
+                  categories: aux_name
+                },
+                y: {
+                  tick: {
+                    format: function (d) {
+                      if ($('#select-moneda').val() == 'GS') {
+                        return 'Gs. ' + convertir_rever(d);
+                      } else {
+                        return 'U$s. ' + addCommas(parseFloat((d)).toFixed(2));
+                      }
                     }
-                    console.log(aux_colum);
-                       var chart = c3.generate({
-                            bindto: '#resultado',
-                            data: {
-                                columns: [aux_colum],
-                                type : 'bar',
-                                color : function (c, d){
-                                    return colors[d.index];
-                                },
-                                onmouseover: function (d, i) { console.log("onmouseover", d, i); },
-                                onmouseout: function (d, i) { console.log("onmouseout", d, i); }
-                            },
-                            axis: {
-                                x: {
-                                    type: 'category',
-                                    categories: aux_name
-                                },
-                                y : {
-                                    tick: {
-                                        format: function (d) { 
-                                            if ($('#select-moneda').val() == 'GS'){
-                                                return 'Gs. ' + convertir_rever(d);
-                                            } else {
-                                                return 'U$s. ' + addCommas(parseFloat((d)).toFixed(2));
-                                            } 
-                                        }
-                                    }
-                                }
-                            },
-                            tooltip: {
-                                grouped: false,
-                                format: {
-                                    value: function (value, ratio, id) {
-                                        if ($('#select-moneda').val() == 'GS'){
-                                            return 'Gs. '+convertir_rever(value);
-                                        } else {
-                                            return 'U$s. ' + addCommas(parseFloat((value)).toFixed(2));
-                                        }
-                                    }
-                                }
-                            },
-                            bar: {
-                                width: {
-                                    ratio: 0.5
-                                }
-                            }
-                    }); 
+                  }
+                }
+              },
+              tooltip: {
+                grouped: false,
+                format: {
+                  value: function (value, ratio, id) {
+                    if ($('#select-moneda').val() == 'GS') {
+                      return 'Gs. ' + convertir_rever(value);
+                    } else {
+                      return 'U$s. ' + addCommas(parseFloat((value)).toFixed(2));
                     }
+                  }
+                }
+              },
+              bar: {
+                width: {
+                  ratio: 0.5
+                }
+              }
             });
+          } else {
+            $empty.show();
+          }
+          $loading.hide();
+        });
       }
     }
 
