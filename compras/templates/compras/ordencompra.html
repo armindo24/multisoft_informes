@@ -13,6 +13,7 @@
   <div class="col-sm-6">
     <div class="form-group">
       <label for="compras" class="col-md-4 control-label">Ventas:</label>
+
       <div class="col-md-6">
         <div id="compras" class="input-daterange input-group input-date">
           <input type="text" class="input-sm form-control" name="start"/>
@@ -22,10 +23,10 @@
       </div>
     </div>
   </div>
-  
-  {% include 'ventas/_filtro.html' with name="tipooc" title="Tipo Orden"%}
+
+  {% include 'ventas/_filtro.html' with name="tipooc" title="Tipo Orden" %}
   {% include 'ventas/_filtro.html' with name="estado" %}
-  
+
 {% endblock %}
 
 {% block table %}
@@ -50,7 +51,8 @@
     var query = {};
 
     var api = u.getApiUrl();
-    var $results = $('#results');
+    var $results = $('#resultado');
+    var dataTable;
     var $preview = $('#preview');
     var today = new Date();
     var initialize = init;
@@ -155,7 +157,7 @@
           debug();
         }
       });
-      
+
       $select_sucursal = $('#select-sucursal').selectize({
         valueField: 'Cod_Sucursal',
         labelField: 'Des_Sucursal',
@@ -181,7 +183,7 @@
           });
         }
       });
-      
+
       $select_departamento = $('#select-departamento').selectize({
         valueField: 'CodDpto',
         labelField: 'Descrip',
@@ -191,7 +193,7 @@
           debug();
         }
       });
-      
+
       $select_tipooc = $('#select-tipooc').selectize({
         valueField: 'TipoOrden',
         labelField: 'Descrip',
@@ -244,16 +246,22 @@
 
     function getInforme() {
       $('.collapse').collapse('hide');
-      $results.show();
 
-      if (!$.fn.DataTable.isDataTable('#results')) {
-        $('#results').DataTable({
+      if (!dataTable) {
+        dataTable = $results.find('table').DataTable({
           language: u.spanish_dt,
-          ajax: {
-            url: api + 'ordencompra/list',
-            data: function () {
-              return query;
-            }
+          ajax: function (d, cb, s) {
+            $.ajax({
+              method: 'GET',
+              url: api + 'ordencompra/list',
+              data: query
+            }).done(function (res) {
+              cb(res);
+            }).fail(function (e) {
+              dataTable.clear().draw();
+              dataTable.processing(false);
+              u.serverDown(e);
+            });
           },
           deferRender: true,
           scrollY: 350,
@@ -283,16 +291,15 @@
           ],
           searching: false,
           ordering: false,
+          processing: true
         });
         $results.show();
       } else {
-        var table = $('#results').DataTable();
-        var $resultado = $('#resultado');
-        table.row(0).scrollTo();
-        $resultado.css("position", "absolute").css("left", -9999);
-        table.ajax.url(api + 'ordencompra/list').load(function () {
-          $resultado.css("position", "relative").css("left", 0);
-        });
+        dataTable.clear().draw();
+        dataTable.processing(true);
+        dataTable.ajax.reload(function () {
+          dataTable.processing(false);
+        }, true);
       }
     }
   </script>
