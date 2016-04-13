@@ -104,10 +104,10 @@ Ventas.articulos = function (params, query) {
         "FROM dba.articulo\n" +
         "WHERE cod_empresa = ?\n";
     var sqlParams = [params.empresa];
-    if (query.sucursal) {
-        sql += "AND (cod_sucursal = ? or cod_sucursal is null)\n";
-        sqlParams.push(query.sucursal);
-    }
+    //if (query.sucursal) {
+    //    sql += "AND (cod_sucursal = ? or cod_sucursal is null)\n";
+    //    sqlParams.push(query.sucursal);
+    //}
     if (query.tipoArticulo) {
         sql += "AND (articulo.cod_tp_art = ?)\n";
         sqlParams.push(query.tipoArticulo);
