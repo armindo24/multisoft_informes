@@ -7,6 +7,7 @@
   var total_saldo_anterior = 0;
 
   var $select_empresa, select_empresa;
+  var $messages, $loading, $empty;
 
   function addCommas(nStr) {
     nStr += '';
@@ -24,6 +25,9 @@
   var query = {};
 
   $(document).ready(function () {
+    $messages = $("#messages");
+    $loading = $messages.find("#loading");
+    $empty = $messages.find("#empty");
     u.hideNav();
     initDate();
     initSelect();
@@ -125,14 +129,12 @@
       }
       $('.collapse').collapse('hide')
       $('#table-div').empty();
-      $('#mensaje-div').empty();
-      $('#mensaje-div').append("<b>Recuperando datos.</b>");
+      $loading.show();
+      $empty.hide();
       $.get(api + "balancecomprobado/list/" + empresa + "/" + periodo + "/" + periodoant + "/" + mes + "/" + mesant + "/" + nivel + "/" + moneda,
               function (data) {
                 if (data.data.length > 0) {
-                  $('#mensaje-div').empty();
                   $('#table-div').empty();
-                  
                   var table_string = '<table id ="resultados" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">'+
                                             '<thead>'+
                                                 '<tr>'+
@@ -414,9 +416,9 @@
                    total_saldo_anterior = 0
                 } else {
                   $('#table-div').empty();
-                  $('#mensaje-div').empty();
-                  $('#mensaje-div').append("<b>No se han encontrado datos.</b>")
+                  $empty.show();
                 }
+                $loading.hide();
               }
       );
     }
