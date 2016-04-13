@@ -180,7 +180,6 @@ u.spanish_dt = {
 };
 
 u.get_empresas = function (user_id, cb) {
-    console.log("getempresas");
     Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario': user_id}, {'cb': cb});
 };
 
@@ -193,7 +192,6 @@ u.parseVal = function (i) {
         parseFloat(i.replace(/[\$]/g, '')) :
         typeof i === 'number' ?
             i : 0;
-    //console.log(i, n);
     return n;
 };
 
@@ -292,4 +290,9 @@ u.hideTable = function ($table) {
 u.showTable = function ($table) {
     if (!$table) return;
     $table.css("position", "relative").css("left", 0);
+};
+
+u.serverDown = function (e) {
+    alert("Error del servidor");
+    console.log(e);
 };

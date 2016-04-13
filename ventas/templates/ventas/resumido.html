@@ -136,9 +136,8 @@
     };
 
     var api = u.getApiUrl();
-    var $preview = $('#preview');
     var $results = $('#results');
-    var numFormat = $.fn.dataTable.render.number('.', ',', 2).display;
+    var numFormat = u.numFormatter.display;
     var init = initialize;
     var today = new Date();
 
@@ -149,10 +148,15 @@
     var select_grupo, $select_grupo;
     var select_tipo_comprobante, $select_tipo_comprobante;
     var $select_order;
+    var $resultado;
+
+    var dtResultado;
 
     $(document).ready(function () {
       u.hideNav();
-      $results.hide();
+      $resultado = $('#resultado');
+      {#      $resultado.hide();#}
+      {#      $results.hide();#}
       init();
 
       select_empresa = $select_empresa[0].selectize;
@@ -167,7 +171,6 @@
       select_tipo_comprobante.disable();
       select_grupo = $select_grupo[0].selectize;
       select_grupo.disable();
-
     });
 
     function initialize() {
@@ -182,7 +185,6 @@
 
       $('.input-date .form-control').datepicker().on('changeDate', function (e) {
         query[this.name] = this.value;
-        u.debug($preview, query);
       });
 
       $('.input-date .form-control').datepicker('setDate', today);
@@ -191,7 +193,6 @@
       $.extend(true, $.fn.selectize.defaults, {
         onChange: function (value) {
           query[this.$input.attr('name')] = value;
-          u.debug($preview, query);
         }
       });
 
@@ -304,18 +305,18 @@
       });
     }
 
+    var calcGravado = function (data, type, row) {
+      var gravado = parseFloat(row.to_gravado) - parseFloat(row.total_iva);
+      return numFormat(gravado);
+    };
+
     function getInforme() {
       $('.collapse').collapse('hide');
-      $results.show();
 
-      var calcGravado = function (data, type, row) {
-        var gravado = parseFloat(row.to_gravado) - parseFloat(row.total_iva);
-        return numFormat(gravado);
-      };
-
-      if (!$.fn.DataTable.isDataTable('#results')) {
-        $('#results').DataTable({
-          language: u.spanish_dt,
+      if (!dtResultado) {
+        $resultado.show();
+        u.defaultDT();
+        dtResultado = $resultado.find('table').DataTable({
           ajax: function (d, cb, s) {
             $.ajax({
               method: 'GET',
@@ -323,24 +324,11 @@
               data: query
             }).done(function (res) {
               cb(res);
-            }).fail(function () {
-              cb();
+            }).fail(function (e) {
+              dtResultado.processing(false);
+              u.serverDown(e);
             });
           },
-          deferRender: true,
-          scrollY: 400,
-          scrollX: '100%',
-          scrollCollapse: true,
-          scroller: {
-            displayBuffer: 30,
-            loadingIndicator: true
-          },
-          columnDefs: [
-            {className: "price-value", targets: "price-label"},
-            {render: $.fn.dataTable.render.number('.', ',', 2), targets: "price-label"},
-            {className: "text-center", targets: "text-center"},
-            {visible: false, targets: "grouping-col"}
-          ],
           columns: [
             {
               data: null,
@@ -362,8 +350,7 @@
             {data: 'razon_social', name: 'cod_cliente'},
             {data: 'des_vendedor', name: 'cod_vendedor'}
           ],
-          searching: false,
-          ordering: false,
+          processing: true,
           footerCallback: footerSum,
           drawCallback: function (settings) {
             var api = this.api();
@@ -371,7 +358,6 @@
             var last = null;
             var colCount = api.columns().header().length;
 
-            console.log(colCount);
             api.column(query.order + ':name', {page: 'current'}).data().each(function (group, i) {
               if (last !== group) {
                 $(rows).eq(i).before(
@@ -380,16 +366,14 @@
                 last = group;
               }
             });
-          },
+          }
         });
         $results.show();
       } else {
-        var table = $('#results').DataTable();
-        var $resultado = $('#resultado');
-        $resultado.css("position", "absolute").css("left", -9999);
-        table.row(0).scrollTo();
-        table.ajax.reload(function () {
-          $resultado.css("position", "relative").css("left", 0);
+        dtResultado.clear().draw();
+        dtResultado.processing(true);
+        dtResultado.ajax.reload(function () {
+          dtResultado.processing(false);
         }, true);
       }
     }
@@ -451,19 +435,14 @@
                 parseFloat(i.replace(/[\$]/g, '')) :
                 typeof i === 'number' ?
                         i : 0;
-        //console.log(i, n);
         return n;
       };
       // Total over all pages
-      var total = api.column(8).data().reduce(function (a, b) {
-        return parseVal(a) + parseVal(b);
-      }, 0);
+      var total = api.column(8).data().sum();
 
 
       // Update footer
-      $(api.column(8).footer()).html(
-              numFormat(total)
-      );
+      $(api.column(8).footer()).html(numFormat(total));
     }
   </script>
 {% endblock %}
