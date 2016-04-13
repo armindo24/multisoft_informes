@@ -113,8 +113,8 @@ router.post('/cuentaauxi/query/:periodo/:empresa/:cuentad/:cuentah', function (r
 });
 
 //list balance general
-router.get('/balancegeneral/list/:empresa/:periodo/:cuentad/:cuentah/:mesd/:mesh/:nivel/:saldo/:moneda/:aux', function (req, res, next) {
-    Balance.general(req.params, function (result) {
+router.get('/balancegeneral/list/', function (req, res, next) {
+    Balance.general(req.query, function (result) {
         res.json({data: result});
     });
 });
