@@ -5,33 +5,34 @@
 {% endblock %}
 
 {% block filters %}
-    <div class="row">
-      {% include 'ventas/_filtro.html' with name="empresa" %}
-      {% include 'ventas/_filtro.html' with name="sucursal" %}
-    </div>
-    <div class="row">
-      {% include 'ventas/_filtro.html' with name="departamento" %}
-      {% include 'ventas/_filtro.html' with name="tipoco" title="Tipo Comprobante" %}
-    </div>
-    <div class="row">
-      {% include 'ventas/_filtro.html' with name="proveedor" %}
-      <div class="col-sm-6">
-        <div class="form-group">
-          <label for="compras" class="col-md-4 control-label">Fecha:</label>
-          <div class="col-md-6">
-            <div id="compras" class="input-daterange input-group input-date">
-              <input type="text" class="input-sm form-control" name="start"/>
-              <span class="input-group-addon">hasta</span>
-              <input type="text" class="input-sm form-control" name="end"/>
-            </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="empresa" %}
+    {% include 'ventas/_filtro.html' with name="sucursal" %}
+  </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="departamento" %}
+    {% include 'ventas/_filtro.html' with name="tipoco" title="Tipo Comprobante" %}
+  </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="proveedor" %}
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="compras" class="col-md-4 control-label">Fecha:</label>
+
+        <div class="col-md-6">
+          <div id="compras" class="input-daterange input-group input-date">
+            <input type="text" class="input-sm form-control" name="start"/>
+            <span class="input-group-addon">hasta</span>
+            <input type="text" class="input-sm form-control" name="end"/>
           </div>
         </div>
       </div>
     </div>
-    <div class="row">
-      {% include 'ventas/_filtro.html' with name="articulo" title="Artículos" %}
-      {% include 'ventas/_filtro.html' with name="moneda" %}
-    </div>
+  </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="articulo" title="Artículos" %}
+    {% include 'ventas/_filtro.html' with name="moneda" %}
+  </div>
 {% endblock %}
 
 {% block table %}
@@ -40,7 +41,7 @@
     <th>Fecha Emisión</th>
     <th class="text-center">T. Cbte.</th>
     <th class="text-center">N° Cbte.</th>
-    <th class="text-center">Moneda</th>    
+    <th class="text-center">Moneda</th>
     <th>Cod. Prov.</th>
     <th>Razón Social</th>
     <th>Cod. Art.</th>
@@ -64,16 +65,19 @@
 
 {% block extra_foot %}
   <style>
-    .aling_right{text-align: right;}
+    .aling_right {
+      text-align: right;
+    }
   </style>
   <script>
     var query = {
-        agrupar: 'Des_Art'
+      agrupar: 'Des_Art'
     };
     //var numFormat = $.fn.dataTable.render.number('.', ',', 2).display;
 
     var api = u.getApiUrl();
-    var $results = $('#results');
+    var $results = $('#resultado');
+    var dataTable;
     var $preview = $('#preview');
     var today = new Date();
     var initialize = init;
@@ -85,18 +89,18 @@
     var select_articulo, $select_articulo;
     var select_moneda, $select_moneda;
     var xhr;
-    
+
     function addCommas(nStr) {
-        nStr += '';
-        x = nStr.split('.');
-        x1 = x[0];
-        x2 = x.length > 1 ? ',' + x[1] : '';
-        var rgx = /(\d+)(\d{3})/;
-        while (rgx.test(x1)) {
-            x1 = x1.replace(rgx, '$1' + '.' + '$2');
-        }
-        return x1 + x2;
+      nStr += '';
+      x = nStr.split('.');
+      x1 = x[0];
+      x2 = x.length > 1 ? ',' + x[1] : '';
+      var rgx = /(\d+)(\d{3})/;
+      while (rgx.test(x1)) {
+        x1 = x1.replace(rgx, '$1' + '.' + '$2');
       }
+      return x1 + x2;
+    }
 
 
     $(document).ready(function () {
@@ -126,7 +130,7 @@
           debug();
         }
       });
-      
+
       $select_moneda = $('#select-moneda').selectize({
         allowEmptyOption: true,
         options: [
@@ -211,7 +215,7 @@
           });
         }
       });
-      
+
       $select_articulo = $('#select-articulo').selectize({
         valueField: 'cod_articulo',
         labelField: 'des_art',
@@ -222,7 +226,7 @@
           debug();
         }
       });
-      
+
       $select_proveedor = $('#select-proveedor').selectize({
         valueField: 'CodProv',
         labelField: 'RazonSocial',
@@ -233,7 +237,7 @@
           debug();
         }
       });
-      
+
       $select_sucursal = $('#select-sucursal').selectize({
         valueField: 'Cod_Sucursal',
         labelField: 'Des_Sucursal',
@@ -259,7 +263,7 @@
           });
         }
       });
-            
+
       $select_departamento = $('#select-departamento').selectize({
         valueField: 'CodDpto',
         labelField: 'Descrip',
@@ -269,7 +273,7 @@
           debug();
         }
       });
-      
+
       $select_articulo = $('#select-articulo').selectize({
         valueField: 'cod_articulo',
         labelField: 'des_art',
@@ -283,7 +287,7 @@
           debug();
         }
       });
-      
+
       $select_tipoco = $('#select-tipoco').selectize({
         valueField: 'cod_tp_comp',
         labelField: 'des_tp_comp',
@@ -294,7 +298,7 @@
           debug();
         }
       });
-      
+
       $select_generado = $('#select-generado').selectize({
         valueField: 'cod_usuario',
         labelField: 'cod_usuario',
@@ -304,7 +308,7 @@
           debug();
         }
       });
-      
+
       $select_cargado = $('#select-cargado').selectize({
         valueField: 'cod_usuario',
         labelField: 'cod_usuario',
@@ -341,15 +345,14 @@
 
     function getInforme() {
       $('.collapse').collapse('hide');
-      $results.show();
-      
+
       var numero_comprobante = $("[name=comprobante]").val();
 
       query.numero_comprobante = numero_comprobante;
       query.moneda = $('#select-moneda').val();
-        
-      if (!$.fn.DataTable.isDataTable('#results')) {
-        $('#results').DataTable({
+
+      if (!dataTable) {
+        dataTable = $results.find('table').DataTable({
           language: u.spanish_dt,
           ajax: function (d, cb, s) {
             $.ajax({
@@ -359,7 +362,9 @@
             }).done(function (res) {
               cb(res);
             }).fail(function () {
-              cb();
+              dataTable.clear().draw();
+              dataTable.processing(false);
+              u.serverDown(e);
             });
           },
           deferRender: true,
@@ -375,7 +380,7 @@
             {render: $.fn.dataTable.render.number('.', ',', 2), targets: "price-label"},
             {className: "text-center", targets: "text-center"},
             {visible: false, targets: "grouping-col"}
-          ], 
+          ],
           columns: [
             {data: 'f_emision'},
             {data: 'Cod_Tp_Comp'},
@@ -387,63 +392,64 @@
             {data: 'Des_Art', name: 'Des_Art'},
             {data: 'Cantidad'},
             {
-                data: 'Pr_Unit',
-                render: function (data) {
-                            if (query.moneda == 'GS'){
-                                return convertir_rever(data);
-                            } else {
-                                return addCommas(data);
-                            }
-                        },
-                "sClass": "aling_right",
+              data: 'Pr_Unit',
+              render: function (data) {
+                if (query.moneda == 'GS') {
+                  return convertir_rever(data);
+                } else {
+                  return addCommas(data);
+                }
+              },
+              "sClass": "aling_right",
             },
             {
-                data: 'Costo_Neto',
-                render: function (data) {
-                            if (query.moneda == 'GS'){
-                                return convertir_rever(data);
-                            } else {
-                                return addCommas(data);
-                            }
-                        },
-                "sClass": "aling_right",
+              data: 'Costo_Neto',
+              render: function (data) {
+                if (query.moneda == 'GS') {
+                  return convertir_rever(data);
+                } else {
+                  return addCommas(data);
+                }
+              },
+              "sClass": "aling_right",
             },
             {
-                data: 'IVA',
-                render: function (data) {
-                            if (query.moneda == 'GS'){
-                                return convertir_rever(data);
-                            } else {
-                                return addCommas(data);
-                            }
-                        },
-                "sClass": "aling_right",
+              data: 'IVA',
+              render: function (data) {
+                if (query.moneda == 'GS') {
+                  return convertir_rever(data);
+                } else {
+                  return addCommas(data);
+                }
+              },
+              "sClass": "aling_right",
             },
             {
-                data: 'total_sin_iva',
-                render: function (data) {
-                            if (query.moneda == 'GS'){
-                                return convertir_rever(data);
-                            } else {
-                                return addCommas(data);
-                            }
-                        },
-                "sClass": "aling_right",
+              data: 'total_sin_iva',
+              render: function (data) {
+                if (query.moneda == 'GS') {
+                  return convertir_rever(data);
+                } else {
+                  return addCommas(data);
+                }
+              },
+              "sClass": "aling_right",
             },
             {
-                data: 'total_con_iva',
-                render: function (data) {
-                            if (query.moneda == 'GS'){
-                                return convertir_rever(data);
-                            } else {
-                                return addCommas(data);
-                            }
-                        },
-                "sClass": "aling_right",
-            },
+              data: 'total_con_iva',
+              render: function (data) {
+                if (query.moneda == 'GS') {
+                  return convertir_rever(data);
+                } else {
+                  return addCommas(data);
+                }
+              },
+              "sClass": "aling_right",
+            }
           ],
           searching: false,
           ordering: false,
+          processing: true,
           footerCallback: footerSum,
           drawCallback: function (settings) {
             var api = this.api();
@@ -460,20 +466,18 @@
                 last = group;
               }
             });
-          },
+          }
         });
         $results.show();
       } else {
-        var table = $('#results').DataTable();
-        var $resultado = $('#resultado');
-        $resultado.css("position", "absolute").css("left", -9999);
-        table.row(0).scrollTo();
-        table.ajax.reload(function () {
-          $resultado.css("position", "relative").css("left", 0);
+        dataTable.clear().draw();
+        dataTable.processing(true);
+        dataTable.ajax.reload(function () {
+          dataTable.processing(false);
         }, true);
       }
     }
-      
+
     function footerSum(row, data, start, end, display) {
       var api = this.api(), data;
 
@@ -497,7 +501,7 @@
 
 
       // Update footer
-      if ($('#select-moneda').val() == 'GS'){
+      if ($('#select-moneda').val() == 'GS') {
         $(api.column(9).footer()).html(
                 convertir_rever(total)
         );
