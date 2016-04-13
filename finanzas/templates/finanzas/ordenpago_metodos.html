@@ -13,8 +13,15 @@
   var $select_tipoop;
   var select_tipo_proveedor, $select_tipo_proveedor;
   var select_proveedor, $select_proveedor;
-
+  
+  var $messages, $loading, $empty;
+    
   $(document).ready(function () {
+  
+    $messages = $("#messages");
+    $loading = $messages.find("#loading");
+    $empty = $messages.find("#empty");
+ 
     u.hideNav();
     initDates();
     initSelects();
@@ -154,12 +161,11 @@
     } else {
       $('.collapse').collapse('hide')
       $('#table-div').empty()
-      $('#mensaje-div').empty()
-      $('#mensaje-div').append("<b>Recuperando datos.</b>")
+      $loading.show();
+      $empty.hide();
       $.get(api + "ordenpago/list/" + empresa + "/" + sucursal + "/" + tipoop + "/" + tipoproveedor + "/" + proveedor + "/" + desde + "/" + hasta,
               function (data) {
                 if (data.data.length > 0) {
-                  $('#mensaje-div').empty()
                   
                   var table_string = '<table id="resultados" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">'+
                                           '<thead>'+
@@ -200,9 +206,9 @@
                 });
                 } else {
                   $('#table-div').empty()
-                  $('#mensaje-div').empty()
-                  $('#mensaje-div').append("<b>No se han encontrado datos.</b>")
+                  $empty.show();
                 }
+                $loading.hide();
               });
     }
   }
