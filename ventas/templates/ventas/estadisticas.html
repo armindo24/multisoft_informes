@@ -55,6 +55,11 @@
 
 
 {% block inner_content %}
+  <div class="text-center" id="messages">
+    <h3 id="loading" style="display: none;">Cargando...</h3>
+
+    <h3 id="empty" style="display: none;">No hay datos disponibles</h3>
+  </div>
   <div id="charts">
     <div class="row">
       <div class="col-lg-6">
@@ -88,6 +93,7 @@
     var currentYearData;
     var $donutTitle;
     var $charts;
+    var $messages, $loading, $empty;
 
     var gs = $.fn.dataTable.render.number('.', ',', 0, 'G ').display;
     var us = $.fn.dataTable.render.number('.', ',', 2, '$ ').display;
@@ -99,6 +105,11 @@
 
     $(document).ready(function () {
       u.hideNav();
+      $messages = $('#messages');
+      $loading = $messages.find('#loading');
+      $empty = $messages.find('#empty');
+      $loading.hide();
+      $empty.hide();
       $charts = $('#charts');
       initDates();
       initSelects();
@@ -300,15 +311,20 @@
     function getInforme() {
       if (!query.agrupacion) return;
       $('.collapse').collapse('hide');
+      $empty.hide();
       $charts.hide();
+      $loading.show();
       $.ajax({
         method: 'GET',
         url: api + 'estadisticas/ventas/' + query.agrupacion,
         data: query
       }).done(function (res) {
+        $loading.hide();
         if (res.data.length > 0) {
           $charts.show();
           initChart(res.data);
+        } else {
+          $empty.show();
         }
       }).fail(function (err) {
         console.log(err);
@@ -316,7 +332,6 @@
     }
 
     function initChart(data) {
-      globData = data;
       var indexedData = {};
       var lineChart;
       var pie;
@@ -353,7 +368,6 @@
       });
 
       var itemsArray = _.values(indexedData).slice(0, 10); // Utilizar array para mantener el mismo orden
-      globCli = itemsArray;
       var names = _(itemsArray).values().map('nombre').value(); // Leyendas de los items
 
       // Calcular totales
@@ -363,7 +377,6 @@
         });
         cliente.total = _(cliente.datos).values().sumBy('total') // total general
       });
-      console.log(indexedData);
 
       bar = c3.generate({
         bindto: '#bar',
