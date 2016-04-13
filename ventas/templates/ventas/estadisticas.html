@@ -327,7 +327,8 @@
           $empty.show();
         }
       }).fail(function (err) {
-        console.log(err);
+        $loading.hide();
+        $empty.show();
       });
     }
 
