@@ -5,53 +5,56 @@
 {% endblock %}
 
 {% block filters %}
-        <div class="row">
-            {% include 'ventas/_filtro.html' with name="empresa" %}
-            <div class="col-sm-6">
-              <div class="form-group">
-                <label for="periodo" class="col-md-4 control-label">Periodo:</label>
-        
-                <div class="col-md-6">
-                  <div id="periodo" class="input-date"><input type="text" onkeydown="return false" class="form-control asd" name="periodo"></div>
-                </div>
-              </div>
-            </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="empresa" %}
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="periodo" class="col-md-4 control-label">Periodo:</label>
+
+        <div class="col-md-6">
+          <div id="periodo" class="input-date"><input type="text" onkeydown="return false" class="form-control asd"
+                                                      name="periodo"></div>
         </div>
-        <div class="row">
-            {% include 'ventas/_filtro.html' with name="sucursal" %}
-            {% include 'ventas/_filtro.html' with name="departamento" %}
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="sucursal" %}
+    {% include 'ventas/_filtro.html' with name="departamento" %}
+  </div>
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="anho" class="col-md-4 control-label">Año:</label>
+
+        <div class="col-md-6">
+          <div id="anho" class="input-date"><input type="text" onkeydown="return false" class="form-control"
+                                                   name="anho"></div>
         </div>
-        <div class="row">
-            <div class="col-sm-6">
-              <div class="form-group">
-                <label for="anho" class="col-md-4 control-label">Año:</label>
-        
-                <div class="col-md-6">
-                  <div id="anho" class="input-date"><input type="text" onkeydown="return false" class="form-control" name="anho"></div>
-                </div>
-              </div>
-            </div>
-            <div class="col-sm-6">
-              <div class="form-group">
-                <label for="mes" class="col-md-4 control-label">Mes:</label>
-        
-                <div class="col-md-6">
-                  <div id="mes" class="input-date"><input type="text" onkeydown="return false" class="dateclass mes form-control" name="mes"></div>
-                </div>
-              </div>
-            </div>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="mes" class="col-md-4 control-label">Mes:</label>
+
+        <div class="col-md-6">
+          <div id="mes" class="input-date"><input type="text" onkeydown="return false"
+                                                  class="dateclass mes form-control" name="mes"></div>
         </div>
-        <div class="row">
-            <div class="col-sm-6">
-              <div class="form-group">
-                <label for="numero" class="col-md-4 control-label">Número:</label>
-        
-                <div class="col-md-6">
-                  <div><input type="text" class="form-control" id="numero" name="nivel" value=""></div>
-                </div>
-              </div>
-            </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="numero" class="col-md-4 control-label">Número:</label>
+
+        <div class="col-md-6">
+          <div><input type="text" class="form-control" id="numero" name="nivel" value=""></div>
         </div>
+      </div>
+    </div>
+  </div>
 {% endblock %}
 
 {% block table %}
@@ -105,16 +108,19 @@
 
 {% block extra_foot %}
   <style>
-    .aling_right{text-align: right;}
+    .aling_right {
+      text-align: right;
+    }
   </style>
   <script>
     var query = {
-        agrupar: 'des_moneda'
+      agrupar: 'des_moneda'
     };
     //var numFormat = $.fn.dataTable.render.number('.', ',', 2).display;
 
     var api = u.getApiUrl();
-    var $results = $('#results');
+    var $results = $('#resultado');
+    var dataTable;
     var $preview = $('#preview');
     var today = new Date();
     var initialize = init;
@@ -122,18 +128,18 @@
     var select_sucursal, $select_sucursal;
     var select_departamento, $select_departamento;
     var xhr;
-    
+
     function addCommas(nStr) {
-        nStr += '';
-        x = nStr.split('.');
-        x1 = x[0];
-        x2 = x.length > 1 ? ',' + x[1] : '';
-        var rgx = /(\d+)(\d{3})/;
-        while (rgx.test(x1)) {
-            x1 = x1.replace(rgx, '$1' + '.' + '$2');
-        }
-        return x1 + x2;
+      nStr += '';
+      x = nStr.split('.');
+      x1 = x[0];
+      x2 = x.length > 1 ? ',' + x[1] : '';
+      var rgx = /(\d+)(\d{3})/;
+      while (rgx.test(x1)) {
+        x1 = x1.replace(rgx, '$1' + '.' + '$2');
       }
+      return x1 + x2;
+    }
 
 
     $(document).ready(function () {
@@ -156,7 +162,7 @@
           debug();
         }
       });
-      
+
       $select_empresa = $('#select-empresa').selectize({
         valueField: 'Cod_Empresa',
         labelField: 'Des_Empresa',
@@ -187,7 +193,7 @@
           });
         }
       });
-      
+
       $select_sucursal = $('#select-sucursal').selectize({
         valueField: 'Cod_Sucursal',
         labelField: 'Des_Sucursal',
@@ -213,7 +219,7 @@
           });
         }
       });
-            
+
       $select_departamento = $('#select-departamento').selectize({
         valueField: 'CodDpto',
         labelField: 'Descrip',
@@ -226,42 +232,42 @@
       });
 
       $('#periodo .form-control').datepicker({
-          format: "yyyy",
-          startView: 2,
-          minViewMode: 2,
-          maxViewMode: 2,
-          autoclose: true
-        });
-        
-        $('#anho .form-control').datepicker({
-          format: "yyyy",
-          startView: 2,
-          minViewMode: 2,
-          maxViewMode: 2,
-          autoclose: true
-        });
-        
-    $('.mes').datepicker({
-      autoclose: true,
-      todayBtn: "linked",
-      language: "es",
-      format: "MM",
-      startView: 1,
-      minViewMode: 1,
-      maxViewMode: 1
-    });
-    
-    $('.mes').datepicker().on('changeDate', function (c) {
-      query.mes = c.format('mm');
-    });
+        format: "yyyy",
+        startView: 2,
+        minViewMode: 2,
+        maxViewMode: 2,
+        autoclose: true
+      });
 
-       $('#periodo .form-control').datepicker().on('changeDate', function (e) {
-          query[this.name] = this.value;
-        });
-        
-        $('#anho .form-control').datepicker().on('changeDate', function (e) {
-          query[this.name] = this.value;
-        });
+      $('#anho .form-control').datepicker({
+        format: "yyyy",
+        startView: 2,
+        minViewMode: 2,
+        maxViewMode: 2,
+        autoclose: true
+      });
+
+      $('.mes').datepicker({
+        autoclose: true,
+        todayBtn: "linked",
+        language: "es",
+        format: "MM",
+        startView: 1,
+        minViewMode: 1,
+        maxViewMode: 1
+      });
+
+      $('.mes').datepicker().on('changeDate', function (c) {
+        query.mes = c.format('mm');
+      });
+
+      $('#periodo .form-control').datepicker().on('changeDate', function (e) {
+        query[this.name] = this.value;
+      });
+
+      $('#anho .form-control').datepicker().on('changeDate', function (e) {
+        query[this.name] = this.value;
+      });
 
       $('.input-date .form-control.asd').datepicker('setDate', today);
       $('.input-date .form-control.asd').datepicker('update');
@@ -273,12 +279,12 @@
 
     function getInforme() {
       $('.collapse').collapse('hide');
-      $results.show();
-      
+
       query.numero = $("#numero").val();
-        
-      if (!$.fn.DataTable.isDataTable('#results')) {
-        $('#results').DataTable({
+
+      if (!dataTable) {
+        $results.show();
+        dataTable = $results.find('table').DataTable({
           language: u.spanish_dt,
           ajax: function (d, cb, s) {
             $.ajax({
@@ -287,8 +293,10 @@
               data: query
             }).done(function (res) {
               cb(res);
-            }).fail(function () {
-              cb();
+            }).fail(function (e) {
+              dataTable.clear().draw();
+              dataTable.processing(false);
+              u.serverDown(e);
             });
           },
           deferRender: true,
@@ -304,7 +312,7 @@
             {render: $.fn.dataTable.render.number('.', ',', 2), targets: "price-label"},
             {className: "text-center", targets: "text-center"},
             {visible: false, targets: "grouping-col"}
-          ], 
+          ],
           columns: [
             {data: 'Cod_tp_Comp'},
             {data: 'NroFact'},
@@ -313,81 +321,82 @@
             {data: 'RazonSocial'},
             {data: 'FactCambio'},
             {
-                data: 'totalgravado',
-                render: function (data, type, full, meta) {
-                            if (full.CodMoneda == 'GS'){
-                                return convertir_rever(parseInt(data));
-                            } else {
-                                return addCommas(parseFloat(data).toFixed(2));
-                            }
-                        },
-                "sClass": "aling_right",
+              data: 'totalgravado',
+              render: function (data, type, full, meta) {
+                if (full.CodMoneda == 'GS') {
+                  return convertir_rever(parseInt(data));
+                } else {
+                  return addCommas(parseFloat(data).toFixed(2));
+                }
+              },
+              "sClass": "aling_right",
             },
             {
-                data: 'totalexen1',
-                render: function (data, type, full, meta) {
-                            if (full.CodMoneda == 'GS'){
-                                return convertir_rever(parseInt(data));
-                            } else {
-                                return addCommas(parseFloat(data).toFixed(2));
-                            }
-                        },
-                "sClass": "aling_right",
+              data: 'totalexen1',
+              render: function (data, type, full, meta) {
+                if (full.CodMoneda == 'GS') {
+                  return convertir_rever(parseInt(data));
+                } else {
+                  return addCommas(parseFloat(data).toFixed(2));
+                }
+              },
+              "sClass": "aling_right",
             },
             {
-                data: 'totaliva',
-                render: function (data, type, full, meta) {
-                            if (full.CodMoneda == 'GS'){
-                                return convertir_rever(parseInt(data));
-                            } else {
-                                return addCommas(parseFloat(data).toFixed(2));
-                            }
-                        },
-                "sClass": "aling_right",
+              data: 'totaliva',
+              render: function (data, type, full, meta) {
+                if (full.CodMoneda == 'GS') {
+                  return convertir_rever(parseInt(data));
+                } else {
+                  return addCommas(parseFloat(data).toFixed(2));
+                }
+              },
+              "sClass": "aling_right",
             },
             {
-                data: 'total',
-                render: function (data, type, full, meta) {
-                            if (full.CodMoneda == 'GS'){
-                                return convertir_rever(parseInt(data));
-                            } else {
-                                return addCommas(parseFloat(data).toFixed(2));
-                            }
-                        },
-                "sClass": "aling_right",
+              data: 'total',
+              render: function (data, type, full, meta) {
+                if (full.CodMoneda == 'GS') {
+                  return convertir_rever(parseInt(data));
+                } else {
+                  return addCommas(parseFloat(data).toFixed(2));
+                }
+              },
+              "sClass": "aling_right",
             },
             {
-                data: 'ret_renta',
-                render: function (data, type, full, meta) {
-                            if (full.CodMoneda == 'GS'){
-                                return convertir_rever(parseInt(data));
-                            } else {
-                                return addCommas(parseFloat(data).toFixed(2));
-                            }
-                        },
-                "sClass": "aling_right",
+              data: 'ret_renta',
+              render: function (data, type, full, meta) {
+                if (full.CodMoneda == 'GS') {
+                  return convertir_rever(parseInt(data));
+                } else {
+                  return addCommas(parseFloat(data).toFixed(2));
+                }
+              },
+              "sClass": "aling_right",
             },
             {
-                data: 'neto',
-                render: function (data, type, full, meta) {
-                            if (full.CodMoneda == 'GS'){
-                                return convertir_rever(parseInt(data));
-                            } else {
-                                return addCommas(parseFloat(data).toFixed(2));
-                            }
-                        },
-                "sClass": "aling_right",
+              data: 'neto',
+              render: function (data, type, full, meta) {
+                if (full.CodMoneda == 'GS') {
+                  return convertir_rever(parseInt(data));
+                } else {
+                  return addCommas(parseFloat(data).toFixed(2));
+                }
+              },
+              "sClass": "aling_right",
             },
             {
-                data: null,
-                render: function (d, t, r) {
+              data: null,
+              render: function (d, t, r) {
                 return "<a class='btn btn-primary' data-toggle='modal' data-target='#compraModal' " +
                         "data-cabecera='" + JSON.stringify(r) + "'>" +
                         "<i class='fa fa-search-plus'></i></a>";
-                }
-            },
+              }
+            }
           ],
           searching: false,
+          processing: true,
           ordering: false,
           drawCallback: function (settings) {
             var api = this.api();
@@ -395,7 +404,6 @@
             var last = null;
             var colCount = api.columns().header().length;
 
-            console.log(colCount);
             api.column(query.agrupar + ':name', {page: 'current'}).data().each(function (group, i) {
               if (last !== group) {
                 $(rows).eq(i).before(
@@ -404,46 +412,43 @@
                 last = group;
               }
             });
-          },
+          }
         });
-        $results.show();
       } else {
-        var table = $('#results').DataTable();
-        var $resultado = $('#resultado');
-        $resultado.css("position", "absolute").css("left", -9999);
-        table.row(0).scrollTo();
-        table.ajax.reload(function () {
-          $resultado.css("position", "relative").css("left", 0);
+        dataTable.clear().draw();
+        dataTable.processing(true);
+        dataTable.ajax.reload(function () {
+          dataTable.processing(false);
         }, true);
       }
     }
-    
+
     function showModal(event) {
       var button = $(event.relatedTarget);
       var cabecera = button.data('cabecera');
       var modal = $(this);
       var table = modal.find('tbody');
       table.empty();
-      
+
       var string = ""
-        
-        if (cabecera.Gravado == 'S') {
-            string+= '<tr><th>Liquidación IVA:</th><td>Si</td>'
-        } else {
-            string+= '<tr><th>Liquidación IVA:</th><td>No</td>'
-        }
-        
-        if (cabecera.TipoIVA == 'D') {
-            string+= '<th>Tipo IVA:</th><td>Desglosado</td>'
-        } else {
-            string+= '<th>Tipo IVA:</th><td>Incluido</td>'
-        }
-            
-        string+= '<th>Timbrado:</th><td>'+cabecera.Timbrado+'</td></tr>'+
-        
-        '<tr><th>Año:</th><td>'+cabecera.AnhoFFijo+'</td><th>Mes:</th><td>'+cabecera.MesFFijo+'</td><th>N°:</th><td>'+cabecera.NroFFijo+'</td></tr>'+
-        '<tr><th>Cod. Dpto.:</th><td>'+cabecera.CodDpto+'</td><th>Dpto.:</th><td>'+cabecera.Descrip+'</td><th>Cod. Prov.:</th><td>'+cabecera.CodProv+'</td></tr>';
-      
+
+      if (cabecera.Gravado == 'S') {
+        string += '<tr><th>Liquidación IVA:</th><td>Si</td>'
+      } else {
+        string += '<tr><th>Liquidación IVA:</th><td>No</td>'
+      }
+
+      if (cabecera.TipoIVA == 'D') {
+        string += '<th>Tipo IVA:</th><td>Desglosado</td>'
+      } else {
+        string += '<th>Tipo IVA:</th><td>Incluido</td>'
+      }
+
+      string += '<th>Timbrado:</th><td>' + cabecera.Timbrado + '</td></tr>' +
+
+              '<tr><th>Año:</th><td>' + cabecera.AnhoFFijo + '</td><th>Mes:</th><td>' + cabecera.MesFFijo + '</td><th>N°:</th><td>' + cabecera.NroFFijo + '</td></tr>' +
+              '<tr><th>Cod. Dpto.:</th><td>' + cabecera.CodDpto + '</td><th>Dpto.:</th><td>' + cabecera.Descrip + '</td><th>Cod. Prov.:</th><td>' + cabecera.CodProv + '</td></tr>';
+
       table.html(string);
     }
   </script>
