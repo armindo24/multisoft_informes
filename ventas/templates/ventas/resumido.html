@@ -257,24 +257,28 @@
         searchField: 'Des_Tp_Cliente',
         onChange: function (value) {
           query.tipo_cliente = value;
+          u.resetSelect(select_cliente);
           if (!value.length) return;
-          select_cliente.disable();
-          select_cliente.clearOptions();
-          select_cliente.load(function (cb) {
-            $.get(api + 'empresas/' + query.empresa + '/clientes', {tipo: query.tipo_cliente}).done(function (res) {
-              select_cliente.enable();
-              cb(res.data);
-            }).fail(function () {
-              cb();
-            });
-          });
+          select_cliente.enable();
         }
       });
 
       $select_cliente = $('#select-cliente').selectize({
         valueField: 'Cod_Cliente',
         labelField: 'Razon_Social',
-        searchField: 'Razon_Social'
+        searchField: 'Razon_Social',
+        load: function (q, cb) {
+          if (!q.length) return cb();
+          $.get(api + 'empresas/' + query.empresa + '/clientes', {
+            tipo: query.tipo_cliente,
+            cliente: q,
+            sucursal: query.sucursal
+          }).done(function (res) {
+            cb(res.data);
+          }).fail(function () {
+            cb();
+          });
+        }
       });
 
       $select_tipo_comprobante = $('#select-tipo_comprobante').selectize({
