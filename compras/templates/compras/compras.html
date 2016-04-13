@@ -152,7 +152,10 @@
 
     var api = u.getApiUrl();
     var $results = $('#results');
+    var $resultado = $('#resultado');
     var $preview = $('#preview');
+    var $loading = $("#loading");
+    var $empty = $("#empty");
     var today = new Date();
     var initialize = init;
     var select_empresa, $select_empresa;
@@ -163,6 +166,7 @@
     var select_agrupar, $select_agrupar;
     var select_moneda, $select_moneda;
     var xhr;
+    var dataTable;
 
     function addCommas(nStr) {
       nStr += '';
@@ -179,7 +183,7 @@
 
     $(document).ready(function () {
       u.hideNav();
-      $results.hide();
+      $resultado.hide();
       initialize();
       select_empresa = $select_empresa[0].selectize;
 
@@ -390,20 +394,20 @@
     }
 
     function debug() {
-      $preview.text(JSON.stringify(query));
+      return;
     }
 
     function getInforme() {
       $('.collapse').collapse('hide');
-      $results.show();
 
       var numero_comprobante = $("[name=comprobante]").val();
 
       query.numero_comprobante = numero_comprobante;
       query.moneda = $('#select-moneda').val();
 
-      if (!$.fn.DataTable.isDataTable('#results')) {
-        $('#results').DataTable({
+      if (!dataTable) {
+        $resultado.show();
+        dataTable = $results.DataTable({
           language: u.spanish_dt,
           ajax: function (d, cb, s) {
             $.ajax({
@@ -412,13 +416,16 @@
               data: query
             }).done(function (res) {
               cb(res);
-            }).fail(function () {
-              cb();
+            }).fail(function (e) {
+              dataTable.clear().draw();
+              dataTable.processing(false);
+              u.serverDown(e);
             });
           },
           deferRender: true,
           scrollY: 350,
           scrollX: '100%',
+          processing: true,
           scrollCollapse: true,
           scroller: {
             displayBuffer: 30,
@@ -511,16 +518,14 @@
                 last = group;
               }
             });
-          },
+          }
         });
         $results.show();
       } else {
-        var table = $('#results').DataTable();
-        var $resultado = $('#resultado');
-        $resultado.css("position", "absolute").css("left", -9999);
-        table.row(0).scrollTo();
-        table.ajax.reload(function () {
-          $resultado.css("position", "relative").css("left", 0);
+        dataTable.clear().draw();
+        dataTable.processing(true);
+        dataTable.ajax.reload(function () {
+          dataTable.processing(false);
         }, true);
       }
     }
