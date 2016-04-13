@@ -1,4 +1,4 @@
-{% extends 'finanzas/base.html' %}
+    {% extends 'finanzas/base.html' %}
 
 {% block header %}
   Centro de Costos:
@@ -67,6 +67,12 @@
 {% endblock %}
 
 {% block inner_content %}
+<div class="text-center" id="messages">
+    <h3 id="loading" style="display: none;">Cargando...</h3>
+
+    <h3 id="empty" style="display: none;">No hay datos disponibles</h3>
+  </div>
+
   <div id="table-div" class="span2">
   </div>
 
