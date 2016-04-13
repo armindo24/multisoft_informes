@@ -397,7 +397,7 @@ router.get('/empresas/:empresa/vendedores', function (req, res, next) {
     Empresa.vendedores(req.params, req.query).then(function (result) {
         postProcess(res, result);
     }).catch(function (err) {
-        next(e);
+        next(err);
     });
 });
 
