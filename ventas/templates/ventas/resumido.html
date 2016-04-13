@@ -324,6 +324,7 @@
             }).done(function (res) {
               cb(res);
             }).fail(function (e) {
+              dtResultado.clear().draw();
               dtResultado.processing(false);
               u.serverDown(e);
             });
