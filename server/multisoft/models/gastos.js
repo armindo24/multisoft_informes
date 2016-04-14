@@ -83,7 +83,7 @@ Gastos_Rendir.all = function (filters, cb) {
         string+= " AND ( DBA.FACTCAB.NroRendicion > 0 ) ";
     }
     
-    string+= "ORDER BY DBA.FACTCAB.CodResponsable";
+    string+= " ORDER BY DBA.FACTCAB.CodResponsable";
     console.log(string);
     
     conn.exec(string, function (err, r) {
