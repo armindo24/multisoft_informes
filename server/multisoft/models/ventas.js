@@ -8,7 +8,7 @@ var maxSelect = 10;
 Ventas.all = function (params, filters, cb) {
     //conn.exec("SET ROWCOUNT 100"); //TODO: solucionar resultados muy grandes
 
-    var select = "dba.vtacab.cod_tp_comp, dba.vtacab.comp_numero, dba.vtacab.cod_cliente, " +
+    var select = "dba.vtacab.cod_tp_comp, dba.vtacab.comp_numero, dba.vtacab.codmoneda, dba.vtacab.cod_cliente, " +
         "dba.f_get_AsoAbreviatura(dba.vtacab.cod_empresa, dba.vtacab.cod_cliente, 'V') as razon_social, " +
         "dba.vtacab.razon_social as cliente," +
         "date(dba.vtacab.fha_cbte) as fecha, dba.vtacab.cod_usuario, cast(dba.vtacab.to_exento as decimal(20,2)), cast(dba.vtacab.to_gravado as decimal(20,2)), " +
@@ -17,8 +17,8 @@ Ventas.all = function (params, filters, cb) {
         "dba.vtacab.cod_sucursal, cast(dba.vtacab.totaldescuento as decimal(20,2)), dba.vtacab.nroservicio, dba.vtacab.anulado, " +
         "dba.clientes.cat_iva, dba.clientes.ruc, dba.vendedor.des_vendedor";
     var from = "dba.VtaCab, dba.Clientes, dba.TpoCbte, dba.Vendedor";
-    var where = "(dba.vtacab.anulado != 'S') and (dba.vtacab.cod_empresa = ?)"
-    var args = [params.empresa];
+    var where = "(dba.vtacab.anulado != 'S') and (dba.vtacab.cod_empresa = ?) and dba.vtacab.codmoneda = ?\n";
+    var args = [params.empresa, filters.moneda ? filters.moneda : 'GS'];
     var join = "( dba.vtacab.cod_empresa = dba.clientes.cod_empresa ) and ( dba.vtacab.cod_cliente = dba.clientes.cod_cliente ) and ( dba.vtacab.cod_empresa =dba.tpocbte.cod_empresa ) and ( dba.vtacab.cod_tp_comp = dba.tpocbte.cod_tp_comp )" +
         " and (dba.vtacab.cod_vendedor = dba.vendedor.cod_vendedor)";
 

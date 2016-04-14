@@ -22,7 +22,7 @@
       </div>
     </div>
   </div>
-  {% include 'ventas/_filtro.html' with title="Grupo" name="grupo" %}
+  {% include 'ventas/_filtro.html' with name="moneda" %}
   {% include 'ventas/_filtro.html' with title="Comprobante" name="tipo_comprobante" %}
   {% include 'ventas/_filtro.html' with title="Agrupar por" name="order" %}
 {% endblock filters %}
@@ -137,7 +137,13 @@
 
     var api = u.getApiUrl();
     var $results = $('#results');
-    var numFormat = u.numFormatter.display;
+    var numFormat = function (value) {
+      if (query.moneda === 'US') {
+        return u.usFormatter.display(value);
+      } else {
+        return u.numFormatter.display(value);
+      }
+    };
     var init = initialize;
     var today = new Date();
 
@@ -145,7 +151,7 @@
     var select_sucursal, $select_sucursal;
     var select_tipo_cliente, $select_tipo_cliente;
     var select_cliente, $select_cliente;
-    var select_grupo, $select_grupo;
+    var select_moneda, $select_moneda;
     var select_tipo_comprobante, $select_tipo_comprobante;
     var $select_order;
     var $resultado;
@@ -168,8 +174,8 @@
       select_cliente.disable();
       select_tipo_comprobante = $select_tipo_comprobante[0].selectize;
       select_tipo_comprobante.disable();
-      select_grupo = $select_grupo[0].selectize;
-      select_grupo.disable();
+      select_moneda = $select_moneda[0].selectize;
+      select_moneda.setValue('GS');
     });
 
     function initialize() {
@@ -228,16 +234,6 @@
               callback();
             });
           });
-          select_grupo.disable();
-          select_grupo.clearOptions();
-          select_grupo.load(function (callback) {
-            $.get(api + 'grupos/').done(function (res) {
-              select_grupo.enable();
-              callback(res.data);
-            }).fail(function () {
-              callback();
-            });
-          });
           select_sucursal.disable();
           select_sucursal.clearOptions();
           select_sucursal.load(function (callback) {
@@ -287,10 +283,11 @@
         searchField: 'des_tp_comp'
       });
 
-      $select_grupo = $('#select-grupo').selectize({
-        valueField: 'cod_grupo',
-        labelField: 'des_grupo',
-        searchField: 'des_grupo'
+      $select_moneda = $('#select-moneda').selectize({
+        options: [
+          {value: 'GS', text: 'Local'},
+          {value: 'US', text: 'Extranjera'}
+        ]
       });
 
       $select_sucursal = $('#select-sucursal').selectize({
@@ -311,6 +308,11 @@
     var calcGravado = function (data, type, row) {
       var gravado = parseFloat(row.to_gravado) - parseFloat(row.total_iva);
       return numFormat(gravado);
+    };
+
+    var numFormatter = function (data) {
+      if (query.moneda === 'US') return u.usFormatter.display(data);
+      return u.numFormatter.display(data);
     };
 
     function getInforme() {
@@ -346,10 +348,10 @@
             {data: 'razon_social'},
             {data: 'ruc'},
             {data: 'fecha'},
-            {data: 'total_iva'},
+            {data: 'total_iva', render: numFormatter},
             {data: null, render: calcGravado},
-            {data: 'totaldescuento'},
-            {data: 'to_gravado'},
+            {data: 'totaldescuento', render: numFormatter},
+            {data: 'to_gravado', render: numFormatter},
             {data: 'des_tp_comp', name: 'cod_tp_comp'},
             {data: 'razon_social', name: 'cod_cliente'},
             {data: 'des_vendedor', name: 'cod_vendedor'}
