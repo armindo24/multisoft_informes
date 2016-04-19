@@ -35,8 +35,6 @@ var Cobrador = require('../models/cobrador');
 var Recaudacion = require('../models/recaudacion');
 var Localidad = require('../models/localidad');
 
-var conn = require('../db');
-
 var postProcess = function (response, result) {
     response.json({data: result});
 };

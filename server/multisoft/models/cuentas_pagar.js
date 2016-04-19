@@ -1,4 +1,4 @@
-var conn = require('../db');
+var conn = require('../db_integrado');
 var util = require('util');
 var moment = require('moment');
 var q = require('./queryUtils');

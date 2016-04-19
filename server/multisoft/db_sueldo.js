@@ -2,7 +2,7 @@ var Promise = require('bluebird');
 var sqlanywhere = Promise.promisifyAll(require('sqlanywhere'));
 var config = require('config');
 
-var dbConfig = config.get('sybase.dbConfig');
+var dbConfig = config.get('sueldo.dbConfig');
 
 var client = sqlanywhere.createConnection();
 
