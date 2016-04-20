@@ -47,7 +47,8 @@ INSTALLED_APPS = (
     'custom_permissions',
     'finanzas',
     'ventas',
-    'compras'
+    'compras',
+    'stock'
 )
 
 MIDDLEWARE_CLASSES = (
