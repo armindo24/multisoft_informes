@@ -1,10 +1,162 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title></title>
-</head>
-<body>
-  <h1>Hola mundo</h1>
-</body>
-</html>
+{% extends 'finanzas/base.html' %}
+{% load staticfiles %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <script src="{% static 'lodash/dist/lodash.min.js' %}"></script>
+{% endblock %}
+
+{% block header %}
+  Cuentas por Cobrar:
+{% endblock %}
+
+{% block filters %}
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="empresa" %}
+    {% include 'ventas/_filtro.html' with name="sucursal" %}
+  </div>
+{% endblock %}
+
+{% block table %}
+  <thead>
+  <tr>
+    <th>Cod. Art.</th>
+    <th>Cod. Original</th>
+    <th>Articulo</th>
+    <th>Comis. Vta.</th>
+    <th>Descuento</th>
+    <th>Unidad</th>
+    <th>Cod. IVA</th>
+    <th>IVA</th>
+    <th>Stock Max.</th>
+  </tr>
+  </thead>
+{% endblock %}
+
+{% block extra_foot %}
+  <script>
+    var query = {empresa: ''};
+    var api = u.getApiUrl();
+    var $tableDiv, dataTable;
+    var numFormat = u.numFormatter;
+
+    var $selectEmpresa, selectEmpresa;
+    var $selectSucursal, selectSucursal;
+
+    $(document).ready(function () {
+      u.hideNav();
+      initDates();
+      initSelects();
+      $tableDiv = $('#resultado');
+      $tableDiv.hide();
+    });
+
+    function initDates() {
+      var $inputDate = $(".input-date .form-control");
+      u.defaultDatepicker();
+
+      u.defaultDatepicker();
+      $(".input-daterange").datepicker({
+        todayBtn: "linked",
+        format: "yyyy-mm-dd",
+        autoclose: true
+      });
+
+      $inputDate.datepicker().on('changeDate', function (e) {
+        var key = this.name;
+        query[key] = this.value;
+      });
+
+      $inputDate.datepicker('setDate', new Date());
+      $inputDate.datepicker('update');
+    }
+
+    function initSelects() {
+      $.extend(true, $.fn.selectize.defaults, {
+        onChange: function (value) {
+          query[this.$input.attr('name')] = value;
+        }
+      });
+
+      $selectEmpresa = $('#select-empresa').selectize({
+        valueField: 'Cod_Empresa',
+        labelField: 'Des_Empresa',
+        searchField: 'Des_Empresa',
+        onChange: function (value) {
+          query.empresa = value;
+          u.resetSelect(selectSucursal);
+          if (!value.length) return;
+          selectSucursal.load(function (callback) {
+            $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
+              selectSucursal.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+
+      selectEmpresa = $selectEmpresa[0].selectize;
+      selectEmpresa.load(function (cb) {
+        u.get_empresas({{ user }}, function (res) {
+          cb(res.data);
+        });
+      });
+
+      $selectSucursal = $('#select-sucursal').selectize({
+        valueField: 'Cod_Sucursal',
+        labelField: 'Des_Sucursal',
+        searchField: 'Des_Sucursal',
+        onChange: function (value) {
+          query.sucursal = value;
+          if (!value.length) return;
+        }
+      });
+      selectSucursal = $selectSucursal[0].selectize;
+      selectSucursal.disable();
+    }
+
+    function getInforme() {
+      $('.collapse').collapse('hide');
+
+      if (!dataTable) {
+        $tableDiv.show();
+        u.defaultDT();
+        dataTable = $tableDiv.find('table').DataTable({
+          ajax: function (d, cb, s) {
+            $.ajax({
+              method: 'GET',
+              url: api + 'stock/articulos',
+              data: query
+            }).done(function (res) {
+              globData = res.data;
+              cb(res);
+            }).fail(function (err) {
+              dataTable.clear().draw();
+              dataTable.processing(false);
+              u.serverDown(e);
+            });
+          },
+          columns: [
+            {data: 'cod_articulo'},
+            {data: 'cod_original'},
+            {data: 'des_art'},
+            {data: 'comision_vta'},
+            {data: 'descuento'},
+            {data: 'unidad'},
+            {data: 'cod_iva'},
+            {data: 'iva'},
+            {data: 'st_max'},
+          ]
+        });
+      } else {
+        dataTable.clear().draw();
+        dataTable.processing(true);
+        dataTable.ajax.reload(function () {
+          dataTable.processing(false);
+        }, true);
+      }
+    }
+  </script>
+{% endblock %}
