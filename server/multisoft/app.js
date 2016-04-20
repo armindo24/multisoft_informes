@@ -7,9 +7,6 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var config = require('config');
 
-var db_integrado = require('./db_integrado');
-var db_sueldo = require('./db_sueldo');
-
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var api = require('./routes/api');
