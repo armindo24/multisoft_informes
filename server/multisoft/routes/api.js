@@ -3,6 +3,7 @@ var router = express.Router();
 
 var Calificacion = require('../models/calificacion');
 var Empresa = require('../models/empresa');
+var EmpresaSueldo = require('../models/empresa_sueldo');
 var Comprobante = require('../models/comprobante');
 var Proveedor = require('../models/proveedor');
 var Sucursal = require('../models/sucursal');
@@ -34,6 +35,8 @@ var Moneda = require('../models/moneda');
 var Cobrador = require('../models/cobrador');
 var Recaudacion = require('../models/recaudacion');
 var Localidad = require('../models/localidad');
+var Tp_Movimiento = require('../models/tp_movimiento_sueldo');
+var Empleado = require('../models/empleado_sueldo');
 
 var postProcess = function (response, result) {
     response.json({data: result});
@@ -54,6 +57,16 @@ router.get('/empresa/select', function (req, res, next) {
         });
 });
 
+//empresas_sueldo select option
+router.get('/empresa_sueldo/select', function (req, res, next) {
+    EmpresaSueldo.all(req.query)
+        .then(function (result) {
+            res.json({data: result});
+        }).catch(function (error) {
+            next(error);
+        });
+});
+
 //empresas select option notin
 router.post('/empresa/notin/select/', function (req, res, next) {
     Empresa.notin(req.body, function (result) {
@@ -61,9 +74,23 @@ router.post('/empresa/notin/select/', function (req, res, next) {
     });
 });
 
+//empresas_sueldo select option notin
+router.post('/empresa_sueldo/notin/select/', function (req, res, next) {
+    EmpresaSueldo.notin(req.body, function (result) {
+        res.json({data: result});
+    });
+});
+
 //empresas select option in
 router.post('/empresa/inin/select/', function (req, res, next) {
     Empresa.inin(req.body, function (result) {
+        res.json({data: result});
+    });
+});
+
+//empresas_sueldo select option in
+router.post('/empresa_sueldo/inin/select/', function (req, res, next) {
+    EmpresaSueldo.inin(req.body, function (result) {
         res.json({data: result});
     });
 });
@@ -513,5 +540,20 @@ router.get('/recaudaciones/planillas', function (req, res, next) {
         res.json({data: result});
     });
 });
+
+//proveedores select option
+router.get('/tp_movimientos_sueldo/select/:empresa/', function (req, res, next) {
+    Tp_Movimiento.all(req.params, function (result) {
+        res.json({data: result});
+    });
+});
+
+//proveedores select option
+router.get('/empleados_sueldo/select/:empresa/', function (req, res, next) {
+    Empleado.all(req.params, function (result) {
+        res.json({data: result});
+    });
+});
+
 
 module.exports = router;

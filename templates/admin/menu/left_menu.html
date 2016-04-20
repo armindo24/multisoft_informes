@@ -83,6 +83,11 @@
                     <a href="{% url 'finanzas:flujo_fondo' %}"> Flujo de Fondo </a>
                 </li>
 		    {% endif %}
+		    {% if  request.session.modulo_seleccionado == "RRHH"  %}
+            <li>
+                <a href="{% url 'rrhh:legajos' %}"> Legajos </a>
+            </li>
+            {% endif %}
 			{% if  request.session.modulo_seleccionado == "Admin"  %}
 			<li>
 				<a href="/admin/auth/"> Usuarios </a>

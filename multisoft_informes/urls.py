@@ -43,6 +43,7 @@ urlpatterns = patterns('',
     url(r'^finanzas/', include("finanzas.urls", namespace="finanzas")),
     url(r'^ventas/', include('ventas.urls', namespace='ventas')),
     url(r'^compras/', include('compras.urls', namespace='compras')),
+    url(r'^rrhh/', include('rrhh.urls', namespace='rrhh')),
     url(r'^custom_permissions/', include("custom_permissions.urls", namespace="custom_permissions")),
 )
 

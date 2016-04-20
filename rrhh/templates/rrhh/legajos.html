@@ -1,0 +1,154 @@
+{% extends 'finanzas/base.html' %}
+
+{% block header %}
+  Legajos:
+{% endblock %}
+
+{% block filters %}
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="empresa" %}
+    {% include 'ventas/_filtro.html' with name="empleados" %}
+  </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="tipo" title="Tipo Movimiento" %}
+  </div>
+{% endblock %}
+
+
+{% block extra_foot %}
+  <style>
+    .aling_right {
+      text-align: right;
+    }
+  </style>
+  <script>
+    var query = {
+      agrupar: 'Cod_Tp_Comp'
+    };
+    //var numFormat = $.fn.dataTable.render.number('.', ',', 2).display;
+
+    var api = u.getApiUrl();
+    var $results = $('#results');
+    var $resultado = $('#resultado');
+    var $preview = $('#preview');
+    var $loading = $("#loading");
+    var $empty = $("#empty");
+    var today = new Date();
+    var initialize = init;
+    var select_empresa, $select_empresa;
+    var select_tipo, $select_tipo;
+    var xhr;
+    var dataTable;
+
+    function addCommas(nStr) {
+      nStr += '';
+      x = nStr.split('.');
+      x1 = x[0];
+      x2 = x.length > 1 ? ',' + x[1] : '';
+      var rgx = /(\d+)(\d{3})/;
+      while (rgx.test(x1)) {
+        x1 = x1.replace(rgx, '$1' + '.' + '$2');
+      }
+      return x1 + x2;
+    }
+
+
+    $(document).ready(function () {
+      u.hideNav();
+      $resultado.hide();
+      initialize();
+      select_empresa = $select_empresa[0].selectize;
+      
+      select_empleados = $select_empleados[0].selectize;
+      select_empleados.disable();
+      select_tipo = $select_tipo[0].selectize;
+      select_tipo.disable();
+    });
+
+    function init() {
+      $.extend(true, $.fn.selectize.defaults, {
+        onChange: function (value) {
+          query[this.$input.attr('name')] = value;
+          debug();
+        }
+      });
+
+      $select_empresa = $('#select-empresa').selectize({
+        valueField: 'Cod_Empresa',
+        labelField: 'Des_Empresa',
+        searchField: 'Des_Empresa',
+        preload: true,
+        load: function (q, callback) {
+          u.get_empresas_sueldo({{ user }}, function (d) {
+            callback(d.data);
+          });
+        },
+        onChange: function (value) {
+          query.empresa = value;
+          debug();
+          if (!value.length) return;
+          select_tipo.disable();
+          select_tipo.clearOptions();
+          select_tipo.load(function (callback) {
+            $.ajax({
+              url: api + 'tp_movimientos_sueldo/select/' + query.empresa,
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_tipo.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+          select_empleados.disable();
+          select_empleados.clearOptions();
+          select_empleados.load(function (callback) {
+            $.ajax({
+              url: api + 'empleados_sueldo/select/' + query.empresa,
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_empleados.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+
+      $select_empleados = $('#select-empleados').selectize({
+        valueField: 'codempleado',
+        labelField: 'nombres',
+        searchField: 'nombres',
+        maxItems: null,
+        onChange: function (value) {
+          query.tipooc = value;
+          debug();
+        }
+      });
+      
+      $select_tipo = $('#select-tipo').selectize({
+        valueField: 'codmvto',
+        labelField: 'descrip',
+        searchField: 'descrip',
+        maxItems: null,
+        onChange: function (value) {
+          query.tipooc = value;
+          debug();
+        }
+      });
+    }
+
+    function debug() {
+      return;
+    }
+
+    function getInforme() {
+      $('.collapse').collapse('hide');
+
+    }
+
+  </script>
+{% endblock %}

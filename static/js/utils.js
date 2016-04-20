@@ -154,6 +154,25 @@ var permisos_empresas = function (data, args) {
     }
 };
 
+var permisos_empresas_sueldo = function (data, args) {
+    if (data.length > 0) {
+        var vector = []
+        for (var a = 0; a < data.length; a++) {
+            vector.push("'" + data[a].empresa + "'")
+        }
+        var str = JSON.stringify({empresas: vector});
+        $.ajax(api + "empresa_sueldo/inin/select", {
+            method: 'POST',
+            contentType: 'application/json',
+            data: str
+        }).done(function (d) {
+                if (args.cb) args.cb(d);
+            }
+        );
+    }
+};
+
+
 u.spanish_dt = {
     "decimal": ",",
     "emptyTable": "No hay datos disponibles",
@@ -182,6 +201,11 @@ u.spanish_dt = {
 u.get_empresas = function (user_id, cb) {
     Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario': user_id}, {'cb': cb});
 };
+
+u.get_empresas_sueldo = function (user_id, cb) {
+    Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas_sueldo, {'usuario': user_id}, {'cb': cb});
+};
+
 
 u.numFormatter = $.fn.dataTable.render.number('.', ',', 0);
 u.numFormat = u.numFormatter.display;
