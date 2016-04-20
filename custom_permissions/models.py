@@ -4,9 +4,9 @@ from django.contrib.auth.models import User, Permission
 from django.db import models
 
 permissions_list = (("entrar_finanzas", "Finanzas"),
-                   ("entrar_ventas", "Ventas"),
-                   ("entrar_compras", "Compras"),
-                   ("entrar_admin", "Admin"),
+                    ("entrar_ventas", "Ventas"),
+                    ("entrar_compras", "Compras"),
+                    ("entrar_admin", "Admin"),
 #                     ("informe_balancegeneral", "Balance General"),
 #                     ("informe_balancegeneralcomprobado", "Balance General Comprobado"),
 #                     ("informe_diario", "Libro Diario"),

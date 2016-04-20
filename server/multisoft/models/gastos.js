@@ -1,4 +1,4 @@
-var conn = require('../db');        
+var conn = require('../db_integrado');        
 var util = require('util');
 var q = require('./queryUtils');
 var Gastos_Rendir = {};
@@ -63,10 +63,9 @@ Gastos_Rendir.all = function (filters, cb) {
                     "AND ( DBA.factcab.cod_empresa = DBA.tpocbte.cod_empresa ) "+ 
                     "AND ( DBA.factcab.cod_tp_comp = DBA.tpocbte.cod_tp_comp ) "+
                     "AND ( DBA.FACTCAB.FondoFijo = 'N' ) "+
-                    "AND ( DBA.FACTCAB.NroRendicion > 0 ) "+
                     "AND ( FactCab.cod_empresa = '"+filters.empresa+"') "+
-                    "AND ( DATE (DBA.FACTCAB.FechaFact) >= DATE ('2011/01/01') ) "+
-                    "AND ( DATE (DBA.FACTCAB.FechaFact) <= DATE ('2015/12/31') ) ";
+                    "AND ( DATE (DBA.FACTCAB.FechaFact) >= DATE ('"+filters.compras_start+"') ) "+
+                    "AND ( DATE (DBA.FACTCAB.FechaFact) <= DATE ('"+filters.compras_end+"') ) ";
                     
     if (filters.asentada == 'S'){
         string+= "AND EXISTS (select * from dba.factcab f2 where f2.cod_empresa = dba.factcab.cod_empresa and f2.codresponsable = dba.factcab.codresponsable and f2.nrorendicion = dba.factcab.nrorendicion and f2.Asentado = 'S' ) ";
@@ -80,9 +79,11 @@ Gastos_Rendir.all = function (filters, cb) {
     
     if (filters.numero != null && filters.numero != "") {
         string+= " AND ( ( FactCab.NroRendicion = "+filters.numero+" ) ) ";
+    } else {
+        string+= " AND ( DBA.FACTCAB.NroRendicion > 0 ) ";
     }
     
-    string+= "ORDER BY DBA.FACTCAB.CodResponsable";
+    string+= " ORDER BY DBA.FACTCAB.CodResponsable";
     console.log(string);
     
     conn.exec(string, function (err, r) {

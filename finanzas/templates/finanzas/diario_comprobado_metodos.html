@@ -1,21 +1,25 @@
 <script type="text/javascript">
-  var current_asiento = 0;
   var total_debito = 0;
   var total_credito = 0;
   var total_debito_me = 0;
   var total_credito_me = 0;
-  var nro_transac_list = [];
 
   var addCommas = u.addCommas;
   var convertir_rever = u.convertir_rever;
 
   var $select_empresa, select_empresa;
   var $select_tipo_asiento, select_tipo_asiento;
+  
+  var $messages, $loading, $empty;
 
   var api = u.getApiUrl();
   var query = {};
 
   $(document).ready(function () {
+    $messages = $("#messages");
+    $loading = $messages.find("#loading");
+    $empty = $messages.find("#empty");
+    
     u.hideNav();
     initDates();
     initSelects();
@@ -91,6 +95,8 @@
 
 
   function getInforme() {
+    var current_asiento = 0;
+    var nro_transac_list = [];
     var empresa = query.empresa;
     var desde = query.fechad;
     var hasta = query.fechah;
@@ -98,16 +104,13 @@
     var autorizado = query.autorizado;
     var moneda = query.moneda;
     $('.collapse').collapse('hide')
-    $('#mensaje-div').empty()
-    $('#mensaje-div').append("<b>Recuperando datos.</b>")
+    $loading.show();
+    $empty.hide();
     $('#table-div').empty()
     $.get(api + "diariocomprobado/list/" + empresa + "/" + tipoasiento + "/" + desde + "/" + hasta + "/" + autorizado,
             function (data) {
               if (data.data.length > 0) {
-                $('#mensaje-div').empty()
-                $('#table-div').empty()
                 var string = ""
-                //current_asiento = parseInt(data.data[0].NroTransac)
                 for (var a = 0; a < data.data.length; a++) {
                   if (parseInt(data.data[a].NroTransac) != parseInt(current_asiento)) {
                     string += '<div id="asiento-' + data.data[a].NroTransac + '">' +
@@ -158,6 +161,8 @@
                     
                   }
                 }
+                
+                console.log(string);
                 
                 $('#table-div').append(string);
                 
@@ -242,9 +247,9 @@
                 }
               } else {
                 $('#table-div').empty()
-                $('#mensaje-div').empty()
-                $('#mensaje-div').append("<b>No se han encontrado datos.</b>")
-              }
+                $empty.show();
+                }
+            $loading.hide();
             });
   }
 </script>

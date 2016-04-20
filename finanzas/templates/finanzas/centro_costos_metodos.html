@@ -13,11 +13,17 @@
   var select_cuenta_auxd, $select_cuenta_auxd;
   var select_cuenta_auxh, $select_cuenta_auxh;
   var $moneda, $nivel;
+  
+  var $messages, $loading, $empty;
 
   $(document).ready(function () {
     u.hideNav();
     initDate();
     initSelects();
+    
+    $messages = $("#messages");
+    $loading = $messages.find("#loading");
+    $empty = $messages.find("#empty");
 
     $moneda = $("#moneda");
     $nivel = $("#nivel");
@@ -171,13 +177,11 @@
       $('.collapse').collapse('hide')
       $('#table-div').empty()
       $('#table-div').show()
-      $('#table-div').append("<b>Recuperando datos.</b>")
+      $loading.show();
+      $empty.hide();
       $.get(api + "centrocostos/list/" + empresa + "/" + periodo + "/" + cuentad + "/" + cuentah + "/" + cuentaad + "/" + cuentaah + "/" + mesd + "/" + mesh + "/" + nivel,
               function (data) {
                 if (data.data.length > 0) {
-                  $('#table-div').empty()
-                  $('#table-div').show()
-                  $('#table-div').empty()
                   var cols = ['Cuentas']
                   var accounts = []
                   var rows = []
@@ -286,9 +290,9 @@
                   }
                 } else {
                   $('#table-div').empty()
-                  $('#table-div').show()
-                  $('#table-div').append("<b>No se han encontrado datos.</b>")
+                   $empty.show();
                 }
+                $loading.hide();
               }
       );
     }
