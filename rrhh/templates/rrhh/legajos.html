@@ -14,6 +14,16 @@
   </div>
 {% endblock %}
 
+{% block inner_content %}
+  <div class="text-center" id="messages">
+    <h3 id="loading" style="display: none;">Cargando...</h3>
+
+    <h3 id="empty" style="display: none;">No hay datos disponibles</h3>
+  </div>
+  <div id="resultado">
+
+  </div>
+{% endblock %}
 
 {% block extra_foot %}
   <style>
@@ -55,10 +65,12 @@
 
     $(document).ready(function () {
       u.hideNav();
-      $resultado.hide();
+      $messages = $("#messages");
+      $loading = $messages.find("#loading");
+      $empty = $messages.find("#empty");
+      
       initialize();
       select_empresa = $select_empresa[0].selectize;
-      
       select_empleados = $select_empleados[0].selectize;
       select_empleados.disable();
       select_tipo = $select_tipo[0].selectize;
@@ -124,7 +136,7 @@
         searchField: 'nombres',
         maxItems: null,
         onChange: function (value) {
-          query.tipooc = value;
+          query.empleados = value;
           debug();
         }
       });
@@ -135,7 +147,7 @@
         searchField: 'descrip',
         maxItems: null,
         onChange: function (value) {
-          query.tipooc = value;
+          query.tipo = value;
           debug();
         }
       });
@@ -147,7 +159,55 @@
 
     function getInforme() {
       $('.collapse').collapse('hide');
+      $loading.show();
+      $empty.hide();
+      $resultado.empty();
 
+      
+      $.ajax(api + "legajos_sueldo/list", {
+          method: 'GET',
+          contentType: 'application/json',
+          data: query
+        }).done(function (datos) {
+          if (datos.data.length > 0) {
+            console.log(datos.data);
+            var data = datos.data;
+            var empleado = 0;
+            
+            for (var a=0; a < data.length; a++){
+                if (empleado != data[a].codempleado){
+                    var sdiv = '<hr><div id="empleado_'+data[a].codempleado+'">'+
+                                    '<table class="table table-striped table-bordered nowrap id="cab_empleado_'+data[a].codempleado+'">'+
+                                        '<tr><th>Legajo:</th><td>'+data[a].apellidos+', '+data[a].codempleado+'</td><th>Fecha de Nacimiento:<th/><td>'+data[a].fechanac+'</td></tr>'+
+                                        '<tr><th>Apellidos y Nombre:</th><td>'+data[a].nombres+'</td><th>Fecha de Entrada:<th/><td>'+data[a].fechaentrada+'</td></tr>'+
+                                        '<tr><th>Documento Nro.:</th><td>'+data[a].cedula+'</td><th>Aporta IPS?:<th/><td>'+data[a].aportaips+'</td></tr>'+
+                                        '<tr><th>Estado Civil:</th><td>'+data[a].estcivil+'</td><th>Número IPS:<th/><td>'+data[a].nroips+'</td></tr>'+
+                                        '<tr><th>Dirección:</th><td>'+data[a].direccion+'</td><th>Teléfono:<th/><td>'+data[a].telefono+'</td></tr>'+
+                                    '</table>'+
+                               '</div>';
+                          $resultado.append(sdiv);
+                    empleado = data[a].codempleado;
+                    <!-- $('#cab_empleado_'+data[a].codempleado).DataTable().destroy();
+                    $('#cab_empleado_'+data[a].codempleado).DataTable({
+                      searching: false,
+                      language: u.spanish_dt,
+                      paging: false,
+                      ordering: false,
+                      info: false,
+                      scrollCollapse: true,
+                      scrollY: 300,
+                      scrollX: '100%'
+                    }); -->
+                }
+            }
+            
+            
+            
+            } else {
+            $empty.show();
+          }
+          $loading.hide();
+        });
     }
 
   </script>

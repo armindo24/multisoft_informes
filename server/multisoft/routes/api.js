@@ -37,6 +37,7 @@ var Recaudacion = require('../models/recaudacion');
 var Localidad = require('../models/localidad');
 var Tp_Movimiento = require('../models/tp_movimiento_sueldo');
 var Empleado = require('../models/empleado_sueldo');
+var Legajos = require('../models/legajos_sueldo');
 
 var postProcess = function (response, result) {
     response.json({data: result});
@@ -555,5 +556,11 @@ router.get('/empleados_sueldo/select/:empresa/', function (req, res, next) {
     });
 });
 
+//legajos
+router.get('/legajos_sueldo/list', function (req, res, next) {
+    Legajos.all(req.query, function (result) {
+        res.json({data: result});
+    });
+});
 
 module.exports = router;
