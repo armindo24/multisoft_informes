@@ -39,7 +39,8 @@ Stock.articulos = function (params, filter) {
         "AND ( articulo.cto_ult_fob_gs is null or articulo.cto_ult_fob_gs <= 0 ) " +
         "AND ( articulo.cto_prom_me is null or articulo.cto_prom_me <= 0 ) " +
         "AND ( articulo.cto_ult_me is null or articulo.cto_ult_me <= 0 ) " +
-        "AND ( articulo.cto_ult_fob_me is null or articulo.cto_ult_fob_me <= 0 );";
+        "AND ( articulo.cto_ult_fob_me is null or articulo.cto_ult_fob_me <= 0 )\n" +
+        "ORDER BY dba.articulo.cod_familia, dba.articulo.cod_grupo;";
 
     return conn.execAsync(sql);
 };

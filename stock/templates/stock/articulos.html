@@ -35,6 +35,8 @@
     <th>Lista 4</th>
     <th>M. Local</th>
     <th>M. Extr.</th>
+    <th class="grouping-col">Familia</th>
+    <th class="grouping-col">Grupo</th>
   </tr>
   </thead>
 {% endblock %}
@@ -166,8 +168,11 @@
             {data: 'PorcComisLista3'},
             {data: 'PorcComisLista4'},
             {data: 'porc_financ'},
-            {data: 'porc_financ_me'}
-          ]
+            {data: 'porc_financ_me'},
+            {data: 'des_familia', name: 'familia'},
+            {data: 'des_grupo', name: 'grupo'}
+          ],
+          drawCallback: groupData
         });
       } else {
         dataTable.clear().draw();
@@ -176,6 +181,22 @@
           dataTable.processing(false);
         }, true);
       }
+    }
+
+    function groupData(settings) {
+      var api = this.api();
+      var rows = api.rows({page: 'current'}).nodes();
+      var last = null;
+      var colCount = api.columns().header().length;
+
+      api.column('familia:name', {page: 'current'}).data().each(function (group, i) {
+        if (last !== group) {
+          $(rows).eq(i).before(
+                  '<tr class="group text-center"><td colspan="' + colCount + '"><h4>' + group + '</h4></td></tr>'
+          );
+          last = group;
+        }
+      });
     }
   </script>
 {% endblock %}
