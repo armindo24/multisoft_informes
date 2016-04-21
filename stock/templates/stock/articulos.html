@@ -15,6 +15,7 @@
     {% include 'ventas/_filtro.html' with name="empresa" %}
     {% include 'ventas/_filtro.html' with name="sucursal" %}
     {% include 'ventas/_filtro.html' with name="familia" %}
+    {% include 'ventas/_filtro.html' with name="grupo" %}
   </div>
 {% endblock %}
 
@@ -55,6 +56,7 @@
     var $selectEmpresa, selectEmpresa;
     var $selectSucursal, selectSucursal;
     var $selectFamilia, selectFamilia;
+    var $selectGrupo, selectGrupo;
 
     $(document).ready(function () {
       u.hideNav();
@@ -145,7 +147,16 @@
         },
         onChange: function (value) {
           query.familia = value;
+          u.resetSelect(selectGrupo);
           if (!value.length) return;
+          selectGrupo.load(function (cb) {
+            $.get(api + 'stock/grupos', {familia: query.familia}).done(function (res) {
+              cb(res.data);
+              selectGrupo.enable();
+            }).fail(function () {
+              cb();
+            });
+          });
         }
       });
       selectFamilia = $selectFamilia[0].selectize;
@@ -157,6 +168,26 @@
           cb();
         });
       });
+
+      $selectGrupo = $('#select-grupo').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: ['id', 'name'],
+        render: {
+          option: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' - ' + escape(item['name']) + '</div>';
+          },
+          item: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' - ' + escape(item['name']) + '</div>';
+          }
+        },
+        onChange: function (value) {
+          query.grupo = value;
+          if (!value.length) return;
+        }
+      });
+      selectGrupo = $selectGrupo[0].selectize;
+      selectGrupo.disable();
     }
 
     function getInforme() {
