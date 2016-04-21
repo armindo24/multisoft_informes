@@ -45,4 +45,9 @@ Stock.articulos = function (params, filter) {
     return conn.execAsync(sql);
 };
 
+Stock.familias = function () {
+    var sql = "SELECT cod_familia id, des_familia name FROM DBA.familia  ORDER BY cod_familia ASC";
+    return conn.execAsync(sql);
+};
+
 module.exports = Stock;

@@ -20,4 +20,12 @@ router.get('/articulos', function (req, res, next) {
     });
 });
 
+router.get('/familias', function (req, res, next) {
+    Stock.familias().then(function (result) {
+        postProcess(res, result);
+    }).catch(function (e) {
+        next(e);
+    });
+});
+
 module.exports = router;
