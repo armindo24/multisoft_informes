@@ -18,11 +18,33 @@ Articulo.list = function (params, filters, cb) {
         "( dba.articulo.cod_tp_art = DBA.tpoart.cod_tp_art ) AND ( articulo.cod_empresa = ? )";
 
     var sql_params = [params.empresa];
-    
+
     conn.exec(sql, sql_params, function (err, res) {
         if (err) throw err;
         cb(res);
     });
+};
+
+Articulo.all = function (params, filter) {
+    var sql =
+        "SELECT a.cod_articulo id, a.des_art name\n" +
+        "FROM dba.articulo a\n" +
+        "WHERE a.cod_empresa = ?\n";
+    var sqlParams = [params.empresa];
+    if (filter.familia) {
+        sql += "AND a.cod_familia = ?\n";
+        sqlParams.push(filter.familia);
+    }
+    if (filter.grupo) {
+        sql += "AND a.cod_grupo = ?\n";
+        sqlParams.push(filter.grupo);
+    }
+    if (filter.tipo) {
+        sql += "AND a.cod_tp_art = ?;";
+        sqlParams.push(filter.tipo);
+    }
+
+    return conn.execAsync(sql, sqlParams);
 };
 
 module.exports = Articulo;
