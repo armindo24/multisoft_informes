@@ -183,7 +183,7 @@
       var api = this.api();
       var rowsDOM = api.rows({page: 'current'}).nodes();
       var rows = api.rows({page: 'current'}).data();
-      var lastFamilia, lastGrupo = 'xxx';
+      var lastFamilia, lastGrupo;
       var colCount = api.columns().header().length;
       var html;
 
