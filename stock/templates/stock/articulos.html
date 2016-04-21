@@ -148,8 +148,8 @@
             });
           },
           columns: [
-            {data: 'cod_articulo'},
-            {data: 'cod_original'},
+            {data: 'des_familia'},
+            {data: 'des_grupo'},
             {data: 'des_art'},
             {data: 'comision_vta', render: percent},
             {data: 'descuento', render: percent},
@@ -166,7 +166,7 @@
             {data: 'PorcComisLista3'},
             {data: 'PorcComisLista4'},
             {data: 'porc_financ'},
-            {data: 'porc_financ_me'},
+            {data: 'porc_financ_me'}
           ],
           drawCallback: groupData
         });
@@ -183,19 +183,27 @@
       var api = this.api();
       var rowsDOM = api.rows({page: 'current'}).nodes();
       var rows = api.rows({page: 'current'}).data();
-      var lastFamilia, lastGrupo;
+      var lastFamilia, lastGrupo = 'xxx';
       var colCount = api.columns().header().length;
+      var html;
 
       _.forEach(rows, function (row, i) {
+        html = null;
         if (lastFamilia !== row['cod_familia']) {
           lastFamilia = row['cod_familia'];
-          $(rowsDOM).eq(i).before(
-                  '<tr class="group text-center">' +
+          html = '<tr class="group text-center">' +
                   '<td colspan="' + colCount + '">' +
                   '<h4>' + lastFamilia + ' - ' + row['des_familia'] + '</h4>' +
-                  '</td></tr>'
-          );
+                  '</td></tr>';
         }
+        if (lastGrupo !== row['cod_grupo']) {
+          lastGrupo = row['cod_grupo'];
+          html += '<tr class="group text-center">' +
+                  '<td colspan="' + colCount + '">' +
+                  '<strong>' + lastGrupo + ' - ' + row['des_grupo'] + '</strong>' +
+                  '</td></tr>';
+        }
+        if (html) $(rowsDOM).eq(i).before(html);
       });
     }
   </script>
