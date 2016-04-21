@@ -28,4 +28,12 @@ router.get('/familias', function (req, res, next) {
     });
 });
 
+router.get('/grupos', function (req, res, next) {
+    Stock.grupos(req.query).then(function (result) {
+        postProcess(res, result);
+    }).catch(function (e) {
+        next(e);
+    });
+});
+
 module.exports = router;

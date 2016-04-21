@@ -50,4 +50,12 @@ Stock.familias = function () {
     return conn.execAsync(sql);
 };
 
+Stock.grupos = function (query) {
+    if (!query.familia) return Promise.resolve({});
+    var sql = "SELECT cod_grupo id, des_grupo name FROM dba.grupo WHERE Cod_Familia = ? ORDER BY cod_grupo ASC";
+    var sqlParams = [query.familia];
+
+    return conn.execAsync(sql, sqlParams);
+};
+
 module.exports = Stock;
