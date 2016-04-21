@@ -14,6 +14,7 @@
   <div class="row">
     {% include 'ventas/_filtro.html' with name="empresa" %}
     {% include 'ventas/_filtro.html' with name="sucursal" %}
+    {% include 'ventas/_filtro.html' with name="familia" %}
   </div>
 {% endblock %}
 
@@ -53,6 +54,7 @@
 
     var $selectEmpresa, selectEmpresa;
     var $selectSucursal, selectSucursal;
+    var $selectFamilia, selectFamilia;
 
     $(document).ready(function () {
       u.hideNav();
@@ -121,11 +123,40 @@
         searchField: 'Des_Sucursal',
         onChange: function (value) {
           query.sucursal = value;
+          u.softResetSelect(selectFamilia);
           if (!value.length) return;
+          selectFamilia.enable();
         }
       });
       selectSucursal = $selectSucursal[0].selectize;
       selectSucursal.disable();
+
+      $selectFamilia = $('#select-familia').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: ['id', 'name'],
+        render: {
+          option: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' - ' + escape(item['name']) + '</div>';
+          },
+          item: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' - ' + escape(item['name']) + '</div>';
+          }
+        },
+        onChange: function (value) {
+          query.familia = value;
+          if (!value.length) return;
+        }
+      });
+      selectFamilia = $selectFamilia[0].selectize;
+      selectFamilia.disable();
+      selectFamilia.load(function (cb) {
+        $.get(api + 'stock/familias').done(function (res) {
+          cb(res.data);
+        }).fail(function () {
+          cb();
+        });
+      });
     }
 
     function getInforme() {
