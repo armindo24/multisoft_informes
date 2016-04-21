@@ -47,4 +47,9 @@ Articulo.all = function (params, filter) {
     return conn.execAsync(sql, sqlParams);
 };
 
+Articulo.tipos = function () {
+    var sql = "SELECT cod_tp_art id, descrip name FROM dba.tpoart;";
+    return conn.execAsync(sql);
+};
+
 module.exports = Articulo;

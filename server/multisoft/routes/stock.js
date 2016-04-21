@@ -38,6 +38,14 @@ router.get('/grupos', function (req, res, next) {
     });
 });
 
+router.get('/tipos/articulos', function (req, res, next) {
+    Articulo.tipos().then(function (result) {
+        postProcess(res, result);
+    }).catch(function (e) {
+        next(e);
+    });
+});
+
 router.get('/:empresa/articulos', function (req, res, next) {
     Articulo.all(req.params, req.query).then(function (result) {
         postProcess(res, result);

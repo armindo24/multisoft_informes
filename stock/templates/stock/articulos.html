@@ -16,6 +16,8 @@
     {% include 'ventas/_filtro.html' with name="sucursal" %}
     {% include 'ventas/_filtro.html' with name="familia" %}
     {% include 'ventas/_filtro.html' with name="grupo" %}
+    {% include 'ventas/_filtro.html' with name="tipo" %}
+    {% include 'ventas/_filtro.html' with name="articulo" %}
   </div>
 {% endblock %}
 
@@ -57,6 +59,8 @@
     var $selectSucursal, selectSucursal;
     var $selectFamilia, selectFamilia;
     var $selectGrupo, selectGrupo;
+    var $selectTipo, selectTipo;
+    var $selectArticulo, selectArticulo;
 
     $(document).ready(function () {
       u.hideNav();
@@ -188,6 +192,30 @@
       });
       selectGrupo = $selectGrupo[0].selectize;
       selectGrupo.disable();
+
+      $selectTipo = $('#select-tipo').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: 'name',
+        onChange: function (value) {
+          query.tipo = value;
+          u.resetSelect(selectGrupo);
+          if (!value.length) return;
+        }
+      });
+      selectTipo = $selectTipo[0].selectize;
+      selectTipo.disable();
+      selectTipo.load(function (cb) {
+        $.get(api + 'stock/tipos/articulos').done(function (res) {
+          cb(res.data);
+        }).fail(function () {
+          cb();
+        });
+      });
+
+      $selectArticulo = $('#select-articulo').selectize({});
+      selectArticulo = $selectArticulo[0].selectize;
+      selectArticulo.disable();
     }
 
     function getInforme() {
@@ -200,7 +228,7 @@
           ajax: function (d, cb, s) {
             $.ajax({
               method: 'GET',
-              url: api + 'stock/articulos',
+              url: api + 'stock/informes/articulos',
               data: query
             }).done(function (res) {
               globData = res.data;
