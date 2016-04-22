@@ -32,9 +32,7 @@
     }
   </style>
   <script>
-    var query = {
-      agrupar: 'Cod_Tp_Comp'
-    };
+    var query = {};
     //var numFormat = $.fn.dataTable.render.number('.', ',', 2).display;
 
     var api = u.getApiUrl();
@@ -156,7 +154,16 @@
     function debug() {
       return;
     }
-
+    
+    //META.fn: sortJSON
+    function sortJSON(data, key) {
+      return data.sort(function (a, b) {
+        var x = a[key];
+        var y = b[key];
+        return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+      });
+    }
+    
     function getInforme() {
       $('.collapse').collapse('hide');
       $loading.show();
@@ -170,43 +177,91 @@
           data: query
         }).done(function (datos) {
           if (datos.data.length > 0) {
-            console.log(datos.data);
-            var data = datos.data;
+            var data = datos.data
             var empleado = 0;
-            
-            for (var a=0; a < data.length; a++){
-                if (empleado != data[a].codempleado){
-                    var sdiv = '<hr><div id="empleado_'+data[a].codempleado+'">'+
-                                    '<table class="table table-striped table-bordered nowrap id="cab_empleado_'+data[a].codempleado+'">'+
-                                        '<tr><th>Legajo:</th><td>'+data[a].apellidos+', '+data[a].codempleado+'</td><th>Fecha de Nacimiento:<th/><td>'+data[a].fechanac+'</td></tr>'+
-                                        '<tr><th>Apellidos y Nombre:</th><td>'+data[a].nombres+'</td><th>Fecha de Entrada:<th/><td>'+data[a].fechaentrada+'</td></tr>'+
-                                        '<tr><th>Documento Nro.:</th><td>'+data[a].cedula+'</td><th>Aporta IPS?:<th/><td>'+data[a].aportaips+'</td></tr>'+
-                                        '<tr><th>Estado Civil:</th><td>'+data[a].estcivil+'</td><th>Número IPS:<th/><td>'+data[a].nroips+'</td></tr>'+
-                                        '<tr><th>Dirección:</th><td>'+data[a].direccion+'</td><th>Teléfono:<th/><td>'+data[a].telefono+'</td></tr>'+
-                                    '</table>'+
-                               '</div>';
-                          $resultado.append(sdiv);
-                    empleado = data[a].codempleado;
-                    <!-- $('#cab_empleado_'+data[a].codempleado).DataTable().destroy();
-                    $('#cab_empleado_'+data[a].codempleado).DataTable({
-                      searching: false,
-                      language: u.spanish_dt,
-                      paging: false,
-                      ordering: false,
-                      info: false,
-                      scrollCollapse: true,
-                      scrollY: 300,
-                      scrollX: '100%'
-                    }); -->
+            var aempleado = [];
+            var aorder_emp = sortJSON(datos.data, 'codempleado');
+            for (var a=0;a < data.length; a++){
+                if (data[a].id.toString().length < 10){
+                    console.log('entre');
+                    while (data[a].id.toString().length < 10){
+                        data[a].id = '0'+data[a].id;
+                    }
                 }
             }
-            
-            
-            
-            } else {
+            var aorder_id = sortJSON(datos.data, 'id')
+            for (var a=0; a < aorder_emp.length; a++){
+                if (empleado != aorder_emp[a].codempleado){
+                    var sdiv = '<hr><div id="empleado_'+aorder_emp[a].codempleado+'">'+
+                                    '<table class="table table-bordered" id="cab_empleado_'+aorder_emp[a].codempleado+'">'+
+                                        '<tr><th style="width:25%">Legajo:</th><td style="width:25%">'+aorder_emp[a].codempleado+'</td><th style="width:25%">Fecha de Nacimiento:</th><td style="width:25%">'+aorder_emp[a].fechanac+'</td></tr>'+
+                                        '<tr><th style="width:25%">Apellidos y Nombre:</th><td style="width:25%">'+aorder_emp[a].apellidos+', '+aorder_emp[a].nombres+'</td><th style="width:25%">Fecha de Entrada:</th><td style="width:25%">'+aorder_emp[a].fechaentrada+'</td></tr>'+
+                                        '<tr><th style="width:25%">Documento Nro.:</th><td style="width:25%">'+aorder_emp[a].cedula+'</td><th style="width:25%">Aporta IPS?:</th><td style="width:25%">'+aorder_emp[a].aportaips+'</td></tr>'+
+                                        '<tr><th style="width:25%">Estado Civil:</th><td style="width:25%">'+aorder_emp[a].estcivil+'</td><th style="width:25%">Número IPS:</th><td style="width:25%">'+aorder_emp[a].nroips+'</td></tr>'+
+                                        '<tr><th style="width:25%">Dirección:</th><td style="width:25%">'+aorder_emp[a].direccion+'</td><th style="width:25%">Teléfono:</th><td style="width:25%">'+aorder_emp[a].telefono+'</td></tr>'+
+                                    '</table>'+
+                                    
+                                    '<table style="width:100%" id="historico_'+aorder_emp[a].codempleado+'" class="table table-striped table-bordered nowrap">'+
+                                        '<thead>'+
+                                            '<th>Fecha</th>'+
+                                            '<th>T. Movimiento</th>'+
+                                            '<th>Aprobado</th>'+
+                                            '<th>Sucursal Anterior</th>'+
+                                            '<th>Sucursal Actual</th>'+
+                                            '<th>Dpto. Anterior</th>'+
+                                            '<th>Dpto. Actual</th>'+
+                                            '<th>Cargo Anterior</th>'+
+                                            '<th>Cargo Actual</th>'+
+                                            '<th>Sueldo Anterior</th>'+
+                                            '<th>Sueldo Actual</th>'+
+                                        '</thead>'+
+                                        '<tbody>'+
+                                        '</tbody>'+
+                                    '</table>'
+                               '</div>';
+                          $resultado.append(sdiv);
+                    empleado = aorder_emp[a].codempleado;
+                    aempleado.push(aorder_emp[a].codempleado);
+                }
+            }
+            for (var a=0; a < aempleado.length; a++){
+                var stbody = "";
+                for (var b=0; b < aorder_id.length; b++){
+                    if (aorder_id[b].codempleado == aempleado[a]){
+                        stbody+= '<tr>'+
+                                    '<td>'+aorder_id[b].fecha+'</td>'+
+                                    '<td>'+aorder_id[b].dmovimiento+'</td>'+
+                                    '<td>'+aorder_id[b].aprobado+'</td>'+
+                                    '<td>'+aorder_id[b].suc_anterior+'</td>'+
+                                    '<td>'+aorder_id[b].suc_actual+'</td>'+
+                                    '<td>'+aorder_id[b].dpto_anterior+'</td>'+
+                                    '<td>'+aorder_id[b].dpto_actual+'</td>'+
+                                    '<td>'+aorder_id[b].car_anterior+'</td>'+
+                                    '<td>'+aorder_id[b].car_actual+'</td>'+
+                                    '<td style="text-align: right;">'+convertir_rever(aorder_id[b].sueldoanterior)+'</td>'+
+                                    '<td style="text-align: right;">'+convertir_rever(aorder_id[b].sueldoactual)+'</td>'+
+                                 '</tr>';
+                    }
+                }
+                $('#historico_'+aempleado[a]+' tbody').html(stbody);
+            }
+            for (var a=0; a < aempleado.length; a++){
+                $('#historico_'+aorder_emp[a].codempleado).DataTable().destroy();
+                $('#historico_'+aorder_emp[a].codempleado).DataTable({
+                  searching: false,
+                  language: u.spanish_dt,
+                  paging: false,
+                  ordering: false,
+                  info: false,
+                  scrollCollapse: true,
+                  scrollY: 300,
+                  scrollX: '100%'
+                });
+            }
+        } else {
             $empty.show();
-          }
-          $loading.hide();
+        }
+        $loading.hide();
         });
     }
 
