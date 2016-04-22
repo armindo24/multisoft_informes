@@ -19,7 +19,7 @@
     {% include 'ventas/_filtro.html' with name="tipo" %}
     {% include 'ventas/_filtro.html' with name="articulo" %}
     {% include 'ventas/_filtro.html' with name="estado" %}
-    {% include 'ventas/_filtro.html' with name="rotacion" %}
+    {% include 'ventas/_filtro.html' with name="lista" title="Lista de Precio" placeholder="Lista" %}
   </div>
 {% endblock %}
 
@@ -45,7 +45,7 @@
 
 {% block extra_foot %}
   <script>
-    var query = {empresa: '', familia: '', tipo: '', estado: '', grupo: '', rotacion: ''};
+    var query = {empresa: '', familia: '', tipo: '', estado: '', grupo: '', lista: ''};
     var api = u.getApiUrl();
     var $tableDiv, dataTable;
     var numFormat = u.numFormatter;
@@ -57,7 +57,7 @@
     var $selectTipo, selectTipo;
     var $selectArticulo, selectArticulo;
     var $selectEstado, selectEstado;
-    var $selectRotacion, selectRotacion;
+    var $selectLista, selectLista;
 
     $(document).ready(function () {
       u.hideNav();
@@ -103,11 +103,11 @@
           u.resetSelect(selectSucursal);
           u.softResetSelect(selectTipo);
           u.softResetSelect(selectEstado);
-          u.softResetSelect(selectRotacion);
+          u.softResetSelect(selectLista);
           if (!value.length) return;
           selectTipo.enable();
           selectEstado.enable();
-          selectRotacion.enable();
+          selectLista.enable();
           selectSucursal.load(function (callback) {
             $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
               selectSucursal.enable();
@@ -260,15 +260,20 @@
       selectEstado = $selectEstado[0].selectize;
       selectEstado.disable();
 
-      $selectRotacion = $('#select-rotacion').selectize({
-        options: [
-          {value: 'A', text: 'Alta'},
-          {value: 'M', text: 'Media'},
-          {value: 'B', text: 'Baja'}
-        ]
+      $selectLista = $('#select-lista').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: 'name'
       });
-      selectRotacion = $selectRotacion[0].selectize;
-      selectRotacion.disable();
+      selectLista = $selectLista[0].selectize;
+      selectLista.disable();
+      selectLista.load(function (cb) {
+        $.get(api + 'stock/listas').done(function (res) {
+          cb(res.data);
+        }).fail(function () {
+          cb();
+        });
+      });
     }
 
     function getInforme() {
@@ -288,7 +293,7 @@
                 estado: query.estado,
                 familia: query.familia,
                 grupo: query.grupo,
-                rotacion: query.rotacion
+                lista: query.lista
               }
             }).done(function (res) {
               cb(res);
