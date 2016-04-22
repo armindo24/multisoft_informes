@@ -61,31 +61,10 @@
 
     $(document).ready(function () {
       u.hideNav();
-      initDates();
       initSelects();
       $tableDiv = $('#resultado');
       $tableDiv.hide();
     });
-
-    function initDates() {
-      var $inputDate = $(".input-date .form-control");
-      u.defaultDatepicker();
-
-      u.defaultDatepicker();
-      $(".input-daterange").datepicker({
-        todayBtn: "linked",
-        format: "yyyy-mm-dd",
-        autoclose: true
-      });
-
-      $inputDate.datepicker().on('changeDate', function (e) {
-        var key = this.name;
-        query[key] = this.value;
-      });
-
-      $inputDate.datepicker('setDate', new Date());
-      $inputDate.datepicker('update');
-    }
 
     function initSelects() {
       $.extend(true, $.fn.selectize.defaults, {
