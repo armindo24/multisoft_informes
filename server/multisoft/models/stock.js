@@ -132,8 +132,6 @@ Stock.listaPrecios = function (params, query) {
 
     sql += "ORDER BY dba.articulo.cod_familia, dba.articulo.cod_grupo";
 
-    console.log(sql);
-    console.log(sqlParams);
     return conn.execAsync(sql, sqlParams);
 };
 
