@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block header %}
-  Articulos:
+  Lista de Precios:
 {% endblock %}
 
 {% block filters %}
@@ -26,26 +26,8 @@
 {% block table %}
   <thead>
   <tr>
-    <th colspan="9"></th>
-    <th colspan="4" style="text-align: center">% Comisión</th>
-    <th colspan="2" style="text-align: center">% Financiero</th>
-  </tr>
-  <tr>
     <th>Cod. Art.</th>
-    <th>Cod. Original</th>
     <th>Articulo</th>
-    <th class="us-price-label">% Com. Vta.</th>
-    <th class="us-price-label">% Desc.</th>
-    <th>Unidad</th>
-    <th>Cod. IVA</th>
-    <th class="us-price-label">IVA</th>
-    <th class="us-price-label">Stock Max.</th>
-    <th class="us-price-label">Lista 1</th>
-    <th class="us-price-label">Lista 2</th>
-    <th class="us-price-label">Lista 3</th>
-    <th class="us-price-label">Lista 4</th>
-    <th class="us-price-label">M. Local</th>
-    <th class="us-price-label">M. Extr.</th>
   </tr>
   </thead>
 {% endblock %}
@@ -288,7 +270,7 @@
           ajax: function (d, cb, s) {
             $.ajax({
               method: 'GET',
-              url: api + 'stock/informes/' + query.empresa + '/articulos',
+              url: api + 'stock/informes/precios',
               data: {
                 articulo: query.articulo,
                 tipo: query.tipo,
@@ -306,27 +288,10 @@
             });
           },
           columns: [
-            {data: 'cod_articulo'},
-            {data: 'cod_original'},
-            {data: 'des_art'},
-            {data: 'comision_vta'},
-            {data: 'descuento'},
-            {data: 'unidad'},
-            {
-              data: 'cod_iva', render: function (d) {
-              return d === 'G' ? 'Gravado' : 'Exento'
-            }
-            },
-            {data: 'iva'},
-            {data: 'st_max'},
-            {data: 'PorcComisLista1'},
-            {data: 'PorcComisLista2'},
-            {data: 'PorcComisLista3'},
-            {data: 'PorcComisLista4'},
-            {data: 'porc_financ'},
-            {data: 'porc_financ_me'}
+            {data: 'codigo'},
+            {data: 'des_art'}
           ],
-          drawCallback: groupData
+          //drawCallback: groupData
         });
       } else {
         dataTable.clear().draw();
