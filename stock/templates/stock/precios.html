@@ -282,7 +282,7 @@
           ajax: function (d, cb, s) {
             $.ajax({
               method: 'GET',
-              url: api + 'stock/informes/precios',
+              url: api + 'stock/informes/' + query.empresa + '/precios',
               data: {
                 articulo: query.articulo,
                 sucursal: query.sucursal,

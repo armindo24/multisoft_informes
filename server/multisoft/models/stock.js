@@ -76,6 +76,7 @@ Stock.articulos = function (params, query) {
 
 Stock.listaPrecios = function (params, query) {
     if (!query.lista) query.lista = '1';
+    if (!query.sucursal) query.sucursal = '';
     var sql =
         "SELECT DBA.articulo.cod_empresa, DBA.articulo.cod_familia, " +
         "DBA.articulo.cod_grupo, DBA.articulo.cod_subgrupo, " +
@@ -94,28 +95,45 @@ Stock.listaPrecios = function (params, query) {
         "	WHERE (dba.artdep.cod_empresa = dba.articulo.cod_empresa )\n" +
         "	AND ( dba.artdep.cod_articulo = dba.articulo.cod_articulo )\n" +
         "	AND ( dba.artdep.cod_sucursal = ? )\n" +
-        "),0) existencia\n" +
+        "), 0) existencia\n" +
         "FROM dba.articulo, DBA.FAMILIA, DBA.GRUPO\n" +
         "WHERE ( dba.articulo.Cod_Familia = DBA.GRUPO.cod_familia )\n" +
         "AND ( dba.articulo.Cod_Grupo = dba.GRUPO.cod_grupo)\n" +
         "AND ( dba.articulo.Cod_Familia = dba.FAMILIA.Cod_Familia)\n" +
-        "AND ( articulo.cod_empresa = 'CP')\n" +
-        "AND ( articulo.estado = 'I')\n";
+        "AND ( articulo.cod_empresa = ?)\n";
 
-    var sqlParams = [query.sucursal];
+    var sqlParams = [query.sucursal, params.empresa];
+    if (query.estado) {
+        sql += "AND ( articulo.estado = ?)\n";
+        sqlParams.push(query.estado);
+    }
+    if (query.tipo) {
+        sql += "AND articulo.cod_tp_art = ?\n";
+        sqlParams.push(query.tipo);
+    }
+    if (query.familia) {
+        sql += "AND articulo.cod_familia = ?\n";
+        sqlParams.push(query.familia);
+    }
+    if (query.grupo) {
+        sql += "AND articulo.cod_grupo = ?\n";
+        sqlParams.push(query.grupo);
+    }
     if (query.sucursal) {
         sql +=
             "AND exists ( " +
             "	select * from dba.artdep " +
             "	where articulo.cod_empresa  = artdep.cod_empresa " +
             "	and  articulo.cod_articulo = artdep.cod_articulo " +
-            "	and  artdep.cod_sucursal   = ? " +
+            "	and  artdep.cod_sucursal  = ? " +
             ")\n";
         sqlParams.push(query.sucursal);
     }
 
     sql += "ORDER BY dba.articulo.cod_familia, dba.articulo.cod_grupo";
 
+    console.log(sql);
+    console.log(sqlParams);
     return conn.execAsync(sql, sqlParams);
 };
 
