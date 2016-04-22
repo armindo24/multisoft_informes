@@ -18,6 +18,8 @@
     {% include 'ventas/_filtro.html' with name="grupo" %}
     {% include 'ventas/_filtro.html' with name="tipo" %}
     {% include 'ventas/_filtro.html' with name="articulo" %}
+    {% include 'ventas/_filtro.html' with name="estado" %}
+    {% include 'ventas/_filtro.html' with name="rotacion" %}
   </div>
 {% endblock %}
 
@@ -61,6 +63,8 @@
     var $selectGrupo, selectGrupo;
     var $selectTipo, selectTipo;
     var $selectArticulo, selectArticulo;
+    var $selectEstado, selectEstado;
+    var $selectRotacion, selectRotacion;
 
     $(document).ready(function () {
       u.hideNav();
@@ -104,7 +108,13 @@
         onChange: function (value) {
           query.empresa = value;
           u.resetSelect(selectSucursal);
+          u.softResetSelect(selectTipo);
+          u.softResetSelect(selectEstado);
+          u.softResetSelect(selectRotacion);
           if (!value.length) return;
+          selectTipo.enable();
+          selectEstado.enable();
+          selectRotacion.enable();
           selectSucursal.load(function (callback) {
             $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
               selectSucursal.enable();
@@ -143,10 +153,10 @@
         searchField: ['id', 'name'],
         render: {
           option: function (item, escape) {
-            return '<div>' + escape(item['id']) + ' - ' + escape(item['name']) + '</div>';
+            return '<div>' + escape(item['id']) + ' ' + escape(item['name']) + '</div>';
           },
           item: function (item, escape) {
-            return '<div>' + escape(item['id']) + ' - ' + escape(item['name']) + '</div>';
+            return '<div>' + escape(item['id']) + ' ' + escape(item['name']) + '</div>';
           }
         },
         onChange: function (value) {
@@ -179,10 +189,10 @@
         searchField: ['id', 'name'],
         render: {
           option: function (item, escape) {
-            return '<div>' + escape(item['id']) + ' - ' + escape(item['name']) + '</div>';
+            return '<div>' + escape(item['id']) + ' ' + escape(item['name']) + '</div>';
           },
           item: function (item, escape) {
-            return '<div>' + escape(item['id']) + ' - ' + escape(item['name']) + '</div>';
+            return '<div>' + escape(item['id']) + ' ' + escape(item['name']) + '</div>';
           }
         },
         onChange: function (value) {
@@ -199,8 +209,9 @@
         searchField: 'name',
         onChange: function (value) {
           query.tipo = value;
-          u.resetSelect(selectGrupo);
+          u.resetSelect(selectArticulo);
           if (!value.length) return;
+          selectArticulo.enable();
         }
       });
       selectTipo = $selectTipo[0].selectize;
@@ -213,9 +224,57 @@
         });
       });
 
-      $selectArticulo = $('#select-articulo').selectize({});
+      $selectArticulo = $('#select-articulo').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: ['id', 'name'],
+        load: function (q, cb) {
+          if (q.length < 2) return cb();
+          $.get(api + 'stock/' + query.empresa + '/articulos', {
+            articulo: q,
+            tipo: query.tipo,
+            familia: query.familia,
+            grupo: query.grupo
+          }).done(function (res) {
+            cb(res.data);
+          }).fail(function () {
+            cb();
+          });
+        },
+        render: {
+          option: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' - ' + escape(item['name']) + '</div>';
+          },
+          item: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' - ' + escape(item['name']) + '</div>';
+          }
+        }
+      });
       selectArticulo = $selectArticulo[0].selectize;
       selectArticulo.disable();
+
+      $selectEstado = $('#select-estado').selectize({
+        options: [
+          {value: 'T', text: 'Todos'},
+          {value: 'I', text: 'Inactivo'},
+          {value: 'A', text: 'Activo'}
+        ],
+        onChange: function (value) {
+          query.estado = value === 'T' ? '' : value;
+        }
+      });
+      selectEstado = $selectEstado[0].selectize;
+      selectEstado.disable();
+
+      $selectRotacion = $('#select-rotacion').selectize({
+        options: [
+          {value: 'A', text: 'Alta'},
+          {value: 'M', text: 'Media'},
+          {value: 'B', text: 'Baja'}
+        ]
+      });
+      selectRotacion = $selectRotacion[0].selectize;
+      selectRotacion.disable();
     }
 
     function getInforme() {
