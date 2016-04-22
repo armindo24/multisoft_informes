@@ -40,8 +40,11 @@ Articulo.all = function (params, filter) {
         sqlParams.push(filter.grupo);
     }
     if (filter.tipo) {
-        sql += "AND a.cod_tp_art = ?;";
+        sql += "AND a.cod_tp_art = ?";
         sqlParams.push(filter.tipo);
+    }
+    if (filter.articulo) {
+        sql += "AND a.des_art LIKE '" + filter.articulo + "%'";
     }
 
     return conn.execAsync(sql, sqlParams);
