@@ -87,18 +87,19 @@ Stock.listaPrecios = function (params, query) {
         "DBA.articulo.pr4_gs, DBA.articulo.pr4_me, DBA.articulo.pr5_gs, " +
         "DBA.articulo.pr5_me, DBA.articulo.pr6_gs, DBA.articulo.pr6_me, " +
         "DBA.articulo.cod_iva, dba.ListaPrecio.List_Nombre, DBA.FAMILIA.des_familia,\n" +
-        "(\n" +
+        "ISNULL((\n" +
         "	SELECT SUM( dba.artdep.existencia )\n" +
         "	FROM dba.artdep\n" +
         "	WHERE (dba.artdep.cod_empresa = dba.articulo.cod_empresa )\n" +
         "	AND ( dba.artdep.cod_articulo = dba.articulo.cod_articulo )\n" +
         "	AND ( dba.artdep.cod_sucursal = '' )\n" +
-        ") Existencia\n" +
+        "),0) Existencia\n" +
         "FROM dba.articulo, dba.ListaPrecio, DBA.FAMILIA\n" +
         "WHERE ( dba.articulo.Cod_Familia = DBA.FAMILIA.cod_familia )\n" +
         "AND ( dba.ListaPrecio.List_Precio = 1 )\n" +
         "AND ( articulo.cod_empresa = 'CP')\n" +
-        "AND ( articulo.estado = 'I')";
+        "AND ( articulo.estado = 'I')\n" +
+        "ORDER BY dba.articulo.cod_familia, dba.articulo.cod_grupo";
 
     return conn.execAsync(sql);
 };

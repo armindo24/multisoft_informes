@@ -27,9 +27,19 @@
   <thead>
   <tr>
     <th>Cod. Art.</th>
-    <th>Articulo</th>
+    <th>Cod. Orig.</th>
+    <th>Descripcion</th>
+    <th class="text-center">IVA</th>
+    <th class="price-label">Moneda Local</th>
+    <th class="us-price-label">Existencia</th>
   </tr>
   </thead>
+  <tfoot>
+  <tr>
+    <th class="text-right" colspan="5">Total General</th>
+    <th></th>
+  </tr>
+  </tfoot>
 {% endblock %}
 
 {% block extra_foot %}
@@ -289,8 +299,13 @@
           },
           columns: [
             {data: 'codigo'},
-            {data: 'des_art'}
+            {data: 'cod_original'},
+            {data: 'des_art'},
+            {data: 'cod_iva'},
+            {data: 'pr1_gs'},
+            {data: 'Existencia'}
           ],
+          footerCallback: sumStock,
           //drawCallback: groupData
         });
       } else {
@@ -328,6 +343,14 @@
         }
         if (html) $(rowsDOM).eq(i).before(html);
       });
+    }
+
+    function sumStock(row, data, start, end, display) {
+      var api = this.api(), data;
+      var total = api.column(-1).data().sum();
+
+      // Update footer
+      $(api.column(-1).footer()).html(u.usFormatter.display(total));
     }
   </script>
 {% endblock %}
