@@ -154,7 +154,8 @@ Stock.existenciaDeposito = function (params, query) {
         "AND ( dba.artdep.cod_empresa = dba.sucursal.cod_empresa )\n" +
         "AND ( dba.artdep.cod_sucursal = dba.sucursal.cod_sucursal )\n" +
         "AND dba.artdep.cod_Empresa = 'CP'\n" +
-        "AND dba.articulo.estado = 'I'\n";
+        "AND dba.articulo.estado = 'I'\n" +
+        "AND dba.artdep.cod_sucursal = '01'";
 
     return conn.execAsync(sql);
 };

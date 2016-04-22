@@ -273,7 +273,7 @@
               }
             }).done(function (res) {
               cb(res);
-            }).fail(function (err) {
+            }).fail(function (e) {
               dataTable.clear().draw();
               dataTable.processing(false);
               u.serverDown(e);

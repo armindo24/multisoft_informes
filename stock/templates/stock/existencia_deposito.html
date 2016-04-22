@@ -27,19 +27,15 @@
   <tr>
     <th>Cod. Art.</th>
     <th>Cod. Orig.</th>
+    <th>Referencia</th>
     <th>Descripcion</th>
-    <th class="text-center">IVA</th>
-    <th class="price-label">M. Local</th>
-    <th class="us-price-label">M. Extr.</th>
-    <th class="us-price-label">Existencia</th>
+    <th>Sucursal</th>
+    <th>Dep.</th>
+    <th>Existencia Min.</th>
+    <th>Unidades</th>
+    <th>Cajas</th>
   </tr>
   </thead>
-  <tfoot>
-  <tr>
-    <th class="text-right" colspan="6">Total General</th>
-    <th></th>
-  </tr>
-  </tfoot>
 {% endblock %}
 
 {% block extra_foot %}
@@ -244,7 +240,7 @@
           ajax: function (d, cb, s) {
             $.ajax({
               method: 'GET',
-              url: api + 'stock/informes/' + query.empresa + '/precios',
+              url: api + 'stock/informes/deposito',
               data: {
                 articulo: query.articulo,
                 sucursal: query.sucursal,
@@ -256,23 +252,25 @@
               }
             }).done(function (res) {
               cb(res);
-            }).fail(function (err) {
+            }).fail(function (e) {
               dataTable.clear().draw();
               dataTable.processing(false);
               u.serverDown(e);
             });
           },
           columns: [
-            {data: 'codigo'},
+            {data: 'cod_articulo'},
             {data: 'cod_original'},
+            {data: 'referencia'},
             {data: 'des_art'},
-            {data: 'cod_iva'},
-            {data: 'pr_gs'},
-            {data: 'pr_me'},
-            {data: 'existencia'}
+            {data: 'cod_sucursal'},
+            {data: 'cod_deposito'},
+            {data: 'pto_pedido'},
+            {data: 'existencia'},
+            {data: 'cantembalaje'},
           ],
-          footerCallback: sumStock,
-          drawCallback: groupData
+          //footerCallback: sumStock,
+          //drawCallback: groupData
         });
       } else {
         dataTable.clear().draw();
