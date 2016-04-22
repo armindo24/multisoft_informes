@@ -21,6 +21,13 @@ router.get('/informes/:empresa/articulos', function (req, res, next) {
     });
 });
 
+router.get('/informes/precios', function (req, res, next) {
+    Stock.listaPrecios(req.params, req.query).then(function (result) {
+        postProcess(res, result);
+    }).catch(function (e) {
+        next(e);
+    });
+});
 
 router.get('/familias', function (req, res, next) {
     Stock.familias().then(function (result) {

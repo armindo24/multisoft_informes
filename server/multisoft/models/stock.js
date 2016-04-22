@@ -2,7 +2,7 @@ var conn = require('../db_integrado');
 var q = require('./queryUtils');
 var Stock = {};
 
-Stock.articulos = function (params, filter) {
+Stock.articulos = function (params, query) {
     var sql =
         "SELECT dba.articulo.cod_familia, dba.familia.des_familia, " +
         "dba.articulo.cod_grupo, dba.grupo.des_grupo, dba.articulo.cod_subgrupo, " +
@@ -41,37 +41,66 @@ Stock.articulos = function (params, filter) {
         "AND ( articulo.cto_ult_fob_me is null or articulo.cto_ult_fob_me <= 0 )\n";
     var sqlParams = [params.empresa];
 
-    if (filter.articulo) {
-        if (filter.articulo.constructor === Array) {
-            sql += "AND articulo.cod_articulo IN " + q.in(filter.articulo) + "\n";
+    if (query.articulo) {
+        if (query.articulo.constructor === Array) {
+            sql += "AND articulo.cod_articulo IN " + q.in(query.articulo) + "\n";
         } else {
             sql += "AND articulo.cod_articulo = ?\n";
-            sqlParams.push(filter.articulo);
+            sqlParams.push(query.articulo);
         }
     }
-    if (filter.tipo) {
+    if (query.tipo) {
         sql += "AND articulo.cod_tp_art = ?\n";
-        sqlParams.push(filter.tipo);
+        sqlParams.push(query.tipo);
     }
-    if (filter.estado) {
+    if (query.estado) {
         sql += "AND articulo.estado = ?\n";
-        sqlParams.push(filter.estado);
+        sqlParams.push(query.estado);
     }
-    if (filter.familia) {
+    if (query.familia) {
         sql += "AND articulo.cod_familia = ?\n";
-        sqlParams.push(filter.familia);
+        sqlParams.push(query.familia);
     }
-    if (filter.grupo) {
+    if (query.grupo) {
         sql += "AND articulo.cod_grupo = ?\n";
-        sqlParams.push(filter.grupo);
+        sqlParams.push(query.grupo);
     }
-    if (filter.rotacion) {
+    if (query.rotacion) {
         sql += "AND articulo.rotacion = ?\n";
-        sqlParams.push(filter.rotacion);
+        sqlParams.push(query.rotacion);
     }
     sql += "ORDER BY dba.articulo.cod_familia, dba.articulo.cod_grupo;";
 
     return conn.execAsync(sql, sqlParams);
+};
+
+Stock.listaPrecios = function (params, query) {
+    var sql =
+        "SELECT DBA.articulo.cod_empresa, DBA.articulo.cod_familia, " +
+        "DBA.articulo.cod_grupo, DBA.articulo.cod_subgrupo, " +
+        "DBA.articulo.cod_individual, if dba.articulo.codartpad is null then " +
+        "dba.articulo.cod_articulo else dba.articulo.codartpad endif as codigo, " +
+        "DBA.articulo.nroarticulo, DBA.articulo.cod_original, DBA.articulo.referencia, " +
+        "DBA.articulo.des_art, DBA.articulo.tipoembalaje, DBA.articulo.pto_pedido, " +
+        "DBA.articulo.pr1_gs, DBA.articulo.pr1_me, DBA.articulo.pr2_gs, " +
+        "DBA.articulo.pr2_me, DBA.articulo.pr3_gs, DBA.articulo.pr3_me, " +
+        "DBA.articulo.pr4_gs, DBA.articulo.pr4_me, DBA.articulo.pr5_gs, " +
+        "DBA.articulo.pr5_me, DBA.articulo.pr6_gs, DBA.articulo.pr6_me, " +
+        "DBA.articulo.cod_iva, dba.ListaPrecio.List_Nombre, DBA.FAMILIA.des_familia,\n" +
+        "(\n" +
+        "	SELECT SUM( dba.artdep.existencia )\n" +
+        "	FROM dba.artdep\n" +
+        "	WHERE (dba.artdep.cod_empresa = dba.articulo.cod_empresa )\n" +
+        "	AND ( dba.artdep.cod_articulo = dba.articulo.cod_articulo )\n" +
+        "	AND ( dba.artdep.cod_sucursal = '' )\n" +
+        ") Existencia\n" +
+        "FROM dba.articulo, dba.ListaPrecio, DBA.FAMILIA\n" +
+        "WHERE ( dba.articulo.Cod_Familia = DBA.FAMILIA.cod_familia )\n" +
+        "AND ( dba.ListaPrecio.List_Precio = 1 )\n" +
+        "AND ( articulo.cod_empresa = 'CP')\n" +
+        "AND ( articulo.estado = 'I')";
+
+    return conn.execAsync(sql);
 };
 
 Stock.familias = function () {
