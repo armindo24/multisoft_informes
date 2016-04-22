@@ -13,7 +13,7 @@ router.use(function (req, res, next) {
     next();
 });
 
-router.get('/informes/articulos', function (req, res, next) {
+router.get('/informes/:empresa/articulos', function (req, res, next) {
     Stock.articulos(req.params, req.query).then(function (result) {
         postProcess(res, result);
     }).catch(function (e) {

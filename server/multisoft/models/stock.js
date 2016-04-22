@@ -32,17 +32,34 @@ Stock.articulos = function (params, filter) {
         "AND dba.articulo.cod_individual = dba.individual.cod_individual, dba.familia" +
         "\n" +
         "WHERE ( dba.articulo.cod_familia = dba.familia.cod_familia )\n" +
-        "AND ( dba.articulo.cod_empresa = 'CP' ) " +
-        "AND articulo.estado = 'I' " +
+        "AND ( dba.articulo.cod_empresa = ? )\n" +
         "AND ( articulo.cto_prom_gs is null or articulo.cto_prom_gs <= 0 ) " +
         "AND ( articulo.cto_ult_gs is null or articulo.cto_ult_gs <= 0 ) " +
         "AND ( articulo.cto_ult_fob_gs is null or articulo.cto_ult_fob_gs <= 0 ) " +
         "AND ( articulo.cto_prom_me is null or articulo.cto_prom_me <= 0 ) " +
         "AND ( articulo.cto_ult_me is null or articulo.cto_ult_me <= 0 ) " +
-        "AND ( articulo.cto_ult_fob_me is null or articulo.cto_ult_fob_me <= 0 )\n" +
-        "ORDER BY dba.articulo.cod_familia, dba.articulo.cod_grupo;";
+        "AND ( articulo.cto_ult_fob_me is null or articulo.cto_ult_fob_me <= 0 )\n";
+    var sqlParams = [params.empresa];
 
-    return conn.execAsync(sql);
+    if (filter.estado) {
+        sql += "AND articulo.estado = ?\n";
+        sqlParams.push(filter.estado);
+    }
+    if (filter.familia) {
+        sql += "AND articulo.cod_familia = ?\n";
+        sqlParams.push(filter.familia);
+    }
+    if (filter.grupo) {
+        sql += "AND articulo.cod_grupo = ?\n";
+        sqlParams.push(filter.grupo);
+    }
+    if (filter.rotacion) {
+        sql += "AND articulo.rotacion = ?\n";
+        sqlParams.push(filter.rotacion);
+    }
+    sql += "ORDER BY dba.articulo.cod_familia, dba.articulo.cod_grupo;";
+
+    return conn.execAsync(sql, sqlParams);
 };
 
 Stock.familias = function () {
