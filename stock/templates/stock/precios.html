@@ -45,7 +45,7 @@
 
 {% block extra_foot %}
   <script>
-    var query = {empresa: '', familia: '', tipo: '', estado: '', grupo: '', lista: ''};
+    var query = {empresa: '', familia: '', tipo: '', estado: '', grupo: '', lista: '', sucursal: ''};
     var api = u.getApiUrl();
     var $tableDiv, dataTable;
     var numFormat = u.numFormatter;
@@ -294,7 +294,6 @@
               }
             }).done(function (res) {
               cb(res);
-              globData = res.data;
             }).fail(function (err) {
               dataTable.clear().draw();
               dataTable.processing(false);
