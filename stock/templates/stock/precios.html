@@ -303,7 +303,7 @@
             {data: 'des_art'},
             {data: 'cod_iva'},
             {data: 'pr1_gs'},
-            {data: 'Existencia'}
+            {data: 'existencia'}
           ],
           footerCallback: sumStock,
           drawCallback: groupData
@@ -321,28 +321,42 @@
       var api = this.api();
       var rowsDOM = api.rows({page: 'current'}).nodes();
       var rows = api.rows({page: 'current'}).data();
-      var lastFamilia, lastGrupo;
+      var last = rows.length - 1;
+      var lastFamilia = 'initial', lastGrupo;
+      var sum = 0.0;
       var colCount = api.columns().header().length;
       var html;
+      var htmlSum = function (total, colCount) {
+        return '<tr class="group text-right">' +
+                '<td colspan="' + colCount + '">' +
+                '<strong>Total: ' + u.usFormatter.display(total) + '</strong>' +
+                '</td></tr>';
+      };
 
       _.forEach(rows, function (row, i) {
         html = null;
         if (lastFamilia !== row['cod_familia']) {
+          if (lastFamilia !== 'initial') {
+            $(rowsDOM).eq(i).before(htmlSum(sum, colCount));
+          }
+          sum = 0.0;
           lastFamilia = row['cod_familia'];
           html = '<tr class="group text-center">' +
                   '<td colspan="' + colCount + '">' +
                   '<h4>' + lastFamilia + ' - ' + row['des_familia'] + '</h4>' +
                   '</td></tr>';
         }
-{#        if (lastGrupo !== row['cod_grupo']) {#}
-{#          lastGrupo = row['cod_grupo'];#}
-{#          html += '<tr class="group text-center">' +#}
-{#                  '<td colspan="' + colCount + '">' +#}
-{#                  '<strong>' + lastGrupo + ' - ' + row['des_grupo'] + '</strong>' +#}
-{#                  '</td></tr>';#}
-{#        }#}
+        {#        if (lastGrupo !== row['cod_grupo']) {#}
+        {#          lastGrupo = row['cod_grupo'];#}
+        {#          html += '<tr class="group text-center">' +#}
+        {#                  '<td colspan="' + colCount + '">' +#}
+        {#                  '<strong>' + lastGrupo + ' - ' + row['des_grupo'] + '</strong>' +#}
+        {#                  '</td></tr>';#}
+        {#        }#}
         if (html) $(rowsDOM).eq(i).before(html);
+        sum += u.parseVal(row['existencia']);
       });
+      $(rowsDOM).eq(last).after(htmlSum(sum, colCount));
     }
 
     function sumStock(row, data, start, end, display) {

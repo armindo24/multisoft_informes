@@ -26,14 +26,6 @@ u.dateFormat = function (date) {
     return date.split(/[\s]+/)[0];
 };
 
-u.parseVal = function (i) {
-    var n = typeof i === 'string' ?
-        parseFloat(i.replace(/[\$]/g, '')) :
-        typeof i === 'number' ?
-            i : 0;
-    return n;
-};
-
 $.fn.dataTable.Api.register('sum()', function () {
     return this.flatten().reduce(function (a, b) {
         a = u.parseVal(a);

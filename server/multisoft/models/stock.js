@@ -93,7 +93,7 @@ Stock.listaPrecios = function (params, query) {
         "	WHERE (dba.artdep.cod_empresa = dba.articulo.cod_empresa )\n" +
         "	AND ( dba.artdep.cod_articulo = dba.articulo.cod_articulo )\n" +
         "	AND ( dba.artdep.cod_sucursal = '' )\n" +
-        "),0) Existencia\n" +
+        "),0) existencia\n" +
         "FROM dba.articulo, dba.ListaPrecio, DBA.FAMILIA\n" +
         "WHERE ( dba.articulo.Cod_Familia = DBA.FAMILIA.cod_familia )\n" +
         "AND ( dba.ListaPrecio.List_Precio = 1 )\n" +
