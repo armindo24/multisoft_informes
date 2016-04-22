@@ -93,17 +93,30 @@ Stock.listaPrecios = function (params, query) {
         "	FROM dba.artdep\n" +
         "	WHERE (dba.artdep.cod_empresa = dba.articulo.cod_empresa )\n" +
         "	AND ( dba.artdep.cod_articulo = dba.articulo.cod_articulo )\n" +
-        "	AND ( dba.artdep.cod_sucursal = '' )\n" +
+        "	AND ( dba.artdep.cod_sucursal = ? )\n" +
         "),0) existencia\n" +
         "FROM dba.articulo, DBA.FAMILIA, DBA.GRUPO\n" +
         "WHERE ( dba.articulo.Cod_Familia = DBA.GRUPO.cod_familia )\n" +
         "AND ( dba.articulo.Cod_Grupo = dba.GRUPO.cod_grupo)\n" +
         "AND ( dba.articulo.Cod_Familia = dba.FAMILIA.Cod_Familia)\n" +
         "AND ( articulo.cod_empresa = 'CP')\n" +
-        "AND ( articulo.estado = 'I')\n" +
-        "ORDER BY dba.articulo.cod_familia, dba.articulo.cod_grupo";
+        "AND ( articulo.estado = 'I')\n";
 
-    return conn.execAsync(sql);
+    var sqlParams = [query.sucursal];
+    if (query.sucursal) {
+        sql +=
+            "AND exists ( " +
+            "	select * from dba.artdep " +
+            "	where articulo.cod_empresa  = artdep.cod_empresa " +
+            "	and  articulo.cod_articulo = artdep.cod_articulo " +
+            "	and  artdep.cod_sucursal   = ? " +
+            ")\n";
+        sqlParams.push(query.sucursal);
+    }
+
+    sql += "ORDER BY dba.articulo.cod_familia, dba.articulo.cod_grupo";
+
+    return conn.execAsync(sql, sqlParams);
 };
 
 Stock.listas = function () {

@@ -104,7 +104,9 @@
           u.softResetSelect(selectTipo);
           u.softResetSelect(selectEstado);
           u.softResetSelect(selectLista);
+          u.softResetSelect(selectFamilia);
           if (!value.length) return;
+          selectFamilia.enable();
           selectTipo.enable();
           selectEstado.enable();
           selectLista.enable();
@@ -129,13 +131,7 @@
       $selectSucursal = $('#select-sucursal').selectize({
         valueField: 'Cod_Sucursal',
         labelField: 'Des_Sucursal',
-        searchField: 'Des_Sucursal',
-        onChange: function (value) {
-          query.sucursal = value;
-          u.softResetSelect(selectFamilia);
-          if (!value.length) return;
-          selectFamilia.enable();
-        }
+        searchField: 'Des_Sucursal'
       });
       selectSucursal = $selectSucursal[0].selectize;
       selectSucursal.disable();
@@ -289,6 +285,7 @@
               url: api + 'stock/informes/precios',
               data: {
                 articulo: query.articulo,
+                sucursal: query.sucursal,
                 tipo: query.tipo,
                 estado: query.estado,
                 familia: query.familia,
