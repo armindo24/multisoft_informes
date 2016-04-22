@@ -44,7 +44,8 @@ Articulo.all = function (params, filter) {
         sqlParams.push(filter.tipo);
     }
     if (filter.articulo) {
-        sql += "AND a.des_art LIKE '" + filter.articulo + "%'";
+        sql += "AND ( a.des_art LIKE '" + filter.articulo + "%' ";
+        sql += "OR a.cod_articulo LIKE '" + filter.articulo + "%' )";
     }
 
     return conn.execAsync(sql, sqlParams);

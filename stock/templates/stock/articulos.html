@@ -52,7 +52,7 @@
 
 {% block extra_foot %}
   <script>
-    var query = {empresa: ''};
+    var query = {empresa: '', familia: '', tipo: '', estado: '', grupo: '', rotacion: ''};
     var api = u.getApiUrl();
     var $tableDiv, dataTable;
     var numFormat = u.numFormatter;
@@ -228,6 +228,7 @@
         valueField: 'id',
         labelField: 'name',
         searchField: ['id', 'name'],
+        maxItems: 10,
         load: function (q, cb) {
           if (q.length < 2) return cb();
           $.get(api + 'stock/' + query.empresa + '/articulos', {
@@ -287,10 +288,16 @@
           ajax: function (d, cb, s) {
             $.ajax({
               method: 'GET',
-              url: api + 'stock/informes/articulos',
-              data: query
+              url: api + 'stock/informes/' + query.empresa + '/articulos',
+              data: {
+                articulo: query.articulo,
+                tipo: query.tipo,
+                estado: query.estado,
+                familia: query.familia,
+                grupo: query.grupo,
+                rotacion: query.rotacion
+              }
             }).done(function (res) {
-              globData = res.data;
               cb(res);
             }).fail(function (err) {
               dataTable.clear().draw();

@@ -1,5 +1,5 @@
 var conn = require('../db_integrado');
-
+var q = require('./queryUtils');
 var Stock = {};
 
 Stock.articulos = function (params, filter) {
@@ -41,6 +41,18 @@ Stock.articulos = function (params, filter) {
         "AND ( articulo.cto_ult_fob_me is null or articulo.cto_ult_fob_me <= 0 )\n";
     var sqlParams = [params.empresa];
 
+    if (filter.articulo) {
+        if (filter.articulo.constructor === Array) {
+            sql += "AND articulo.cod_articulo IN " + q.in(filter.articulo) + "\n";
+        } else {
+            sql += "AND articulo.cod_articulo = ?\n";
+            sqlParams.push(filter.articulo);
+        }
+    }
+    if (filter.tipo) {
+        sql += "AND articulo.cod_tp_art = ?\n";
+        sqlParams.push(filter.tipo);
+    }
     if (filter.estado) {
         sql += "AND articulo.estado = ?\n";
         sqlParams.push(filter.estado);
