@@ -292,6 +292,7 @@
               }
             }).done(function (res) {
               cb(res);
+              globData = res.data;
             }).fail(function (err) {
               dataTable.clear().draw();
               dataTable.processing(false);
@@ -328,10 +329,10 @@
       var sumFamilia = 0.0, sumGrupo = 0.0;
       var colCount = api.columns().header().length;
       var html;
-      var htmlSum = function (total, colCount) {
+      var htmlSum = function (group, total, colCount) {
         return '<tr class="group text-right">' +
                 '<td colspan="' + colCount + '">' +
-                '<strong>Total: ' + u.usFormatter.display(total) + '</strong>' +
+                '<strong>Total ' + group + ': ' + u.usFormatter.display(total) + '</strong>' +
                 '</td></tr>';
       };
 
@@ -339,7 +340,7 @@
         html = '';
         if (lastFamilia !== row['cod_familia']) {
           if (lastFamilia !== 'initial') {
-            html += htmlSum(sumFamilia, colCount);
+            html += htmlSum('Familia', sumFamilia, colCount);
           }
           sumFamilia = 0.0;
           lastFamilia = row['cod_familia'];
@@ -350,8 +351,9 @@
         }
         if (lastGrupo !== row['cod_grupo']) {
           if (lastGrupo !== 'initial') {
-            html = htmlSum(100, colCount) + html;
+            html = htmlSum('Grupo', sumGrupo, colCount) + html;
           }
+          sumGrupo = 0.0;
           lastGrupo = row['cod_grupo'];
           html += '<tr class="group text-center">' +
                   '<td colspan="' + colCount + '">' +
@@ -359,9 +361,10 @@
                   '</td></tr>';
         }
         if (html) $(rowsDOM).eq(i).before(html);
+        sumGrupo += u.parseVal(row['existencia']);
         sumFamilia += u.parseVal(row['existencia']);
       });
-      html = htmlSum(100, colCount) + htmlSum(sumFamilia, colCount);
+      html = htmlSum('Grupo', sumGrupo, colCount) + htmlSum('Familia', sumFamilia, colCount);
       $(rowsDOM).eq(last).after(html);
     }
 
