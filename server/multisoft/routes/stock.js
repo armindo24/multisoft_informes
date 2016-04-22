@@ -29,6 +29,14 @@ router.get('/informes/:empresa/precios', function (req, res, next) {
     });
 });
 
+router.get('/informes/deposito', function (req, res, next) {
+    Stock.existenciaDeposito(req.params, req.query).then(function (result) {
+        postProcess(res, result);
+    }).catch(function (e) {
+        next(e);
+    });
+});
+
 router.get('/familias', function (req, res, next) {
     Stock.familias().then(function (result) {
         postProcess(res, result);
