@@ -25,7 +25,11 @@ router.get('/informes/precios', function (req, res, next) {
     Stock.listaPrecios(req.params, req.query).then(function (result) {
         postProcess(res, result);
     }).catch(function (e) {
-        next(e);
+        if (e.isOperational) {
+            next(new Error('Invalid Lista de Precio', 500));
+        } else {
+            next(e);
+        }
     });
 });
 
