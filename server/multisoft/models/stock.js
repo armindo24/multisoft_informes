@@ -104,6 +104,11 @@ Stock.listaPrecios = function (params, query) {
     return conn.execAsync(sql);
 };
 
+Stock.listas = function () {
+    var sql = "select list_precio id, list_nombre name from dba.ListaPrecio;";
+    return conn.execAsync(sql);
+};
+
 Stock.familias = function () {
     var sql = "SELECT cod_familia id, des_familia name FROM DBA.familia  ORDER BY cod_familia ASC";
     return conn.execAsync(sql);

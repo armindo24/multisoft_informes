@@ -45,6 +45,14 @@ router.get('/grupos', function (req, res, next) {
     });
 });
 
+router.get('/listas', function (req, res, next) {
+    Stock.listas(req.query).then(function (result) {
+        postProcess(res, result);
+    }).catch(function (e) {
+        next(e);
+    });
+});
+
 router.get('/tipos/articulos', function (req, res, next) {
     Articulo.tipos().then(function (result) {
         postProcess(res, result);
