@@ -86,7 +86,7 @@ Stock.listaPrecios = function (params, query) {
         "DBA.articulo.pr2_me, DBA.articulo.pr3_gs, DBA.articulo.pr3_me, " +
         "DBA.articulo.pr4_gs, DBA.articulo.pr4_me, DBA.articulo.pr5_gs, " +
         "DBA.articulo.pr5_me, DBA.articulo.pr6_gs, DBA.articulo.pr6_me, " +
-        "DBA.articulo.cod_iva, dba.ListaPrecio.List_Nombre, DBA.FAMILIA.des_familia,\n" +
+        "DBA.articulo.cod_iva, dba.ListaPrecio.List_Nombre, DBA.FAMILIA.des_familia, DBA.GRUPO.des_grupo,\n" +
         "ISNULL((\n" +
         "	SELECT SUM( dba.artdep.existencia )\n" +
         "	FROM dba.artdep\n" +
@@ -94,8 +94,10 @@ Stock.listaPrecios = function (params, query) {
         "	AND ( dba.artdep.cod_articulo = dba.articulo.cod_articulo )\n" +
         "	AND ( dba.artdep.cod_sucursal = '' )\n" +
         "),0) existencia\n" +
-        "FROM dba.articulo, dba.ListaPrecio, DBA.FAMILIA\n" +
-        "WHERE ( dba.articulo.Cod_Familia = DBA.FAMILIA.cod_familia )\n" +
+        "FROM dba.articulo, dba.ListaPrecio, DBA.FAMILIA, DBA.GRUPO\n" +
+        "WHERE ( dba.articulo.Cod_Familia = DBA.GRUPO.cod_familia )\n" +
+        "AND ( dba.articulo.Cod_Grupo = dba.GRUPO.cod_grupo)\n" +
+        "AND ( dba.articulo.Cod_Familia = dba.FAMILIA.Cod_Familia)\n" +
         "AND ( dba.ListaPrecio.List_Precio = 1 )\n" +
         "AND ( articulo.cod_empresa = 'CP')\n" +
         "AND ( articulo.estado = 'I')\n" +
