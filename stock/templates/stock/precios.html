@@ -30,13 +30,14 @@
     <th>Cod. Orig.</th>
     <th>Descripcion</th>
     <th class="text-center">IVA</th>
-    <th class="price-label">Moneda Local</th>
+    <th class="price-label">M. Local</th>
+    <th class="us-price-label">M. Extr.</th>
     <th class="us-price-label">Existencia</th>
   </tr>
   </thead>
   <tfoot>
   <tr>
-    <th class="text-right" colspan="5">Total General</th>
+    <th class="text-right" colspan="6">Total General</th>
     <th></th>
   </tr>
   </tfoot>
@@ -303,6 +304,7 @@
             {data: 'des_art'},
             {data: 'cod_iva'},
             {data: 'pr1_gs'},
+            {data: 'pr1_me'},
             {data: 'existencia'}
           ],
           footerCallback: sumStock,
