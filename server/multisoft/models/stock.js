@@ -159,6 +159,11 @@ Stock.existenciaDeposito = function (params, query) {
         sql += "AND dba.artdep.cod_sucursal = ?\n";
         sqlParams.push(query.sucursal);
     }
+
+    if (query.deposito) {
+        sql += "AND dba.artdep.cod_deposito = ?\n";
+        sqlParams.push(query.deposito);
+    }
     if (query.existencia && mappings.hasOwnProperty(query.existencia)) {
         sql += "AND dba.artdep.existencia " + mappings[query.existencia] + " 0\n";
     }
