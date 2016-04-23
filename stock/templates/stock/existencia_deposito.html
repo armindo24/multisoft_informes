@@ -18,8 +18,9 @@
     {% include 'ventas/_filtro.html' with name="familia" %}
     {% include 'ventas/_filtro.html' with name="grupo" %}
     {% include 'ventas/_filtro.html' with name="tipo" %}
-    {% include 'ventas/_filtro.html' with name="articulo" %}
     {% include 'ventas/_filtro.html' with name="estado" %}
+    {% include 'ventas/_filtro.html' with name="existencia" %}
+    {% include 'ventas/_filtro.html' with name="articulo" %}
   </div>
 {% endblock %}
 
@@ -61,6 +62,7 @@
     var $selectTipo, selectTipo;
     var $selectArticulo, selectArticulo;
     var $selectEstado, selectEstado;
+    var $selectExistencia, selectExistencia;
 
     $(document).ready(function () {
       u.hideNav();
@@ -86,10 +88,12 @@
           u.softResetSelect(selectTipo);
           u.softResetSelect(selectEstado);
           u.softResetSelect(selectFamilia);
+          u.softResetSelect(selectExistencia);
           if (!value.length) return;
           selectFamilia.enable();
           selectTipo.enable();
           selectEstado.enable();
+          selectExistencia.enable();
           selectSucursal.load(function (callback) {
             $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
               selectSucursal.enable();
@@ -256,6 +260,21 @@
       });
       selectEstado = $selectEstado[0].selectize;
       selectEstado.disable();
+
+      $selectExistencia = $('#select-existencia').selectize({
+        options: [
+          {value: 'T', text: 'Todos'},
+          {value: 'Z', text: 'Cero'},
+          {value: 'P', text: 'Positiva'},
+          {value: 'N', text: 'Negativa'},
+          {value: 'PN', text: 'Positiva y Negativa'}
+        ],
+        onChange: function (value) {
+          query.existencia = value === 'T' ? '' : value;
+        }
+      });
+      selectExistencia = $selectExistencia[0].selectize;
+      selectExistencia.disable();
     }
 
     function calcCajas(r, t, v, m) {
@@ -279,15 +298,16 @@
           ajax: function (d, cb, s) {
             $.ajax({
               method: 'GET',
-              url: api + 'stock/informes/deposito',
+              url: api + 'stock/informes/' + query.empresa + '/deposito',
               data: {
-                articulo: query.articulo,
                 sucursal: query.sucursal,
-                tipo: query.tipo,
-                estado: query.estado,
+                deposito: query.deposito,
                 familia: query.familia,
                 grupo: query.grupo,
-                lista: query.lista
+                tipo: query.tipo,
+                articulo: query.articulo,
+                estado: query.estado,
+                existencia: query.existencia
               }
             }).done(function (res) {
               cb(res);

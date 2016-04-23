@@ -136,6 +136,8 @@ Stock.listaPrecios = function (params, query) {
 };
 
 Stock.existenciaDeposito = function (params, query) {
+    //Cero, Positivo y Negativo, Negativo, Positivo
+    var mappings = {'Z': '=', 'PN': '!=', 'N': '<', 'P': '>'};
     var sql =
         "SELECT dba.articulo.cod_familia, dba.articulo.cod_grupo, " +
         "dba.articulo.cod_subgrupo, dba.articulo.cod_individual, " +
@@ -150,14 +152,35 @@ Stock.existenciaDeposito = function (params, query) {
         "AND ( dba.articulo.cod_articulo = dba.artdep.cod_articulo )\n" +
         "AND ( dba.artdep.cod_empresa = dba.sucursal.cod_empresa )\n" +
         "AND ( dba.artdep.cod_sucursal = dba.sucursal.cod_sucursal )\n" +
-        "AND dba.artdep.existencia = 0\n" +
-        "AND dba.artdep.cod_Empresa = 'CP'\n" +
-        "AND dba.artdep.cod_sucursal = '02'\n" +
-        "AND dba.articulo.estado = 'I'\n" +
-        "AND ( (dba.articulo.cod_tp_art = '01') )\n" +
-        "ORDER BY dba.articulo.cod_familia, dba.articulo.cod_grupo, dba.articulo.cod_articulo, dba.artdep.cod_sucursal";
+        "AND dba.artdep.cod_Empresa = ?\n";
+    var sqlParams = [params.empresa];
 
-    return conn.execAsync(sql);
+    if (query.sucursal) {
+        sql += "AND dba.artdep.cod_sucursal = ?\n";
+        sqlParams.push(query.sucursal);
+    }
+    if (query.existencia && mappings.hasOwnProperty(query.existencia)) {
+        sql += "AND dba.artdep.existencia " + mappings[query.existencia] + " 0\n";
+    }
+    if (query.estado) {
+        sql += "AND dba.articulo.estado = ?\n";
+        sqlParams.push(query.estado);
+    }
+    if (query.tipo) {
+        sql += "AND ( (dba.articulo.cod_tp_art = ?) )\n";
+        sqlParams.push(query.tipo);
+    }
+    if (query.familia) {
+        sql += "AND (dba.articulo.cod_familia = ?)\n";
+        sqlParams.push(query.familia);
+    }
+    if (query.grupo) {
+        sql += "AND (dba.articulo.cod_grupo = ?)\n";
+        sqlParams.push(query.grupo);
+    }
+    sql += "ORDER BY dba.articulo.cod_familia, dba.articulo.cod_grupo, dba.articulo.cod_articulo, dba.artdep.cod_sucursal";
+
+    return conn.execAsync(sql, sqlParams);
 };
 
 Stock.listas = function () {

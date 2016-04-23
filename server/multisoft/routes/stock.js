@@ -29,7 +29,7 @@ router.get('/informes/:empresa/precios', function (req, res, next) {
     });
 });
 
-router.get('/informes/deposito', function (req, res, next) {
+router.get('/informes/:empresa/deposito', function (req, res, next) {
     Stock.existenciaDeposito(req.params, req.query).then(function (result) {
         postProcess(res, result);
     }).catch(function (e) {
