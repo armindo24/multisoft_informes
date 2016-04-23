@@ -14,6 +14,7 @@
   <div class="row">
     {% include 'ventas/_filtro.html' with name="empresa" %}
     {% include 'ventas/_filtro.html' with name="sucursal" %}
+    {% include 'ventas/_filtro.html' with name="deposito" %}
     {% include 'ventas/_filtro.html' with name="familia" %}
     {% include 'ventas/_filtro.html' with name="grupo" %}
     {% include 'ventas/_filtro.html' with name="tipo" %}
@@ -54,6 +55,7 @@
 
     var $selectEmpresa, selectEmpresa;
     var $selectSucursal, selectSucursal;
+    var $selectDeposito, selectDeposito;
     var $selectFamilia, selectFamilia;
     var $selectGrupo, selectGrupo;
     var $selectTipo, selectTipo;
@@ -109,10 +111,31 @@
       $selectSucursal = $('#select-sucursal').selectize({
         valueField: 'Cod_Sucursal',
         labelField: 'Des_Sucursal',
-        searchField: 'Des_Sucursal'
+        searchField: 'Des_Sucursal',
+        onChange: function (value) {
+          query.sucursal = value;
+          u.resetSelect(selectDeposito);
+          if (!value) return;
+          selectDeposito.load(function (cb) {
+            $.get(api + 'stock/' + query.empresa + '/sucursales/' + query.sucursal + '/depositos').done(function (res) {
+              selectDeposito.enable();
+              cb(res.data);
+            }).fail(function () {
+              cb();
+            });
+          });
+        }
       });
       selectSucursal = $selectSucursal[0].selectize;
       selectSucursal.disable();
+
+      $selectDeposito = $('#select-deposito').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: 'name',
+      });
+      selectDeposito = $selectDeposito[0].selectize;
+      selectDeposito.disable();
 
       $selectFamilia = $('#select-familia').selectize({
         valueField: 'id',
