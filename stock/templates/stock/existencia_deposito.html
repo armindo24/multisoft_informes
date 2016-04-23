@@ -235,6 +235,17 @@
       selectEstado.disable();
     }
 
+    function calcCajas(r, t, v, m) {
+      var existencia = u.parseVal(r.existencia);
+      var cant = u.parseVal(r.cantembalaje);
+      var cajas = 0;
+      if (existencia && cant) {
+        cajas = existencia / cant;
+      }
+      r.cajas = cajas;
+      return r.cajas;
+    }
+
     function getInforme() {
       $('.collapse').collapse('hide');
 
@@ -272,7 +283,7 @@
             {data: 'cod_deposito'},
             {data: 'pto_pedido'},
             {data: 'existencia'},
-            {data: 'cantembalaje'}
+            {data: calcCajas},
           ],
           footerCallback: sumStock,
           drawCallback: groupData
@@ -301,8 +312,9 @@
       var rowsDOM = api.rows({page: 'current'}).nodes();
       var rows = api.rows({page: 'current'}).data();
       var last = rows.length - 1;
-      var lastFamilia = 'initial', lastGrupo = 'initial';
-      var sumFamilia = 0.0, sumGrupo = 0.0;
+      var lastFamilia = 'initial', lastArticulo = 'initial';
+      var sumFamilia = [0.0, 0.0];
+      var sumArticulo = [0.0, 0.0];
       var colCount = api.columns().header().length;
       var html;
 
@@ -310,32 +322,30 @@
         html = '';
         if (lastFamilia !== row['cod_familia']) {
           if (lastFamilia !== 'initial') {
-            html += htmlSum('Familia', [sumFamilia, sumFamilia], colCount);
+            html += htmlSum('Familia', sumFamilia, colCount);
           }
-          sumFamilia = 0.0;
+          _.fill(sumFamilia, 0.0);
           lastFamilia = row['cod_familia'];
           html += '<tr class="group text-center">' +
                   '<td colspan="' + colCount + '">' +
                   '<h4>' + lastFamilia + ' - ' + row['des_familia'] + '</h4>' +
                   '</td></tr>';
         }
-        if (lastGrupo !== row['cod_grupo']) {
-          if (lastGrupo !== 'initial') {
-            html = htmlSum('Grupo', [sumGrupo, sumGrupo], colCount) + html;
+        if (lastArticulo !== row['cod_articulo']) {
+          if (lastArticulo !== 'initial') {
+            html = htmlSum('Articulo', sumArticulo, colCount) + html;
           }
-          sumGrupo = 0.0;
-          lastGrupo = row['cod_grupo'];
-          html += '<tr class="group text-center">' +
-                  '<td colspan="' + colCount + '">' +
-                  '<strong>' + lastGrupo + ' - ' + row['des_grupo'] + '</strong>' +
-                  '</td></tr>';
+          _.fill(sumArticulo, 0.0);
+          lastArticulo = row['cod_articulo'];
         }
         if (html) $(rowsDOM).eq(i).before(html);
-        sumGrupo += u.parseVal(row['existencia']);
-        sumFamilia += u.parseVal(row['existencia']);
+        sumArticulo[0] += u.parseVal(row['existencia']);
+        sumFamilia[0] += u.parseVal(row['existencia']);
+        sumArticulo[1] += u.parseVal(row['cajas']);
+        sumFamilia[1] += u.parseVal(row['cajas']);
       });
-      {#      html = htmlSum('Grupo', sumGrupo, colCount) + htmlSum('Familia', sumFamilia, colCount);#}
-      {#      $(rowsDOM).eq(last).after(html);#}
+      html = htmlSum('Articulo', sumArticulo, colCount) + htmlSum('Familia', sumFamilia, colCount);
+      $(rowsDOM).eq(last).after(html);
     }
 
     function sumStock(row, data, start, end, display) {
