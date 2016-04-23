@@ -300,6 +300,16 @@
       }
     }
 
+    function htmlSum(group, totals, colCount) {
+      return '<tr class="group text-right">' +
+              '<td colspan="' + (colCount - totals.length) + '">' +
+              '<strong>Total ' + group + ':</strong>' +
+              '</td>' + _.reduce(totals, function (conc, t) {
+                return conc + '<td><strong>' + u.usFormatter.display(t) + '<strong></td>';
+              }, '') +
+              '</tr>';
+    }
+
     function groupData(settings) {
       var api = this.api();
       var rowsDOM = api.rows({page: 'current'}).nodes();
@@ -309,18 +319,12 @@
       var sumFamilia = 0.0, sumGrupo = 0.0;
       var colCount = api.columns().header().length;
       var html;
-      var htmlSum = function (group, total, colCount) {
-        return '<tr class="group text-right">' +
-                '<td colspan="' + colCount + '">' +
-                '<strong>Total ' + group + ': ' + u.usFormatter.display(total) + '</strong>' +
-                '</td></tr>';
-      };
 
       _.forEach(rows, function (row, i) {
         html = '';
         if (lastFamilia !== row['cod_familia']) {
           if (lastFamilia !== 'initial') {
-            html += htmlSum('Familia', sumFamilia, colCount);
+            html += htmlSum('Familia', [sumFamilia], colCount);
           }
           sumFamilia = 0.0;
           lastFamilia = row['cod_familia'];
@@ -331,7 +335,7 @@
         }
         if (lastGrupo !== row['cod_grupo']) {
           if (lastGrupo !== 'initial') {
-            html = htmlSum('Grupo', sumGrupo, colCount) + html;
+            html = htmlSum('Grupo', [sumGrupo], colCount) + html;
           }
           sumGrupo = 0.0;
           lastGrupo = row['cod_grupo'];
@@ -344,7 +348,7 @@
         sumGrupo += u.parseVal(row['existencia']);
         sumFamilia += u.parseVal(row['existencia']);
       });
-      html = htmlSum('Grupo', sumGrupo, colCount) + htmlSum('Familia', sumFamilia, colCount);
+      html = htmlSum('Grupo', [sumGrupo], colCount) + htmlSum('Familia', [sumFamilia], colCount);
       $(rowsDOM).eq(last).after(html);
     }
 
