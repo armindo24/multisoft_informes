@@ -142,10 +142,7 @@ Stock.existenciaDeposito = function (params, query) {
         "dba.articulo.cod_articulo, dba.articulo.cod_original, dba.articulo.referencia, " +
         "dba.articulo.des_art, dba.articulo.pto_pedido, dba.articulo.cantembalaje, " +
         "dba.articulo.tipoembalaje, dba.artdep.cod_deposito, dba.artdep.existencia, " +
-        "dba.artdep.cod_empresa, dba.artdep.cod_sucursal, dba.sucursal.des_sucursal, " +
-        "DBA.FAMILIA.des_familia, dba.articulo.pr1_gs, dba.articulo.pr2_gs, " +
-        "dba.articulo.pr3_gs, dba.articulo.pr4_gs, dba.articulo.pr1_me, " +
-        "dba.articulo.pr2_me, dba.articulo.pr3_me, dba.articulo.pr4_me\n" +
+        "dba.artdep.cod_empresa, dba.artdep.cod_sucursal, DBA.FAMILIA.des_familia\n" +
         "FROM dba.artdep, dba.articulo, dba.sucursal, DBA.FAMILIA\n" +
         "WHERE ( dba.articulo.Cod_Familia = DBA.FAMILIA.cod_familia )\n" +
         "AND ( dba.articulo.Cod_Empresa = dba.sucursal.Cod_Empresa )\n" +
@@ -153,11 +150,12 @@ Stock.existenciaDeposito = function (params, query) {
         "AND ( dba.articulo.cod_articulo = dba.artdep.cod_articulo )\n" +
         "AND ( dba.artdep.cod_empresa = dba.sucursal.cod_empresa )\n" +
         "AND ( dba.artdep.cod_sucursal = dba.sucursal.cod_sucursal )\n" +
-        "AND dba.artdep.cod_Empresa = 'CP'\n" +
-        "AND dba.articulo.estado = 'I'\n" +
         "AND dba.artdep.existencia = 0\n" +
+        "AND dba.artdep.cod_Empresa = 'CP'\n" +
+        "AND dba.artdep.cod_sucursal = '02'\n" +
+        "AND dba.articulo.estado = 'I'\n" +
+        "AND ( (dba.articulo.cod_tp_art = '01') )\n" +
         "ORDER BY dba.articulo.cod_familia, dba.articulo.cod_grupo, dba.articulo.cod_articulo, dba.artdep.cod_sucursal";
-    //"AND dba.artdep.cod_sucursal = '01'";
 
     return conn.execAsync(sql);
 };
