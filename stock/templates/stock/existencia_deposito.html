@@ -36,6 +36,13 @@
     <th class="us-price-label">Cajas</th>
   </tr>
   </thead>
+  <tfoot>
+  <tr>
+    <th class="text-right" colspan="7">Total General:</th>
+    <th></th>
+    <th></th>
+  </tr>
+  </tfoot>
 {% endblock %}
 
 {% block extra_foot %}
@@ -76,13 +83,11 @@
           u.resetSelect(selectSucursal);
           u.softResetSelect(selectTipo);
           u.softResetSelect(selectEstado);
-          u.softResetSelect(selectLista);
           u.softResetSelect(selectFamilia);
           if (!value.length) return;
           selectFamilia.enable();
           selectTipo.enable();
           selectEstado.enable();
-          selectLista.enable();
           selectSucursal.load(function (callback) {
             $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
               selectSucursal.enable();
@@ -267,9 +272,9 @@
             {data: 'cod_deposito'},
             {data: 'pto_pedido'},
             {data: 'existencia'},
-            {data: 'cantembalaje'},
+            {data: 'cantembalaje'}
           ],
-          //footerCallback: sumStock,
+          footerCallback: sumStock,
           //drawCallback: groupData
         });
       } else {
@@ -331,10 +336,12 @@
 
     function sumStock(row, data, start, end, display) {
       var api = this.api(), data;
-      var total = api.column(-1).data().sum();
+      var totalExistencia = api.column(-2).data().sum();
+      var totalCajas = api.column(-1).data().sum();
 
       // Update footer
-      $(api.column(-1).footer()).html(u.usFormatter.display(total));
+      $(api.column(-2).footer()).html(u.usFormatter.display(totalExistencia));
+      $(api.column(-1).footer()).html(u.usFormatter.display(totalCajas));
     }
   </script>
 {% endblock %}
