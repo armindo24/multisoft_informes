@@ -180,4 +180,14 @@ Stock.grupos = function (query) {
     return conn.execAsync(sql, sqlParams);
 };
 
+Stock.depositos = function (params, query) {
+    var sql =
+        "SELECT cod_deposito id, des_deposito name FROM dba.DEPOSITO d\n" +
+        "WHERE d.cod_empresa = ?\n" +
+        "AND d.cod_sucursal = ?\n";
+
+    var sqlParams = [params.empresa, params.sucursal];
+    return conn.execAsync(sql, sqlParams);
+};
+
 module.exports = Stock;

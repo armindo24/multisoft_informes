@@ -77,4 +77,12 @@ router.get('/:empresa/articulos', function (req, res, next) {
     });
 });
 
+router.get('/:empresa/sucursales/:sucursal/depositos', function (req, res, next) {
+    Stock.depositos(req.params, req.query).then(function (result) {
+        postProcess(res, result);
+    }).catch(function (e) {
+        next(e);
+    });
+});
+
 module.exports = router;
