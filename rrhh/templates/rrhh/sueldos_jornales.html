@@ -1,0 +1,242 @@
+{% extends 'finanzas/base.html' %}
+
+{% block header %}
+  Liquidaciones de Sueldos y Jornales:
+{% endblock %}
+
+{% block filters %}
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="empresa" %}
+    {% include 'ventas/_filtro.html' with name="empleados" %}
+  </div>
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="periodo" class="col-md-4 control-label">Periodo:</label>
+
+        <div class="col-md-6">
+          <div id="periodo" class="input-date"><input type="text" class="form-control" name="periodo"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="mes" class="col-md-4 control-label">Mes:</label>
+
+        <div class="col-md-6">
+          <div id="mes" class="input-date">
+            <input type="text" onkeydown="return false" class="form-control" name="mes">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block inner_content %}
+  <div class="text-center" id="messages">
+    <h3 id="loading" style="display: none;">Cargando...</h3>
+
+    <h3 id="empty" style="display: none;">No hay datos disponibles</h3>
+  </div>
+  <div id="resultado">
+
+  </div>
+{% endblock %}
+
+{% block extra_foot %}
+  <style>
+    .aling_right {
+      text-align: right;
+    }
+  </style>
+  <script>
+    var query = {};
+    //var numFormat = $.fn.dataTable.render.number('.', ',', 2).display;
+
+    var api = u.getApiUrl();
+    var $results = $('#results');
+    var $resultado = $('#resultado');
+    var $preview = $('#preview');
+    var $loading = $("#loading");
+    var $empty = $("#empty");
+    var today = new Date();
+    var initialize = init;
+    var select_empresa, $select_empresa;
+    var select_tipo, $select_tipo;
+    var xhr;
+    var dataTable;
+
+    function addCommas(nStr) {
+      nStr += '';
+      x = nStr.split('.');
+      x1 = x[0];
+      x2 = x.length > 1 ? ',' + x[1] : '';
+      var rgx = /(\d+)(\d{3})/;
+      while (rgx.test(x1)) {
+        x1 = x1.replace(rgx, '$1' + '.' + '$2');
+      }
+      return x1 + x2;
+    }
+
+
+    $(document).ready(function () {
+      u.hideNav();
+      $messages = $("#messages");
+      $loading = $messages.find("#loading");
+      $empty = $messages.find("#empty");
+      
+      initialize();
+      select_empresa = $select_empresa[0].selectize;
+      select_empleados = $select_empleados[0].selectize;
+      select_empleados.disable();
+    });
+
+    function init() {
+      u.defaultDatepicker();
+      $.extend(true, $.fn.selectize.defaults, {
+        onChange: function (value) {
+          query[this.$input.attr('name')] = value;
+          debug();
+        }
+      });
+      
+      $('#periodo .form-control').datepicker({
+          format: "yyyy",
+          startView: 2,
+          minViewMode: 2,
+          maxViewMode: 2,
+          autoclose: true
+        });
+        
+      $('#mes .form-control').datepicker({
+        format: "MM",
+        startView: 1,
+        minViewMode: 1,
+        maxViewMode: 1,
+        autoclose: true,
+        todayBtn: "linked"
+      });
+        
+      $('#mes .form-control').datepicker().on('changeDate', function (e) {
+        query[this.name] = e.format('mm');
+      });  
+        
+      $('#periodo .form-control').datepicker().on('changeDate', function (e) {
+          query[this.name] = this.value;
+        });
+        
+      $('.input-date .form-control').datepicker('setDate', today);
+      $('.input-date .form-control').datepicker('update');
+
+      $select_empresa = $('#select-empresa').selectize({
+        valueField: 'Cod_Empresa',
+        labelField: 'Des_Empresa',
+        searchField: 'Des_Empresa',
+        preload: true,
+        load: function (q, callback) {
+          u.get_empresas_sueldo({{ user }}, function (d) {
+            callback(d.data);
+          });
+        },
+        onChange: function (value) {
+          query.empresa = value;
+          debug();
+          if (!value.length) return;
+          select_empleados.disable();
+          select_empleados.clearOptions();
+          select_empleados.load(function (callback) {
+            $.ajax({
+              url: api + 'empleados_sueldo/select/' + query.empresa,
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_empleados.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+
+      $select_empleados = $('#select-empleados').selectize({
+        valueField: 'codempleado',
+        labelField: 'nombres',
+        searchField: 'nombres',
+        maxItems: null,
+        onChange: function (value) {
+          query.empleados = value;
+          debug();
+        }
+      });
+      
+    }
+
+    function debug() {
+      return;
+    }
+    
+    //META.fn: sortJSON
+    function sortJSON(data, key) {
+      return data.sort(function (a, b) {
+        var x = a[key];
+        var y = b[key];
+        return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+      });
+    }
+    
+    var monthNames = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
+                      "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"
+                    ];
+    
+    function getInforme() {
+      $('.collapse').collapse('hide');
+      $loading.show();
+      $empty.hide();
+      $resultado.empty();
+
+      
+      $.ajax(api + "sueldos_jornales/delete", {
+          method: 'GET',
+          contentType: 'application/json',
+        }).done(function (datos) {
+          if (datos.data == "OK") {
+                $.ajax(api + "sueldos_jornales/query_1", {
+                  method: 'GET',
+                  contentType: 'application/json',
+                  data: query
+                }).done(function (datos_1) {
+                    if (datos_1.data == "OK") {
+                        $.ajax(api + "sueldos_jornales/procedures", {
+                          method: 'GET',
+                          contentType: 'application/json',
+                          data: query
+                        }).done(function (datos_2) {
+                            var sucursal = null;
+                            var a_sucursal = []
+                            if (datos_2.data.length > 0) {
+                                var date = new Date(parseInt(query.periodo), parseInt(query.mes), 0);
+                                $('#resultado').append("<h3>PERIODO DE PAGO: DEL 1 AL "+date.getUTCDate() + " DE " +  monthNames[date.getMonth()] + " DE " + date.getUTCFullYear() +"</h3>");
+                                for (var a=0; a < datos_2.data.length; a++){
+                                    if (sucursal != datos_2.data[a].des_sucursal){
+                                        var sdiv = '<div id="div_sucusal_'+datos_2.data[a].cod_sucursal+'"></div>';
+                                        $('#resultado').append(sdiv);
+                                        a_sucursal.push(datos_2.data[a].cod_sucursal);
+                                        sucursal = datos_2.data[a].des_sucursal;
+                                    }
+                                }
+                                console.log(a_sucursal);
+                            } else {
+                                $empty.show();
+                            }
+                            $loading.hide();
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+  </script>
+{% endblock %}

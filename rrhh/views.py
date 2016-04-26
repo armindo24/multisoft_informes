@@ -5,3 +5,6 @@ from django.template.context import RequestContext
 #@permission_required('custom_permissions.informe_ventascomprobante')
 def legajos(request):
     return render_to_response('rrhh/legajos.html', {'user': request.user.id}, context_instance=RequestContext(request))
+
+def sueldos_jornales(request):
+    return render_to_response('rrhh/sueldos_jornales.html', {'user': request.user.id}, context_instance=RequestContext(request))

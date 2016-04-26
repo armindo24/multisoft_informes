@@ -38,6 +38,7 @@ var Localidad = require('../models/localidad');
 var Tp_Movimiento = require('../models/tp_movimiento_sueldo');
 var Empleado = require('../models/empleado_sueldo');
 var Legajos = require('../models/legajos_sueldo');
+var Sueldos_Jornales = require('../models/sueldos_jornales_sueldo');
 
 var postProcess = function (response, result) {
     response.json({data: result});
@@ -562,5 +563,70 @@ router.get('/legajos_sueldo/list', function (req, res, next) {
         res.json({data: result});
     });
 });
+
+//sueldos y jornales - Delete
+router.get('/sueldos_jornales/delete', function (req, res, next) {
+    Sueldos_Jornales.delete(function (result) {
+        res.json({data: result});
+    });
+});
+
+//sueldos y jornales - query_1
+router.get('/sueldos_jornales/query_1', function (req, res, next) {
+    Sueldos_Jornales.query_1(req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+
+//sueldos y jornales - procedures
+router.get('/sueldos_jornales/procedures', function (req, res, next) {
+    Sueldos_Jornales.procedures(req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+
+// //sueldos y jornales - procedure_1
+// router.get('/sueldos_jornales/procedure_1', function (req, res, next) {
+//     Sueldos_Jornales.procedure_1(req.query, function (result) {
+//         res.json({data: result});
+//     });
+// });
+// 
+// //sueldos y jornales - procedure_2
+// router.get('/sueldos_jornales/procedure_2', function (req, res, next) {
+//     Sueldos_Jornales.procedure_2(req.query, function (result) {
+//         res.json({data: result});
+//     });
+// });
+// 
+// //sueldos y jornales - procedure_3
+// router.get('/sueldos_jornales/procedure_3', function (req, res, next) {
+//     Sueldos_Jornales.procedure_3(req.query, function (result) {
+//         res.json({data: result});
+//     });
+// });
+// 
+// //sueldos y jornales - procedure_4
+// router.get('/sueldos_jornales/procedure_4', function (req, res, next) {
+//     Sueldos_Jornales.procedure_4(req.query, function (result) {
+//         res.json({data: result});
+//     });
+// });
+// 
+// //sueldos y jornales - procedure_5
+// router.get('/sueldos_jornales/procedure_5', function (req, res, next) {
+//     Sueldos_Jornales.procedure_5(req.query, function (result) {
+//         res.json({data: result});
+//     });
+// });
+// 
+// //sueldos y jornales - procedure_6
+// router.get('/sueldos_jornales/procedure_6', function (req, res, next) {
+//     Sueldos_Jornales.procedure_6(req.query, function (result) {
+//         res.json({data: result});
+//     });
+// });
 
 module.exports = router;
