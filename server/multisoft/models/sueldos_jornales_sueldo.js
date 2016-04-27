@@ -1,10 +1,14 @@
 var conn = require('../db_sueldo');
+var util = require('util');
+var moment = require('moment');
+var q = require('./queryUtils');
 
 var Sueldos_Jornales = {};
 
 var qProcedure = [];
 var responseCallback;
 var empresa = null;
+var empleados = null;
 
 Sueldos_Jornales.delete = function (cb) {
     conn.exec("DELETE FROM dba.tmpHistLiq;", function(err, row){
@@ -26,7 +30,7 @@ Sueldos_Jornales.query_1 = function (params, cb) {
 Sueldos_Jornales.procedures = function (params, cb) {
     
     empresa = params.empresa;
-    
+    empleados = params.empleados
     var date = new Date(parseInt(params.periodo), parseInt(params.mes), 0);
     
     qProcedure.push("execute dba.generar_hist_temporal_planilla1 mCodEmpresa = '"+params.empresa+"' , mFechaProces = '"+date.toISOString().substring(0, 10)+"';");
@@ -50,16 +54,20 @@ Sueldos_Jornales.procedures = function (params, cb) {
 
 function executeQueue() {
     if (qProcedure.length == 0) {
-        console.log("entre aca porque ya no hay mas");
         var string_sql = "SELECT dba.tmpplanillasdo2_hist.cod_empresa, dba.tmpplanillasdo2_hist.anho, "+
                          "dba.tmpplanillasdo2_hist.codempleado, dba.tmpplanillasdo2_hist.cod_sucursal, "+
                          "dba.tmpplanillasdo2_hist.coddpto, dba.tmpplanillasdo2_hist.codcargo, "+
                          "dba.tmpplanillasdo2_hist.fechaliquid, dba.tmpplanillasdo2_hist.aportaips, "+
-                         "dba.tmpplanillasdo2_hist.diashorastrab, dba.tmpplanillasdo2_hist.ingbasico, "+
-                         "dba.tmpplanillasdo2_hist.ingbasicomes, dba.tmpplanillasdo2_hist.ingbasicoadicional, "+
-                         "dba.tmpplanillasdo2_hist.ingbonificacion, dba.tmpplanillasdo2_hist.ingboniffam, "+
-                         "dba.tmpplanillasdo2_hist.inghe30, dba.tmpplanillasdo2_hist.inghe50, "+
-                         "dba.tmpplanillasdo2_hist.inghe100, dba.tmpplanillasdo2_hist.ingvarios, "+
+                         "dba.tmpplanillasdo2_hist.diashorastrab, "+
+                         "cast(dba.tmpplanillasdo2_hist.ingbasico as decimal (20,0)) as ingbasico, "+
+                         "cast(dba.tmpplanillasdo2_hist.ingbasicomes as decimal (20,0)) as ingbasicomes,"+
+                         "cast(dba.tmpplanillasdo2_hist.ingbasicoadicional as decimal (20,0)) as ingbasicoadicional,"+
+                         "cast(dba.tmpplanillasdo2_hist.ingbonificacion as decimal (20,0)) as ingbonificacion,"+
+                         "cast(dba.tmpplanillasdo2_hist.ingboniffam as decimal (20,0)) as ingboniffam,"+
+                         "cast(dba.tmpplanillasdo2_hist.inghe30 as decimal (20,0)) as inghe30,"+
+                         "cast(dba.tmpplanillasdo2_hist.inghe50 as decimal (20,0)) as inghe50,"+
+                         "cast(dba.tmpplanillasdo2_hist.inghe100 as decimal (20,0)) as inghe100,"+
+                         "cast(dba.tmpplanillasdo2_hist.ingvarios as decimal (20,0)) as ingvarios,"+
                          "dba.tmpplanillasdo2_hist.descaporteips, dba.tmpplanillasdo2_hist.descvarios1, "+
                          "dba.tmpplanillasdo2_hist.descvarios2, dba.tmpplanillasdo2_hist.descanticipos, "+
                          "dba.tmpplanillasdo2_hist.importeletra, dba.empresa.des_empresa, dba.empleados.apellidos, "+
@@ -73,7 +81,12 @@ function executeQueue() {
                          "( dba.tmpplanillasdo2_hist.cod_empresa = dba.dpto.cod_empresa ) and "+
                          "( dba.tmpplanillasdo2_hist.cod_sucursal = dba.dpto.cod_sucursal ) and "+
                          "( dba.tmpplanillasdo2_hist.coddpto = dba.dpto.coddpto ) and "+
-                         "( dba.tmpplanillasdo2_hist.cod_empresa = '"+empresa+"' ) ORDER BY dba.sucursal.des_sucursal";
+                         "( dba.tmpplanillasdo2_hist.cod_empresa = '"+empresa+"' ) ";
+        if (empleados) {
+            string_sql += " AND (dba.tmpplanillasdo2_hist.codempleado IN " + q.in(empleados) + ") ";
+        }
+        
+        string_sql += " ORDER BY dba.sucursal.des_sucursal";
         console.log(string_sql);
         conn.exec(string_sql, function (err, r) {
             if (err) throw err;
