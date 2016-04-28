@@ -7,6 +7,10 @@
 {% block filters %}
   <div class="row">
     {% include 'ventas/_filtro.html' with name="empresa" %}
+   {% include 'ventas/_filtro.html' with name="sucursal" %}
+  </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="departamento" %}
     {% include 'ventas/_filtro.html' with name="empleados" %}
   </div>
   <div class="row">
@@ -44,6 +48,8 @@
     var today = new Date();
     var initialize = init;
     var select_empresa, $select_empresa;
+    var select_sucursal, $select_sucursal;
+    var select_departamento, $select_departamento;
     var select_tipo, $select_tipo;
     var xhr;
     var dataTable;
@@ -71,6 +77,10 @@
       select_empresa = $select_empresa[0].selectize;
       select_empleados = $select_empleados[0].selectize;
       select_empleados.disable();
+      select_sucursal = $select_sucursal[0].selectize;
+      select_sucursal.disable();
+      select_departamento = $select_departamento[0].selectize;
+      select_departamento.disable();
       select_tipo = $select_tipo[0].selectize;
       select_tipo.disable();
     });
@@ -101,7 +111,8 @@
           select_tipo.clearOptions();
           select_tipo.load(function (callback) {
             $.ajax({
-              url: api + 'tp_movimientos_sueldo/select/' + query.empresa,
+              url: api + 'tp_movimientos_sueldo/select/',
+              data: query,
               type: 'GET',
               dataType: 'json'
             }).done(function (res) {
@@ -111,11 +122,66 @@
               callback();
             });
           });
+          select_sucursal.disable();
+          select_sucursal.clearOptions();
+          select_sucursal.load(function (callback) {
+            $.ajax({
+              url: api + 'sucursal_sueldo/select/' + query.empresa,
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_sucursal.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+      
+      $select_sucursal = $('#select-sucursal').selectize({
+        valueField: 'Cod_Sucursal',
+        labelField: 'Des_Sucursal',
+        searchField: 'Des_Sucursal',
+        preload: true,
+        maxItems: null,
+        onChange: function (value) {
+          query.sucursal = value;
+          debug();
+          if (!value.length) return;
+          select_departamento.disable();
+          select_departamento.clearOptions();
+          select_departamento.load(function (callback) {
+            $.ajax({
+              url: api + 'departamento_sueldo/select/',
+              data: query,
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_departamento.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+      
+      $select_departamento = $('#select-departamento').selectize({
+        valueField: 'CodDpto',
+        labelField: 'Descrip',
+        searchField: 'Descrip',
+        maxItems: null,
+        onChange: function (value) {
+          query.departamento = value;
+          debug();
+          if (!value.length) return;
           select_empleados.disable();
           select_empleados.clearOptions();
           select_empleados.load(function (callback) {
             $.ajax({
-              url: api + 'empleados_sueldo/select/' + query.empresa,
+              url: api + 'empleados_sueldo/select/',
+              data: query,
               type: 'GET',
               dataType: 'json'
             }).done(function (res) {

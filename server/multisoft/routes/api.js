@@ -39,6 +39,8 @@ var Tp_Movimiento = require('../models/tp_movimiento_sueldo');
 var Empleado = require('../models/empleado_sueldo');
 var Legajos = require('../models/legajos_sueldo');
 var Sueldos_Jornales = require('../models/sueldos_jornales_sueldo');
+var Sucursal_Sueldo = require('../models/sucursal_sueldo');
+var Departamento_Sueldo = require('../models/departamento_sueldo');
 
 var postProcess = function (response, result) {
     response.json({data: result});
@@ -544,15 +546,15 @@ router.get('/recaudaciones/planillas', function (req, res, next) {
 });
 
 //proveedores select option
-router.get('/tp_movimientos_sueldo/select/:empresa/', function (req, res, next) {
-    Tp_Movimiento.all(req.params, function (result) {
+router.get('/tp_movimientos_sueldo/select/', function (req, res, next) {
+    Tp_Movimiento.all(req.query, function (result) {
         res.json({data: result});
     });
 });
 
 //proveedores select option
-router.get('/empleados_sueldo/select/:empresa/', function (req, res, next) {
-    Empleado.all(req.params, function (result) {
+router.get('/empleados_sueldo/select/', function (req, res, next) {
+    Empleado.all(req.query, function (result) {
         res.json({data: result});
     });
 });
@@ -587,46 +589,19 @@ router.get('/sueldos_jornales/procedures', function (req, res, next) {
 });
 
 
-// //sueldos y jornales - procedure_1
-// router.get('/sueldos_jornales/procedure_1', function (req, res, next) {
-//     Sueldos_Jornales.procedure_1(req.query, function (result) {
-//         res.json({data: result});
-//     });
-// });
-// 
-// //sueldos y jornales - procedure_2
-// router.get('/sueldos_jornales/procedure_2', function (req, res, next) {
-//     Sueldos_Jornales.procedure_2(req.query, function (result) {
-//         res.json({data: result});
-//     });
-// });
-// 
-// //sueldos y jornales - procedure_3
-// router.get('/sueldos_jornales/procedure_3', function (req, res, next) {
-//     Sueldos_Jornales.procedure_3(req.query, function (result) {
-//         res.json({data: result});
-//     });
-// });
-// 
-// //sueldos y jornales - procedure_4
-// router.get('/sueldos_jornales/procedure_4', function (req, res, next) {
-//     Sueldos_Jornales.procedure_4(req.query, function (result) {
-//         res.json({data: result});
-//     });
-// });
-// 
-// //sueldos y jornales - procedure_5
-// router.get('/sueldos_jornales/procedure_5', function (req, res, next) {
-//     Sueldos_Jornales.procedure_5(req.query, function (result) {
-//         res.json({data: result});
-//     });
-// });
-// 
-// //sueldos y jornales - procedure_6
-// router.get('/sueldos_jornales/procedure_6', function (req, res, next) {
-//     Sueldos_Jornales.procedure_6(req.query, function (result) {
-//         res.json({data: result});
-//     });
-// });
+//sucursales sueldo select option
+router.get('/sucursal_sueldo/select/:empresa', function (req, res, next) {
+    Sucursal_Sueldo.all(req.params, function (result) {
+        res.json({data: result});
+    });
+});
+
+//departamentos sueldo select option
+router.get('/departamento_sueldo/select', function (req, res, next) {
+    Departamento_Sueldo.all(req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
 
 module.exports = router;

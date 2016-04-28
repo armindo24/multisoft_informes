@@ -9,6 +9,8 @@ var qProcedure = [];
 var responseCallback;
 var empresa = null;
 var empleados = null;
+var sucursal = null;
+var departamento = null;
 
 Sueldos_Jornales.delete = function (cb) {
     conn.exec("DELETE FROM dba.tmpHistLiq;", function(err, row){
@@ -30,6 +32,8 @@ Sueldos_Jornales.query_1 = function (params, cb) {
 Sueldos_Jornales.procedures = function (params, cb) {
     
     empresa = params.empresa;
+    sucursal = params.sucursal;
+    departamento = params.departamento
     empleados = params.empleados
     var date = new Date(parseInt(params.periodo), parseInt(params.mes), 0);
     
@@ -68,10 +72,18 @@ function executeQueue() {
                          "cast(dba.tmpplanillasdo2_hist.inghe50 as decimal (20,0)) as inghe50,"+
                          "cast(dba.tmpplanillasdo2_hist.inghe100 as decimal (20,0)) as inghe100,"+
                          "cast(dba.tmpplanillasdo2_hist.ingvarios as decimal (20,0)) as ingvarios,"+
-                         "dba.tmpplanillasdo2_hist.descaporteips, dba.tmpplanillasdo2_hist.descvarios1, "+
-                         "dba.tmpplanillasdo2_hist.descvarios2, dba.tmpplanillasdo2_hist.descanticipos, "+
+                         "cast((dba.tmpplanillasdo2_hist.ingbasico + dba.tmpplanillasdo2_hist.ingbonificacion + dba.tmpplanillasdo2_hist.ingboniffam "+
+                         "+ dba.tmpplanillasdo2_hist.inghe30 + dba.tmpplanillasdo2_hist.inghe50 + dba.tmpplanillasdo2_hist.inghe100 +dba.tmpplanillasdo2_hist.ingvarios)"+
+                         " as decimal (20,0)) as toting_ind,"+
+                         "cast(dba.tmpplanillasdo2_hist.descaporteips as decimal (20,0)) as descaporteips,"+
+                         "cast(dba.tmpplanillasdo2_hist.descvarios1 as decimal (20,0)) as descvarios1,"+
+                         "cast(dba.tmpplanillasdo2_hist.descvarios2 as decimal (20,0)) as descvarios2,"+
+                         "cast(dba.tmpplanillasdo2_hist.descanticipos as decimal (20,0)) as descanticipos,"+
+                         "cast((dba.tmpplanillasdo2_hist.descaporteips + dba.tmpplanillasdo2_hist.descvarios1 "+
+                         " + dba.tmpplanillasdo2_hist.descvarios2 + dba.tmpplanillasdo2_hist.descanticipos) as decimal (20,0)) as totdesc_ind,"+
+                         "cast((toting_ind-totdesc_ind) as decimal (20,0)) as total, "+
                          "dba.tmpplanillasdo2_hist.importeletra, dba.empresa.des_empresa, dba.empleados.apellidos, "+
-                         "dba.empleados.nombres, dba.sucursal.des_sucursal, dba.dpto.descrip FROM "+
+                         "dba.empleados.nombres, dba.sucursal.des_sucursal, dba.dpto.descrip as des_dpto FROM "+
                          "dba.tmpplanillasdo2_hist, dba.empresa, dba.empleados, dba.sucursal, dba.dpto WHERE "+
                          "( dba.tmpplanillasdo2_hist.cod_empresa = dba.empresa.cod_empresa ) and "+
                          "( dba.tmpplanillasdo2_hist.cod_empresa = dba.empleados.cod_empresa ) and "+
@@ -86,11 +98,70 @@ function executeQueue() {
             string_sql += " AND (dba.tmpplanillasdo2_hist.codempleado IN " + q.in(empleados) + ") ";
         }
         
+        if (sucursal) {
+            string_sql += " AND (dba.tmpplanillasdo2_hist.cod_sucursal IN " + q.in(sucursal) + ") ";
+        }
+        
+        if (departamento) {
+            string_sql += " AND (dba.tmpplanillasdo2_hist.coddpto IN " + q.in(departamento) + ") ";
+        }
+        
         string_sql += " ORDER BY dba.sucursal.des_sucursal";
-        console.log(string_sql);
         conn.exec(string_sql, function (err, r) {
             if (err) throw err;
-            responseCallback(r);
+            var string_sql1 = "SELECT dba.tmpplanillasdo2_hist.cod_empresa, dba.tmpplanillasdo2_hist.anho, "+
+                         "dba.tmpplanillasdo2_hist.codempleado, dba.tmpplanillasdo2_hist.cod_sucursal, "+
+                         "dba.tmpplanillasdo2_hist.coddpto, dba.tmpplanillasdo2_hist.codcargo, "+
+                         "dba.tmpplanillasdo2_hist.fechaliquid, dba.tmpplanillasdo2_hist.aportaips, "+
+                         "dba.tmpplanillasdo2_hist.diashorastrab, "+
+                         "cast(dba.tmpplanillasdo2_hist.ingbasico as decimal (20,0)) as ingbasico, "+
+                         "cast(dba.tmpplanillasdo2_hist.ingbasicomes as decimal (20,0)) as ingbasicomes,"+
+                         "cast(dba.tmpplanillasdo2_hist.ingbasicoadicional as decimal (20,0)) as ingbasicoadicional,"+
+                         "cast(dba.tmpplanillasdo2_hist.ingbonificacion as decimal (20,0)) as ingbonificacion,"+
+                         "cast(dba.tmpplanillasdo2_hist.ingboniffam as decimal (20,0)) as ingboniffam,"+
+                         "cast(dba.tmpplanillasdo2_hist.inghe30 as decimal (20,0)) as inghe30,"+
+                         "cast(dba.tmpplanillasdo2_hist.inghe50 as decimal (20,0)) as inghe50,"+
+                         "cast(dba.tmpplanillasdo2_hist.inghe100 as decimal (20,0)) as inghe100,"+
+                         "cast(dba.tmpplanillasdo2_hist.ingvarios as decimal (20,0)) as ingvarios,"+
+                         "cast((dba.tmpplanillasdo2_hist.ingbasico + dba.tmpplanillasdo2_hist.ingbonificacion + dba.tmpplanillasdo2_hist.ingboniffam "+
+                         "+ dba.tmpplanillasdo2_hist.inghe30 + dba.tmpplanillasdo2_hist.inghe50 + dba.tmpplanillasdo2_hist.inghe100 +dba.tmpplanillasdo2_hist.ingvarios)"+
+                         " as decimal (20,0)) as toting_ind,"+
+                         "cast(dba.tmpplanillasdo2_hist.descaporteips as decimal (20,0)) as descaporteips,"+
+                         "cast(dba.tmpplanillasdo2_hist.descvarios1 as decimal (20,0)) as descvarios1,"+
+                         "cast(dba.tmpplanillasdo2_hist.descvarios2 as decimal (20,0)) as descvarios2,"+
+                         "cast(dba.tmpplanillasdo2_hist.descanticipos as decimal (20,0)) as descanticipos,"+
+                         "cast((dba.tmpplanillasdo2_hist.descaporteips + dba.tmpplanillasdo2_hist.descvarios1 "+
+                         " + dba.tmpplanillasdo2_hist.descvarios2 + dba.tmpplanillasdo2_hist.descanticipos) as decimal (20,0)) as totdesc_ind,"+
+                         "cast((toting_ind-totdesc_ind) as decimal (20,0)) as total, "+
+                         "dba.tmpplanillasdo2_hist.importeletra, dba.empresa.des_empresa, dba.empleados.apellidos, "+
+                         "dba.empleados.nombres, dba.sucursal.des_sucursal, dba.dpto.descrip as des_dpto FROM "+
+                         "dba.tmpplanillasdo2_hist, dba.empresa, dba.empleados, dba.sucursal, dba.dpto WHERE "+
+                         "( dba.tmpplanillasdo2_hist.cod_empresa = dba.empresa.cod_empresa ) and "+
+                         "( dba.tmpplanillasdo2_hist.cod_empresa = dba.empleados.cod_empresa ) and "+
+                         "( dba.tmpplanillasdo2_hist.codempleado = dba.empleados.codempleado ) and "+
+                         "( dba.tmpplanillasdo2_hist.cod_empresa = dba.sucursal.cod_empresa ) and "+
+                         "( dba.tmpplanillasdo2_hist.cod_sucursal = dba.sucursal.cod_sucursal ) and "+
+                         "( dba.tmpplanillasdo2_hist.cod_empresa = dba.dpto.cod_empresa ) and "+
+                         "( dba.tmpplanillasdo2_hist.cod_sucursal = dba.dpto.cod_sucursal ) and "+
+                         "( dba.tmpplanillasdo2_hist.coddpto = dba.dpto.coddpto ) and "+
+                         "( dba.tmpplanillasdo2_hist.cod_empresa = '"+empresa+"' ) ";
+            if (empleados) {
+                string_sql1 += " AND (dba.tmpplanillasdo2_hist.codempleado IN " + q.in(empleados) + ") ";
+            }
+            
+            if (sucursal) {
+            string_sql += " AND (dba.tmpplanillasdo2_hist.cod_sucursal IN " + q.in(sucursal) + ") ";
+            }
+            
+            if (departamento) {
+                string_sql += " AND (dba.tmpplanillasdo2_hist.coddpto IN " + q.in(departamento) + ") ";
+            }
+            
+            string_sql1 += " ORDER BY dba.dpto.descrip";
+            conn.exec(string_sql1, function (err, r1) {
+                if (err) throw err;
+                responseCallback([r, r1]);
+            })
         })
     } else {
         exec(qProcedure.shift(), executeQueue);

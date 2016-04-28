@@ -1,4 +1,7 @@
 var conn = require('../db_sueldo');
+var util = require('util');
+var moment = require('moment');
+var q = require('./queryUtils');
 
 var Tp_Movimiento = {};
 
