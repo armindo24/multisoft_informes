@@ -41,6 +41,7 @@ var Legajos = require('../models/legajos_sueldo');
 var Sueldos_Jornales = require('../models/sueldos_jornales_sueldo');
 var Sucursal_Sueldo = require('../models/sucursal_sueldo');
 var Departamento_Sueldo = require('../models/departamento_sueldo');
+var Anticipos = require('../models/anticipos_sueldo');
 
 var postProcess = function (response, result) {
     response.json({data: result});
@@ -603,5 +604,26 @@ router.get('/departamento_sueldo/select', function (req, res, next) {
     });
 });
 
+//Anticipos - Delete
+router.get('/anticipo_sueldo/delete', function (req, res, next) {
+    Sueldos_Jornales.delete(function (result) {
+        res.json({data: result});
+    });
+});
+
+//Anticipos - query_1
+router.get('/anticipo_sueldo/query_1', function (req, res, next) {
+    Sueldos_Jornales.query_1(req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+
+//Anticipos - procedures
+router.get('/anticipo_sueldo/procedures', function (req, res, next) {
+    Anticipos.procedures(req.query, function (result) {
+        res.json({data: result});
+    });
+});
 
 module.exports = router;

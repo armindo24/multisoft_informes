@@ -184,9 +184,10 @@
           select_departamento.clearOptions();
           select_departamento.load(function (callback) {
             $.ajax({
-              url: api + 'departamento_sueldo/select/' + query.empresa,
+              url: api + 'departamento_sueldo/select/',
               type: 'GET',
-              dataType: 'json'
+              dataType: 'json',
+              data: query
             }).done(function (res) {
               select_departamento.enable();
               callback(res.data);

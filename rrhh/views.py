@@ -8,3 +8,6 @@ def legajos(request):
 
 def sueldos_jornales(request):
     return render_to_response('rrhh/sueldos_jornales.html', {'user': request.user.id}, context_instance=RequestContext(request))
+
+def anticipos(request):
+    return render_to_response('rrhh/anticipos.html', {'user': request.user.id}, context_instance=RequestContext(request))
