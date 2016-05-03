@@ -145,18 +145,21 @@ function executeQueue() {
                             "and dba.tmphistliq.cod_empresa = '"+empresa+"' "+
                             "and dba.tmphistliq.codconcepto = 18";
            if (empleados) {
-            string_sql += " AND (dba.tmpHISTLIQ.codempleado IN " + q.in(empleados) + ") ";
+            string_sql1 += " AND (dba.tmpHISTLIQ.codempleado IN " + q.in(empleados) + ") ";
             }
             
             if (sucursal) {
-                string_sql += " AND (dba.tmpHISTLIQ.cod_sucursal IN " + q.in(sucursal) + ") ";
+                string_sql1 += " AND (dba.tmpHISTLIQ.cod_sucursal IN " + q.in(sucursal) + ") ";
             }
             
             if (departamento) {
-                string_sql += " AND (dba.tmpHISTLIQ.CodDpto IN " + q.in(departamento) + ") ";
+                string_sql1 += " AND (dba.tmpHISTLIQ.CodDpto IN " + q.in(departamento) + ") ";
             }
             
             string_sql1 += " ORDER BY dba.dpto.descrip";
+            
+            console.log(string_sql1);
+            
             conn.exec(string_sql1, function (err, r1) {
                 if (err) throw err;
                 responseCallback([r, r1]);
