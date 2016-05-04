@@ -53,6 +53,7 @@
     var api = u.getApiUrl();
     var $tableDiv, dataTable;
     var numFormat = u.numFormatter;
+    var totalGeneral = 0;
 
     var $selectEmpresa, selectEmpresa;
     var $selectSucursal, selectSucursal;
@@ -277,15 +278,23 @@
       selectExistencia.disable();
     }
 
-    function calcCajas(r, t, v, m) {
-      var existencia = u.parseVal(r.existencia);
-      var cant = u.parseVal(r.cantembalaje);
-      var cajas = 0;
-      if (existencia && cant) {
-        cajas = existencia / cant;
+    function calcTotal(r, t, v, m) {
+      var existencia = u.parseVal(r['total_existencia']);
+      var costo = u.parseVal(r['cto_prom_gs']);
+      r.total = existencia * costo;
+      return r.total;
+    }
+
+    function calcIncid(r, t, v, m) {
+      if (totalGeneral) {
+        var existencia = u.parseVal(r['total_existencia']);
+        var costo = u.parseVal(r['cto_prom_gs']);
+        var totalLinea = existencia * costo;
+        r.incid = totalLinea / totalGeneral * 100;
+      } else {
+        r.incid = 0;
       }
-      r.cajas = cajas;
-      return r.cajas;
+      return r.incid;
     }
 
     function getInforme() {
@@ -323,8 +332,8 @@
             {data: 'des_art'},
             {data: 'total_existencia'},
             {data: 'cto_prom_gs'},
-            {data: 'total_existencia'},
-            {data: 'total_existencia'}
+            {data: calcTotal},
+            {data: calcIncid}
           ],
           footerCallback: sumStock,
           drawCallback: groupData
@@ -388,10 +397,10 @@
         sumFamilia[0] += u.parseVal(row['total_existencia']);
         sumGrupo[1] += u.parseVal(row['cto_prom_gs']);
         sumFamilia[1] += u.parseVal(row['cto_prom_gs']);
-        sumGrupo[2] += u.parseVal(row['total_existencia']); //fix this
-        sumFamilia[2] += u.parseVal(row['total_existencia']); //fix this
-        sumGrupo[3] += u.parseVal(row['total_existencia']);//fix this
-        sumFamilia[3] += u.parseVal(row['total_existencia']);//fix this
+        sumGrupo[2] += u.parseVal(row['total']); //fix this
+        sumFamilia[2] += u.parseVal(row['total']); //fix this
+        sumGrupo[3] += u.parseVal(row['incid']);//fix this
+        sumFamilia[3] += u.parseVal(row['incid']);//fix this
       });
       html = htmlSum('Grupo', sumGrupo, colCount) + htmlSum('Familia', sumFamilia, colCount);
       $(rowsDOM).eq(last).after(html);
@@ -402,13 +411,14 @@
 
       var totalExistencia = api.column(-4).data().sum();
       var totalCosto = api.column(-3).data().sum();
-      var totalTotal = api.column(-2).data().sum();
-      var totalIncid = api.column(-1).data().sum();
+      var totalLinea = api.column(-2).data().sum();
+      var totalIncid = 100;
+      totalGeneral = totalLinea;
 
       // Update footer
       $(api.column(-4).footer()).html(u.usFormatter.display(totalExistencia));
       $(api.column(-3).footer()).html(u.numFormatter.display(totalCosto));
-      $(api.column(-2).footer()).html(u.usFormatter.display(totalTotal));
+      $(api.column(-2).footer()).html(u.usFormatter.display(totalLinea));
       $(api.column(-1).footer()).html(u.usFormatter.display(totalIncid));
     }
   </script>
