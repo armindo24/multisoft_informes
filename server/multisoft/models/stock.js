@@ -220,15 +220,16 @@ Stock.valorizado = function (params, query) {
     var sql =
         "SELECT dba.artdep.cod_empresa, dba.artdep.cod_sucursal, " +
         "dba.artdep.cod_deposito, dba.sucursal.des_sucursal, dba.deposito.des_deposito, " +
-        "dba.articulo.cod_familia, dba.articulo.cod_grupo, dba.grupo.des_grupo, " +
+        "dba.articulo.cod_familia, dba.familia.des_familia, dba.articulo.cod_grupo, dba.grupo.des_grupo, " +
         "dba.articulo.cod_subgrupo, dba.articulo.cod_individual, " +
         "dba.articulo.cod_articulo, dba.articulo.codartpad, dba.articulo.nroarticulo, " +
         "dba.articulo.cod_original, dba.articulo.des_art, dba.articulo.cto_prom_gs, " +
         "dba.articulo.cto_ult_gs, dba.articulo.cto_ult_fob_gs, " +
-        "sum(dba.artdep.existencia) as total_existencia\n" +
-        "FROM dba.artdep, dba.articulo, dba.sucursal, dba.deposito, dba.grupo\n" +
-        "WHERE (dba.articulo.cod_empresa = dba.artdep.cod_empresa)\n" +
+        "sum(dba.artdep.existencia) as total_existencia  " +
+        "FROM dba.artdep, dba.articulo, dba.sucursal, dba.deposito, dba.familia, dba.grupo " +
+        "WHERE (dba.articulo.cod_empresa = dba.artdep.cod_empresa) " +
         "AND (dba.articulo.cod_articulo = dba.artdep.cod_articulo) " +
+        "AND (dba.articulo.cod_familia = dba.familia.cod_familia) " +
         "AND (dba.articulo.cod_familia = dba.grupo.cod_familia) " +
         "AND (dba.articulo.cod_grupo = dba.grupo.cod_grupo) " +
         "AND (dba.artdep.cod_empresa = dba.sucursal.cod_empresa) " +
@@ -242,11 +243,11 @@ Stock.valorizado = function (params, query) {
         "AND dba.articulo.estado = 'I' " +
         "GROUP BY dba.artdep.cod_empresa, dba.artdep.cod_sucursal, dba.artdep.cod_deposito, " +
         "dba.sucursal.des_sucursal, dba.deposito.des_deposito, " +
-        "dba.articulo.cod_familia, dba.articulo.cod_grupo, dba.grupo.des_grupo, " +
+        "dba.articulo.cod_familia, dba.familia.des_familia, dba.articulo.cod_grupo, dba.grupo.des_grupo, " +
         "dba.articulo.cod_subgrupo, dba.articulo.cod_individual, " +
         "dba.articulo.codartpad, dba.articulo.cod_articulo, dba.articulo.nroarticulo, " +
         "dba.articulo.cod_original, dba.articulo.des_art, dba.articulo.cto_prom_gs, " +
-        "dba.articulo.cto_ult_gs, dba.articulo.cto_ult_fob_gs\n" +
+        "dba.articulo.cto_ult_gs, dba.articulo.cto_ult_fob_gs " +
         "ORDER BY dba.articulo.cod_familia, dba.articulo.cod_grupo, dba.articulo.cod_articulo";
     return conn.execAsync(sql);
 };

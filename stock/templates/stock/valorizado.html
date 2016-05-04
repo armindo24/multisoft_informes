@@ -327,7 +327,7 @@
             {data: 'total_existencia'}
           ],
           footerCallback: sumStock,
-          //drawCallback: groupData
+          drawCallback: groupData
         });
       } else {
         dataTable.clear().draw();
@@ -353,9 +353,9 @@
       var rowsDOM = api.rows({page: 'current'}).nodes();
       var rows = api.rows({page: 'current'}).data();
       var last = rows.length - 1;
-      var lastFamilia = 'initial', lastArticulo = 'initial';
-      var sumFamilia = [0.0, 0.0];
-      var sumArticulo = [0.0, 0.0];
+      var lastFamilia = 'initial', lastGrupo = 'initial';
+      var sumFamilia = [0, 0, 0, 0];
+      var sumGrupo = [0, 0, 0, 0];
       var colCount = api.columns().header().length;
       var html;
 
@@ -372,20 +372,28 @@
                   '<h4>' + lastFamilia + ' - ' + row['des_familia'] + '</h4>' +
                   '</td></tr>';
         }
-        if (lastArticulo !== row['cod_articulo']) {
-          if (lastArticulo !== 'initial') {
-            html = htmlSum('Articulo', sumArticulo, colCount) + html;
+        if (lastGrupo !== row['cod_grupo']) {
+          if (lastGrupo !== 'initial') {
+            html = htmlSum('Grupo', sumGrupo, colCount) + html;
           }
-          _.fill(sumArticulo, 0.0);
-          lastArticulo = row['cod_articulo'];
+          _.fill(sumGrupo, 0.0);
+          lastGrupo = row['cod_grupo'];
+          html += '<tr class="group text-center">' +
+                  '<td colspan="' + colCount + '">' +
+                  '<strong>' + lastGrupo + ' - ' + row['des_grupo'] + '</strong>' +
+                  '</td></tr>';
         }
         if (html) $(rowsDOM).eq(i).before(html);
-        sumArticulo[0] += u.parseVal(row['existencia']);
-        sumFamilia[0] += u.parseVal(row['existencia']);
-        sumArticulo[1] += u.parseVal(row['cajas']);
-        sumFamilia[1] += u.parseVal(row['cajas']);
+        sumGrupo[0] += u.parseVal(row['total_existencia']);
+        sumFamilia[0] += u.parseVal(row['total_existencia']);
+        sumGrupo[1] += u.parseVal(row['cto_prom_gs']);
+        sumFamilia[1] += u.parseVal(row['cto_prom_gs']);
+        sumGrupo[2] += u.parseVal(row['total_existencia']); //fix this
+        sumFamilia[2] += u.parseVal(row['total_existencia']); //fix this
+        sumGrupo[3] += u.parseVal(row['total_existencia']);//fix this
+        sumFamilia[3] += u.parseVal(row['total_existencia']);//fix this
       });
-      html = htmlSum('Articulo', sumArticulo, colCount) + htmlSum('Familia', sumFamilia, colCount);
+      html = htmlSum('Grupo', sumGrupo, colCount) + htmlSum('Familia', sumFamilia, colCount);
       $(rowsDOM).eq(last).after(html);
     }
 
