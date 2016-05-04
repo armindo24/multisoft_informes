@@ -217,14 +217,39 @@ Stock.depositos = function (params, query) {
 };
 
 Stock.valorizado = function (params, query) {
+    console.log(query);
+    if (!query.moneda) {
+        query.moneda = 'L';
+    }
+    var moneda = query.moneda === 'E' ? '_me' : '_gs';
+    console.log(query.costeo);
+    if (!query.costeo) {
+        query.costeo = 'P';
+    }
+    var costeo;
+    switch (query.costeo) {
+        case "P":
+            costeo = "cto_prom";
+            break;
+        case "U":
+            costeo = "cto_ult";
+            break;
+        case "F":
+            costeo = "cto_ult_fob";
+            break;
+        default:
+            costeo = "cto_prom";
+    }
+    console.log(query.costeo);
+    console.log(costeo);
     var sql =
         "SELECT dba.artdep.cod_empresa, dba.artdep.cod_sucursal, " +
         "dba.artdep.cod_deposito, dba.sucursal.des_sucursal, dba.deposito.des_deposito, " +
         "dba.articulo.cod_familia, dba.familia.des_familia, dba.articulo.cod_grupo, dba.grupo.des_grupo, " +
         "dba.articulo.cod_subgrupo, dba.articulo.cod_individual, " +
         "dba.articulo.cod_articulo, dba.articulo.codartpad, dba.articulo.nroarticulo, " +
-        "dba.articulo.cod_original, dba.articulo.des_art, dba.articulo.cto_prom_gs, " +
-        "dba.articulo.cto_ult_gs, dba.articulo.cto_ult_fob_gs, " +
+        "dba.articulo.cod_original, dba.articulo.des_art, " +
+        "dba.articulo." + costeo + moneda + " as costo, " +
         "sum(dba.artdep.existencia) as total_existencia  " +
         "FROM dba.artdep, dba.articulo, dba.sucursal, dba.deposito, dba.familia, dba.grupo " +
         "WHERE (dba.articulo.cod_empresa = dba.artdep.cod_empresa) " +
@@ -238,16 +263,15 @@ Stock.valorizado = function (params, query) {
         "AND (dba.artdep.cod_sucursal = dba.deposito.cod_sucursal) " +
         "AND (dba.artdep.cod_deposito = dba.deposito.cod_deposito) " +
         "AND (dba.artdep.cod_empresa = 'CP') " +
-        "AND dba.artdep.cod_sucursal = '01' " +
-        "AND dba.artdep.cod_deposito = '01' " +
+        "AND dba.artdep.cod_sucursal = '02' " +
+        "AND dba.artdep.cod_deposito = '02' " +
         "AND dba.articulo.estado = 'I' " +
         "GROUP BY dba.artdep.cod_empresa, dba.artdep.cod_sucursal, dba.artdep.cod_deposito, " +
         "dba.sucursal.des_sucursal, dba.deposito.des_deposito, " +
         "dba.articulo.cod_familia, dba.familia.des_familia, dba.articulo.cod_grupo, dba.grupo.des_grupo, " +
         "dba.articulo.cod_subgrupo, dba.articulo.cod_individual, " +
         "dba.articulo.codartpad, dba.articulo.cod_articulo, dba.articulo.nroarticulo, " +
-        "dba.articulo.cod_original, dba.articulo.des_art, dba.articulo.cto_prom_gs, " +
-        "dba.articulo.cto_ult_gs, dba.articulo.cto_ult_fob_gs " +
+        "dba.articulo.cod_original, dba.articulo.des_art, costo\n" +
         "ORDER BY dba.articulo.cod_familia, dba.articulo.cod_grupo, dba.articulo.cod_articulo";
     return conn.execAsync(sql);
 };
