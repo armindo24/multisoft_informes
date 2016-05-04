@@ -20,6 +20,7 @@
     {% include 'ventas/_filtro.html' with name="tipo" %}
     {% include 'ventas/_filtro.html' with name="estado" %}
     {% include 'ventas/_filtro.html' with name="existencia" %}
+    {% include 'ventas/_filtro.html' with name="costeo" %}
     {% include 'ventas/_filtro.html' with name="articulo" %}
   </div>
 {% endblock %}
@@ -49,7 +50,7 @@
 
 {% block extra_foot %}
   <script>
-    var query = {empresa: '', familia: '', tipo: '', estado: '', grupo: '', sucursal: ''};
+    var query = {empresa: '', familia: '', tipo: '', estado: '', grupo: '', sucursal: '', costeo: ''};
     var api = u.getApiUrl();
     var $tableDiv, dataTable;
     var numFormat = u.numFormatter;
@@ -64,6 +65,7 @@
     var $selectArticulo, selectArticulo;
     var $selectEstado, selectEstado;
     var $selectExistencia, selectExistencia;
+    var $selectCosteo, selectCosteo;
 
     $(document).ready(function () {
       u.hideNav();
@@ -90,10 +92,12 @@
           u.softResetSelect(selectEstado);
           u.softResetSelect(selectFamilia);
           u.softResetSelect(selectExistencia);
+          u.softResetSelect(selectCosteo);
           if (!value.length) return;
           selectFamilia.enable();
           selectTipo.enable();
           selectEstado.enable();
+          selectCosteo.enable();
           selectExistencia.enable();
           selectSucursal.load(function (callback) {
             $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
@@ -262,6 +266,16 @@
       selectEstado = $selectEstado[0].selectize;
       selectEstado.disable();
 
+      $selectCosteo = $('#select-costeo').selectize({
+        options: [
+          {value: 'P', text: 'Promedio'},
+          {value: 'U', text: 'Ultima Compra'},
+          {value: 'F', text: 'FOB'}
+        ]
+      });
+      selectCosteo = $selectCosteo[0].selectize;
+      selectCosteo.disable();
+
       $selectExistencia = $('#select-existencia').selectize({
         options: [
           {value: 'T', text: 'Todos'},
@@ -280,7 +294,7 @@
 
     function calcTotal(r, t, v, m) {
       var existencia = u.parseVal(r['total_existencia']);
-      var costo = u.parseVal(r['cto_prom_gs']);
+      var costo = u.parseVal(getCosto(r));
       r.total = existencia * costo;
       return r.total;
     }
@@ -288,13 +302,26 @@
     function calcIncid(r, t, v, m) {
       if (totalGeneral) {
         var existencia = u.parseVal(r['total_existencia']);
-        var costo = u.parseVal(r['cto_prom_gs']);
+        var costo = u.parseVal(getCosto(r));
         var totalLinea = existencia * costo;
         r.incid = totalLinea / totalGeneral * 100;
       } else {
         r.incid = 0;
       }
       return r.incid;
+    }
+
+    function getCosto(r, t, v, m) {
+      switch (query.costeo) {
+        case 'P':
+          return r['cto_prom_gs'];
+        case 'U':
+          return r['cto_ult_gs'];
+        case 'F':
+          return r['cto_ult_fob_gs'];
+        default:
+          return r['cto_prom_gs'];
+      }
     }
 
     function getInforme() {
@@ -331,7 +358,7 @@
             {data: 'cod_original'},
             {data: 'des_art'},
             {data: 'total_existencia'},
-            {data: 'cto_prom_gs'},
+            {data: getCosto},
             {data: calcTotal},
             {data: calcIncid}
           ],
@@ -395,8 +422,8 @@
         if (html) $(rowsDOM).eq(i).before(html);
         sumGrupo[0] += u.parseVal(row['total_existencia']);
         sumFamilia[0] += u.parseVal(row['total_existencia']);
-        sumGrupo[1] += u.parseVal(row['cto_prom_gs']);
-        sumFamilia[1] += u.parseVal(row['cto_prom_gs']);
+        sumGrupo[1] += u.parseVal(getCosto(row));
+        sumFamilia[1] += u.parseVal(getCosto(row));
         sumGrupo[2] += u.parseVal(row['total']); //fix this
         sumFamilia[2] += u.parseVal(row['total']); //fix this
         sumGrupo[3] += u.parseVal(row['incid']);//fix this
@@ -412,7 +439,7 @@
       var totalExistencia = api.column(-4).data().sum();
       var totalCosto = api.column(-3).data().sum();
       var totalLinea = api.column(-2).data().sum();
-      var totalIncid = 100;
+      var totalIncid = totalExistencia && totalCosto ? 100 : 0;
       totalGeneral = totalLinea;
 
       // Update footer
