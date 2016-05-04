@@ -220,28 +220,34 @@ Stock.valorizado = function (params, query) {
     var sql =
         "SELECT dba.artdep.cod_empresa, dba.artdep.cod_sucursal, " +
         "dba.artdep.cod_deposito, dba.sucursal.des_sucursal, dba.deposito.des_deposito, " +
-        "dba.articulo.cod_familia, dba.articulo.cod_grupo, dba.articulo.cod_subgrupo, " +
-        "dba.articulo.cod_individual, dba.articulo.cod_articulo, " +
-        "dba.articulo.codartpad, dba.articulo.nroarticulo, dba.articulo.cod_original, " +
-        "dba.articulo.des_art, dba.articulo.cto_prom_gs, dba.articulo.cto_ult_gs, " +
-        "dba.articulo.cto_ult_fob_gs, sum(dba.artdep.existencia) as total_existencia\n" +
-        "FROM dba.artdep, dba.articulo, dba.sucursal, dba.deposito\n" +
+        "dba.articulo.cod_familia, dba.articulo.cod_grupo, dba.grupo.des_grupo, " +
+        "dba.articulo.cod_subgrupo, dba.articulo.cod_individual, " +
+        "dba.articulo.cod_articulo, dba.articulo.codartpad, dba.articulo.nroarticulo, " +
+        "dba.articulo.cod_original, dba.articulo.des_art, dba.articulo.cto_prom_gs, " +
+        "dba.articulo.cto_ult_gs, dba.articulo.cto_ult_fob_gs, " +
+        "sum(dba.artdep.existencia) as total_existencia\n" +
+        "FROM dba.artdep, dba.articulo, dba.sucursal, dba.deposito, dba.grupo\n" +
         "WHERE (dba.articulo.cod_empresa = dba.artdep.cod_empresa)\n" +
         "AND (dba.articulo.cod_articulo = dba.artdep.cod_articulo) " +
+        "AND (dba.articulo.cod_familia = dba.grupo.cod_familia) " +
+        "AND (dba.articulo.cod_grupo = dba.grupo.cod_grupo) " +
         "AND (dba.artdep.cod_empresa = dba.sucursal.cod_empresa) " +
         "AND (dba.artdep.cod_sucursal = dba.sucursal.cod_sucursal) " +
         "AND (dba.artdep.cod_empresa = dba.deposito.cod_empresa) " +
         "AND (dba.artdep.cod_sucursal = dba.deposito.cod_sucursal) " +
         "AND (dba.artdep.cod_deposito = dba.deposito.cod_deposito) " +
-        "AND ((dba.artdep.cod_empresa = 'CP')) " +
-        "AND dba.articulo.estado = 'I'\n" +
+        "AND (dba.artdep.cod_empresa = 'CP') " +
+        "AND dba.artdep.cod_sucursal = '01' " +
+        "AND dba.artdep.cod_deposito = '01' " +
+        "AND dba.articulo.estado = 'I' " +
         "GROUP BY dba.artdep.cod_empresa, dba.artdep.cod_sucursal, dba.artdep.cod_deposito, " +
         "dba.sucursal.des_sucursal, dba.deposito.des_deposito, " +
-        "dba.articulo.cod_familia, dba.articulo.cod_grupo, dba.articulo.cod_subgrupo, " +
-        "dba.articulo.cod_individual, dba.articulo.codartpad, " +
-        "dba.articulo.cod_articulo, dba.articulo.nroarticulo, " +
+        "dba.articulo.cod_familia, dba.articulo.cod_grupo, dba.grupo.des_grupo, " +
+        "dba.articulo.cod_subgrupo, dba.articulo.cod_individual, " +
+        "dba.articulo.codartpad, dba.articulo.cod_articulo, dba.articulo.nroarticulo, " +
         "dba.articulo.cod_original, dba.articulo.des_art, dba.articulo.cto_prom_gs, " +
-        "dba.articulo.cto_ult_gs, dba.articulo.cto_ult_fob_gs";
+        "dba.articulo.cto_ult_gs, dba.articulo.cto_ult_fob_gs\n" +
+        "ORDER BY dba.articulo.cod_familia, dba.articulo.cod_grupo, dba.articulo.cod_articulo";
     return conn.execAsync(sql);
 };
 

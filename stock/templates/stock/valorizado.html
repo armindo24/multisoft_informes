@@ -14,57 +14,55 @@
   <div class="row">
     {% include 'ventas/_filtro.html' with name="empresa" %}
     {% include 'ventas/_filtro.html' with name="sucursal" %}
+    {% include 'ventas/_filtro.html' with name="deposito" %}
     {% include 'ventas/_filtro.html' with name="familia" %}
     {% include 'ventas/_filtro.html' with name="grupo" %}
     {% include 'ventas/_filtro.html' with name="tipo" %}
-    {% include 'ventas/_filtro.html' with name="articulo" %}
     {% include 'ventas/_filtro.html' with name="estado" %}
-    {% include 'ventas/_filtro.html' with name="rotacion" %}
+    {% include 'ventas/_filtro.html' with name="existencia" %}
+    {% include 'ventas/_filtro.html' with name="articulo" %}
   </div>
 {% endblock %}
 
 {% block table %}
   <thead>
   <tr>
-    <th colspan="9"></th>
-    <th colspan="4" style="text-align: center">% Comisión</th>
-    <th colspan="2" style="text-align: center">% Financiero</th>
-  </tr>
-  <tr>
     <th>Cod. Art.</th>
-    <th>Cod. Original</th>
-    <th>Articulo</th>
-    <th class="us-price-label">% Com. Vta.</th>
-    <th class="us-price-label">% Desc.</th>
-    <th>Unidad</th>
-    <th>Cod. IVA</th>
-    <th class="us-price-label">IVA</th>
-    <th class="us-price-label">Stock Max.</th>
-    <th class="us-price-label">Lista 1</th>
-    <th class="us-price-label">Lista 2</th>
-    <th class="us-price-label">Lista 3</th>
-    <th class="us-price-label">Lista 4</th>
-    <th class="us-price-label">M. Local</th>
-    <th class="us-price-label">M. Extr.</th>
+    <th>Cod. Orig.</th>
+    <th>Descripcion</th>
+    <th class="us-price-label">Existencia</th>
+    <th class="price-label">Costo</th>
+    <th class="us-price-label">Total.</th>
+    <th class="us-price-label">Incid.</th>
   </tr>
   </thead>
+  <tfoot>
+  <tr>
+    <th class="text-right" colspan="3">Total General:</th>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
+  </tr>
+  </tfoot>
 {% endblock %}
 
 {% block extra_foot %}
   <script>
-    var query = {empresa: '', familia: '', tipo: '', estado: '', grupo: '', rotacion: ''};
+    var query = {empresa: '', familia: '', tipo: '', estado: '', grupo: '', sucursal: ''};
     var api = u.getApiUrl();
     var $tableDiv, dataTable;
     var numFormat = u.numFormatter;
 
     var $selectEmpresa, selectEmpresa;
     var $selectSucursal, selectSucursal;
+    var $selectDeposito, selectDeposito;
     var $selectFamilia, selectFamilia;
     var $selectGrupo, selectGrupo;
     var $selectTipo, selectTipo;
     var $selectArticulo, selectArticulo;
     var $selectEstado, selectEstado;
-    var $selectRotacion, selectRotacion;
+    var $selectExistencia, selectExistencia;
 
     $(document).ready(function () {
       u.hideNav();
@@ -89,11 +87,13 @@
           u.resetSelect(selectSucursal);
           u.softResetSelect(selectTipo);
           u.softResetSelect(selectEstado);
-          u.softResetSelect(selectRotacion);
+          u.softResetSelect(selectFamilia);
+          u.softResetSelect(selectExistencia);
           if (!value.length) return;
+          selectFamilia.enable();
           selectTipo.enable();
           selectEstado.enable();
-          selectRotacion.enable();
+          selectExistencia.enable();
           selectSucursal.load(function (callback) {
             $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
               selectSucursal.enable();
@@ -118,13 +118,28 @@
         searchField: 'Des_Sucursal',
         onChange: function (value) {
           query.sucursal = value;
-          u.softResetSelect(selectFamilia);
-          if (!value.length) return;
-          selectFamilia.enable();
+          u.resetSelect(selectDeposito);
+          if (!value) return;
+          selectDeposito.load(function (cb) {
+            $.get(api + 'stock/' + query.empresa + '/sucursales/' + query.sucursal + '/depositos').done(function (res) {
+              selectDeposito.enable();
+              cb(res.data);
+            }).fail(function () {
+              cb();
+            });
+          });
         }
       });
       selectSucursal = $selectSucursal[0].selectize;
       selectSucursal.disable();
+
+      $selectDeposito = $('#select-deposito').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: 'name',
+      });
+      selectDeposito = $selectDeposito[0].selectize;
+      selectDeposito.disable();
 
       $selectFamilia = $('#select-familia').selectize({
         valueField: 'id',
@@ -246,15 +261,31 @@
       selectEstado = $selectEstado[0].selectize;
       selectEstado.disable();
 
-      $selectRotacion = $('#select-rotacion').selectize({
+      $selectExistencia = $('#select-existencia').selectize({
         options: [
-          {value: 'A', text: 'Alta'},
-          {value: 'M', text: 'Media'},
-          {value: 'B', text: 'Baja'}
-        ]
+          {value: 'T', text: 'Todos'},
+          {value: 'Z', text: 'Cero'},
+          {value: 'P', text: 'Positiva'},
+          {value: 'N', text: 'Negativa'},
+          {value: 'PN', text: 'Positiva y Negativa'}
+        ],
+        onChange: function (value) {
+          query.existencia = value === 'T' ? '' : value;
+        }
       });
-      selectRotacion = $selectRotacion[0].selectize;
-      selectRotacion.disable();
+      selectExistencia = $selectExistencia[0].selectize;
+      selectExistencia.disable();
+    }
+
+    function calcCajas(r, t, v, m) {
+      var existencia = u.parseVal(r.existencia);
+      var cant = u.parseVal(r.cantembalaje);
+      var cajas = 0;
+      if (existencia && cant) {
+        cajas = existencia / cant;
+      }
+      r.cajas = cajas;
+      return r.cajas;
     }
 
     function getInforme() {
@@ -267,14 +298,16 @@
           ajax: function (d, cb, s) {
             $.ajax({
               method: 'GET',
-              url: api + 'stock/informes/' + query.empresa + '/articulos',
+              url: api + 'stock/informes/valorizado',
               data: {
-                articulo: query.articulo,
-                tipo: query.tipo,
-                estado: query.estado,
+                sucursal: query.sucursal,
+                deposito: query.deposito,
                 familia: query.familia,
                 grupo: query.grupo,
-                rotacion: query.rotacion
+                tipo: query.tipo,
+                articulo: query.articulo,
+                estado: query.estado,
+                existencia: query.existencia
               }
             }).done(function (res) {
               cb(res);
@@ -288,24 +321,13 @@
             {data: 'cod_articulo'},
             {data: 'cod_original'},
             {data: 'des_art'},
-            {data: 'comision_vta'},
-            {data: 'descuento'},
-            {data: 'unidad'},
-            {
-              data: 'cod_iva', render: function (d) {
-              return d === 'G' ? 'Gravado' : 'Exento'
-            }
-            },
-            {data: 'iva'},
-            {data: 'st_max'},
-            {data: 'PorcComisLista1'},
-            {data: 'PorcComisLista2'},
-            {data: 'PorcComisLista3'},
-            {data: 'PorcComisLista4'},
-            {data: 'porc_financ'},
-            {data: 'porc_financ_me'}
+            {data: 'total_existencia'},
+            {data: 'cto_prom_gs'},
+            {data: 'total_existencia'},
+            {data: 'total_existencia'}
           ],
-          drawCallback: groupData
+          footerCallback: sumStock,
+          //drawCallback: groupData
         });
       } else {
         dataTable.clear().draw();
@@ -316,32 +338,70 @@
       }
     }
 
+    function htmlSum(group, totals, colCount) {
+      return '<tr class="group text-right">' +
+              '<td colspan="' + (colCount - totals.length) + '">' +
+              '<strong>Total ' + group + ':</strong>' +
+              '</td>' + _.reduce(totals, function (conc, t) {
+                return conc + '<td><strong>' + u.usFormatter.display(t) + '<strong></td>';
+              }, '') +
+              '</tr>';
+    }
+
     function groupData(settings) {
       var api = this.api();
       var rowsDOM = api.rows({page: 'current'}).nodes();
       var rows = api.rows({page: 'current'}).data();
-      var lastFamilia, lastGrupo;
+      var last = rows.length - 1;
+      var lastFamilia = 'initial', lastArticulo = 'initial';
+      var sumFamilia = [0.0, 0.0];
+      var sumArticulo = [0.0, 0.0];
       var colCount = api.columns().header().length;
       var html;
 
       _.forEach(rows, function (row, i) {
-        html = null;
+        html = '';
         if (lastFamilia !== row['cod_familia']) {
+          if (lastFamilia !== 'initial') {
+            html += htmlSum('Familia', sumFamilia, colCount);
+          }
+          _.fill(sumFamilia, 0.0);
           lastFamilia = row['cod_familia'];
-          html = '<tr class="group text-center">' +
+          html += '<tr class="group text-center">' +
                   '<td colspan="' + colCount + '">' +
                   '<h4>' + lastFamilia + ' - ' + row['des_familia'] + '</h4>' +
                   '</td></tr>';
         }
-        if (lastGrupo !== row['cod_grupo']) {
-          lastGrupo = row['cod_grupo'];
-          html += '<tr class="group text-center">' +
-                  '<td colspan="' + colCount + '">' +
-                  '<strong>' + lastGrupo + ' - ' + row['des_grupo'] + '</strong>' +
-                  '</td></tr>';
+        if (lastArticulo !== row['cod_articulo']) {
+          if (lastArticulo !== 'initial') {
+            html = htmlSum('Articulo', sumArticulo, colCount) + html;
+          }
+          _.fill(sumArticulo, 0.0);
+          lastArticulo = row['cod_articulo'];
         }
         if (html) $(rowsDOM).eq(i).before(html);
+        sumArticulo[0] += u.parseVal(row['existencia']);
+        sumFamilia[0] += u.parseVal(row['existencia']);
+        sumArticulo[1] += u.parseVal(row['cajas']);
+        sumFamilia[1] += u.parseVal(row['cajas']);
       });
+      html = htmlSum('Articulo', sumArticulo, colCount) + htmlSum('Familia', sumFamilia, colCount);
+      $(rowsDOM).eq(last).after(html);
+    }
+
+    function sumStock(row, data, start, end, display) {
+      var api = this.api(), data;
+
+      var totalExistencia = api.column(-4).data().sum();
+      var totalCosto = api.column(-3).data().sum();
+      var totalTotal = api.column(-2).data().sum();
+      var totalIncid = api.column(-1).data().sum();
+
+      // Update footer
+      $(api.column(-4).footer()).html(u.usFormatter.display(totalExistencia));
+      $(api.column(-3).footer()).html(u.numFormatter.display(totalCosto));
+      $(api.column(-2).footer()).html(u.usFormatter.display(totalTotal));
+      $(api.column(-1).footer()).html(u.usFormatter.display(totalIncid));
     }
   </script>
 {% endblock %}
