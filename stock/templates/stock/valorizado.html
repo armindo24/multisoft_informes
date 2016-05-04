@@ -21,6 +21,7 @@
     {% include 'ventas/_filtro.html' with name="estado" %}
     {% include 'ventas/_filtro.html' with name="existencia" %}
     {% include 'ventas/_filtro.html' with name="costeo" %}
+    {% include 'ventas/_filtro.html' with name="moneda" %}
     {% include 'ventas/_filtro.html' with name="articulo" %}
   </div>
 {% endblock %}
@@ -53,7 +54,6 @@
     var query = {empresa: '', familia: '', tipo: '', estado: '', grupo: '', sucursal: '', costeo: ''};
     var api = u.getApiUrl();
     var $tableDiv, dataTable;
-    var numFormat = u.numFormatter;
     var totalGeneral = 0;
 
     var $selectEmpresa, selectEmpresa;
@@ -66,6 +66,7 @@
     var $selectEstado, selectEstado;
     var $selectExistencia, selectExistencia;
     var $selectCosteo, selectCosteo;
+    var $selectMoneda, selectMoneda;
 
     $(document).ready(function () {
       u.hideNav();
@@ -93,12 +94,14 @@
           u.softResetSelect(selectFamilia);
           u.softResetSelect(selectExistencia);
           u.softResetSelect(selectCosteo);
+          u.softResetSelect(selectMoneda);
           if (!value.length) return;
           selectFamilia.enable();
           selectTipo.enable();
           selectEstado.enable();
           selectCosteo.enable();
           selectExistencia.enable();
+          selectMoneda.enable();
           selectSucursal.load(function (callback) {
             $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
               selectSucursal.enable();
@@ -276,6 +279,15 @@
       selectCosteo = $selectCosteo[0].selectize;
       selectCosteo.disable();
 
+      $selectMoneda = $('#select-moneda').selectize({
+        options: [
+          {value: 'L', text: 'Local'},
+          {value: 'E', text: 'Extranjera'}
+        ]
+      });
+      selectMoneda = $selectMoneda[0].selectize;
+      selectMoneda.disable();
+
       $selectExistencia = $('#select-existencia').selectize({
         options: [
           {value: 'T', text: 'Todos'},
@@ -294,7 +306,7 @@
 
     function calcTotal(r, t, v, m) {
       var existencia = u.parseVal(r['total_existencia']);
-      var costo = u.parseVal(getCosto(r));
+      var costo = u.parseVal(r['costo']);
       r.total = existencia * costo;
       return r.total;
     }
@@ -302,7 +314,7 @@
     function calcIncid(r, t, v, m) {
       if (totalGeneral) {
         var existencia = u.parseVal(r['total_existencia']);
-        var costo = u.parseVal(getCosto(r));
+        var costo = u.parseVal(r['costo']);
         var totalLinea = existencia * costo;
         r.incid = totalLinea / totalGeneral * 100;
       } else {
@@ -311,18 +323,10 @@
       return r.incid;
     }
 
-    function getCosto(r, t, v, m) {
-      switch (query.costeo) {
-        case 'P':
-          return r['cto_prom_gs'];
-        case 'U':
-          return r['cto_ult_gs'];
-        case 'F':
-          return r['cto_ult_fob_gs'];
-        default:
-          return r['cto_prom_gs'];
-      }
-    }
+    var numFormatter = function (data) {
+      if (query.moneda === 'E') return u.usFormatter.display(data);
+      return u.numFormatter.display(data);
+    };
 
     function getInforme() {
       $('.collapse').collapse('hide');
@@ -343,7 +347,9 @@
                 tipo: query.tipo,
                 articulo: query.articulo,
                 estado: query.estado,
-                existencia: query.existencia
+                existencia: query.existencia,
+                moneda: query.moneda,
+                costeo: query.costeo
               }
             }).done(function (res) {
               cb(res);
@@ -358,7 +364,7 @@
             {data: 'cod_original'},
             {data: 'des_art'},
             {data: 'total_existencia'},
-            {data: getCosto},
+            {data: 'costo', render: numFormatter},
             {data: calcTotal},
             {data: calcIncid}
           ],
@@ -374,12 +380,12 @@
       }
     }
 
-    function htmlSum(group, totals, colCount) {
+    function htmlSum(group, totals, colCount, format) {
       return '<tr class="group text-right">' +
               '<td colspan="' + (colCount - totals.length) + '">' +
               '<strong>Total ' + group + ':</strong>' +
-              '</td>' + _.reduce(totals, function (conc, t) {
-                return conc + '<td><strong>' + u.usFormatter.display(t) + '<strong></td>';
+              '</td>' + _.reduce(totals, function (conc, t, i) {
+                return conc + '<td><strong>' + format[i](t) + '<strong></td>';
               }, '') +
               '</tr>';
     }
@@ -392,6 +398,9 @@
       var lastFamilia = 'initial', lastGrupo = 'initial';
       var sumFamilia = [0, 0, 0, 0];
       var sumGrupo = [0, 0, 0, 0];
+      var us = u.usFormatter.display;
+      var num = numFormatter;
+      var formats = [us, num, us, us];
       var colCount = api.columns().header().length;
       var html;
 
@@ -399,7 +408,7 @@
         html = '';
         if (lastFamilia !== row['cod_familia']) {
           if (lastFamilia !== 'initial') {
-            html += htmlSum('Familia', sumFamilia, colCount);
+            html += htmlSum('Familia', sumFamilia, colCount, formats);
           }
           _.fill(sumFamilia, 0.0);
           lastFamilia = row['cod_familia'];
@@ -410,7 +419,7 @@
         }
         if (lastGrupo !== row['cod_grupo']) {
           if (lastGrupo !== 'initial') {
-            html = htmlSum('Grupo', sumGrupo, colCount) + html;
+            html = htmlSum('Grupo', sumGrupo, colCount, formats) + html;
           }
           _.fill(sumGrupo, 0.0);
           lastGrupo = row['cod_grupo'];
@@ -422,14 +431,14 @@
         if (html) $(rowsDOM).eq(i).before(html);
         sumGrupo[0] += u.parseVal(row['total_existencia']);
         sumFamilia[0] += u.parseVal(row['total_existencia']);
-        sumGrupo[1] += u.parseVal(getCosto(row));
-        sumFamilia[1] += u.parseVal(getCosto(row));
+        sumGrupo[1] += u.parseVal(row['costo']);
+        sumFamilia[1] += u.parseVal(row['costo']);
         sumGrupo[2] += u.parseVal(row['total']); //fix this
         sumFamilia[2] += u.parseVal(row['total']); //fix this
         sumGrupo[3] += u.parseVal(row['incid']);//fix this
         sumFamilia[3] += u.parseVal(row['incid']);//fix this
       });
-      html = htmlSum('Grupo', sumGrupo, colCount) + htmlSum('Familia', sumFamilia, colCount);
+      html = htmlSum('Grupo', sumGrupo, colCount, formats) + htmlSum('Familia', sumFamilia, colCount, formats);
       $(rowsDOM).eq(last).after(html);
     }
 
@@ -444,7 +453,7 @@
 
       // Update footer
       $(api.column(-4).footer()).html(u.usFormatter.display(totalExistencia));
-      $(api.column(-3).footer()).html(u.numFormatter.display(totalCosto));
+      $(api.column(-3).footer()).html(numFormatter(totalCosto));
       $(api.column(-2).footer()).html(u.usFormatter.display(totalLinea));
       $(api.column(-1).footer()).html(u.usFormatter.display(totalIncid));
     }
