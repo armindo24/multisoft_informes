@@ -37,6 +37,14 @@ router.get('/informes/:empresa/deposito', function (req, res, next) {
     });
 });
 
+router.get('/informes/valorizado', function (req, res, next) {
+    Stock.valorizado(req.params, req.query).then(function (result) {
+        postProcess(res, result);
+    }).catch(function (e) {
+        next(e);
+    });
+});
+
 router.get('/familias', function (req, res, next) {
     Stock.familias().then(function (result) {
         postProcess(res, result);
