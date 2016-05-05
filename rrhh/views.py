@@ -11,3 +11,9 @@ def sueldos_jornales(request):
 
 def anticipos(request):
     return render_to_response('rrhh/anticipos.html', {'user': request.user.id}, context_instance=RequestContext(request))
+
+def aguinaldos(request):
+    return render_to_response('rrhh/aguinaldos.html', {'user': request.user.id}, context_instance=RequestContext(request))
+
+def recibos(request):
+    return render_to_response('rrhh/recibos.html', {'user': request.user.id}, context_instance=RequestContext(request))

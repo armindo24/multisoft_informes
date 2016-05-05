@@ -42,6 +42,7 @@ var Sueldos_Jornales = require('../models/sueldos_jornales_sueldo');
 var Sucursal_Sueldo = require('../models/sucursal_sueldo');
 var Departamento_Sueldo = require('../models/departamento_sueldo');
 var Anticipos = require('../models/anticipos_sueldo');
+var Aguinaldos = require('../models/aguinaldos_sueldo');
 
 var postProcess = function (response, result) {
     response.json({data: result});
@@ -622,6 +623,21 @@ router.get('/anticipo_sueldo/query_1', function (req, res, next) {
 //Anticipos - procedures
 router.get('/anticipo_sueldo/procedures', function (req, res, next) {
     Anticipos.procedures(req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+
+//Aguinaldos - exite
+router.get('/aguinaldo_sueldo/existe', function (req, res, next) {
+    Aguinaldos.existe(req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+//Aguinaldos - procedures
+router.get('/aguinaldo_sueldo/procedures', function (req, res, next) {
+    Aguinaldos.procedures(req.query, function (result) {
         res.json({data: result});
     });
 });
