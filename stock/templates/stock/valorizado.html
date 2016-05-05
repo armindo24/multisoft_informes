@@ -22,6 +22,7 @@
     {% include 'ventas/_filtro.html' with name="existencia" %}
     {% include 'ventas/_filtro.html' with name="costeo" %}
     {% include 'ventas/_filtro.html' with name="moneda" %}
+    {% include 'ventas/_filtro.html' with name="iva" title="IVA" placeholder="Tipo" %}
     {% include 'ventas/_filtro.html' with name="articulo" %}
   </div>
 {% endblock %}
@@ -51,7 +52,10 @@
 
 {% block extra_foot %}
   <script>
-    var query = {empresa: '', familia: '', tipo: '', estado: '', grupo: '', sucursal: '', costeo: ''};
+    var query = {
+      empresa: '', familia: '', tipo: '', estado: '',
+      grupo: '', sucursal: '', costeo: '', iva: '', exitencia: ''
+    };
     var api = u.getApiUrl();
     var $tableDiv, dataTable;
     var totalGeneral = 0;
@@ -67,6 +71,7 @@
     var $selectExistencia, selectExistencia;
     var $selectCosteo, selectCosteo;
     var $selectMoneda, selectMoneda;
+    var $selectIVA, selectIVA;
 
     $(document).ready(function () {
       u.hideNav();
@@ -95,6 +100,7 @@
           u.softResetSelect(selectExistencia);
           u.softResetSelect(selectCosteo);
           u.softResetSelect(selectMoneda);
+          u.softResetSelect(selectIVA);
           if (!value.length) return;
           selectFamilia.enable();
           selectTipo.enable();
@@ -102,6 +108,7 @@
           selectCosteo.enable();
           selectExistencia.enable();
           selectMoneda.enable();
+          selectIVA.enable();
           selectSucursal.load(function (callback) {
             $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
               selectSucursal.enable();
@@ -269,6 +276,19 @@
       selectEstado = $selectEstado[0].selectize;
       selectEstado.disable();
 
+      $selectIVA = $('#select-iva').selectize({
+        options: [
+          {value: 'T', text: 'Todos'},
+          {value: 'G', text: 'Gravadas'},
+          {value: 'E', text: 'Exentas'}
+        ],
+        onChange: function (value) {
+          query.iva = value === 'T' ? '' : value;
+        }
+      });
+      selectIVA = $selectIVA[0].selectize;
+      selectIVA.disable();
+
       $selectCosteo = $('#select-costeo').selectize({
         valueField: 'id',
         labelField: 'name',
@@ -358,7 +378,8 @@
                 estado: query.estado,
                 existencia: query.existencia,
                 moneda: query.moneda,
-                costeo: query.costeo
+                costeo: query.costeo,
+                iva: query.iva
               }
             }).done(function (res) {
               cb(res);
