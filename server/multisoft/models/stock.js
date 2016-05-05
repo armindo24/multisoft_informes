@@ -238,7 +238,7 @@ Stock.valorizado = function (params, query) {
             costeo = "cto_ult_fob";
             break;
         default:
-            costeo = "cto_prom";
+            costeo = "pr" + query.costeo;
     }
     console.log(query.costeo);
     console.log(costeo);

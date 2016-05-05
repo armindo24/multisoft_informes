@@ -270,14 +270,23 @@
       selectEstado.disable();
 
       $selectCosteo = $('#select-costeo').selectize({
-        options: [
-          {value: 'P', text: 'Promedio'},
-          {value: 'U', text: 'Ultima Compra'},
-          {value: 'F', text: 'FOB'}
-        ]
+        valueField: 'id',
+        labelField: 'name',
+        searchField: 'name'
       });
       selectCosteo = $selectCosteo[0].selectize;
       selectCosteo.disable();
+      selectCosteo.load(function (cb) {
+        $.get(api + 'stock/listas').done(function (res) {
+          var options = [
+            {id: 'P', name: 'Promedio'},
+            {id: 'U', name: 'Ultima Compra'},
+            {id: 'F', name: 'FOB'}].concat(res.data);
+          cb(options);
+        }).fail(function () {
+          cb();
+        });
+      });
 
       $selectMoneda = $('#select-moneda').selectize({
         options: [
