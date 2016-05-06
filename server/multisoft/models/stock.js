@@ -1,6 +1,8 @@
 var conn = require('../db_integrado');
 var q = require('./queryUtils');
 var Stock = {};
+//Cero, Positivo y Negativo, Negativo, Positivo
+var mappings = {'Z': '=', 'PN': '!=', 'N': '<', 'P': '>'};
 
 Stock.articulos = function (params, query) {
     var sql =
@@ -136,8 +138,6 @@ Stock.listaPrecios = function (params, query) {
 };
 
 Stock.existenciaDeposito = function (params, query) {
-    //Cero, Positivo y Negativo, Negativo, Positivo
-    var mappings = {'Z': '=', 'PN': '!=', 'N': '<', 'P': '>'};
     var sql =
         "SELECT dba.articulo.cod_familia, dba.articulo.cod_grupo, " +
         "dba.articulo.cod_subgrupo, dba.articulo.cod_individual, " +
@@ -217,14 +217,12 @@ Stock.depositos = function (params, query) {
 };
 
 Stock.valorizado = function (params, query) {
-    console.log(query);
     if (!query.moneda) {
-        query.moneda = 'L';
+        query.moneda = 'L'; //moneda local por defecto
     }
-    var moneda = query.moneda === 'E' ? '_me' : '_gs';
-    console.log(query.costeo);
+    var moneda = query.moneda === 'E' ? '_me' : '_gs'; //columna de moneda
     if (!query.costeo) {
-        query.costeo = 'P';
+        query.costeo = 'P'; //precio promedio por defecto
     }
     var costeo;
     switch (query.costeo) {
@@ -238,10 +236,9 @@ Stock.valorizado = function (params, query) {
             costeo = "cto_ult_fob";
             break;
         default:
-            costeo = "pr" + query.costeo;
+            costeo = "pr" + query.costeo; //se selecciono lista de precio
     }
-    console.log(query.costeo);
-    console.log(costeo);
+    var sqlParams = [params.empresa];
     var sql =
         "SELECT dba.artdep.cod_empresa, dba.artdep.cod_sucursal, " +
         "dba.artdep.cod_deposito, dba.sucursal.des_sucursal, dba.deposito.des_deposito, " +
@@ -261,19 +258,69 @@ Stock.valorizado = function (params, query) {
         "AND (dba.artdep.cod_sucursal = dba.sucursal.cod_sucursal) " +
         "AND (dba.artdep.cod_empresa = dba.deposito.cod_empresa) " +
         "AND (dba.artdep.cod_sucursal = dba.deposito.cod_sucursal) " +
-        "AND (dba.artdep.cod_deposito = dba.deposito.cod_deposito) " +
-        "AND (dba.artdep.cod_empresa = 'CP') " +
-        "AND dba.artdep.cod_sucursal = '02' " +
-        "AND dba.artdep.cod_deposito = '02' " +
-        "AND dba.articulo.estado = 'I' " +
+        "AND (dba.artdep.cod_deposito = dba.deposito.cod_deposito)\n" +
+        "AND (dba.artdep.cod_empresa = ?)\n";
+
+    var groupBy =
         "GROUP BY dba.artdep.cod_empresa, dba.artdep.cod_sucursal, dba.artdep.cod_deposito, " +
         "dba.sucursal.des_sucursal, dba.deposito.des_deposito, " +
         "dba.articulo.cod_familia, dba.familia.des_familia, dba.articulo.cod_grupo, dba.grupo.des_grupo, " +
         "dba.articulo.cod_subgrupo, dba.articulo.cod_individual, " +
         "dba.articulo.codartpad, dba.articulo.cod_articulo, dba.articulo.nroarticulo, " +
-        "dba.articulo.cod_original, dba.articulo.des_art, costo\n" +
-        "ORDER BY dba.articulo.cod_familia, dba.articulo.cod_grupo, dba.articulo.cod_articulo";
-    return conn.execAsync(sql);
+        "dba.articulo.cod_original, dba.articulo.des_art, costo\n";
+    var orderBy = "ORDER BY dba.articulo.cod_familia, dba.articulo.cod_grupo, dba.articulo.cod_articulo";
+
+    if (query.articulo) {
+        if (query.articulo.constructor === Array) {
+            sql += "AND articulo.cod_articulo IN " + q.in(query.articulo) + "\n";
+        } else {
+            sql += "AND articulo.cod_articulo = ?\n";
+            sqlParams.push(query.articulo);
+        }
+    }
+
+    if (query.existencia && mappings.hasOwnProperty(query.existencia)) {
+        sql += "AND dba.artdep.existencia " + mappings[query.existencia] + " 0\n";
+        groupBy += "HAVING total_existencia " + mappings[query.existencia] + " 0\n";
+    }
+
+    if (query.sucursal) {
+        sql += "AND dba.artdep.cod_sucursal = ?\n";
+        sqlParams.push(query.sucursal);
+    }
+
+    if (query.deposito) {
+        sql += "AND dba.artdep.cod_deposito = ?\n";
+        sqlParams.push(query.deposito);
+    }
+
+    if (query.iva) {
+        sql += "AND dba.articulo.cod_iva = ?\n";
+        sqlParams.push(query.iva);
+    }
+
+    if (query.estado) {
+        sql += "AND dba.articulo.estado = ?\n";
+        sqlParams.push(query.estado);
+    }
+
+    if (query.tipo) {
+        sql += "AND dba.articulo.cod_tp_art = ?\n";
+        sqlParams.push(query.tipo);
+    }
+
+    if (query.familia) {
+        sql += "AND ((dba.articulo.cod_familia = ?))\n";
+        sqlParams.push(query.familia);
+    }
+
+    if (query.grupo) {
+        sql += "AND ((dba.articulo.cod_grupo = ?))\n";
+        sqlParams.push(query.grupo);
+    }
+
+    sql = sql + groupBy + orderBy;
+    return conn.execAsync(sql, sqlParams);
 };
 
 module.exports = Stock;
