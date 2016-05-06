@@ -35,7 +35,7 @@
     <th>Descripcion</th>
     <th class="us-price-label">Existencia</th>
     <th class="price-label">Costo</th>
-    <th class="us-price-label">Total.</th>
+    <th class="us-price-label">Total</th>
     <th class="us-price-label">Incid.</th>
   </tr>
   </thead>
@@ -54,7 +54,7 @@
   <script>
     var query = {
       empresa: '', familia: '', tipo: '', estado: '',
-      grupo: '', sucursal: '', costeo: '', iva: '', exitencia: ''
+      grupo: '', sucursal: '', costeo: '', iva: '', existencia: ''
     };
     var api = u.getApiUrl();
     var $tableDiv, dataTable;
@@ -341,13 +341,15 @@
     }
 
     function calcIncid(r, t, v, m) {
-      if (totalGeneral) {
-        var existencia = u.parseVal(r['total_existencia']);
-        var costo = u.parseVal(r['costo']);
-        var totalLinea = existencia * costo;
-        r.incid = totalLinea / totalGeneral * 100;
-      } else {
-        r.incid = 0;
+      if (!r.hasOwnProperty('incid')) {
+        if (totalGeneral) {
+          var existencia = u.parseVal(r['total_existencia']);
+          var costo = u.parseVal(r['costo']);
+          var totalLinea = existencia * costo;
+          r.incid = totalLinea / totalGeneral * 100;
+        } else {
+          r.incid = 0;
+        }
       }
       return r.incid;
     }
@@ -367,7 +369,7 @@
           ajax: function (d, cb, s) {
             $.ajax({
               method: 'GET',
-              url: api + 'stock/informes/valorizado',
+              url: api + 'stock/informes/' + query.empresa + '/valorizado',
               data: {
                 sucursal: query.sucursal,
                 deposito: query.deposito,
@@ -377,8 +379,8 @@
                 articulo: query.articulo,
                 estado: query.estado,
                 existencia: query.existencia,
-                moneda: query.moneda,
                 costeo: query.costeo,
+                moneda: query.moneda,
                 iva: query.iva
               }
             }).done(function (res) {
@@ -398,6 +400,7 @@
             {data: calcTotal},
             {data: calcIncid}
           ],
+          preDrawCallback: calcTotalGeneral, //se necesita calcular antes para mostrar incid
           footerCallback: sumStock,
           drawCallback: groupData
         });
@@ -429,8 +432,7 @@
       var sumFamilia = [0, 0, 0, 0];
       var sumGrupo = [0, 0, 0, 0];
       var us = u.usFormatter.display;
-      var num = numFormatter;
-      var formats = [us, num, us, us];
+      var formats = [us, numFormatter, us, us];
       var colCount = api.columns().header().length;
       var html;
 
@@ -463,13 +465,18 @@
         sumFamilia[0] += u.parseVal(row['total_existencia']);
         sumGrupo[1] += u.parseVal(row['costo']);
         sumFamilia[1] += u.parseVal(row['costo']);
-        sumGrupo[2] += u.parseVal(row['total']); //fix this
-        sumFamilia[2] += u.parseVal(row['total']); //fix this
-        sumGrupo[3] += u.parseVal(row['incid']);//fix this
-        sumFamilia[3] += u.parseVal(row['incid']);//fix this
+        sumGrupo[2] += u.parseVal(row['total']);
+        sumFamilia[2] += u.parseVal(row['total']);
+        sumGrupo[3] += u.parseVal(row['incid']);
+        sumFamilia[3] += u.parseVal(row['incid']);
       });
       html = htmlSum('Grupo', sumGrupo, colCount, formats) + htmlSum('Familia', sumFamilia, colCount, formats);
       $(rowsDOM).eq(last).after(html);
+    }
+
+    function calcTotalGeneral(row, data, start, end, display) {
+      var api = this.api(), data;
+      totalGeneral = api.column(-2).data().sum();
     }
 
     function sumStock(row, data, start, end, display) {
@@ -477,14 +484,12 @@
 
       var totalExistencia = api.column(-4).data().sum();
       var totalCosto = api.column(-3).data().sum();
-      var totalLinea = api.column(-2).data().sum();
       var totalIncid = totalExistencia && totalCosto ? 100 : 0;
-      totalGeneral = totalLinea;
 
       // Update footer
       $(api.column(-4).footer()).html(u.usFormatter.display(totalExistencia));
       $(api.column(-3).footer()).html(numFormatter(totalCosto));
-      $(api.column(-2).footer()).html(u.usFormatter.display(totalLinea));
+      $(api.column(-2).footer()).html(u.usFormatter.display(totalGeneral));
       $(api.column(-1).footer()).html(u.usFormatter.display(totalIncid));
     }
   </script>
