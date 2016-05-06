@@ -1,4 +1,5 @@
 var conn = require('../db_integrado');
+var utils = require('./queryUtils');
 
 var Empresa = {};
 
