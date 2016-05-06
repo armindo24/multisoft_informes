@@ -6,6 +6,7 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var config = require('config');
+var redis = require('redis'), client = redis.createClient('/tmp/redis.sock');
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
@@ -39,6 +40,26 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(function (req, res, next) {
+    if (req.cookies && req.cookies.sessionid) {
+        var sessionid = 'session:' + req.cookies['sessionid'];
+        client.get(sessionid, function (err, data) {
+            if (data) {
+                var sessionData = new Buffer(data, 'base64').toString();
+                var sessionObjString = sessionData.substring(sessionData.indexOf(":") + 1);
+                var sessionObjJSON = JSON.parse(sessionObjString);
+                req.user = sessionObjJSON['_auth_user_id'];
+                req.loggedin = true;
+                next();
+            } else {
+                res.status(401).send('Unauthorized');
+            }
+        });
+    } else {
+        res.status(401).send('Unauthorized');
+    }
+});
 
 // Register routes
 app.use('/', routes);

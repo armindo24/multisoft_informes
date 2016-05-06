@@ -44,4 +44,18 @@ router.get('/:user/empresas', function (req, res, next) {
     });
 });
 
+router.get('/empresas', function (req, res, next) {
+    pg.User.findById(req.params.user).then(function (user) {
+        if (!user)throw new UserNotFoundError();
+        return user.getEmpresa();
+    }).then(function (empresas) {
+        var include = _.map(empresas, 'empresa');
+        return Empresa.list(include);
+    }).then(function (result) {
+        res.json({data: result});
+    }).catch(function (error) {
+        next(error);
+    });
+});
+
 module.exports = router;
