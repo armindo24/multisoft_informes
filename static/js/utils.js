@@ -173,7 +173,9 @@ u.spanish_dt = {
 
 u.get_empresas = function (user_id, cb) {
     console.log("getempresas");
-    $.get(api + 'users/' + user_id + '/empresas').done(function (res) {
+    $.ajax({
+        url: api + 'users/' + user_id + '/empresas'
+    }).done(function (res) {
         cb(res);
     });
 };
