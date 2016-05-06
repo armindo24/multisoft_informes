@@ -22,7 +22,7 @@
       </div>
     </div>
   </div>
-  {% include 'ventas/_filtro.html' with title="Grupo" name="grupo" %}
+  {% include 'ventas/_filtro.html' with name="moneda" %}
   {% include 'ventas/_filtro.html' with title="Comprobante" name="tipo_comprobante" %}
   {% include 'ventas/_filtro.html' with title="Agrupar por" name="order" %}
 {% endblock filters %}
@@ -136,9 +136,14 @@
     };
 
     var api = u.getApiUrl();
-    var $preview = $('#preview');
     var $results = $('#results');
-    var numFormat = $.fn.dataTable.render.number('.', ',', 2).display;
+    var numFormat = function (value) {
+      if (query.moneda === 'US') {
+        return u.usFormatter.display(value);
+      } else {
+        return u.numFormatter.display(value);
+      }
+    };
     var init = initialize;
     var today = new Date();
 
@@ -146,13 +151,17 @@
     var select_sucursal, $select_sucursal;
     var select_tipo_cliente, $select_tipo_cliente;
     var select_cliente, $select_cliente;
-    var select_grupo, $select_grupo;
+    var select_moneda, $select_moneda;
     var select_tipo_comprobante, $select_tipo_comprobante;
     var $select_order;
+    var $resultado;
+
+    var dtResultado;
 
     $(document).ready(function () {
       u.hideNav();
-      $results.hide();
+      $resultado = $('#resultado');
+      $resultado.hide();
       init();
 
       select_empresa = $select_empresa[0].selectize;
@@ -165,9 +174,8 @@
       select_cliente.disable();
       select_tipo_comprobante = $select_tipo_comprobante[0].selectize;
       select_tipo_comprobante.disable();
-      select_grupo = $select_grupo[0].selectize;
-      select_grupo.disable();
-
+      select_moneda = $select_moneda[0].selectize;
+      select_moneda.setValue('GS');
     });
 
     function initialize() {
@@ -177,12 +185,12 @@
         todayBtn: "linked",
         language: "es",
         format: "yyyy-mm-dd",
-        orientation: "bottom auto"
+        orientation: "bottom auto",
+        autoclose: true
       });
 
       $('.input-date .form-control').datepicker().on('changeDate', function (e) {
         query[this.name] = this.value;
-        u.debug($preview, query);
       });
 
       $('.input-date .form-control').datepicker('setDate', today);
@@ -191,7 +199,6 @@
       $.extend(true, $.fn.selectize.defaults, {
         onChange: function (value) {
           query[this.$input.attr('name')] = value;
-          u.debug($preview, query);
         }
       });
 
@@ -228,16 +235,6 @@
               callback();
             });
           });
-          select_grupo.disable();
-          select_grupo.clearOptions();
-          select_grupo.load(function (callback) {
-            $.get(api + 'grupos/').done(function (res) {
-              select_grupo.enable();
-              callback(res.data);
-            }).fail(function () {
-              callback();
-            });
-          });
           select_sucursal.disable();
           select_sucursal.clearOptions();
           select_sucursal.load(function (callback) {
@@ -257,24 +254,28 @@
         searchField: 'Des_Tp_Cliente',
         onChange: function (value) {
           query.tipo_cliente = value;
+          u.resetSelect(select_cliente);
           if (!value.length) return;
-          select_cliente.disable();
-          select_cliente.clearOptions();
-          select_cliente.load(function (cb) {
-            $.get(api + 'empresas/' + query.empresa + '/clientes', {tipo: query.tipo_cliente}).done(function (res) {
-              select_cliente.enable();
-              cb(res.data);
-            }).fail(function () {
-              cb();
-            });
-          });
+          select_cliente.enable();
         }
       });
 
       $select_cliente = $('#select-cliente').selectize({
         valueField: 'Cod_Cliente',
         labelField: 'Razon_Social',
-        searchField: 'Razon_Social'
+        searchField: 'Razon_Social',
+        load: function (q, cb) {
+          if (!q.length) return cb();
+          $.get(api + 'empresas/' + query.empresa + '/clientes', {
+            tipo: query.tipo_cliente,
+            cliente: q,
+            sucursal: query.sucursal
+          }).done(function (res) {
+            cb(res.data);
+          }).fail(function () {
+            cb();
+          });
+        }
       });
 
       $select_tipo_comprobante = $('#select-tipo_comprobante').selectize({
@@ -283,10 +284,11 @@
         searchField: 'des_tp_comp'
       });
 
-      $select_grupo = $('#select-grupo').selectize({
-        valueField: 'cod_grupo',
-        labelField: 'des_grupo',
-        searchField: 'des_grupo'
+      $select_moneda = $('#select-moneda').selectize({
+        options: [
+          {value: 'GS', text: 'Local'},
+          {value: 'US', text: 'Extranjera'}
+        ]
       });
 
       $select_sucursal = $('#select-sucursal').selectize({
@@ -304,18 +306,23 @@
       });
     }
 
+    var calcGravado = function (data, type, row) {
+      var gravado = parseFloat(row.to_gravado) - parseFloat(row.total_iva);
+      return numFormat(gravado);
+    };
+
+    var numFormatter = function (data) {
+      if (query.moneda === 'US') return u.usFormatter.display(data);
+      return u.numFormatter.display(data);
+    };
+
     function getInforme() {
       $('.collapse').collapse('hide');
-      $results.show();
 
-      var calcGravado = function (data, type, row) {
-        var gravado = parseFloat(row.to_gravado) - parseFloat(row.total_iva);
-        return numFormat(gravado);
-      };
-
-      if (!$.fn.DataTable.isDataTable('#results')) {
-        $('#results').DataTable({
-          language: u.spanish_dt,
+      if (!dtResultado) {
+        $resultado.show();
+        u.defaultDT();
+        dtResultado = $resultado.find('table').DataTable({
           ajax: function (d, cb, s) {
             $.ajax({
               method: 'GET',
@@ -323,24 +330,12 @@
               data: query
             }).done(function (res) {
               cb(res);
-            }).fail(function () {
-              cb();
+            }).fail(function (e) {
+              dtResultado.clear().draw();
+              dtResultado.processing(false);
+              u.serverDown(e);
             });
           },
-          deferRender: true,
-          scrollY: 400,
-          scrollX: '100%',
-          scrollCollapse: true,
-          scroller: {
-            displayBuffer: 30,
-            loadingIndicator: true
-          },
-          columnDefs: [
-            {className: "price-value", targets: "price-label"},
-            {render: $.fn.dataTable.render.number('.', ',', 2), targets: "price-label"},
-            {className: "text-center", targets: "text-center"},
-            {visible: false, targets: "grouping-col"}
-          ],
           columns: [
             {
               data: null,
@@ -354,16 +349,15 @@
             {data: 'razon_social'},
             {data: 'ruc'},
             {data: 'fecha'},
-            {data: 'total_iva'},
+            {data: 'total_iva', render: numFormatter},
             {data: null, render: calcGravado},
-            {data: 'totaldescuento'},
-            {data: 'to_gravado'},
+            {data: 'totaldescuento', render: numFormatter},
+            {data: 'to_gravado', render: numFormatter},
             {data: 'des_tp_comp', name: 'cod_tp_comp'},
             {data: 'razon_social', name: 'cod_cliente'},
             {data: 'des_vendedor', name: 'cod_vendedor'}
           ],
-          searching: false,
-          ordering: false,
+          processing: true,
           footerCallback: footerSum,
           drawCallback: function (settings) {
             var api = this.api();
@@ -371,7 +365,6 @@
             var last = null;
             var colCount = api.columns().header().length;
 
-            console.log(colCount);
             api.column(query.order + ':name', {page: 'current'}).data().each(function (group, i) {
               if (last !== group) {
                 $(rows).eq(i).before(
@@ -380,16 +373,14 @@
                 last = group;
               }
             });
-          },
+          }
         });
         $results.show();
       } else {
-        var table = $('#results').DataTable();
-        var $resultado = $('#resultado');
-        $resultado.css("position", "absolute").css("left", -9999);
-        table.row(0).scrollTo();
-        table.ajax.reload(function () {
-          $resultado.css("position", "relative").css("left", 0);
+        dtResultado.clear().draw();
+        dtResultado.processing(true);
+        dtResultado.ajax.reload(function () {
+          dtResultado.processing(false);
         }, true);
       }
     }
@@ -451,23 +442,14 @@
                 parseFloat(i.replace(/[\$]/g, '')) :
                 typeof i === 'number' ?
                         i : 0;
-        //console.log(i, n);
         return n;
       };
-
       // Total over all pages
-      var total = api
-              .column(8)
-              .data()
-              .reduce(function (a, b) {
-                return parseVal(a) + parseVal(b);
-              }, 0);
+      var total = api.column(8).data().sum();
 
 
       // Update footer
-      $(api.column(8).footer()).html(
-              numFormat(total)
-      );
+      $(api.column(8).footer()).html(numFormat(total));
     }
   </script>
 {% endblock %}

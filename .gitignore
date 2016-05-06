@@ -6,7 +6,6 @@ build
 node_modules
 bower_components
 server/multisoft/server.json
-multisoft_informes/wsgi.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -21,7 +20,6 @@ __pycache__/
 env/
 build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/

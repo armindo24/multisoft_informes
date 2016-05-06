@@ -1,0 +1,347 @@
+{% extends 'finanzas/base.html' %}
+{% load staticfiles %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <script src="{% static 'lodash/dist/lodash.min.js' %}"></script>
+{% endblock %}
+
+{% block header %}
+  Articulos:
+{% endblock %}
+
+{% block filters %}
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="empresa" %}
+    {% include 'ventas/_filtro.html' with name="sucursal" %}
+    {% include 'ventas/_filtro.html' with name="familia" %}
+    {% include 'ventas/_filtro.html' with name="grupo" %}
+    {% include 'ventas/_filtro.html' with name="tipo" %}
+    {% include 'ventas/_filtro.html' with name="articulo" %}
+    {% include 'ventas/_filtro.html' with name="estado" %}
+    {% include 'ventas/_filtro.html' with name="rotacion" %}
+  </div>
+{% endblock %}
+
+{% block table %}
+  <thead>
+  <tr>
+    <th colspan="9"></th>
+    <th colspan="4" style="text-align: center">% Comisión</th>
+    <th colspan="2" style="text-align: center">% Financiero</th>
+  </tr>
+  <tr>
+    <th>Cod. Art.</th>
+    <th>Cod. Original</th>
+    <th>Articulo</th>
+    <th class="us-price-label">% Com. Vta.</th>
+    <th class="us-price-label">% Desc.</th>
+    <th>Unidad</th>
+    <th>Cod. IVA</th>
+    <th class="us-price-label">IVA</th>
+    <th class="us-price-label">Stock Max.</th>
+    <th class="us-price-label">Lista 1</th>
+    <th class="us-price-label">Lista 2</th>
+    <th class="us-price-label">Lista 3</th>
+    <th class="us-price-label">Lista 4</th>
+    <th class="us-price-label">M. Local</th>
+    <th class="us-price-label">M. Extr.</th>
+  </tr>
+  </thead>
+{% endblock %}
+
+{% block extra_foot %}
+  <script>
+    var query = {empresa: '', familia: '', tipo: '', estado: '', grupo: '', rotacion: ''};
+    var api = u.getApiUrl();
+    var $tableDiv, dataTable;
+    var numFormat = u.numFormatter;
+
+    var $selectEmpresa, selectEmpresa;
+    var $selectSucursal, selectSucursal;
+    var $selectFamilia, selectFamilia;
+    var $selectGrupo, selectGrupo;
+    var $selectTipo, selectTipo;
+    var $selectArticulo, selectArticulo;
+    var $selectEstado, selectEstado;
+    var $selectRotacion, selectRotacion;
+
+    $(document).ready(function () {
+      u.hideNav();
+      initSelects();
+      $tableDiv = $('#resultado');
+      $tableDiv.hide();
+    });
+
+    function initSelects() {
+      $.extend(true, $.fn.selectize.defaults, {
+        onChange: function (value) {
+          query[this.$input.attr('name')] = value;
+        }
+      });
+
+      $selectEmpresa = $('#select-empresa').selectize({
+        valueField: 'Cod_Empresa',
+        labelField: 'Des_Empresa',
+        searchField: 'Des_Empresa',
+        onChange: function (value) {
+          query.empresa = value;
+          u.resetSelect(selectSucursal);
+          u.softResetSelect(selectTipo);
+          u.softResetSelect(selectEstado);
+          u.softResetSelect(selectRotacion);
+          if (!value.length) return;
+          selectTipo.enable();
+          selectEstado.enable();
+          selectRotacion.enable();
+          selectSucursal.load(function (callback) {
+            $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
+              selectSucursal.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+
+      selectEmpresa = $selectEmpresa[0].selectize;
+      selectEmpresa.load(function (cb) {
+        u.get_empresas({{ user }}, function (res) {
+          cb(res.data);
+        });
+      });
+
+      $selectSucursal = $('#select-sucursal').selectize({
+        valueField: 'Cod_Sucursal',
+        labelField: 'Des_Sucursal',
+        searchField: 'Des_Sucursal',
+        onChange: function (value) {
+          query.sucursal = value;
+          u.softResetSelect(selectFamilia);
+          if (!value.length) return;
+          selectFamilia.enable();
+        }
+      });
+      selectSucursal = $selectSucursal[0].selectize;
+      selectSucursal.disable();
+
+      $selectFamilia = $('#select-familia').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: ['id', 'name'],
+        render: {
+          option: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' ' + escape(item['name']) + '</div>';
+          },
+          item: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' ' + escape(item['name']) + '</div>';
+          }
+        },
+        onChange: function (value) {
+          query.familia = value;
+          u.resetSelect(selectGrupo);
+          if (!value.length) return;
+          selectGrupo.load(function (cb) {
+            $.get(api + 'stock/grupos', {familia: query.familia}).done(function (res) {
+              cb(res.data);
+              selectGrupo.enable();
+            }).fail(function () {
+              cb();
+            });
+          });
+        }
+      });
+      selectFamilia = $selectFamilia[0].selectize;
+      selectFamilia.disable();
+      selectFamilia.load(function (cb) {
+        $.get(api + 'stock/familias').done(function (res) {
+          cb(res.data);
+        }).fail(function () {
+          cb();
+        });
+      });
+
+      $selectGrupo = $('#select-grupo').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: ['id', 'name'],
+        render: {
+          option: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' ' + escape(item['name']) + '</div>';
+          },
+          item: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' ' + escape(item['name']) + '</div>';
+          }
+        },
+        onChange: function (value) {
+          query.grupo = value;
+          if (!value.length) return;
+        }
+      });
+      selectGrupo = $selectGrupo[0].selectize;
+      selectGrupo.disable();
+
+      $selectTipo = $('#select-tipo').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: 'name',
+        onChange: function (value) {
+          query.tipo = value;
+          u.resetSelect(selectArticulo);
+          if (!value.length) return;
+          selectArticulo.enable();
+        }
+      });
+      selectTipo = $selectTipo[0].selectize;
+      selectTipo.disable();
+      selectTipo.load(function (cb) {
+        $.get(api + 'stock/tipos/articulos').done(function (res) {
+          cb(res.data);
+        }).fail(function () {
+          cb();
+        });
+      });
+
+      $selectArticulo = $('#select-articulo').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: ['id', 'name'],
+        maxItems: 10,
+        load: function (q, cb) {
+          if (q.length < 2) return cb();
+          $.get(api + 'stock/' + query.empresa + '/articulos', {
+            articulo: q,
+            tipo: query.tipo,
+            familia: query.familia,
+            grupo: query.grupo
+          }).done(function (res) {
+            cb(res.data);
+          }).fail(function () {
+            cb();
+          });
+        },
+        render: {
+          option: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' - ' + escape(item['name']) + '</div>';
+          },
+          item: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' - ' + escape(item['name']) + '</div>';
+          }
+        }
+      });
+      selectArticulo = $selectArticulo[0].selectize;
+      selectArticulo.disable();
+
+      $selectEstado = $('#select-estado').selectize({
+        options: [
+          {value: 'T', text: 'Todos'},
+          {value: 'I', text: 'Inactivo'},
+          {value: 'A', text: 'Activo'}
+        ],
+        onChange: function (value) {
+          query.estado = value === 'T' ? '' : value;
+        }
+      });
+      selectEstado = $selectEstado[0].selectize;
+      selectEstado.disable();
+
+      $selectRotacion = $('#select-rotacion').selectize({
+        options: [
+          {value: 'A', text: 'Alta'},
+          {value: 'M', text: 'Media'},
+          {value: 'B', text: 'Baja'}
+        ]
+      });
+      selectRotacion = $selectRotacion[0].selectize;
+      selectRotacion.disable();
+    }
+
+    function getInforme() {
+      $('.collapse').collapse('hide');
+
+      if (!dataTable) {
+        $tableDiv.show();
+        u.defaultDT();
+        dataTable = $tableDiv.find('table').DataTable({
+          ajax: function (d, cb, s) {
+            $.ajax({
+              method: 'GET',
+              url: api + 'stock/informes/' + query.empresa + '/articulos',
+              data: {
+                articulo: query.articulo,
+                tipo: query.tipo,
+                estado: query.estado,
+                familia: query.familia,
+                grupo: query.grupo,
+                rotacion: query.rotacion
+              }
+            }).done(function (res) {
+              cb(res);
+            }).fail(function (e) {
+              dataTable.clear().draw();
+              dataTable.processing(false);
+              u.serverDown(e);
+            });
+          },
+          columns: [
+            {data: 'cod_articulo'},
+            {data: 'cod_original'},
+            {data: 'des_art'},
+            {data: 'comision_vta'},
+            {data: 'descuento'},
+            {data: 'unidad'},
+            {
+              data: 'cod_iva', render: function (d) {
+              return d === 'G' ? 'Gravado' : 'Exento'
+            }
+            },
+            {data: 'iva'},
+            {data: 'st_max'},
+            {data: 'PorcComisLista1'},
+            {data: 'PorcComisLista2'},
+            {data: 'PorcComisLista3'},
+            {data: 'PorcComisLista4'},
+            {data: 'porc_financ'},
+            {data: 'porc_financ_me'}
+          ],
+          drawCallback: groupData
+        });
+      } else {
+        dataTable.clear().draw();
+        dataTable.processing(true);
+        dataTable.ajax.reload(function () {
+          dataTable.processing(false);
+        }, true);
+      }
+    }
+
+    function groupData(settings) {
+      var api = this.api();
+      var rowsDOM = api.rows({page: 'current'}).nodes();
+      var rows = api.rows({page: 'current'}).data();
+      var lastFamilia, lastGrupo;
+      var colCount = api.columns().header().length;
+      var html;
+
+      _.forEach(rows, function (row, i) {
+        html = null;
+        if (lastFamilia !== row['cod_familia']) {
+          lastFamilia = row['cod_familia'];
+          html = '<tr class="group text-center">' +
+                  '<td colspan="' + colCount + '">' +
+                  '<h4>' + lastFamilia + ' - ' + row['des_familia'] + '</h4>' +
+                  '</td></tr>';
+        }
+        if (lastGrupo !== row['cod_grupo']) {
+          lastGrupo = row['cod_grupo'];
+          html += '<tr class="group text-center">' +
+                  '<td colspan="' + colCount + '">' +
+                  '<strong>' + lastGrupo + ' - ' + row['des_grupo'] + '</strong>' +
+                  '</td></tr>';
+        }
+        if (html) $(rowsDOM).eq(i).before(html);
+      });
+    }
+  </script>
+{% endblock %}

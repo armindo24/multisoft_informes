@@ -26,14 +26,6 @@ u.dateFormat = function (date) {
     return date.split(/[\s]+/)[0];
 };
 
-u.parseVal = function (i) {
-    var n = typeof i === 'string' ?
-        parseFloat(i.replace(/[\$]/g, '')) :
-        typeof i === 'number' ?
-            i : 0;
-    return n;
-};
-
 $.fn.dataTable.Api.register('sum()', function () {
     return this.flatten().reduce(function (a, b) {
         a = u.parseVal(a);
@@ -127,6 +119,11 @@ var spanish = {
     yearSuffix: ''
 };
 
+u.spanishMonths = {
+    short: spanish.monthNamesShort,
+    long: spanish.monthNames
+};
+
 u.translate = function () {
     $.datepicker.setDefaults(spanish);
 };
@@ -151,7 +148,7 @@ var permisos_empresas = function (data, args) {
 
 u.spanish_dt = {
     "decimal": ",",
-    "emptyTable": "Ningún dato disponible en esta tabla",
+    "emptyTable": "No hay datos disponibles",
     "info": "Mostrando registros del _START_ al _END_ de _TOTAL_ registros",
     "infoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
     "infoFiltered": "(filtrado de un total de _MAX_ entradas)",
@@ -183,13 +180,13 @@ u.get_empresas = function (user_id, cb) {
 
 u.numFormatter = $.fn.dataTable.render.number('.', ',', 0);
 u.numFormat = u.numFormatter.display;
+u.usFormatter = $.fn.dataTable.render.number('.', ',', 2);
 
 u.parseVal = function (i) {
     var n = typeof i === 'string' ?
         parseFloat(i.replace(/[\$]/g, '')) :
         typeof i === 'number' ?
             i : 0;
-    //console.log(i, n);
     return n;
 };
 
@@ -220,12 +217,15 @@ u.defaultDT = function () {
         },
         columnDefs: [
             {className: "price-value", targets: "price-label"},
+            {className: "price-value", targets: "us-price-label"},
             {render: u.numFormatter, targets: "price-label"},
+            {render: u.usFormatter, targets: "us-price-label"},
             {className: "text-center", targets: "text-center"},
             {visible: false, targets: "grouping-col"}
         ],
         searching: false,
-        ordering: false
+        ordering: false,
+        processing: true
     });
 };
 
@@ -233,6 +233,13 @@ u.resetSelect = function ($select) {
     if (!$select) return;
     $select.disable();
     $select.clearOptions();
+};
+
+// para selects que se cargan una sola vez
+u.softResetSelect = function ($select) {
+    if (!$select) return;
+    $select.disable();
+    $select.clear();
 };
 
 u.convertir_rever = function (str) {
@@ -279,4 +286,12 @@ u.hideTable = function ($table) {
 u.showTable = function ($table) {
     if (!$table) return;
     $table.css("position", "relative").css("left", 0);
+};
+
+u.serverDown = function (e) {
+    if (e.status) {
+        console.log(e);
+    } else {
+        alert("Error del servidor");
+    }
 };

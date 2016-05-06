@@ -1,0 +1,528 @@
+{% extends 'ventas/baseWithoutTable.html' %}
+{% load staticfiles %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <link href="{% static 'c3/c3.min.css' %}" rel="stylesheet" type="text/css">
+  <script src="{% static 'lodash/dist/lodash.min.js' %}"></script>
+  <script src="{% static 'd3/d3.min.js' %}"></script>
+  <script src="{% static 'pathseg/pathseg.js' %}"></script>
+  <script src="{% static 'c3/c3.min.js' %}"></script>
+{% endblock %}
+
+{% block header %}
+  Estadísticas de Ventas:
+{% endblock %}
+
+{% block filters %}
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="empresa" %}
+    {% include 'ventas/_filtro.html' with name="sucursal" %}
+  </div>
+
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="agrupacion" title="Graficar Por" placeholder="Gráfico" %}
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="fecha" class="col-md-4 control-label">Fecha:</label>
+
+        <div class="col-md-6">
+          <div id="fecha" class="input-daterange input-group input-date">
+            <input type="text" class="input-sm form-control" name="start"/>
+            <span class="input-group-addon">hasta</span>
+            <input type="text" class="input-sm form-control" name="end"/>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="vendedor" col='12' %}
+  </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="articulo" col='12' %}
+  </div>
+
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="tipoCliente" title="Tipo de Cliente" placeholder="Tipo" %}
+    {% include 'ventas/_filtro.html' with name="cliente" %}
+  </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="moneda" %}
+  </div>
+{% endblock %}
+
+
+{% block inner_content %}
+  <div class="text-center" id="messages">
+    <h3 id="loading" style="display: none;">Cargando...</h3>
+
+    <h3 id="empty" style="display: none;">No hay datos disponibles</h3>
+  </div>
+  <div id="charts">
+    <div class="row">
+      <div class="col-lg-6">
+        <div id="bar"></div>
+      </div>
+      <div class="col-lg-6">
+        <div id="pie"></div>
+      </div>
+    </div>
+    <div id="chart"></div>
+  </div>
+{% endblock %}
+
+{% block extra_foot %}
+  <script>
+    var query = {empresa: ''};
+
+    var $selectEmpresa, selectEmpresa;
+    var $selectAgrupacion, selectAgrupacion;
+    var $selectSucursal, selectSucursal;
+    var $selectTipoCliente, selectTipoCliente;
+    var $selectCliente, selectCliente;
+    var $selectVendedor, selectVendedor;
+    var $selectArticulo, selectArticulo;
+    var $selectMoneda, selectMoneda;
+    var dataTable;
+
+    var currentClient;
+    var currentClientData;
+    var currentYear;
+    var currentYearData;
+    var $donutTitle;
+    var $charts;
+    var $messages, $loading, $empty;
+
+    var gs = $.fn.dataTable.render.number('.', ',', 0, 'G ').display;
+    var us = $.fn.dataTable.render.number('.', ',', 2, '$ ').display;
+    var numFormat = function (num) {
+      if (query.agrupacion === 'articulos') return num;
+      if (query.moneda === 'US') return us(num);
+      return gs(num);
+    };
+
+    $(document).ready(function () {
+      u.hideNav();
+      $messages = $('#messages');
+      $loading = $messages.find('#loading');
+      $empty = $messages.find('#empty');
+      $charts = $('#charts');
+      initDates();
+      initSelects();
+      hideSelects();
+    });
+
+    function hideSelects() {
+      $selectCliente.parent().parent().parent().parent().hide();
+      $selectMoneda.parent().parent().parent().hide();
+      $selectVendedor.parent().parent().hide();
+      $selectArticulo.parent().parent().hide();
+    }
+
+    function initDates() {
+      var $inputDate = $(".input-date .form-control");
+      u.defaultDatepicker();
+
+      u.defaultDatepicker();
+      $(".input-daterange").datepicker({
+        todayBtn: "linked",
+        format: "yyyy-mm-dd",
+        autoclose: true
+      });
+
+      $inputDate.datepicker().on('changeDate', function (e) {
+        var key = this.name;
+        query[key] = this.value;
+      });
+
+      $inputDate.datepicker('setDate', new Date());
+      $inputDate.datepicker('update');
+    }
+
+    function initSelects() {
+      $.extend(true, $.fn.selectize.defaults, {
+        onChange: function (value) {
+          query[this.$input.attr('name')] = value;
+        }
+      });
+
+      $selectEmpresa = $('#select-empresa').selectize({
+        valueField: 'Cod_Empresa',
+        labelField: 'Des_Empresa',
+        searchField: 'Des_Empresa',
+        onChange: function (value) {
+          query.empresa = value;
+          u.resetSelect(selectSucursal);
+
+          if (!value.length) return;
+
+          selectSucursal.load(function (callback) {
+            $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
+              selectSucursal.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+
+        }
+      });
+
+      selectEmpresa = $selectEmpresa[0].selectize;
+      selectEmpresa.load(function (cb) {
+        u.get_empresas({{ user }}, function (res) {
+          cb(res.data);
+        });
+      });
+
+      $selectSucursal = $('#select-sucursal').selectize({
+        valueField: 'Cod_Sucursal',
+        labelField: 'Des_Sucursal',
+        searchField: 'Des_Sucursal',
+        onChange: function (value) {
+          query.sucursal = value;
+          u.resetSelect(selectTipoCliente);
+          u.resetSelect(selectVendedor);
+          u.resetSelect(selectArticulo);
+          if (!value.length) return;
+          selectTipoCliente.load(function (callback) {
+            $.get(api + 'clientes/tipos/').done(function (res) {
+              selectTipoCliente.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+          selectVendedor.load(function (cb) {
+            $.get(api + 'empresas/' + query.empresa + '/vendedores', {sucursal: query.sucursal}).done(function (res) {
+              selectVendedor.enable();
+              cb(res.data);
+            }).fail(function () {
+              cb();
+            });
+          });
+          selectArticulo.enable();
+        }
+      });
+      selectSucursal = $selectSucursal[0].selectize;
+      selectSucursal.disable();
+
+      $selectTipoCliente = $('#select-tipoCliente').selectize({
+        valueField: 'Cod_Tp_Cliente',
+        labelField: 'Des_Tp_Cliente',
+        searchField: 'Des_Tp_Cliente',
+        onChange: function (value) {
+          query.tipoCliente = value;
+          u.resetSelect(selectCliente);
+          if (!value.length) return;
+          selectCliente.enable();
+        }
+      });
+      selectTipoCliente = $selectTipoCliente[0].selectize;
+      selectTipoCliente.disable();
+
+      $selectCliente = $('#select-cliente').selectize({
+        valueField: 'Cod_Cliente',
+        labelField: 'Razon_Social',
+        searchField: 'Razon_Social',
+        maxItems: 10,
+        load: function (q, cb) {
+          if (!q.length) return cb();
+          $.get(api + 'empresas/' + query.empresa + '/clientes', {
+            tipo: query.tipoCliente,
+            cliente: q,
+            sucursal: query.sucursal
+          }).done(function (res) {
+            cb(res.data);
+          }).fail(function () {
+            cb();
+          });
+        }
+      });
+      selectCliente = $selectCliente[0].selectize;
+      selectCliente.disable();
+
+      $selectVendedor = $('#select-vendedor').selectize({
+        valueField: 'cod_vendedor',
+        labelField: 'des_vendedor',
+        searchField: 'des_vendedor',
+        maxItems: 10
+      });
+      selectVendedor = $selectVendedor[0].selectize;
+      selectVendedor.disable();
+
+      $selectArticulo = $('#select-articulo').selectize({
+        valueField: 'cod_articulo',
+        labelField: 'des_art',
+        searchField: 'des_art',
+        maxItems: 10,
+        load: function (q, cb) {
+          if (q.length < 2) return cb();
+          $.get(api + 'ventas/' + query.empresa + '/articulos', {
+            articulo: q,
+            sucursal: query.sucursal
+          }).done(function (res) {
+            cb(res.data);
+          }).fail(function () {
+            cb();
+          });
+        }
+      });
+      selectArticulo = $selectArticulo[0].selectize;
+      selectArticulo.disable();
+
+      $selectAgrupacion = $('#select-agrupacion').selectize({
+        options: [
+          {value: 'clientes', text: 'Cliente'},
+          {value: 'vendedores', text: 'Vendedor'},
+          {value: 'articulos', text: 'Artículo'}
+        ],
+        onChange: function (value) {
+          query.agrupacion = value;
+          hideSelects();
+          if (!value) return;
+          if (value === "clientes") {
+            $selectCliente.parent().parent().parent().parent().show();
+            $selectMoneda.parent().parent().parent().show();
+          } else if (value === "vendedores") {
+            $selectVendedor.parent().parent().show();
+            $selectMoneda.parent().parent().parent().show();
+          } else if (value === "articulos") {
+            $selectArticulo.parent().parent().show();
+          }
+        }
+      });
+      selectAgrupacion = $selectAgrupacion[0].selectize;
+
+      $selectMoneda = $('#select-moneda').selectize({
+        options: [
+          {value: 'GS', text: 'Local'},
+          {value: 'US', text: 'Extranjera'}
+        ]
+      });
+      selectMoneda = $selectMoneda[0].selectize;
+      selectMoneda.setValue('GS');
+    }
+
+    function getInforme() {
+      if (!query.agrupacion) return;
+      $('.collapse').collapse('hide');
+      $empty.hide();
+      $charts.hide();
+      $loading.show();
+      $.ajax({
+        method: 'GET',
+        url: api + 'estadisticas/ventas/' + query.agrupacion,
+        data: query
+      }).done(function (res) {
+        $loading.hide();
+        if (res.data.length > 0) {
+          $charts.show();
+          initChart(res.data);
+        } else {
+          $empty.show();
+        }
+      }).fail(function (err) {
+        $loading.hide();
+        $empty.show();
+      });
+    }
+
+    function initChart(data) {
+      var indexedData = {};
+      var lineChart;
+      var pie;
+      var bar;
+
+      // parsear datos e indexar por item
+      _.each(data, function (d) {
+        // index por nombre
+        if (!indexedData.hasOwnProperty(d.nombre)) {
+          indexedData[d.nombre] = {
+            nombre: d.nombre,
+            datos: {}
+          };
+        }
+        var item = indexedData[d.nombre];
+        // index por anho
+        if (!item.datos.hasOwnProperty(d.anho)) {
+          item.datos[d.anho] = {
+            total: 0,
+            datos: {}
+          };
+        }
+        var datosYear = item.datos[d.anho].datos;
+        // index por mes
+        if (!datosYear.hasOwnProperty(d.mes)) {
+          datosYear[d.mes] = {'credito': 0, 'venta': 0, 'total': 0};
+        }
+        var datosMonth = datosYear[d.mes];
+        // index por tipo
+        datosMonth[d.tipo] = parseFloat(d.total);
+        if (d.tipo === 'venta') {
+          datosMonth['total'] = datosMonth['venta'] - datosMonth['credito'];
+        }
+      });
+
+      var itemsArray = _.values(indexedData).slice(0, 10); // Utilizar array para mantener el mismo orden
+      var names = _(itemsArray).values().map('nombre').value(); // Leyendas de los items
+
+      // Calcular totales
+      _.forIn(indexedData, function (cliente) {
+        _.forIn(cliente.datos, function (year) {
+          year.total = _(year.datos).values().sumBy('total'); // total anual
+        });
+        cliente.total = _(cliente.datos).values().sumBy('total') // total general
+      });
+
+      bar = c3.generate({
+        bindto: '#bar',
+        data: {
+          x: 'x',
+          columns: [
+            ['x', _.capitalize(query.agrupacion)]].concat(_.map(itemsArray, function (item) {
+                    return [item.nombre, item.total];
+                  })),
+          onclick: function (d, elem) {
+            currentClient = d.id;
+            currentClientData = indexedData[currentClient];
+            $donutTitle.html(_.truncate(d.id, {length: 25, 'separator': /,? +/}));
+            lineChart.unload();
+            pie.load({
+              unload: true,
+              columns: _(currentClientData.datos).entries().map(function (x) {
+                return [x[0], x[1].total];
+              }).value()
+            });
+          },
+          type: 'bar'
+        },
+        axis: {
+          x: {
+            type: 'category',
+            categories: ['Ventas']
+
+          },
+          y: {
+            tick: {
+              format: numFormat
+            }
+          }
+        },
+        tooltip: {
+          grouped: false,
+          format: {
+            value: function (value) {
+              return numFormat(value);
+            }
+          }
+        }
+      });
+
+      pie = c3.generate({
+        bindto: '#pie',
+        data: {
+          columns: [],
+          type: 'donut',
+          onclick: function (d, el) {
+            currentYear = d.id;
+            currentYearData = currentClientData.datos[currentYear];
+            lineChart.load({
+              columns: [
+                ['x'].concat(_(currentYearData.datos).keys().value().map(function (x) {
+                  return [currentYear, x, '01'].join('-');
+                })),
+                ['Total'].concat(_(currentYearData.datos).values().map('total').value()),
+              ]
+            });
+          }
+        },
+        donut: {
+          title: _.capitalize(query.agrupacion)
+        },
+        tooltip: {
+          format: {
+            value: function (value, ratio, id, index) {
+              return numFormat(value);
+            }
+          }
+        }
+      });
+      $donutTitle = $('.c3-chart-arcs-title');
+
+      lineChart = c3.generate({
+        bindto: '#chart',
+        data: {
+          x: 'x',
+          columns: []
+        },
+        axis: {
+          x: {
+            type: 'timeseries',
+            tick: {
+              format: '%Y-%m'
+            }
+          },
+          y: {
+            tick: {
+              format: numFormat
+            }
+          }
+        },
+        padding: {
+          left: 100,
+          right: 100
+        },
+        tooltip: {
+          grouped: false,
+          contents: tooltip_contents
+        }
+      });
+    }
+
+    function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {
+      var $$ = this, config = $$.config,
+              titleFormat = config.tooltip_format_title || defaultTitleFormat,
+              nameFormat = config.tooltip_format_name || function (name) {
+                        return name;
+                      },
+              valueFormat = config.tooltip_format_value || defaultValueFormat,
+              text, i, title, value, name, bgcolor;
+      var month;
+      var monthIndex;
+
+      for (i = 0; i < d.length; i++) {
+        if (!(d[i] && (d[i].value || d[i].value === 0))) {
+          continue;
+        }
+        monthIndex = d[0].x.getMonth();
+        month = monthIndex + 1;
+
+        if (!text) {
+          title = titleFormat ? titleFormat(d[i].x) : d[i].x;
+          text = "<table class='" + $$.CLASS.tooltip + "'>" + (title || title === 0 ? "<tr><th colspan='2'>" + u.spanishMonths.long[monthIndex] + "</th></tr>" : "");
+        }
+        name = nameFormat(d[i].name);
+        value = valueFormat(d[i].value, d[i].ratio, d[i].id, d[i].index);
+        bgcolor = $$.levelColor ? $$.levelColor(d[i].value) : color(d[i].id);
+
+        text += "<tr class='" + $$.CLASS.tooltipName + "-" + d[i].id + "'>";
+        text += "<td class='name'><span style='background-color:" + bgcolor + "'></span>" + name + "</td>";
+        text += "<td class='value'>" + numFormat(value) + "</td>";
+        text += "</tr>";
+        text += "<tr class='" + $$.CLASS.tooltipName + "-" + d[i].id + "'>";
+        text += "<td class='name'><span style='background-color:" + bgcolor + "'></span>" + 'Venta' + "</td>";
+        text += "<td class='value'>" + numFormat(currentYearData.datos[month].venta) + "</td>";
+        text += "</tr>";
+        text += "<tr class='" + $$.CLASS.tooltipName + "-" + d[i].id + "'>";
+        text += "<td class='name'><span style='background-color:" + bgcolor + "'></span>" + 'Nota Credito' + "</td>";
+        text += "<td class='value'>" + numFormat(currentYearData.datos[month].credito) + "</td>";
+        text += "</tr>";
+      }
+      return text + "</table>";
+    }
+
+  </script>
+{% endblock %}

@@ -8,6 +8,8 @@
   var select_empresa, $select_empresa;
   var api = u.getApiUrl();
   var today = new Date();
+  var $messages, $loading, $empty;
+
 
   function init() {
     $select_empresa = $('#select-empresa').selectize({
@@ -24,6 +26,10 @@
   }
 
   $(document).ready(function () {
+    $messages = $("#messages");
+    $loading = $messages.find("#loading");
+    $empty = $messages.find("#empty");
+    
     initialize();
     u.hideNav();
 
@@ -122,13 +128,12 @@
     } else {
       $('.collapse').collapse('hide');
       $('#resultado-table').hide();
-      $('#mensaje').empty();
-      $('#mensaje').append("<b>Recuperando datos.</b>");
+      $loading.show();
+      $empty.hide();
       $.get(api + "flowcash/" + periodo + "/" + empresa + "/" + mes_corte,
               function (data) {
                 if (data.data[0].saldos.length > 0 || data.data[1].movimientos.length > 0 || data.data[2].descuentos.length > 0 || data.data[3].bancos.length > 0) {
                   $('#resultado-table').show();
-                  $('#mensaje').empty();
                   if (data.data[0].saldos.length > 0) {
                     var saldos = []
                     for (var a = 0; a < data.data[0].saldos.length; a++) {
@@ -234,9 +239,9 @@
                   $('#resultado-tables tbody').html(string_resultados);
                 } else {
                   $('#resultado-table').hide();
-                  $('#mensaje').empty();
-                  $('#mensaje').append("<b>No se han encontrado datos.</b>");
+                 $empty.show();
                 }
+                $loading.hide();
               });
 
     }

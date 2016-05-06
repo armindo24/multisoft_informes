@@ -1,0 +1,404 @@
+{% extends 'finanzas/base.html' %}
+{% load staticfiles %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <script src="{% static 'lodash/dist/lodash.min.js' %}"></script>
+{% endblock %}
+
+{% block header %}
+  Existencias por Deposito:
+{% endblock %}
+
+{% block filters %}
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="empresa" %}
+    {% include 'ventas/_filtro.html' with name="sucursal" %}
+    {% include 'ventas/_filtro.html' with name="deposito" %}
+    {% include 'ventas/_filtro.html' with name="familia" %}
+    {% include 'ventas/_filtro.html' with name="grupo" %}
+    {% include 'ventas/_filtro.html' with name="tipo" %}
+    {% include 'ventas/_filtro.html' with name="estado" %}
+    {% include 'ventas/_filtro.html' with name="existencia" %}
+    {% include 'ventas/_filtro.html' with name="articulo" %}
+  </div>
+{% endblock %}
+
+{% block table %}
+  <thead>
+  <tr>
+    <th>Cod. Art.</th>
+    <th>Cod. Orig.</th>
+    <th>Referencia</th>
+    <th>Descripcion</th>
+    <th class="text-center">Sucursal</th>
+    <th class="text-center">Deposito</th>
+    <th class="us-price-label">Existencia Min.</th>
+    <th class="us-price-label">Unidades</th>
+    <th class="us-price-label">Cajas</th>
+  </tr>
+  </thead>
+  <tfoot>
+  <tr>
+    <th class="text-right" colspan="7">Total General:</th>
+    <th></th>
+    <th></th>
+  </tr>
+  </tfoot>
+{% endblock %}
+
+{% block extra_foot %}
+  <script>
+    var query = {empresa: '', familia: '', tipo: '', estado: '', grupo: '', sucursal: ''};
+    var api = u.getApiUrl();
+    var $tableDiv, dataTable;
+    var numFormat = u.numFormatter;
+
+    var $selectEmpresa, selectEmpresa;
+    var $selectSucursal, selectSucursal;
+    var $selectDeposito, selectDeposito;
+    var $selectFamilia, selectFamilia;
+    var $selectGrupo, selectGrupo;
+    var $selectTipo, selectTipo;
+    var $selectArticulo, selectArticulo;
+    var $selectEstado, selectEstado;
+    var $selectExistencia, selectExistencia;
+
+    $(document).ready(function () {
+      u.hideNav();
+      initSelects();
+      $tableDiv = $('#resultado');
+      $tableDiv.hide();
+    });
+
+    function initSelects() {
+      $.extend(true, $.fn.selectize.defaults, {
+        onChange: function (value) {
+          query[this.$input.attr('name')] = value;
+        }
+      });
+
+      $selectEmpresa = $('#select-empresa').selectize({
+        valueField: 'Cod_Empresa',
+        labelField: 'Des_Empresa',
+        searchField: 'Des_Empresa',
+        onChange: function (value) {
+          query.empresa = value;
+          u.resetSelect(selectSucursal);
+          u.softResetSelect(selectTipo);
+          u.softResetSelect(selectEstado);
+          u.softResetSelect(selectFamilia);
+          u.softResetSelect(selectExistencia);
+          if (!value.length) return;
+          selectFamilia.enable();
+          selectTipo.enable();
+          selectEstado.enable();
+          selectExistencia.enable();
+          selectSucursal.load(function (callback) {
+            $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
+              selectSucursal.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+
+      selectEmpresa = $selectEmpresa[0].selectize;
+      selectEmpresa.load(function (cb) {
+        u.get_empresas({{ user }}, function (res) {
+          cb(res.data);
+        });
+      });
+
+      $selectSucursal = $('#select-sucursal').selectize({
+        valueField: 'Cod_Sucursal',
+        labelField: 'Des_Sucursal',
+        searchField: 'Des_Sucursal',
+        onChange: function (value) {
+          query.sucursal = value;
+          u.resetSelect(selectDeposito);
+          if (!value) return;
+          selectDeposito.load(function (cb) {
+            $.get(api + 'stock/' + query.empresa + '/sucursales/' + query.sucursal + '/depositos').done(function (res) {
+              selectDeposito.enable();
+              cb(res.data);
+            }).fail(function () {
+              cb();
+            });
+          });
+        }
+      });
+      selectSucursal = $selectSucursal[0].selectize;
+      selectSucursal.disable();
+
+      $selectDeposito = $('#select-deposito').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: 'name',
+      });
+      selectDeposito = $selectDeposito[0].selectize;
+      selectDeposito.disable();
+
+      $selectFamilia = $('#select-familia').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: ['id', 'name'],
+        render: {
+          option: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' ' + escape(item['name']) + '</div>';
+          },
+          item: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' ' + escape(item['name']) + '</div>';
+          }
+        },
+        onChange: function (value) {
+          query.familia = value;
+          u.resetSelect(selectGrupo);
+          if (!value.length) return;
+          selectGrupo.load(function (cb) {
+            $.get(api + 'stock/grupos', {familia: query.familia}).done(function (res) {
+              cb(res.data);
+              selectGrupo.enable();
+            }).fail(function () {
+              cb();
+            });
+          });
+        }
+      });
+      selectFamilia = $selectFamilia[0].selectize;
+      selectFamilia.disable();
+      selectFamilia.load(function (cb) {
+        $.get(api + 'stock/familias').done(function (res) {
+          cb(res.data);
+        }).fail(function () {
+          cb();
+        });
+      });
+
+      $selectGrupo = $('#select-grupo').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: ['id', 'name'],
+        render: {
+          option: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' ' + escape(item['name']) + '</div>';
+          },
+          item: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' ' + escape(item['name']) + '</div>';
+          }
+        },
+        onChange: function (value) {
+          query.grupo = value;
+          if (!value.length) return;
+        }
+      });
+      selectGrupo = $selectGrupo[0].selectize;
+      selectGrupo.disable();
+
+      $selectTipo = $('#select-tipo').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: 'name',
+        onChange: function (value) {
+          query.tipo = value;
+          u.resetSelect(selectArticulo);
+          if (!value.length) return;
+          selectArticulo.enable();
+        }
+      });
+      selectTipo = $selectTipo[0].selectize;
+      selectTipo.disable();
+      selectTipo.load(function (cb) {
+        $.get(api + 'stock/tipos/articulos').done(function (res) {
+          cb(res.data);
+        }).fail(function () {
+          cb();
+        });
+      });
+
+      $selectArticulo = $('#select-articulo').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: ['id', 'name'],
+        maxItems: 10,
+        load: function (q, cb) {
+          if (q.length < 2) return cb();
+          $.get(api + 'stock/' + query.empresa + '/articulos', {
+            articulo: q,
+            tipo: query.tipo,
+            familia: query.familia,
+            grupo: query.grupo
+          }).done(function (res) {
+            cb(res.data);
+          }).fail(function () {
+            cb();
+          });
+        },
+        render: {
+          option: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' - ' + escape(item['name']) + '</div>';
+          },
+          item: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' - ' + escape(item['name']) + '</div>';
+          }
+        }
+      });
+      selectArticulo = $selectArticulo[0].selectize;
+      selectArticulo.disable();
+
+      $selectEstado = $('#select-estado').selectize({
+        options: [
+          {value: 'T', text: 'Todos'},
+          {value: 'I', text: 'Inactivo'},
+          {value: 'A', text: 'Activo'}
+        ],
+        onChange: function (value) {
+          query.estado = value === 'T' ? '' : value;
+        }
+      });
+      selectEstado = $selectEstado[0].selectize;
+      selectEstado.disable();
+
+      $selectExistencia = $('#select-existencia').selectize({
+        options: [
+          {value: 'T', text: 'Todos'},
+          {value: 'Z', text: 'Cero'},
+          {value: 'P', text: 'Positiva'},
+          {value: 'N', text: 'Negativa'},
+          {value: 'PN', text: 'Positiva y Negativa'}
+        ],
+        onChange: function (value) {
+          query.existencia = value === 'T' ? '' : value;
+        }
+      });
+      selectExistencia = $selectExistencia[0].selectize;
+      selectExistencia.disable();
+    }
+
+    function calcCajas(r, t, v, m) {
+      var existencia = u.parseVal(r.existencia);
+      var cant = u.parseVal(r.cantembalaje);
+      var cajas = 0;
+      if (existencia && cant) {
+        cajas = existencia / cant;
+      }
+      r.cajas = cajas;
+      return r.cajas;
+    }
+
+    function getInforme() {
+      $('.collapse').collapse('hide');
+
+      if (!dataTable) {
+        $tableDiv.show();
+        u.defaultDT();
+        dataTable = $tableDiv.find('table').DataTable({
+          ajax: function (d, cb, s) {
+            $.ajax({
+              method: 'GET',
+              url: api + 'stock/informes/' + query.empresa + '/deposito',
+              data: {
+                sucursal: query.sucursal,
+                deposito: query.deposito,
+                familia: query.familia,
+                grupo: query.grupo,
+                tipo: query.tipo,
+                articulo: query.articulo,
+                estado: query.estado,
+                existencia: query.existencia
+              }
+            }).done(function (res) {
+              cb(res);
+            }).fail(function (e) {
+              dataTable.clear().draw();
+              dataTable.processing(false);
+              u.serverDown(e);
+            });
+          },
+          columns: [
+            {data: 'cod_articulo'},
+            {data: 'cod_original'},
+            {data: 'referencia'},
+            {data: 'des_art'},
+            {data: 'cod_sucursal'},
+            {data: 'cod_deposito'},
+            {data: 'pto_pedido'},
+            {data: 'existencia'},
+            {data: calcCajas}
+          ],
+          footerCallback: sumStock,
+          drawCallback: groupData
+        });
+      } else {
+        dataTable.clear().draw();
+        dataTable.processing(true);
+        dataTable.ajax.reload(function () {
+          dataTable.processing(false);
+        }, true);
+      }
+    }
+
+    function htmlSum(group, totals, colCount) {
+      return '<tr class="group text-right">' +
+              '<td colspan="' + (colCount - totals.length) + '">' +
+              '<strong>Total ' + group + ':</strong>' +
+              '</td>' + _.reduce(totals, function (conc, t) {
+                return conc + '<td><strong>' + u.usFormatter.display(t) + '<strong></td>';
+              }, '') +
+              '</tr>';
+    }
+
+    function groupData(settings) {
+      var api = this.api();
+      var rowsDOM = api.rows({page: 'current'}).nodes();
+      var rows = api.rows({page: 'current'}).data();
+      var last = rows.length - 1;
+      var lastFamilia = 'initial', lastArticulo = 'initial';
+      var sumFamilia = [0.0, 0.0];
+      var sumArticulo = [0.0, 0.0];
+      var colCount = api.columns().header().length;
+      var html;
+
+      _.forEach(rows, function (row, i) {
+        html = '';
+        if (lastFamilia !== row['cod_familia']) {
+          if (lastFamilia !== 'initial') {
+            html += htmlSum('Familia', sumFamilia, colCount);
+          }
+          _.fill(sumFamilia, 0.0);
+          lastFamilia = row['cod_familia'];
+          html += '<tr class="group text-center">' +
+                  '<td colspan="' + colCount + '">' +
+                  '<h4>' + lastFamilia + ' - ' + row['des_familia'] + '</h4>' +
+                  '</td></tr>';
+        }
+        if (lastArticulo !== row['cod_articulo']) {
+          if (lastArticulo !== 'initial') {
+            html = htmlSum('Articulo', sumArticulo, colCount) + html;
+          }
+          _.fill(sumArticulo, 0.0);
+          lastArticulo = row['cod_articulo'];
+        }
+        if (html) $(rowsDOM).eq(i).before(html);
+        sumArticulo[0] += u.parseVal(row['existencia']);
+        sumFamilia[0] += u.parseVal(row['existencia']);
+        sumArticulo[1] += u.parseVal(row['cajas']);
+        sumFamilia[1] += u.parseVal(row['cajas']);
+      });
+      html = htmlSum('Articulo', sumArticulo, colCount) + htmlSum('Familia', sumFamilia, colCount);
+      $(rowsDOM).eq(last).after(html);
+    }
+
+    function sumStock(row, data, start, end, display) {
+      var api = this.api(), data;
+      var totalExistencia = api.column(-2).data().sum();
+      var totalCajas = api.column(-1).data().sum();
+
+      // Update footer
+      $(api.column(-2).footer()).html(u.usFormatter.display(totalExistencia));
+      $(api.column(-1).footer()).html(u.usFormatter.display(totalCajas));
+    }
+  </script>
+{% endblock %}

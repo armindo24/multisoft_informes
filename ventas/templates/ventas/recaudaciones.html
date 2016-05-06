@@ -1,7 +1,13 @@
-{% extends 'finanzas/base.html' %}
+{% extends 'ventas/baseWithoutTable.html' %}
+{% load staticfiles %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <script src="{% static 'lodash/dist/lodash.min.js' %}"></script>
+{% endblock %}
 
 {% block header %}
-  Planilla de Recaudaciones:
+  Recaudaciones:
 {% endblock %}
 
 {% block filters %}
@@ -29,57 +35,130 @@
         </div>
       </div>
     </div>
-    <div class="col-sm-6">
-      <div class="form-group">
-        <label for="incluir" class="col-md-4 control-label">Incluir Ventas? :</label>
+  </div>
+{% endblock %}
 
-        <div class="col-md-6">
-          <input type="checkbox" name="incluir" id="incluir"/>
+{% block inner_content %}
+  <ul class="nav nav-pills">
+    <li role="presentation" class="active" id="planilla"><a href="#">Planilla de Recaudaciones</a></li>
+    <li role="presentation" id="resumido"><a href="#">Comprobantes - Resumido</a></li>
+    <li role="presentation" id="detallado"><a href="#">Comprobantes - Detallado</a></li>
+    <li role="presentation" id="ajustes"><a href="#">Ajustes</a></li>
+    <li role="presentation" id="depositos"><a href="#">Depósitos</a></li>
+  </ul>
+
+  <div class="results">
+    <div class="result-group">
+      <div class="result-header"></div>
+      <div id="bodytab">
+        <div>
         </div>
       </div>
     </div>
   </div>
-{% endblock %}
 
-{% block table %}
-  <thead>
-  <tr>
-    <th class="grouping-col">Tipo</th>
-    <th>Numero</th>
-    <th class="text-center">Fecha</th>
-    <th>Cliente</th>
-    <th class="price-label">Importe</th>
-  </tr>
-  </thead>
-  <tfoot>
-  <tr>
-    <th colspan="4" style="text-align:right">Total:</th>
-    <th></th>
-  </tr>
-  </tfoot>
+  <div id="div_detallado">
+  </div>
+
+  <div id="div_deposito">
+    <table id="tabla_deposito" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+      <thead>
+      <tr>
+        <th># Depósito</th>
+        <th>Banco</th>
+        <th>Fecha</th>
+        <th class="price-label">Importe GS</th>
+        <th class="us-price-label">Importe US</th>
+      </tr>
+      </thead>
+      <tfoot>
+      <tr>
+        <th colspan="3" style="text-align:right">Total:</th>
+        <th></th>
+        <th></th>
+      </tr>
+      </tfoot>
+    </table>
+  </div>
+  <div id="div_ajustes">
+    <table id="tabla_ajustes" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+      <thead>
+      <tr>
+        <th>Moneda</th>
+        <th>Sucursal</th>
+        <th>Cajero</th>
+        <th>Fecha</th>
+        <th>Concepto</th>
+        <th class="price-label">Importe</th>
+      </tr>
+      </thead>
+    </table>
+  </div>
+  <div id="div_resumido">
+    <table id="tabla_resumido" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+      <thead>
+      <tr>
+        <th class="grouping-col">Tipo</th>
+        <th>Numero</th>
+        <th class="text-center">Fecha</th>
+        <th>Cliente</th>
+        <th class="price-label">Importe</th>
+      </tr>
+      </thead>
+      <tfoot>
+      <tr>
+        <th colspan="4" style="text-align:right">Total:</th>
+        <th></th>
+      </tr>
+      </tfoot>
+    </table>
+  </div>
+
 {% endblock %}
 
 {% block extra_foot %}
   <script>
-    var query = {empresa: ''};
-    var $results, $resultado;
+    var query = {
+      empresa: '',
+    };
+    var $resultado;
 
     var $selectEmpresa, selectEmpresa;
     var $selectSucursal, selectSucursal;
-    var $selectSucursal, selectSucursal;
     var $selectCajero, selectCajero;
     var $selectEstado, selectEstado;
-    var dataTable;
 
+    var dtDeposito, divDeposito;
+    var dtAjustes, divAjustes;
+    var dtResumido, divResumido;
+    var divDetallado;
+
+    var $tabs;
     var numFormat = u.numFormatter;
 
     $(document).ready(function () {
       u.hideNav();
+      $tabs = $(".nav.nav-pills li");
+      $tabs.on("click", function (e) {
+        $tabs.removeClass("active");
+        $(this).addClass('active');
+        if (this.id === query.tab) return;
+        query.tab = this.id;
+        getInforme(this.id);
+      });
       initDates();
       initSelects();
-      $results = $('#results');
       $resultado = $('#resultado');
       $resultado.hide();
+      u.defaultDT();
+      divDeposito = $('#div_deposito');
+      divDeposito.hide();
+      divAjustes = $('#div_ajustes');
+      divAjustes.hide();
+      divResumido = $('#div_resumido');
+      divResumido.hide();
+      divDetallado = $('#div_detallado');
+      divDetallado.hide();
     });
 
     var calcSaldoAcumulado = function (d, t, r, m) {
@@ -126,8 +205,7 @@
         onChange: function (value) {
           query.empresa = value;
           u.resetSelect(selectSucursal);
-          selectCajero.disable();
-          selectCajero.clear();
+          u.softResetSelect(selectCajero);
           if (!value.length) return;
           selectCajero.enable();
           selectSucursal.load(function (callback) {
@@ -152,10 +230,6 @@
         valueField: 'Cod_Sucursal',
         labelField: 'Des_Sucursal',
         searchField: 'Des_Sucursal',
-        onChange: function (value) {
-          query.sucursal = value;
-          if (!value.length) return;
-        }
       });
       selectSucursal = $selectSucursal[0].selectize;
       selectSucursal.disable();
@@ -179,78 +253,264 @@
         options: [
           {value: 'AB', text: 'Abierta'},
           {value: 'CE', text: 'Cerrada'},
-          {value: 'GN', text: 'Generada'},
-          {value: 'TD', text: 'Todos'}
+          {value: 'GN', text: 'Generada'}
         ]
       });
       selectEstado = $selectEstado[0].selectize;
     }
 
-    function getInforme() {
-      $('.collapse').collapse('hide');
-
-      if (!dataTable) {
-        $resultado.show();
-        u.defaultDT();
-        dataTable = $results.DataTable({
-          ajax: function (d, cb, s) {
-            $.ajax({
-              method: 'GET',
-              url: api + 'recaudaciones/' + query.empresa + '/consolidada',
-              data: query
-            }).done(function (res) {
-              cb(res);
-            }).fail(function (err) {
-              console.log(err);
-              dataTable.clear().draw();
-              dataTable.processing(false);
-            });
-          },
-          columns: [
-            {data: 'cod_tp_comp', name: 'tipo'},
-            {data: 'pago_numero'},
-            {data: 'fecha', render: u.dateFormat},
-            {data: 'razon_social', render: function (d, t, r, m){
-              return r['cod_cliente'] + ' - ' + d;
-            }},
-            {data: 'importe'}
-          ],
-          footerCallback: footerSum,
-          drawCallback: function (settings) {
-            var api = this.api();
-            var rows = api.rows({page: 'current'}).nodes();
-            var last = null;
-            var colCount = api.columns().header().length;
-
-            api.column('tipo:name', {page: 'current'}).data().each(function (group, i) {
-              if (last !== group) {
-                $(rows).eq(i).before(
-                        '<tr class="group text-center"><td colspan="' + colCount + '"><h4>' + group + '</h4></td></tr>'
-                );
-                last = group;
-              }
-            });
-          },
-          processing: true
-        });
-      } else {
-        dataTable.clear().draw();
-        dataTable.processing(true);
-        dataTable.ajax.reload(function () {
-          dataTable.processing(false);
-        }, true);
-      }
+    //META.fn: sortJSON
+    function sortJSON(data, key) {
+      return data.sort(function (a, b) {
+        var x = a[key];
+        var y = b[key];
+        return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+      });
     }
-    function footerSum(row, data, start, end, display) {
-      var api = this.api(), data;
 
-      // Total over all pages
-      var totalImporte = api.column(-1).data().sum();
+    function addCommas(nStr) {
+      nStr += '';
+      var x = nStr.split('.');
+      var x1 = x[0];
+      var x2 = x.length > 1 ? ',' + x[1] : '';
+      var rgx = /(\d+)(\d{3})/;
+      while (rgx.test(x1)) {
+        x1 = x1.replace(rgx, '$1' + '.' + '$2');
+      }
+      return x1 + x2;
+    }
 
-      // Update footer
-      $(api.column(-1).footer()).html(
-              numFormat.display(totalImporte)
-      );
+    function getInforme(informe) {
+      if (!query.empresa) return;
+      $('.collapse').collapse('hide');
+      $resultado.hide();
+      divDeposito.hide();
+      divResumido.hide();
+      divAjustes.hide();
+      divDetallado.hide();
+      divDetallado.find('table').DataTable().destroy();
+      divDetallado.empty();
+      $('#bodytab').empty();
+      if (!informe) {
+        query.tab = informe = 'planilla';
+        $tabs.removeClass('active');
+        $tabs.first().addClass('active');
+      }
+
+      if (informe === 'planilla') {
+        $.get(api + 'recaudaciones/planillas', query).done(function (d) {
+          {% include 'ventas/_recaudaciones_resumen.js' %}
+        });
+      } else if (informe === 'ajustes') {
+        divAjustes.show();
+        if (!dtAjustes) {
+          dtAjustes = divAjustes.find('table').DataTable({
+            ajax: function (d, cb, s) {
+              $.ajax({
+                method: 'GET',
+                url: api + 'recaudaciones/' + query.empresa + '/ajustes',
+                data: query
+              }).done(function (res) {
+                cb(res);
+              }).fail(function (err) {
+                console.log(err);
+              });
+            },
+            columns: [
+              {data: 'codmoneda'},
+              {data: 'cod_sucursal'},
+              {data: 'cod_cajero'},
+              {data: 'fecha', render: u.dateFormat},
+              {data: 'observ'},
+              {data: 'importe'}
+            ], processing: true
+          });
+        } else {
+          dtAjustes.clear().draw();
+          dtAjustes.processing(true);
+          dtAjustes.ajax.reload(function () {
+            dtAjustes.processing(false);
+          }, true);
+        }
+      } else if (informe === 'depositos') {
+        divDeposito.show();
+        if (!dtDeposito) {
+          dtDeposito = divDeposito.find('table').DataTable({
+            ajax: function (d, cb, s) {
+              $.ajax({
+                method: 'GET',
+                url: api + 'recaudaciones/' + query.empresa + '/depositos',
+                data: query
+              }).done(function (res) {
+                cb(res);
+              }).fail(function (err) {
+                console.log(err);
+              });
+            },
+            columns: [
+              {data: 'nrodeposito'},
+              {data: 'descrip'},
+              {data: 'fecha', render: u.dateFormat},
+              {data: 'importe_gs'},
+              {data: 'importe_us'}
+            ],
+            footerCallback: function (row, data, start, end, display) {
+              var api = this.api(), data;
+              var totalUS = api.column(-1).data().sum();
+              var totalGS = api.column(-2).data().sum();
+              $(api.column(-1).footer()).html(u.usFormatter.display(totalUS));
+              $(api.column(-2).footer()).html(numFormat.display(totalGS));
+            }, processing: true
+          });
+        } else {
+          dtDeposito.clear().draw();
+          dtDeposito.processing(true);
+          dtDeposito.ajax.reload(function () {
+            dtDeposito.processing(false);
+          }, true);
+        }
+      } else if (informe === 'detallado') {
+        $.ajax({
+          method: 'GET',
+          url: api + 'recaudaciones/' + query.empresa + '/detallado',
+          data: query
+        }).done(function (res) {
+          divDetallado.show();
+          if (res.data.length === 0) {
+            divDetallado.html('<h1>No hay datos disponibles</h1>');
+            return;
+          }
+          var newTable = function (html, title, id) {
+            return '<h1>' + title + '</h1>' +
+                    '<table '
+                    + (id ? 'id="' + id + '" ' : '')
+                    + 'class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">'
+                    + html
+                    + '</table>';
+          };
+          var abreviaturas = _(res.data).map('abreviatura').uniq().value().sort();
+          var abreviaturaMap = {};
+          var i = 1;
+          _(abreviaturas).each(function (a) {
+            abreviaturaMap[a] = i++;
+          });
+          var agrupado = _(res.data).groupBy('cod_tp_comp').value();
+          var totalGS = _(res.data).filter(['codmoneda', 'GS']).map('importe').map(_.parseInt).sum();
+          var totalUS = _(res.data).filter(['codmoneda', 'US']).map('importe').map(_.parseInt).sum();
+          var headers = ['Cliente', 'Fecha', '# Comp.'];
+
+          var n = abreviaturas.length;
+          var bigSum = _.fill(new Array(n), 0);
+          var sums = new Array(n);
+
+          var thead = "<thead><tr><th>" + headers.join('</th><th>') + '</th>'
+                  + '<th class="price-label">' + abreviaturas.join('</th><th class="price-label">') + "</th></tr><thead>";
+          _.each(agrupado, function (data, group) {
+            var table = thead + "<tbody>";
+            var before, after, col;
+            _.fill(sums, 0);
+            _(data).each(function (row) {
+              col = abreviaturaMap[row.abreviatura];
+              before = col - 1;
+              after = n - col;
+              table += "<tr>" +
+                      "<td>" + row.razon_social + "</td>" +
+                      "<td>" + row.fecha + "</td>" +
+                      "<td>" + row.pago_numero + "</td>" +
+                      _.repeat("<td>0</td>", before) +
+                      "<td>" + row.importe + "</td>" +
+                      _.repeat("<td>0</td>", after) +
+                      "</tr>";
+              sums[col - 1] += parseInt(row.importe);
+            });
+            table += "</tbody>";
+            table += "<tfoot>" +
+                    "<tr>" +
+                    "<th colspan='3' style='text-align:right'>Totales</th>" +
+                    "<th>" + _(sums).map(numFormat.display).join("</th><th>") + "</th>" +
+                    "</tr>" +
+                    "</tfoot>";
+            for (var i = 0; i < n; i++)
+              bigSum[i] += sums[i];
+
+            divDetallado.append(newTable(table, group, group));
+          });
+          var totalTable =
+                  "<thead><tr><th class='price-label'>" + abreviaturas.join("</th><th class='price-label'>") + "</th></tr><thead>" +
+                  "<tbody><tr><td>" + _(bigSum).join("</td><td>") + "</td></tr></tbody>" +
+                  "<tfoot>" +
+                  "<tr>" +
+                  "<th style='text-align:right'>Total GS</th>" +
+                  "<th colspan='" + (n - 1) + "' style='text-align:left'>" + numFormat.display(totalGS) + "</th>" +
+                  "</tr>" +
+                  "<tr>" +
+                  "<th style='text-align:right'>Total US</th>" +
+                  "<th colspan='" + (n - 1) + "'>" + u.usFormatter.display(totalUS) + "</th>" +
+                  "</tr>" +
+                  "</tfoot>";
+          divDetallado.append(newTable(totalTable, 'Total', 'total'));
+          divDetallado.find('table').DataTable({
+            info: false
+          });
+        });
+      } else if (informe === 'resumido') {
+        divResumido.show();
+        if (!dtResumido) {
+          dtResumido = divResumido.find('table').DataTable({
+            ajax: function (d, cb, s) {
+              $.ajax({
+                method: 'GET',
+                url: api + 'recaudaciones/' + query.empresa + '/consolidada',
+                data: query
+              }).done(function (res) {
+                cb(res);
+              }).fail(function (err) {
+                console.log(err);
+                dtResumido.clear().draw();
+                dtResumido.processing(false);
+              });
+            },
+            columns: [
+              {data: 'cod_tp_comp', name: 'tipo'},
+              {data: 'pago_numero'},
+              {data: 'fecha'},
+              {
+                data: 'razon_social', render: function (d, t, r, m) {
+                return r['cod_cliente'] + ' - ' + d;
+              }
+              },
+              {data: 'importe'}
+            ],
+            footerCallback: function (row, data, start, end, display) {
+              var api = this.api(), data;
+              var totalImporte = api.column(-1).data().sum();
+              $(api.column(-1).footer()).html(numFormat.display(totalImporte));
+            },
+            drawCallback: function (settings) {
+              var api = this.api();
+              var rows = api.rows({page: 'current'}).nodes();
+              var last = null;
+              var colCount = api.columns().header().length;
+
+              api.column('tipo:name', {page: 'current'}).data().each(function (group, i) {
+                if (last !== group) {
+                  $(rows).eq(i).before(
+                          '<tr class="group text-center"><td colspan="' + colCount + '"><h4>' + group + '</h4></td></tr>'
+                  );
+                  last = group;
+                }
+              });
+            },
+            processing: true
+          });
+        } else {
+          dtResumido.clear().draw();
+          dtResumido.processing(true);
+          dtResumido.ajax.reload(function () {
+            dtResumido.processing(false);
+          }, true);
+        }
+      }
     }
   </script>
 {% endblock %}

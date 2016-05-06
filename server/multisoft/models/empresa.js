@@ -1,5 +1,5 @@
-var conn = require('../db');
-var utils = require('./queryUtils');
+var conn = require('../db_integrado');
+
 var Empresa = {};
 
 Empresa.all = function (query, cb) {
@@ -31,6 +31,7 @@ Empresa.list = function (list) {
 };
 
 Empresa.clientes = function (empresa, query, cb) {
+    if (!query.cliente || query.cliente.length < 2) return Promise.resolve({});
     var sql = "select Cod_Cliente, Razon_Social, Cod_Tp_Cliente from dba.Clientes WHERE Cod_Empresa = ?";
     var sql_params = [empresa];
     if (query.tipo) {
@@ -70,19 +71,13 @@ Empresa.cuentas = function (params, query, cb) {
     });
 };
 
-Empresa.vendedores = function (params, filter, cb) {
-    var sql = "SELECT cod_vendedor, des_vendedor " +
+Empresa.vendedores = function (params, query) {
+    var sql =
+        "SELECT cod_vendedor, des_vendedor " +
         "FROM dba.VENDEDOR " +
-        "WHERE estado = 'A' " +
-        "and cod_empresa = ? " +
-        "and (cod_sucursal = ? or cod_sucursal is null) ";
+        "WHERE estado = 'A' ";
 
-    var sql_params = [params.empresa, filter.sucursal]
-
-    conn.exec(sql, sql_params, function (err, result) {
-        if (err) throw err;
-        cb(result);
-    });
+    return conn.execAsync(sql);
 };
 
 module.exports = Empresa;

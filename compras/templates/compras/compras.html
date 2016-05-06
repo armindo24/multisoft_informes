@@ -5,33 +5,34 @@
 {% endblock %}
 
 {% block filters %}
-    <div class="row">
-      {% include 'ventas/_filtro.html' with name="empresa" %}
-      {% include 'ventas/_filtro.html' with name="sucursal" %}
-    </div>
-    <div class="row">
-      {% include 'ventas/_filtro.html' with name="departamento" %}
-      {% include 'ventas/_filtro.html' with name="tipoco" title="Tipo Comprobante" %}
-    </div>
-    <div class="row">
-      {% include 'ventas/_filtro.html' with name="proveedor" %}
-      <div class="col-sm-6">
-        <div class="form-group">
-          <label for="compras" class="col-md-4 control-label">Fecha:</label>
-          <div class="col-md-6">
-            <div id="compras" class="input-daterange input-group input-date">
-              <input type="text" class="input-sm form-control" name="start"/>
-              <span class="input-group-addon">hasta</span>
-              <input type="text" class="input-sm form-control" name="end"/>
-            </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="empresa" %}
+    {% include 'ventas/_filtro.html' with name="sucursal" %}
+  </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="departamento" %}
+    {% include 'ventas/_filtro.html' with name="tipoco" title="Tipo Comprobante" %}
+  </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="proveedor" %}
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="compras" class="col-md-4 control-label">Fecha:</label>
+
+        <div class="col-md-6">
+          <div id="compras" class="input-daterange input-group input-date">
+            <input type="text" class="input-sm form-control" name="start"/>
+            <span class="input-group-addon">hasta</span>
+            <input type="text" class="input-sm form-control" name="end"/>
           </div>
         </div>
       </div>
     </div>
-    <div class="row">
-      {% include 'ventas/_filtro.html' with name="agrupar" title="Agrupar por" %}
-      {% include 'ventas/_filtro.html' with name="moneda" %}
-    </div>
+  </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="agrupar" title="Agrupar por" %}
+    {% include 'ventas/_filtro.html' with name="moneda" %}
+  </div>
 {% endblock %}
 
 {% block table %}
@@ -139,17 +140,22 @@
 
 {% block extra_foot %}
   <style>
-    .aling_right{text-align: right;}
+    .aling_right {
+      text-align: right;
+    }
   </style>
   <script>
     var query = {
-        agrupar: 'Cod_Tp_Comp'
+      agrupar: 'Cod_Tp_Comp'
     };
     //var numFormat = $.fn.dataTable.render.number('.', ',', 2).display;
 
     var api = u.getApiUrl();
     var $results = $('#results');
+    var $resultado = $('#resultado');
     var $preview = $('#preview');
+    var $loading = $("#loading");
+    var $empty = $("#empty");
     var today = new Date();
     var initialize = init;
     var select_empresa, $select_empresa;
@@ -160,23 +166,24 @@
     var select_agrupar, $select_agrupar;
     var select_moneda, $select_moneda;
     var xhr;
-    
+    var dataTable;
+
     function addCommas(nStr) {
-        nStr += '';
-        x = nStr.split('.');
-        x1 = x[0];
-        x2 = x.length > 1 ? ',' + x[1] : '';
-        var rgx = /(\d+)(\d{3})/;
-        while (rgx.test(x1)) {
-            x1 = x1.replace(rgx, '$1' + '.' + '$2');
-        }
-        return x1 + x2;
+      nStr += '';
+      x = nStr.split('.');
+      x1 = x[0];
+      x2 = x.length > 1 ? ',' + x[1] : '';
+      var rgx = /(\d+)(\d{3})/;
+      while (rgx.test(x1)) {
+        x1 = x1.replace(rgx, '$1' + '.' + '$2');
       }
+      return x1 + x2;
+    }
 
 
     $(document).ready(function () {
       u.hideNav();
-      $results.hide();
+      $resultado.hide();
       initialize();
       select_empresa = $select_empresa[0].selectize;
 
@@ -200,7 +207,7 @@
           debug();
         }
       });
-      
+
       $select_agrupar = $('#select-agrupar').selectize({
         allowEmptyOption: true,
         options: [
@@ -213,7 +220,7 @@
           debug();
         }
       });
-      
+
       $select_moneda = $('#select-moneda').selectize({
         allowEmptyOption: true,
         options: [
@@ -221,7 +228,7 @@
           {value: 'US', text: 'Extranjera'},
         ],
         onChange: function (value) {
-          query.estado = value;
+          query.moneda = value;
           debug();
         }
       });
@@ -284,7 +291,7 @@
           });
         }
       });
-      
+
       $select_proveedor = $('#select-proveedor').selectize({
         valueField: 'CodProv',
         labelField: 'RazonSocial',
@@ -295,7 +302,7 @@
           debug();
         }
       });
-      
+
       $select_sucursal = $('#select-sucursal').selectize({
         valueField: 'Cod_Sucursal',
         labelField: 'Des_Sucursal',
@@ -321,7 +328,7 @@
           });
         }
       });
-            
+
       $select_departamento = $('#select-departamento').selectize({
         valueField: 'CodDpto',
         labelField: 'Descrip',
@@ -331,7 +338,7 @@
           debug();
         }
       });
-      
+
       $select_tipoco = $('#select-tipoco').selectize({
         valueField: 'cod_tp_comp',
         labelField: 'des_tp_comp',
@@ -342,7 +349,7 @@
           debug();
         }
       });
-      
+
       $select_generado = $('#select-generado').selectize({
         valueField: 'cod_usuario',
         labelField: 'cod_usuario',
@@ -352,7 +359,7 @@
           debug();
         }
       });
-      
+
       $select_cargado = $('#select-cargado').selectize({
         valueField: 'cod_usuario',
         labelField: 'cod_usuario',
@@ -365,7 +372,7 @@
 
       var selectize = $select_agrupar[0].selectize;
       selectize.setValue('Cod_Tp_Comp');
-      
+
       var selectize1 = $select_moneda[0].selectize;
       selectize1.setValue('GS');
 
@@ -387,35 +394,38 @@
     }
 
     function debug() {
-      $preview.text(JSON.stringify(query));
+      return;
     }
 
     function getInforme() {
       $('.collapse').collapse('hide');
-      $results.show();
-      
+
       var numero_comprobante = $("[name=comprobante]").val();
 
       query.numero_comprobante = numero_comprobante;
       query.moneda = $('#select-moneda').val();
-        
-      if (!$.fn.DataTable.isDataTable('#results')) {
-        $('#results').DataTable({
+
+      if (!dataTable) {
+        $resultado.show();
+        dataTable = $results.DataTable({
           language: u.spanish_dt,
           ajax: function (d, cb, s) {
             $.ajax({
               method: 'GET',
-              url: api + 'cuentas_pagar/list',
+              url: api + 'compras/list',
               data: query
             }).done(function (res) {
               cb(res);
-            }).fail(function () {
-              cb();
+            }).fail(function (e) {
+              dataTable.clear().draw();
+              dataTable.processing(false);
+              u.serverDown(e);
             });
           },
           deferRender: true,
           scrollY: 350,
           scrollX: '100%',
+          processing: true,
           scrollCollapse: true,
           scroller: {
             displayBuffer: 30,
@@ -426,7 +436,7 @@
             {render: $.fn.dataTable.render.number('.', ',', 2), targets: "price-label"},
             {className: "text-center", targets: "text-center"},
             {visible: false, targets: "grouping-col"}
-          ], 
+          ],
           columns: [
             {
               data: null,
@@ -443,48 +453,48 @@
             {data: 'ruc'},
             {data: 'Timbrado'},
             {
-                data: 'gravada',
-                render: function (data) {
-                            if (query.moneda == 'GS'){
-                                return convertir_rever(data);
-                            } else {
-                                return addCommas(data);
-                            }
-                        },
-                "sClass": "aling_right",
+              data: 'gravada',
+              render: function (data) {
+                if (query.moneda == 'GS') {
+                  return convertir_rever(data);
+                } else {
+                  return addCommas(data);
+                }
+              },
+              "sClass": "aling_right",
             },
             {
-                data: 'IVA',
-                render: function (data) {
-                            if (query.moneda == 'GS'){
-                                return convertir_rever(data);
-                            } else {
-                                return addCommas(data);
-                            }
-                        },
-                "sClass": "aling_right",
+              data: 'IVA',
+              render: function (data) {
+                if (query.moneda == 'GS') {
+                  return convertir_rever(data);
+                } else {
+                  return addCommas(data);
+                }
+              },
+              "sClass": "aling_right",
             },
             {
-                data: 'TotalExen',
-                render: function (data) {
-                            if (query.moneda == 'GS'){
-                                return convertir_rever(data);
-                            } else {
-                                return addCommas(data);
-                            }
-                        },
-                "sClass": "aling_right",
+              data: 'TotalExen',
+              render: function (data) {
+                if (query.moneda == 'GS') {
+                  return convertir_rever(data);
+                } else {
+                  return addCommas(data);
+                }
+              },
+              "sClass": "aling_right",
             },
             {
-                data: 'total',
-                render: function (data) {
-                            if (query.moneda == 'GS'){
-                                return convertir_rever(data);
-                            } else {
-                                return addCommas(data);
-                            }
-                        },
-                "sClass": "aling_right",
+              data: 'total',
+              render: function (data) {
+                if (query.moneda == 'GS') {
+                  return convertir_rever(data);
+                } else {
+                  return addCommas(data);
+                }
+              },
+              "sClass": "aling_right",
             },
             {data: 'estado'},
             {data: 'TipoIva'},
@@ -508,20 +518,18 @@
                 last = group;
               }
             });
-          },
+          }
         });
         $results.show();
       } else {
-        var table = $('#results').DataTable();
-        var $resultado = $('#resultado');
-        $resultado.css("position", "absolute").css("left", -9999);
-        table.row(0).scrollTo();
-        table.ajax.reload(function () {
-          $resultado.css("position", "relative").css("left", 0);
+        dataTable.clear().draw();
+        dataTable.processing(true);
+        dataTable.ajax.reload(function () {
+          dataTable.processing(false);
         }, true);
       }
     }
-    
+
     function showModal(event) {
       var button = $(event.relatedTarget);
       var cabecera = button.data('cabecera');
@@ -530,7 +538,7 @@
       var modal = $(this);
       var table = modal.find('tbody');
       table.empty();
-      
+
       modal.find('#comprobanteModal').text(cabecera.NroFact);
       modal.find('#tipoModal').text(cabecera.Des_Tp_Comp);
       modal.find('#proveedorModal').text(cabecera.RazonSocial);
@@ -541,56 +549,56 @@
       //modal.find('#descuentoModal').text(u.addCommas(cabecera.totaldescuento));
       //modal.find('#netoModal').text(u.addCommas(cabecera.to_gravado));
 
-      $.get(api + 'compras/det/' + cabecera.Cod_Empresa + '/' + cabecera.NroFact + '/' + cabecera.Cod_Tp_Comp + '/' + cabecera.CodMoneda + '/' + cabecera.CodProv ).done(function (d) {
+      $.get(api + 'compras/det/' + cabecera.Cod_Empresa + '/' + cabecera.NroFact + '/' + cabecera.Cod_Tp_Comp + '/' + cabecera.CodMoneda + '/' + cabecera.CodProv).done(function (d) {
         //modal.find('.modal-title').text('Comprobante ' + cabecera.comp_numero);
         var totCant = 0.0;
         for (var i = 0; i < d.data.length; i++) {
           item = d.data[i];
-          if ($('#select-moneda').val() == 'GS'){
-              items.push("<tr>" +
-                      "<td>" + item.Cod_Articulo + "</td>" +
-                      "<td>" + item.Des_Art + "</td>" +
-                      "<td>" + item.GravExen + "</td>" +
-                      "<td class='text-center'>" + convertir_rever(item.Cantidad) + "</td>" +
-                      "<td class='price-value'>" + convertir_rever(item.Pr_Unit) + "</td>" +
-                      "<td class='price-value'>" + convertir_rever(item.IVA) + "</td>" +
-                      "<td class='price-value'>" + convertir_rever(item.Total) + "</td>" +
-                      "</tr>");
-              totCant += parseInt(item.Cantidad);
-              var summary =
-                        "<tr>" +
-                        "<td colspan='3'></td>" +
-                        "<td class='text-center'><strong>" + convertir_rever(totCant) + "</strong></td>" +
-                        "<td colspan='2'></td>" +
-                        "<td class='price-value'><strong>" + convertir_rever(cabecera.total) + "</strong></td>" +
-                        "</tr>";
-              items.push(summary);
+          if ($('#select-moneda').val() == 'GS') {
+            items.push("<tr>" +
+                    "<td>" + item.Cod_Articulo + "</td>" +
+                    "<td>" + item.Des_Art + "</td>" +
+                    "<td>" + item.GravExen + "</td>" +
+                    "<td class='text-center'>" + convertir_rever(item.Cantidad) + "</td>" +
+                    "<td class='price-value'>" + convertir_rever(item.Pr_Unit) + "</td>" +
+                    "<td class='price-value'>" + convertir_rever(item.IVA) + "</td>" +
+                    "<td class='price-value'>" + convertir_rever(item.Total) + "</td>" +
+                    "</tr>");
+            totCant += parseInt(item.Cantidad);
+            var summary =
+                    "<tr>" +
+                    "<td colspan='3'></td>" +
+                    "<td class='text-center'><strong>" + convertir_rever(totCant) + "</strong></td>" +
+                    "<td colspan='2'></td>" +
+                    "<td class='price-value'><strong>" + convertir_rever(cabecera.total) + "</strong></td>" +
+                    "</tr>";
+            items.push(summary);
           } else {
-              items.push("<tr>" +
-                      "<td>" + item.Cod_Articulo + "</td>" +
-                      "<td>" + item.Des_Art + "</td>" +
-                      "<td>" + item.GravExen + "</td>" +
-                      "<td class='text-center'>" + addCommas(item.Cantidad) + "</td>" +
-                      "<td class='price-value'>" + addCommas(item.Pr_Unit) + "</td>" +
-                      "<td class='price-value'>" + addCommas(item.IVA) + "</td>" +
-                      "<td class='price-value'>" + addCommas(item.Total) + "</td>" +
-                      "</tr>");
-              totCant += parseFloat(item.Cantidad);
-              var summary =
-                        "<tr>" +
-                        "<td colspan='3'></td>" +
-                        "<td class='text-center'><strong>" + addCommas(totCant) + "</strong></td>" +
-                        "<td colspan='2'></td>" +
-                        "<td class='price-value'><strong>" + addCommas(cabecera.total) + "</strong></td>" +
-                        "</tr>";
-              items.push(summary);
+            items.push("<tr>" +
+                    "<td>" + item.Cod_Articulo + "</td>" +
+                    "<td>" + item.Des_Art + "</td>" +
+                    "<td>" + item.GravExen + "</td>" +
+                    "<td class='text-center'>" + addCommas(item.Cantidad) + "</td>" +
+                    "<td class='price-value'>" + addCommas(item.Pr_Unit) + "</td>" +
+                    "<td class='price-value'>" + addCommas(item.IVA) + "</td>" +
+                    "<td class='price-value'>" + addCommas(item.Total) + "</td>" +
+                    "</tr>");
+            totCant += parseFloat(item.Cantidad);
+            var summary =
+                    "<tr>" +
+                    "<td colspan='3'></td>" +
+                    "<td class='text-center'><strong>" + addCommas(totCant) + "</strong></td>" +
+                    "<td colspan='2'></td>" +
+                    "<td class='price-value'><strong>" + addCommas(cabecera.total) + "</strong></td>" +
+                    "</tr>";
+            items.push(summary);
           }
         }
-        
+
         table.html(items.join(''));
       });
     }
-    
+
     function footerSum(row, data, start, end, display) {
       var api = this.api(), data;
 
@@ -611,10 +619,8 @@
               .reduce(function (a, b) {
                 return parseVal(a) + parseVal(b);
               }, 0);
-
-
       // Update footer
-      if ($('#select-moneda').val() == 'GS'){
+      if ($('#select-moneda').val() == 'GS') {
         $(api.column(9).footer()).html(
                 convertir_rever(total)
         );

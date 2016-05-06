@@ -1,0 +1,363 @@
+{% extends 'finanzas/base.html' %}
+{% load staticfiles %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <script src="{% static 'lodash/dist/lodash.min.js' %}"></script>
+{% endblock %}
+
+{% block header %}
+  Lista de Precios:
+{% endblock %}
+
+{% block filters %}
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="empresa" %}
+    {% include 'ventas/_filtro.html' with name="sucursal" %}
+    {% include 'ventas/_filtro.html' with name="familia" %}
+    {% include 'ventas/_filtro.html' with name="grupo" %}
+    {% include 'ventas/_filtro.html' with name="tipo" %}
+    {% include 'ventas/_filtro.html' with name="articulo" %}
+    {% include 'ventas/_filtro.html' with name="estado" %}
+    {% include 'ventas/_filtro.html' with name="lista" title="Lista de Precio" placeholder="Lista" %}
+  </div>
+{% endblock %}
+
+{% block table %}
+  <thead>
+  <tr>
+    <th>Cod. Art.</th>
+    <th>Cod. Orig.</th>
+    <th>Descripcion</th>
+    <th class="text-center">IVA</th>
+    <th class="price-label">M. Local</th>
+    <th class="us-price-label">M. Extr.</th>
+    <th class="us-price-label">Existencia</th>
+  </tr>
+  </thead>
+  <tfoot>
+  <tr>
+    <th class="text-right" colspan="6">Total General</th>
+    <th></th>
+  </tr>
+  </tfoot>
+{% endblock %}
+
+{% block extra_foot %}
+  <script>
+    var query = {empresa: '', familia: '', tipo: '', estado: '', grupo: '', lista: '', sucursal: ''};
+    var api = u.getApiUrl();
+    var $tableDiv, dataTable;
+    var numFormat = u.numFormatter;
+
+    var $selectEmpresa, selectEmpresa;
+    var $selectSucursal, selectSucursal;
+    var $selectFamilia, selectFamilia;
+    var $selectGrupo, selectGrupo;
+    var $selectTipo, selectTipo;
+    var $selectArticulo, selectArticulo;
+    var $selectEstado, selectEstado;
+    var $selectLista, selectLista;
+
+    $(document).ready(function () {
+      u.hideNav();
+      initSelects();
+      $tableDiv = $('#resultado');
+      $tableDiv.hide();
+    });
+
+    function initSelects() {
+      $.extend(true, $.fn.selectize.defaults, {
+        onChange: function (value) {
+          query[this.$input.attr('name')] = value;
+        }
+      });
+
+      $selectEmpresa = $('#select-empresa').selectize({
+        valueField: 'Cod_Empresa',
+        labelField: 'Des_Empresa',
+        searchField: 'Des_Empresa',
+        onChange: function (value) {
+          query.empresa = value;
+          u.resetSelect(selectSucursal);
+          u.softResetSelect(selectTipo);
+          u.softResetSelect(selectEstado);
+          u.softResetSelect(selectLista);
+          u.softResetSelect(selectFamilia);
+          if (!value.length) return;
+          selectFamilia.enable();
+          selectTipo.enable();
+          selectEstado.enable();
+          selectLista.enable();
+          selectSucursal.load(function (callback) {
+            $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
+              selectSucursal.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+
+      selectEmpresa = $selectEmpresa[0].selectize;
+      selectEmpresa.load(function (cb) {
+        u.get_empresas({{ user }}, function (res) {
+          cb(res.data);
+        });
+      });
+
+      $selectSucursal = $('#select-sucursal').selectize({
+        valueField: 'Cod_Sucursal',
+        labelField: 'Des_Sucursal',
+        searchField: 'Des_Sucursal'
+      });
+      selectSucursal = $selectSucursal[0].selectize;
+      selectSucursal.disable();
+
+      $selectFamilia = $('#select-familia').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: ['id', 'name'],
+        render: {
+          option: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' ' + escape(item['name']) + '</div>';
+          },
+          item: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' ' + escape(item['name']) + '</div>';
+          }
+        },
+        onChange: function (value) {
+          query.familia = value;
+          u.resetSelect(selectGrupo);
+          if (!value.length) return;
+          selectGrupo.load(function (cb) {
+            $.get(api + 'stock/grupos', {familia: query.familia}).done(function (res) {
+              cb(res.data);
+              selectGrupo.enable();
+            }).fail(function () {
+              cb();
+            });
+          });
+        }
+      });
+      selectFamilia = $selectFamilia[0].selectize;
+      selectFamilia.disable();
+      selectFamilia.load(function (cb) {
+        $.get(api + 'stock/familias').done(function (res) {
+          cb(res.data);
+        }).fail(function () {
+          cb();
+        });
+      });
+
+      $selectGrupo = $('#select-grupo').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: ['id', 'name'],
+        render: {
+          option: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' ' + escape(item['name']) + '</div>';
+          },
+          item: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' ' + escape(item['name']) + '</div>';
+          }
+        },
+        onChange: function (value) {
+          query.grupo = value;
+          if (!value.length) return;
+        }
+      });
+      selectGrupo = $selectGrupo[0].selectize;
+      selectGrupo.disable();
+
+      $selectTipo = $('#select-tipo').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: 'name',
+        onChange: function (value) {
+          query.tipo = value;
+          u.resetSelect(selectArticulo);
+          if (!value.length) return;
+          selectArticulo.enable();
+        }
+      });
+      selectTipo = $selectTipo[0].selectize;
+      selectTipo.disable();
+      selectTipo.load(function (cb) {
+        $.get(api + 'stock/tipos/articulos').done(function (res) {
+          cb(res.data);
+        }).fail(function () {
+          cb();
+        });
+      });
+
+      $selectArticulo = $('#select-articulo').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: ['id', 'name'],
+        maxItems: 10,
+        load: function (q, cb) {
+          if (q.length < 2) return cb();
+          $.get(api + 'stock/' + query.empresa + '/articulos', {
+            articulo: q,
+            tipo: query.tipo,
+            familia: query.familia,
+            grupo: query.grupo
+          }).done(function (res) {
+            cb(res.data);
+          }).fail(function () {
+            cb();
+          });
+        },
+        render: {
+          option: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' - ' + escape(item['name']) + '</div>';
+          },
+          item: function (item, escape) {
+            return '<div>' + escape(item['id']) + ' - ' + escape(item['name']) + '</div>';
+          }
+        }
+      });
+      selectArticulo = $selectArticulo[0].selectize;
+      selectArticulo.disable();
+
+      $selectEstado = $('#select-estado').selectize({
+        options: [
+          {value: 'T', text: 'Todos'},
+          {value: 'I', text: 'Inactivo'},
+          {value: 'A', text: 'Activo'}
+        ],
+        onChange: function (value) {
+          query.estado = value === 'T' ? '' : value;
+        }
+      });
+      selectEstado = $selectEstado[0].selectize;
+      selectEstado.disable();
+
+      $selectLista = $('#select-lista').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: 'name'
+      });
+      selectLista = $selectLista[0].selectize;
+      selectLista.disable();
+      selectLista.load(function (cb) {
+        $.get(api + 'stock/listas').done(function (res) {
+          cb(res.data);
+        }).fail(function () {
+          cb();
+        });
+      });
+    }
+
+    function getInforme() {
+      $('.collapse').collapse('hide');
+
+      if (!dataTable) {
+        $tableDiv.show();
+        u.defaultDT();
+        dataTable = $tableDiv.find('table').DataTable({
+          ajax: function (d, cb, s) {
+            $.ajax({
+              method: 'GET',
+              url: api + 'stock/informes/' + query.empresa + '/precios',
+              data: {
+                articulo: query.articulo,
+                sucursal: query.sucursal,
+                tipo: query.tipo,
+                estado: query.estado,
+                familia: query.familia,
+                grupo: query.grupo,
+                lista: query.lista
+              }
+            }).done(function (res) {
+              cb(res);
+            }).fail(function (e) {
+              dataTable.clear().draw();
+              dataTable.processing(false);
+              u.serverDown(e);
+            });
+          },
+          columns: [
+            {data: 'codigo'},
+            {data: 'cod_original'},
+            {data: 'des_art'},
+            {data: 'cod_iva'},
+            {data: 'pr_gs'},
+            {data: 'pr_me'},
+            {data: 'existencia'}
+          ],
+          footerCallback: sumStock,
+          drawCallback: groupData
+        });
+      } else {
+        dataTable.clear().draw();
+        dataTable.processing(true);
+        dataTable.ajax.reload(function () {
+          dataTable.processing(false);
+        }, true);
+      }
+    }
+
+    function htmlSum(group, totals, colCount) {
+      return '<tr class="group text-right">' +
+              '<td colspan="' + (colCount - totals.length) + '">' +
+              '<strong>Total ' + group + ':</strong>' +
+              '</td>' + _.reduce(totals, function (conc, t) {
+                return conc + '<td><strong>' + u.usFormatter.display(t) + '<strong></td>';
+              }, '') +
+              '</tr>';
+    }
+
+    function groupData(settings) {
+      var api = this.api();
+      var rowsDOM = api.rows({page: 'current'}).nodes();
+      var rows = api.rows({page: 'current'}).data();
+      var last = rows.length - 1;
+      var lastFamilia = 'initial', lastGrupo = 'initial';
+      var sumFamilia = 0.0, sumGrupo = 0.0;
+      var colCount = api.columns().header().length;
+      var html;
+
+      _.forEach(rows, function (row, i) {
+        html = '';
+        if (lastFamilia !== row['cod_familia']) {
+          if (lastFamilia !== 'initial') {
+            html += htmlSum('Familia', [sumFamilia], colCount);
+          }
+          sumFamilia = 0.0;
+          lastFamilia = row['cod_familia'];
+          html += '<tr class="group text-center">' +
+                  '<td colspan="' + colCount + '">' +
+                  '<h4>' + lastFamilia + ' - ' + row['des_familia'] + '</h4>' +
+                  '</td></tr>';
+        }
+        if (lastGrupo !== row['cod_grupo']) {
+          if (lastGrupo !== 'initial') {
+            html = htmlSum('Grupo', [sumGrupo], colCount) + html;
+          }
+          sumGrupo = 0.0;
+          lastGrupo = row['cod_grupo'];
+          html += '<tr class="group text-center">' +
+                  '<td colspan="' + colCount + '">' +
+                  '<strong>' + lastGrupo + ' - ' + row['des_grupo'] + '</strong>' +
+                  '</td></tr>';
+        }
+        if (html) $(rowsDOM).eq(i).before(html);
+        sumGrupo += u.parseVal(row['existencia']);
+        sumFamilia += u.parseVal(row['existencia']);
+      });
+      html = htmlSum('Grupo', [sumGrupo], colCount) + htmlSum('Familia', [sumFamilia], colCount);
+      $(rowsDOM).eq(last).after(html);
+    }
+
+    function sumStock(row, data, start, end, display) {
+      var api = this.api(), data;
+      var total = api.column(-1).data().sum();
+
+      // Update footer
+      $(api.column(-1).footer()).html(u.usFormatter.display(total));
+    }
+  </script>
+{% endblock %}

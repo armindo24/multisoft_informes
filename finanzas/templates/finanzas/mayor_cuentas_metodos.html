@@ -14,8 +14,14 @@
   var $select_cuentad, select_cuentad;
   var $select_cuentah, select_cuentah;
   var $select_tipo_asiento, select_tipo_asiento;
+  
+  var $messages, $loading, $empty;
 
   $(document).ready(function () {
+    $messages = $("#messages");
+    $loading = $messages.find("#loading");
+    $empty = $messages.find("#empty"); 
+    
     u.hideNav();
     initDates();
     initSelects();
@@ -500,11 +506,11 @@
     } else {
       $('.collapse').collapse('hide')
       $('#table-div').empty()
-      $('#table-div').append("<b>Recuperando datos.</b>")
+      $loading.show();
+      $empty.hide();
       $.get(api + "mayorcuenta/cab/" + empresa + "/" + periodo + "/" + fechad + "/" + fechah + "/" + tipoasiento + "/" + cuentad + "/" + cuentah + "/" + incluir,
               function (data) {
                 if (data[1].data2.length > 0) {
-                  $('#table-div').empty()
                   for (var e = 0; e < data[1].data2.length; e++) {
                     var string = '<div id="pad-' + data[1].data2[e].Codplanctapad + '"><hr size="50" style="height: 0px;margin-top: 0px;margin-bottom: 0px;border-top-width: 5px;padding-bottom: 5px;">' +
                             '<b>' + data[1].data2[e].Codplanctapad + '&nbsp;&nbsp;&nbsp;&nbsp;' + data[1].data2[e].NOMBREPLANCTAPAD + "</b>" +
@@ -554,10 +560,10 @@
                   }
 
                 } else {
-                  $('#table-div').empty()
-                  $('#table-div').append("<b>No se han encontrado datos.</b>")
+                  $empty.show();
                 }
-              }
+                $loading.hide();
+            }
       );
     }
   }

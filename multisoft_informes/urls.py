@@ -25,7 +25,7 @@ handler500 = 'multisoft_informes.views.server_error'
 handler404 = 'multisoft_informes.views.custom_404'
 
 urlpatterns = patterns('',
-                       
+
     url(r'^admin/', include(admin.site.urls)),
     url(dajaxice_config.dajaxice_url, include('dajaxice.urls')),
     url(r'^accounts/login/$',   'multisoft_informes.views.login'),
@@ -34,15 +34,16 @@ urlpatterns = patterns('',
     url(r'^accounts/loggedin/$',   'multisoft_informes.views.loggedin'),
     url(r'^accounts/invalid/$',   'multisoft_informes.views.invalid_login'),
     url(r'^accounts/menu/$',   'multisoft_informes.views.menu'),
-    url(r'^accounts/password_change/$', 
-        'django.contrib.auth.views.password_change', 
-        {'post_change_redirect' : '/accounts/password_change/done/'}, 
-        name="password_change"), 
-    (r'^accounts/password_change/done/$', 
+    url(r'^accounts/password_change/$',
+        'django.contrib.auth.views.password_change',
+        {'post_change_redirect' : '/accounts/password_change/done/'},
+        name="password_change"),
+    (r'^accounts/password_change/done/$',
         'django.contrib.auth.views.password_change_done'),
     url(r'^finanzas/', include("finanzas.urls", namespace="finanzas")),
     url(r'^ventas/', include('ventas.urls', namespace='ventas')),
     url(r'^compras/', include('compras.urls', namespace='compras')),
+    url(r'^stock/', include('stock.urls', namespace='stock')),
     url(r'^custom_permissions/', include("custom_permissions.urls", namespace="custom_permissions")),
 )
 

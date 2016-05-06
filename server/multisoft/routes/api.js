@@ -28,11 +28,12 @@ var Usuarios = require('../models/usuarios');
 var Compras = require('../models/compras');
 var Presupuesto = require('../models/presupuesto');
 var Cuentas_pagar = require('../models/cuentas_pagar');
+var Fondo_Fijo = require('../models/fondo_fijo');
+var Gastos_Rendir = require('../models/gastos');
 var Moneda = require('../models/moneda');
 var Cobrador = require('../models/cobrador');
 var Recaudacion = require('../models/recaudacion');
-
-var conn = require('../db');
+var Localidad = require('../models/localidad');
 
 var postProcess = function (response, result) {
     response.json({data: result});
@@ -110,8 +111,8 @@ router.post('/cuentaauxi/query/:periodo/:empresa/:cuentad/:cuentah', function (r
 });
 
 //list balance general
-router.get('/balancegeneral/list/:empresa/:periodo/:cuentad/:cuentah/:mesd/:mesh/:nivel/:saldo/:moneda/:aux', function (req, res, next) {
-    Balance.general(req.params, function (result) {
+router.get('/balancegeneral/list/', function (req, res, next) {
+    Balance.general(req.query, function (result) {
         res.json({data: result});
     });
 });
@@ -271,6 +272,14 @@ router.get('/empresas/:empresa/articulos', function (req, res, next) {
     });
 });
 
+router.get('/ventas/:empresa/articulos', function (req, res, next) {
+    Ventas.articulos(req.params, req.query).then(function (result) {
+        res.json({data: result});
+    }).catch(function (err) {
+        next(err);
+    });
+});
+
 router.get('/empresas/:empresa/proveedores', function (req, res, next) {
     Proveedor.list(req.params, req.query, function (result) {
         res.json({data: result});
@@ -383,8 +392,10 @@ router.get('/cobradores', function (req, res, next) {
 });
 
 router.get('/empresas/:empresa/vendedores', function (req, res, next) {
-    Empresa.vendedores(req.params, req.query, function (result) {
+    Empresa.vendedores(req.params, req.query).then(function (result) {
         postProcess(res, result);
+    }).catch(function (err) {
+        next(err);
     });
 });
 
@@ -412,6 +423,30 @@ router.get('/cuentas_pagar/list', function (req, res, next) {
     });
 });
 
+router.get('/fondo_fijo/list', function (req, res, next) {
+    Fondo_Fijo.all(req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/gastos_rendir/list', function (req, res, next) {
+    Gastos_Rendir.all(req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/compras_articulo/ranking', function (req, res, next) {
+    Compras.ranking_aticulo(req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/compras_proveedor/ranking', function (req, res, next) {
+    Compras.ranking_proveedor(req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
 router.get('/usuarios/cajeros', function (req, res, next) {
     Usuarios.cajeros(req.params)
         .then(function (result) {
@@ -432,6 +467,30 @@ router.get('/recaudaciones/:empresa/planillas', function (req, res, next) {
         });
 });
 
+router.get('/recaudaciones/:empresa/detallado', function (req, res, next) {
+    Recaudacion.resumido(req.params, req.query).then(function (result) {
+        postProcess(res, result);
+    }).catch(function (err) {
+        next(err);
+    });
+});
+
+router.get('/recaudaciones/:empresa/ajustes', function (req, res, next) {
+    Recaudacion.ajustes(req.params, req.query).then(function (result) {
+        postProcess(res, result);
+    }).catch(function (err) {
+        next(err);
+    });
+});
+
+router.get('/recaudaciones/:empresa/depositos', function (req, res, next) {
+    Recaudacion.deposito(req.params, req.query).then(function (result) {
+        postProcess(res, result);
+    }).catch(function (e) {
+        next(e);
+    });
+});
+
 router.get('/recaudaciones/:empresa/consolidada', function (req, res, next) {
     Recaudacion.resumido(req.params, req.query)
         .then(function (result) {
@@ -439,6 +498,20 @@ router.get('/recaudaciones/:empresa/consolidada', function (req, res, next) {
         }).catch(function (error) {
             next(error);
         });
+});
+
+router.get('/localidades', function (req, res, next) {
+    Localidad.list().then(function (result) {
+        postProcess(res, result);
+    }).catch(function (error) {
+        next(error);
+    });
+});
+
+router.get('/recaudaciones/planillas', function (req, res, next) {
+    Recaudacion.planillaConsolidada(req.query, function (result) {
+        res.json({data: result});
+    });
 });
 
 module.exports = router;

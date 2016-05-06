@@ -1,4 +1,4 @@
-var conn = require('../db');
+var conn = require('../db_integrado');
 
 var Articulo = {};
 
@@ -15,8 +15,7 @@ Articulo.list = function (params, filters, cb) {
         "dba.articulo.referencia, dba.articulo.estado, dba.articulo.cantembalaje, dba.articulo.porcpartgravado, " +
         "dba.articulo.ctaimpcurso, dba.articulo.auximpcurso FROM dba.articulo, dba.familia, DBA.tpoart " +
         "WHERE ( dba.articulo.cod_familia = dba.familia.cod_familia ) AND " +
-        "( dba.articulo.cod_tp_art = DBA.tpoart.cod_tp_art ) AND ( articulo.cod_empresa = ? ) AND " +
-        "( DBA.TPOART.tpdef IN ('A', 'I') )";
+        "( dba.articulo.cod_tp_art = DBA.tpoart.cod_tp_art ) AND ( articulo.cod_empresa = ? )";
 
     var sql_params = [params.empresa];
 
@@ -24,6 +23,37 @@ Articulo.list = function (params, filters, cb) {
         if (err) throw err;
         cb(res);
     });
+};
+
+Articulo.all = function (params, filter) {
+    var sql =
+        "SELECT a.cod_articulo id, a.des_art name\n" +
+        "FROM dba.articulo a\n" +
+        "WHERE a.cod_empresa = ?\n";
+    var sqlParams = [params.empresa];
+    if (filter.familia) {
+        sql += "AND a.cod_familia = ?\n";
+        sqlParams.push(filter.familia);
+    }
+    if (filter.grupo) {
+        sql += "AND a.cod_grupo = ?\n";
+        sqlParams.push(filter.grupo);
+    }
+    if (filter.tipo) {
+        sql += "AND a.cod_tp_art = ?";
+        sqlParams.push(filter.tipo);
+    }
+    if (filter.articulo) {
+        sql += "AND ( a.des_art LIKE '" + filter.articulo + "%' ";
+        sql += "OR a.cod_articulo LIKE '" + filter.articulo + "%' )";
+    }
+
+    return conn.execAsync(sql, sqlParams);
+};
+
+Articulo.tipos = function () {
+    var sql = "SELECT cod_tp_art id, descrip name FROM dba.tpoart;";
+    return conn.execAsync(sql);
 };
 
 module.exports = Articulo;
