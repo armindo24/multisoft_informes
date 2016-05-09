@@ -53,7 +53,7 @@ Legajos.all = function (filters, cb) {
         sql += " AND (dba.legajo.codmvto IN " + q.in(filters.tipo) + ") ";
     } 
     
-    sql += " ORDER BY dba.legajo.fecha ASC";
+    sql += " ORDER BY dba.empleados.codempleado,dba.legajo.fecha ASC";
 
     console.log(sql);
 

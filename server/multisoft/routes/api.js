@@ -43,6 +43,7 @@ var Sucursal_Sueldo = require('../models/sucursal_sueldo');
 var Departamento_Sueldo = require('../models/departamento_sueldo');
 var Anticipos = require('../models/anticipos_sueldo');
 var Aguinaldos = require('../models/aguinaldos_sueldo');
+var Recibos = require('../models/recibos_sueldo');
 
 var postProcess = function (response, result) {
     response.json({data: result});
@@ -638,6 +639,29 @@ router.get('/aguinaldo_sueldo/existe', function (req, res, next) {
 //Aguinaldos - procedures
 router.get('/aguinaldo_sueldo/procedures', function (req, res, next) {
     Aguinaldos.procedures(req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+
+//Recibos - Delete
+router.get('/recibo_sueldo/delete', function (req, res, next) {
+    Recibos.delete(function (result) {
+        res.json({data: result});
+    });
+});
+
+//Recibos - query_1
+router.get('/recibo_sueldo/query_1', function (req, res, next) {
+    Recibos.query_1(req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+
+//Recibos - procedures
+router.get('/recibo_sueldo/procedures', function (req, res, next) {
+    Recibos.procedures(req.query, function (result) {
         res.json({data: result});
     });
 });

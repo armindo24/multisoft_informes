@@ -69,6 +69,12 @@
 
     $(document).ready(function () {
       u.hideNav();
+      $tabs = $(".nav.nav-pills li");
+      //$tabs.on("click", function (e) {
+        //$tabs.removeClass("active");
+        //$(this).addClass('active');
+      //});
+      
       $messages = $("#messages");
       $loading = $messages.find("#loading");
       $empty = $messages.find("#empty");
@@ -230,6 +236,31 @@
       });
     }
     
+    function show_principales(a){
+        $('#cab_empleado_'+a).show();
+        $('#div_historico_'+a).hide();
+        $('#btn_principales_'+a).addClass('active');
+        $('#btn_historico_'+a).removeClass('active');
+    }
+    
+    function show_historico(a){
+        $('#cab_empleado_'+a).hide();
+        $('#div_historico_'+a).show();
+        $('#historico_'+a).DataTable().destroy();
+        $('#historico_'+a).DataTable({
+          searching: false,
+          language: u.spanish_dt,
+          paging: false,
+          ordering: false,
+          info: false,
+          scrollCollapse: true,
+          scrollY: 300,
+          scrollX: '100%'
+        });
+        $('#btn_principales_'+a).removeClass('active');
+        $('#btn_historico_'+a).addClass('active');
+    }
+    
     function getInforme() {
       $('.collapse').collapse('hide');
       $loading.show();
@@ -249,7 +280,6 @@
             var aorder_emp = sortJSON(datos.data, 'codempleado');
             for (var a=0;a < data.length; a++){
                 if (data[a].id.toString().length < 10){
-                    console.log('entre');
                     while (data[a].id.toString().length < 10){
                         data[a].id = '0'+data[a].id;
                     }
@@ -259,6 +289,13 @@
             for (var a=0; a < aorder_emp.length; a++){
                 if (empleado != aorder_emp[a].codempleado){
                     var sdiv = '<hr><div id="empleado_'+aorder_emp[a].codempleado+'">'+
+                                    
+                                    
+                                    '<ul class="nav nav-pills">'+
+                                        '<li role="presentation" class="active" id="btn_principales_'+aorder_emp[a].codempleado+'"><a onclick="show_principales(&quot;'+aorder_emp[a].codempleado+'&quot;)">Datos Principales</a></li>'+
+                                        '<li role="presentation" id="btn_historico_'+aorder_emp[a].codempleado+'"><a onclick="show_historico(&quot;'+aorder_emp[a].codempleado+'&quot;)">Historico</a></li>'+
+                                    '</ul>'+
+                                    '<br>'+                                    
                                     '<table class="table table-bordered" id="cab_empleado_'+aorder_emp[a].codempleado+'">'+
                                         '<tr><th style="width:25%">Legajo:</th><td style="width:25%">'+aorder_emp[a].codempleado+'</td><th style="width:25%">Fecha de Nacimiento:</th><td style="width:25%">'+aorder_emp[a].fechanac+'</td></tr>'+
                                         '<tr><th style="width:25%">Apellidos y Nombre:</th><td style="width:25%">'+aorder_emp[a].apellidos+', '+aorder_emp[a].nombres+'</td><th style="width:25%">Fecha de Entrada:</th><td style="width:25%">'+aorder_emp[a].fechaentrada+'</td></tr>'+
@@ -267,23 +304,25 @@
                                         '<tr><th style="width:25%">Dirección:</th><td style="width:25%">'+aorder_emp[a].direccion+'</td><th style="width:25%">Teléfono:</th><td style="width:25%">'+aorder_emp[a].telefono+'</td></tr>'+
                                     '</table>'+
                                     
-                                    '<table style="width:100%" id="historico_'+aorder_emp[a].codempleado+'" class="table table-striped table-bordered nowrap">'+
+                                    '<div id="div_historico_'+aorder_emp[a].codempleado+'" ><table style="width:100%;" id="historico_'+aorder_emp[a].codempleado+'" class="table table-striped table-bordered nowrap">'+
                                         '<thead>'+
-                                            '<th>Fecha</th>'+
-                                            '<th>T. Movimiento</th>'+
-                                            '<th>Aprobado</th>'+
-                                            '<th>Sucursal Anterior</th>'+
-                                            '<th>Sucursal Actual</th>'+
-                                            '<th>Dpto. Anterior</th>'+
-                                            '<th>Dpto. Actual</th>'+
-                                            '<th>Cargo Anterior</th>'+
-                                            '<th>Cargo Actual</th>'+
-                                            '<th>Sueldo Anterior</th>'+
-                                            '<th>Sueldo Actual</th>'+
+                                            '<tr>'+
+                                                '<th>Fecha</th>'+
+                                                '<th>T. Movimiento</th>'+
+                                                '<th>Aprobado</th>'+
+                                                '<th>Sucursal Anterior</th>'+
+                                                '<th>Sucursal Actual</th>'+
+                                                '<th>Dpto. Anterior</th>'+
+                                                '<th>Dpto. Actual</th>'+
+                                                '<th>Cargo Anterior</th>'+
+                                                '<th>Cargo Actual</th>'+
+                                                '<th>Sueldo Anterior</th>'+
+                                                '<th>Sueldo Actual</th>'+
+                                            '</tr>'+
                                         '</thead>'+
                                         '<tbody>'+
                                         '</tbody>'+
-                                    '</table>'
+                                    '</table></div>'
                                '</div>';
                           $resultado.append(sdiv);
                     empleado = aorder_emp[a].codempleado;
@@ -312,17 +351,7 @@
                 $('#historico_'+aempleado[a]+' tbody').html(stbody);
             }
             for (var a=0; a < aempleado.length; a++){
-                $('#historico_'+aorder_emp[a].codempleado).DataTable().destroy();
-                $('#historico_'+aorder_emp[a].codempleado).DataTable({
-                  searching: false,
-                  language: u.spanish_dt,
-                  paging: false,
-                  ordering: false,
-                  info: false,
-                  scrollCollapse: true,
-                  scrollY: 300,
-                  scrollX: '100%'
-                });
+                $('#div_historico_'+aempleado[a]).hide();
             }
         } else {
             $empty.show();
