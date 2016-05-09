@@ -25,3 +25,7 @@ def existencia_deposito(request):
 def valorizado(request):
     return render_to_response('stock/valorizado.html', {'user': request.user.id},
                               context_instance=RequestContext(request))
+# TODO: Permiso
+def ficha_productos(request):
+    return render_to_response('stock/ficha_productos.html', {'user': request.user.id},
+                              context_instance=RequestContext(request))
