@@ -4,6 +4,8 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
+env.read_env('.envariables')
+
 SECRET_KEY = env('DJANGO_SECRET_KEY')
 
 DATABASES = {
@@ -11,8 +13,8 @@ DATABASES = {
         {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
             'NAME': 'multisoft_informes',
-            'USER': 'multisoft_user',
-            'PASSWORD': 'password',
+            'USER': env('DB_USER'),
+            'PASSWORD': env('DB_PASSWORD'),
             'HOST': 'localhost',
             'PORT': ''
         }
