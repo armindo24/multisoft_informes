@@ -48,6 +48,7 @@ INSTALLED_APPS = (
     'finanzas',
     'ventas',
     'compras',
+    'rrhh',
     'stock'
 )
 
