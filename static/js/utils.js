@@ -8,14 +8,15 @@ $.fn.dataTable.Api.register('processing()', function (show) {
 
 var u = {
     api: {
-        port: 3000,
+        port: '3000',
         path: '/api/v1/'
     }
 };
 
 u.getApiUrl = function () {
     var url = window.location;
-    return 'http://' + url.hostname + ':' + u.api.port + u.api.path;
+    var port = window.location.port ? ':' + u.api.port : '';
+    return 'http://' + url.hostname + port + u.api.path;
 };
 
 var api = u.getApiUrl();
