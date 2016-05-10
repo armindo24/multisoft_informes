@@ -1,8 +1,9 @@
 var _ = require('lodash');
 var Sequelize = require('sequelize');
+var config = require('config'), pg = config.get('postgres');
 
-var sequelize = new Sequelize('multisoft_informes', 'node_user', 'ownnetmasterkey', {
-    host: 'localhost',
+var sequelize = new Sequelize(pg.database, pg.user, pg.password, {
+    host: pg.host,
     dialect: 'postgres',
 
     pool: {
