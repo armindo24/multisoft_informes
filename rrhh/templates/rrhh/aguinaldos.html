@@ -1,0 +1,471 @@
+{% extends 'finanzas/base.html' %}
+
+{% block header %}
+  Aguinaldos:
+{% endblock %}
+
+{% block filters %}
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="empresa" %}
+    {% include 'ventas/_filtro.html' with name="sucursal" %}
+  </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="departamento" %}
+    {% include 'ventas/_filtro.html' with name="empleados" %}
+  </div>
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="fecha" class="col-md-4 control-label">Fecha:</label>
+
+        <div class="col-md-6">
+          <div id="fecha" class="input-date">
+            <input type="text" onkeydown="return false" class="form-control" name="fecha">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block inner_content %}
+  <div class="text-center" id="messages">
+    <h3 id="loading" style="display: none;">Cargando...</h3>
+
+    <h3 id="empty" style="display: none;">No hay datos disponibles</h3>
+  </div>
+  <div id="resultado">
+
+  </div>
+{% endblock %}
+
+{% block extra_foot %}
+  <style>
+    .aling_right {
+      text-align: right;
+    }
+  </style>
+  <script>
+    var query = {};
+    //var numFormat = $.fn.dataTable.render.number('.', ',', 2).display;
+
+    var api = u.getApiUrl();
+    var $results = $('#results');
+    var $resultado = $('#resultado');
+    var $preview = $('#preview');
+    var $loading = $("#loading");
+    var $empty = $("#empty");
+    var today = new Date();
+    var initialize = init;
+    var select_empresa, $select_empresa;
+    var select_sucursal, $select_sucursal;
+    var select_departamento, $select_departamento;
+    var select_tipo, $select_tipo;
+    var xhr;
+    var dataTable;
+
+    function addCommas(nStr) {
+      nStr += '';
+      x = nStr.split('.');
+      x1 = x[0];
+      x2 = x.length > 1 ? ',' + x[1] : '';
+      var rgx = /(\d+)(\d{3})/;
+      while (rgx.test(x1)) {
+        x1 = x1.replace(rgx, '$1' + '.' + '$2');
+      }
+      return x1 + x2;
+    }
+
+
+    $(document).ready(function () {
+      u.hideNav();
+      $messages = $("#messages");
+      $loading = $messages.find("#loading");
+      $empty = $messages.find("#empty");
+      
+      initialize();
+      select_empresa = $select_empresa[0].selectize;
+      select_sucursal = $select_sucursal[0].selectize;
+      select_sucursal.disable();
+      select_departamento = $select_departamento[0].selectize;
+      select_departamento.disable();
+      select_empleados = $select_empleados[0].selectize;
+      select_empleados.disable();
+    });
+
+    function init() {
+      u.defaultDatepicker();
+      $.extend(true, $.fn.selectize.defaults, {
+        onChange: function (value) {
+          query[this.$input.attr('name')] = value;
+          debug();
+        }
+      });
+      
+           
+      $('#fecha .form-control').datepicker({
+        todayBtn: "linked",
+        language: "es",
+        format: "yyyy-mm-dd",
+        autoclose: true,
+        orientation: "bottom auto"
+      });
+        
+      $('#fecha .form-control').datepicker().on('changeDate', function (e) {
+        query[this.name] = e.format('yyyy-mm-dd');
+      });  
+        
+        
+      $('.input-date .form-control').datepicker('setDate', today);
+      $('.input-date .form-control').datepicker('update');
+
+      $select_empresa = $('#select-empresa').selectize({
+        valueField: 'Cod_Empresa',
+        labelField: 'Des_Empresa',
+        searchField: 'Des_Empresa',
+        preload: true,
+        load: function (q, callback) {
+          u.get_empresas_sueldo({{ user }}, function (d) {
+            callback(d.data);
+          });
+        },
+        onChange: function (value) {
+          query.empresa = value;
+          debug();
+          if (!value.length) return;
+          select_sucursal.disable();
+          select_sucursal.clearOptions();
+          select_sucursal.load(function (callback) {
+            $.ajax({
+              url: api + 'sucursal_sueldo/select/' + query.empresa,
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_sucursal.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+      
+      $select_sucursal = $('#select-sucursal').selectize({
+        valueField: 'Cod_Sucursal',
+        labelField: 'Des_Sucursal',
+        searchField: 'Des_Sucursal',
+        preload: true,
+        maxItems: null,
+        onChange: function (value) {
+          query.sucursal = value;
+          debug();
+          if (!value.length) return;
+          select_departamento.disable();
+          select_departamento.clearOptions();
+          select_departamento.load(function (callback) {
+            $.ajax({
+              url: api + 'departamento_sueldo/select/',
+              type: 'GET',
+              dataType: 'json',
+              data: query
+            }).done(function (res) {
+              select_departamento.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+      
+      $select_departamento = $('#select-departamento').selectize({
+        valueField: 'CodDpto',
+        labelField: 'Descrip',
+        searchField: 'Descrip',
+        maxItems: null,
+        onChange: function (value) {
+          query.departamento = value;
+          debug();
+          if (!value.length) return;
+          select_empleados.disable();
+          select_empleados.clearOptions();
+          select_empleados.load(function (callback) {
+            $.ajax({
+              url: api + 'empleados_sueldo/select/',
+              data: query,
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_empleados.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+
+      $select_empleados = $('#select-empleados').selectize({
+        valueField: 'codempleado',
+        labelField: 'nombres',
+        searchField: 'nombres',
+        maxItems: null,
+        onChange: function (value) {
+          query.empleados = value;
+          debug();
+        }
+      });
+      
+    }
+
+    function debug() {
+      return;
+    }
+    
+    //META.fn: sortJSON
+    function sortJSON(data, key) {
+      return data.sort(function (a, b) {
+        var x = a[key];
+        var y = b[key];
+        return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+      });
+    }
+    
+    var monthNames = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
+                      "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"
+                    ];
+    
+    function getInforme() {
+      $('.collapse').collapse('hide');
+      $loading.show();
+      $empty.hide();
+      $resultado.empty();
+
+      
+      $.ajax(api + "aguinaldo_sueldo/existe", {
+          method: 'GET',
+          contentType: 'application/json',
+          data: query,
+        }).done(function (datos) {
+          console.log(datos)
+          if (datos.data.length > 0) {
+                $.ajax(api + "aguinaldo_sueldo/procedures", {
+                  method: 'GET',
+                  contentType: 'application/json',
+                  data: query
+                }).done(function (datos_2) {
+                    if (datos_2.data.length > 0) {
+                        var sucursal = "";
+                        var new_dep_data = datos_2.data[1];
+                        var new_emp_data = sortJSON(datos_2.data[0], 'apellidos');
+                        var datos_3 = sortJSON(datos_2.data[0], 'des_sucursal');
+                        var a_table = []
+                        var a_sucursal = []
+                        var a_departamento = []
+                        var date = new Date(parseInt(query.periodo), parseInt(query.mes), 0);
+                        $('#resultado').append("<h3>PROCESADO AL "+ query.fecha +"</h3>");
+                        for (var a=0; a < datos_3.length; a++){
+                            if (sucursal != datos_3[a].des_sucursal){
+                                var sdiv = '<hr><div id="div_suc_'+datos_3[a].cod_sucursal+'">'+
+                                                '<h3>SUCURSAL: '+datos_3[a].des_sucursal+'</h3>'+
+                                            '</div>';
+                                $('#resultado').append(sdiv);
+                                console.log(datos_3[a].cod_sucursal);
+                                a_sucursal.push(datos_3[a].cod_sucursal);
+                                sucursal = datos_3[a].des_sucursal;
+                            }
+                        }
+                        var tt_enero = 0; var tt_febrero = 0; var tt_marzo = 0;
+                        var tt_abril = 0; var tt_mayo = 0; var tt_junio = 0;
+                        var tt_julio = 0; var tt_agosto = 0; var tt_setiembre = 0;
+                        var tt_octubre = 0; var tt_noviembre = 0; var tt_diciembre = 0;
+                        var tt_totgen = 0; var tt_aguipropdet = 0;
+                        for (var c=0; c < new_emp_data.length; c++){
+                            tt_enero += parseInt(new_emp_data[c].enero); tt_febrero += parseInt(new_emp_data[c].febrero);
+                            tt_marzo += parseInt(new_emp_data[c].marzo); tt_abril += parseInt(new_emp_data[c].abril);
+                            tt_mayo += parseInt(new_emp_data[c].mayo); tt_junio += parseInt(new_emp_data[c].junio);
+                            tt_julio += parseInt(new_emp_data[c].julio); tt_agosto += parseInt(new_emp_data[c].agosto);
+                            tt_setiembre += parseInt(new_emp_data[c].setiembre); tt_octubre += parseInt(new_emp_data[c].octubre);
+                            tt_noviembre += parseInt(new_emp_data[c].noviembre); tt_diciembre += parseInt(new_emp_data[c].diciembre);
+                            tt_totgen += parseInt(new_emp_data[c].totgen); tt_aguipropdet += parseInt(new_emp_data[c].aguipropdet);
+                        }
+                        var sttfoot = '<tr>'+
+                            '<th colspan="2">TOTAL </th>'+
+                            '<th style="text-align: right;">'+convertir_rever(tt_enero)+'</th>'+
+                            '<th style="text-align: right;">'+convertir_rever(tt_febrero)+'</th>'+
+                            '<th style="text-align: right;">'+convertir_rever(tt_marzo)+'</th>'+
+                            '<th style="text-align: right;">'+convertir_rever(tt_abril)+'</th>'+
+                            '<th style="text-align: right;">'+convertir_rever(tt_mayo)+'</th>'+
+                            '<th style="text-align: right;">'+convertir_rever(tt_junio)+'</th>'+
+                            '<th style="text-align: right;">'+convertir_rever(tt_julio)+'</th>'+
+                            '<th style="text-align: right;">'+convertir_rever(tt_agosto)+'</th>'+
+                            '<th style="text-align: right;">'+convertir_rever(tt_setiembre)+'</th>'+
+                            '<th style="text-align: right;">'+convertir_rever(tt_octubre)+'</th>'+
+                            '<th style="text-align: right;">'+convertir_rever(tt_noviembre)+'</th>'+
+                            '<th style="text-align: right;">'+convertir_rever(tt_diciembre)+'</th>'+
+                            '<th style="text-align: right;">'+convertir_rever(tt_totgen)+'</th>'+
+                            '<th style="text-align: right;">'+convertir_rever(tt_aguipropdet)+'</th>'+
+                        '</tr>';
+                        console.log(a_sucursal);
+                        for (var b=0; b < a_sucursal.length; b++){
+                            var deposito = null;
+                            for (var a=0; a < new_dep_data.length; a++){
+                                console.log(new_dep_data[a].des_dpto);
+                                if (a_sucursal[b] == new_dep_data[a].cod_sucursal){
+                                    if (deposito != new_dep_data[a].des_dpto){
+                                        var sdiv = '<hr><div id="div_suc_'+new_dep_data[a].cod_sucursal+'_dep_'+new_dep_data[a].coddpto+'">'+
+                                                        '<h4> &nbsp;&nbsp;&nbsp;&nbsp; DEPARTAMENTO: '+new_dep_data[a].des_dpto+'</h4>'+
+                                                        '<table id="table_suc_'+new_dep_data[a].cod_sucursal+'_dep_'+new_dep_data[a].coddpto+'" '+
+                                                        'class="table table-striped table-bordered nowrap suc_'+new_dep_data[a].cod_sucursal+' total" cellspacing="0" style="width:100%">'+
+                                                                '<thead>'+
+                                                                '<tr>'+
+                                                                    '<th style="text-align: center;">Legajo</th>'+
+                                                                    '<th style="text-align: center;width: 185px;">Apellidos y Nombres</th>'+
+                                                                    '<th style="text-align: center;">Enero</th>'+
+                                                                    '<th style="text-align: center;">Febrero</th>'+
+                                                                    '<th style="text-align: center;">Marzo</th>'+
+                                                                    '<th style="text-align: center;">Abril</th>'+
+                                                                    '<th style="text-align: center;">Mayo</th>'+
+                                                                    '<th style="text-align: center;">Junio</th>'+
+                                                                    '<th style="text-align: center;">Julio</th>'+
+                                                                    '<th style="text-align: center;">Agosto</th>'+
+                                                                    '<th style="text-align: center;">Septiembre</th>'+
+                                                                    '<th style="text-align: center;">Octubre</th>'+
+                                                                    '<th style="text-align: center;">Noviembre</th>'+
+                                                                    '<th style="text-align: center;">Diciembre</th>'+
+                                                                    '<th style="text-align: center;">Total Acumulado</th>'+
+                                                                    '<th style="text-align: center;">Aguinaldo</th>'+
+                                                                '</tr>'+
+                                                            '</thead>'+
+                                                            '<tbody></tbody>'+
+                                                            '<tfoot></tfoot>'+
+                                                        '</table>'+
+                                                    '</div>';
+                                        $('#div_suc_'+a_sucursal[b]).append(sdiv);
+                                        a_table.push('table_suc_'+new_dep_data[a].cod_sucursal+'_dep_'+new_dep_data[a].coddpto);
+                                        a_departamento.push(new_dep_data[a].coddpto);
+                                        deposito = new_dep_data[a].des_dpto;
+                                    }
+                                }
+                            }
+                        }
+                        for (var b=0; b < a_sucursal.length; b++){
+                            var ts_enero = 0; var ts_febrero = 0; var ts_marzo = 0;
+                            var ts_abril = 0; var ts_mayo = 0; var ts_junio = 0;
+                            var ts_julio = 0; var ts_agosto = 0; var ts_setiembre = 0;
+                            var ts_octubre = 0; var ts_noviembre = 0; var ts_diciembre = 0;
+                            var ts_totgen = 0; var ts_aguipropdet = 0;
+                            for (var c=0; c < new_emp_data.length; c++){
+                                if (new_emp_data[c].cod_sucursal == a_sucursal){
+                                    ts_enero += parseInt(new_emp_data[c].enero); ts_febrero += parseInt(new_emp_data[c].febrero);
+                                    ts_marzo += parseInt(new_emp_data[c].marzo); ts_abril += parseInt(new_emp_data[c].abril);
+                                    ts_mayo += parseInt(new_emp_data[c].mayo); ts_junio += parseInt(new_emp_data[c].junio);
+                                    ts_julio += parseInt(new_emp_data[c].julio); ts_agosto += parseInt(new_emp_data[c].agosto);
+                                    ts_setiembre += parseInt(new_emp_data[c].setiembre); ts_octubre += parseInt(new_emp_data[c].octubre);
+                                    ts_noviembre += parseInt(new_emp_data[c].noviembre); ts_diciembre += parseInt(new_emp_data[c].diciembre);
+                                    ts_totgen += parseInt(new_emp_data[c].totgen); ts_aguipropdet += parseInt(new_emp_data[c].aguipropdet);
+                                }
+                            }
+                            for (var a=0; a < a_departamento.length; a++){
+                                var t_enero = 0; var t_febrero = 0; var t_marzo = 0;
+                                var t_abril = 0; var t_mayo = 0; var t_junio = 0;
+                                var t_julio = 0; var t_agosto = 0; var t_setiembre = 0;
+                                var t_octubre = 0; var t_noviembre = 0; var t_diciembre = 0;
+                                var t_totgen = 0; var t_aguipropdet = 0;
+                                for (var c=0; c < new_emp_data.length; c++){
+                                    var current_legajo = null;
+                                    if (new_emp_data[c].cod_sucursal == a_sucursal[b] && new_emp_data[c].coddpto == a_departamento[a]){
+                                        if (new_emp_data[c].codempleado != current_legajo){
+                                            var stbody = '<tr>'+
+                                                            '<td>'+new_emp_data[c].codempleado+'</td>'+
+                                                            '<td>'+new_emp_data[c].apellidos+', '+new_emp_data[c].nombres+'</td>'+
+                                                            '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].enero)+'</td>'+
+                                                            '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].febrero)+'</td>'+
+                                                            '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].marzo)+'</td>'+
+                                                            '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].abril)+'</td>'+
+                                                            '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].mayo)+'</td>'+
+                                                            '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].junio)+'</td>'+
+                                                            '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].julio)+'</td>'+
+                                                            '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].agosto)+'</td>'+
+                                                            '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].setiembre)+'</td>'+
+                                                            '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].octubre)+'</td>'+
+                                                            '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].noviembre)+'</td>'+
+                                                            '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].diciembre)+'</td>'+
+                                                            '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].totgen)+'</td>'+
+                                                            '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].aguipropdet)+'</td>'+
+                                                         '</tr>';
+                                            $('#table_suc_'+new_emp_data[c].cod_sucursal+'_dep_'+new_emp_data[c].coddpto+' tbody').append(stbody);
+                                            current_legajo = new_emp_data[c].codempleado;
+                                            t_enero += parseInt(new_emp_data[c].enero); t_febrero += parseInt(new_emp_data[c].febrero);
+                                            t_marzo += parseInt(new_emp_data[c].marzo); t_abril += parseInt(new_emp_data[c].abril);
+                                            t_mayo += parseInt(new_emp_data[c].mayo); t_junio += parseInt(new_emp_data[c].junio);
+                                            t_julio += parseInt(new_emp_data[c].julio); t_agosto += parseInt(new_emp_data[c].agosto);
+                                            t_setiembre += parseInt(new_emp_data[c].setiembre); t_octubre += parseInt(new_emp_data[c].octubre);
+                                            t_noviembre += parseInt(new_emp_data[c].noviembre); t_diciembre += parseInt(new_emp_data[c].diciembre);
+                                            t_totgen += parseInt(new_emp_data[c].totgen); t_aguipropdet += parseInt(new_emp_data[c].aguipropdet);
+                                        }
+                                        var stfoot = '<tr>'+
+                                                        '<th colspan="2">TOTAL POR DEPARTAMENTO</th>'+
+                                                        '<th style="text-align: right;">'+convertir_rever(t_enero)+'</th>'+
+                                                        '<th style="text-align: right;">'+convertir_rever(t_febrero)+'</th>'+
+                                                        '<th style="text-align: right;">'+convertir_rever(t_marzo)+'</th>'+
+                                                        '<th style="text-align: right;">'+convertir_rever(t_abril)+'</th>'+
+                                                        '<th style="text-align: right;">'+convertir_rever(t_mayo)+'</th>'+
+                                                        '<th style="text-align: right;">'+convertir_rever(t_junio)+'</th>'+
+                                                        '<th style="text-align: right;">'+convertir_rever(t_julio)+'</th>'+
+                                                        '<th style="text-align: right;">'+convertir_rever(t_agosto)+'</th>'+
+                                                        '<th style="text-align: right;">'+convertir_rever(t_setiembre)+'</th>'+
+                                                        '<th style="text-align: right;">'+convertir_rever(t_octubre)+'</th>'+
+                                                        '<th style="text-align: right;">'+convertir_rever(t_noviembre)+'</th>'+
+                                                        '<th style="text-align: right;">'+convertir_rever(t_diciembre)+'</th>'+
+                                                        '<th style="text-align: right;">'+convertir_rever(t_totgen)+'</th>'+
+                                                        '<th style="text-align: right;">'+convertir_rever(t_aguipropdet)+'</th>'+
+                                                    '</tr>';
+                                        $('#table_suc_'+a_sucursal[b]+'_dep_'+a_departamento[a]+' tfoot').html(stfoot);
+                                    }
+                                }
+                            }
+                        var stsfoot = '<tr>'+
+                                            '<th colspan="2">TOTAL POR SUCURSAL</th>'+
+                                            '<th style="text-align: right;">'+convertir_rever(ts_enero)+'</th>'+
+                                            '<th style="text-align: right;">'+convertir_rever(ts_febrero)+'</th>'+
+                                            '<th style="text-align: right;">'+convertir_rever(ts_marzo)+'</th>'+
+                                            '<th style="text-align: right;">'+convertir_rever(ts_abril)+'</th>'+
+                                            '<th style="text-align: right;">'+convertir_rever(ts_mayo)+'</th>'+
+                                            '<th style="text-align: right;">'+convertir_rever(ts_junio)+'</th>'+
+                                            '<th style="text-align: right;">'+convertir_rever(ts_julio)+'</th>'+
+                                            '<th style="text-align: right;">'+convertir_rever(ts_agosto)+'</th>'+
+                                            '<th style="text-align: right;">'+convertir_rever(ts_setiembre)+'</th>'+
+                                            '<th style="text-align: right;">'+convertir_rever(ts_octubre)+'</th>'+
+                                            '<th style="text-align: right;">'+convertir_rever(ts_noviembre)+'</th>'+
+                                            '<th style="text-align: right;">'+convertir_rever(ts_diciembre)+'</th>'+
+                                            '<th style="text-align: right;">'+convertir_rever(ts_totgen)+'</th>'+
+                                            '<th style="text-align: right;">'+convertir_rever(ts_aguipropdet)+'</th>'+
+                                        '</tr>';
+                            $('.suc_'+a_sucursal[b]+' tfoot').last().append(stsfoot);
+                        }
+                        $('.total tfoot').last().append(sttfoot);
+                        for (var a=0; a < a_table.length; a++){
+                            $('#' + a_table[a]).DataTable().destroy();
+                            $('#' + a_table[a]).DataTable({
+                              searching: false,
+                              language: u.spanish_dt,
+                              paging: false,
+                              ordering: false,
+                              info: false,
+                              scrollCollapse: true,
+                              scrollY: 300,
+                              scrollX: '100%',                
+                            });
+                        }
+                    } else {
+                        $empty.show();
+                    }
+                    $loading.hide();
+                });
+            }
+        });
+    }
+
+  </script>
+{% endblock %}
