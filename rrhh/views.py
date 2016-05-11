@@ -1,5 +1,6 @@
 from django.shortcuts import render, render_to_response
 from django.template.context import RequestContext
+from django.contrib.auth.decorators import permission_required
 
 # Create your views here.
 @permission_required('custom_permissions.informe_legajos')

@@ -21,6 +21,23 @@
                     <a href="{% url 'ventas:estadisticas' %}"> Estadísticas de Ventas </a>
                 </li>
 		    {% endif %}
+		    {% if  request.session.modulo_seleccionado == "Stock"  %}
+		        <li>
+                    <a href="{% url 'stock:articulos' %}"> General de Productos </a>
+                </li>
+                <!-- <li>
+                    <a href="{% url 'stock:precios' %}"> Ficha de Productos en Unidades </a>
+                </li> -->
+                <li>
+                    <a href="{% url 'stock:existencia_deposito' %}"> Existencias por Depósitos </a>
+                </li>
+                <li>
+                    <a href="{% url 'stock:valorizado' %}"> Existencias valorizadas </a>
+                </li>
+                <li>
+                    <a href="{% url 'stock:precios' %}"> Control de Precios </a>
+                </li>
+            {% endif %}
 		    {% if  request.session.modulo_seleccionado == "Compras"  %}
                 <li>
                     <a href="{% url 'compras:ordencompra' %}"> Orden de Compra </a>
