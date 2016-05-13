@@ -7,8 +7,8 @@ var dbConfig = config.get('integrado.dbConfig');
 var client = sqlanywhere.createConnection();
 
 client.connect(dbConfig, function (err) {
-    if (err) throw err;
-    console.log('Conectado a:', dbConfig);
+    if (err) console.log(err);
+    else console.log('Conectado a:', dbConfig);
 });
 
 client.discon = function () {

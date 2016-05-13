@@ -1,0 +1,515 @@
+{% extends 'finanzas/base.html' %}
+
+{% block header %}
+  Liquidaciones de Sueldos y Jornales:
+{% endblock %}
+
+{% block filters %}
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="empresa" %}
+    {% include 'ventas/_filtro.html' with name="sucursal" %}
+  </div>
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="departamento" %}
+    {% include 'ventas/_filtro.html' with name="empleados" %}
+  </div>
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="periodo" class="col-md-4 control-label">Periodo:</label>
+
+        <div class="col-md-6">
+          <div id="periodo" class="input-date"><input type="text" class="form-control" name="periodo"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="mes" class="col-md-4 control-label">Mes:</label>
+
+        <div class="col-md-6">
+          <div id="mes" class="input-date">
+            <input type="text" onkeydown="return false" class="form-control" name="mes">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block inner_content %}
+  <div class="text-center" id="messages">
+    <h3 id="loading" style="display: none;">Cargando...</h3>
+
+    <h3 id="empty" style="display: none;">No hay datos disponibles</h3>
+  </div>
+  <div id="resultado">
+
+  </div>
+{% endblock %}
+
+{% block extra_foot %}
+  <style>
+    .aling_right {
+      text-align: right;
+    }
+  </style>
+  <script>
+    var query = {};
+    //var numFormat = $.fn.dataTable.render.number('.', ',', 2).display;
+
+    var api = u.getApiUrl();
+    var $results = $('#results');
+    var $resultado = $('#resultado');
+    var $preview = $('#preview');
+    var $loading = $("#loading");
+    var $empty = $("#empty");
+    var today = new Date();
+    var initialize = init;
+    var select_empresa, $select_empresa;
+    var select_sucursal, $select_sucursal;
+    var select_departamento, $select_departamento;
+    var select_tipo, $select_tipo;
+    var xhr;
+    var dataTable;
+
+    function addCommas(nStr) {
+      nStr += '';
+      x = nStr.split('.');
+      x1 = x[0];
+      x2 = x.length > 1 ? ',' + x[1] : '';
+      var rgx = /(\d+)(\d{3})/;
+      while (rgx.test(x1)) {
+        x1 = x1.replace(rgx, '$1' + '.' + '$2');
+      }
+      return x1 + x2;
+    }
+
+
+    $(document).ready(function () {
+      u.hideNav();
+      $messages = $("#messages");
+      $loading = $messages.find("#loading");
+      $empty = $messages.find("#empty");
+      
+      initialize();
+      select_empresa = $select_empresa[0].selectize;
+      select_sucursal = $select_sucursal[0].selectize;
+      select_sucursal.disable();
+      select_departamento = $select_departamento[0].selectize;
+      select_departamento.disable();
+      select_empleados = $select_empleados[0].selectize;
+      select_empleados.disable();
+    });
+
+    function init() {
+      u.defaultDatepicker();
+      $.extend(true, $.fn.selectize.defaults, {
+        onChange: function (value) {
+          query[this.$input.attr('name')] = value;
+          debug();
+        }
+      });
+      
+      $('#periodo .form-control').datepicker({
+          format: "yyyy",
+          startView: 2,
+          minViewMode: 2,
+          maxViewMode: 2,
+          autoclose: true
+        });
+        
+      $('#mes .form-control').datepicker({
+        format: "MM",
+        startView: 1,
+        minViewMode: 1,
+        maxViewMode: 1,
+        autoclose: true,
+        todayBtn: "linked"
+      });
+        
+      $('#mes .form-control').datepicker().on('changeDate', function (e) {
+        query[this.name] = e.format('mm');
+      });  
+        
+      $('#periodo .form-control').datepicker().on('changeDate', function (e) {
+          query[this.name] = this.value;
+        });
+        
+      $('.input-date .form-control').datepicker('setDate', today);
+      $('.input-date .form-control').datepicker('update');
+
+      $select_empresa = $('#select-empresa').selectize({
+        valueField: 'Cod_Empresa',
+        labelField: 'Des_Empresa',
+        searchField: 'Des_Empresa',
+        preload: true,
+        load: function (q, callback) {
+          u.get_empresas_sueldo({{ user }}, function (d) {
+            callback(d.data);
+          });
+        },
+        onChange: function (value) {
+          query.empresa = value;
+          debug();
+          if (!value.length) return;
+          select_sucursal.disable();
+          select_sucursal.clearOptions();
+          select_sucursal.load(function (callback) {
+            $.ajax({
+              url: api + 'sucursal_sueldo/select/' + query.empresa,
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_sucursal.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+      
+      $select_sucursal = $('#select-sucursal').selectize({
+        valueField: 'Cod_Sucursal',
+        labelField: 'Des_Sucursal',
+        searchField: 'Des_Sucursal',
+        preload: true,
+        maxItems: null,
+        onChange: function (value) {
+          query.sucursal = value;
+          debug();
+          if (!value.length) return;
+          select_departamento.disable();
+          select_departamento.clearOptions();
+          select_departamento.load(function (callback) {
+            $.ajax({
+              url: api + 'departamento_sueldo/select/',
+              type: 'GET',
+              dataType: 'json',
+              data: query
+            }).done(function (res) {
+              select_departamento.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+      
+      $select_departamento = $('#select-departamento').selectize({
+        valueField: 'CodDpto',
+        labelField: 'Descrip',
+        searchField: 'Descrip',
+        maxItems: null,
+        onChange: function (value) {
+          query.departamento = value;
+          debug();
+          if (!value.length) return;
+          select_empleados.disable();
+          select_empleados.clearOptions();
+          select_empleados.load(function (callback) {
+            $.ajax({
+              url: api + 'empleados_sueldo/select/',
+              data: query,
+              type: 'GET',
+              dataType: 'json'
+            }).done(function (res) {
+              select_empleados.enable();
+              callback(res.data);
+            }).fail(function () {
+              callback();
+            });
+          });
+        }
+      });
+
+      $select_empleados = $('#select-empleados').selectize({
+        valueField: 'codempleado',
+        labelField: 'nombres',
+        searchField: 'nombres',
+        maxItems: null,
+        onChange: function (value) {
+          query.empleados = value;
+          debug();
+        }
+      });
+      
+    }
+
+    function debug() {
+      return;
+    }
+    
+    //META.fn: sortJSON
+    function sortJSON(data, key) {
+      return data.sort(function (a, b) {
+        var x = a[key];
+        var y = b[key];
+        return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+      });
+    }
+    
+    var monthNames = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
+                      "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"
+                    ];
+    
+    function getInforme() {
+      $('.collapse').collapse('hide');
+      $loading.show();
+      $empty.hide();
+      $resultado.empty();
+
+      
+      $.ajax(api + "sueldos_jornales/delete", {
+          method: 'GET',
+          contentType: 'application/json',
+        }).done(function (datos) {
+          if (datos.data == "OK") {
+                $.ajax(api + "sueldos_jornales/query_1", {
+                  method: 'GET',
+                  contentType: 'application/json',
+                  data: query
+                }).done(function (datos_1) {
+                    if (datos_1.data == "OK") {
+                        $.ajax(api + "sueldos_jornales/procedures", {
+                          method: 'GET',
+                          contentType: 'application/json',
+                          data: query
+                        }).done(function (datos_2) {
+                            if (datos_2.data.length > 0) {
+                                var sucursal = null;
+                                var new_dep_data = datos_2.data[1];
+                                var new_emp_data = sortJSON(datos_2.data[0], 'apellidos');
+                                var datos_3 = datos_2.data[0]
+                                var a_table = []
+                                var a_sucursal = []
+                                var a_departamento = []
+                                var date = new Date(parseInt(query.periodo), parseInt(query.mes), 0);
+                                $('#resultado').append("<h3>PERIODO DE PAGO: DEL 1 AL "+date.getUTCDate() + " DE " +  monthNames[date.getMonth()] + " DE " + date.getUTCFullYear() +"</h3>");
+                                for (var a=0; a < datos_3.length; a++){
+                                    if (sucursal != datos_3[a].des_sucursal){
+                                        var sdiv = '<hr><div id="div_suc_'+datos_3[a].cod_sucursal+'">'+
+                                                        '<h3>SUCURSAL: '+datos_3[a].des_sucursal+'</h3>'+
+                                                    '</div>';
+                                        $('#resultado').append(sdiv);
+                                        a_sucursal.push(datos_3[a].cod_sucursal);
+                                        sucursal = datos_3[a].des_sucursal;
+                                    }
+                                }
+                                var tt_ingbasico = 0; var tt_ingbasicomes = 0; var tt_ingbasicoadicional = 0;
+                                var tt_ingboniffam = 0; var tt_inghe30 = 0; var tt_inghe50 = 0;
+                                var tt_inghe100 = 0; var tt_ingvarios = 0; var tt_ingbonificacion = 0;
+                                var tt_toting_ind = 0; var tt_descaporteips = 0; var tt_descanticipos = 0;
+                                var tt_descvarios1 = 0; var tt_descvarios2 = 0; var tt_totdesc_ind = 0;
+                                var tt_total = 0;
+                                for (var c=0; c < new_emp_data.length; c++){
+                                    tt_ingbasico += parseInt(new_emp_data[c].ingbasico); tt_ingbasicomes += parseInt(new_emp_data[c].ingbasicomes);
+                                    tt_ingbasicoadicional += parseInt(new_emp_data[c].ingbasicoadicional); tt_ingboniffam += parseInt(new_emp_data[c].ingboniffam);
+                                    tt_inghe30 += parseInt(new_emp_data[c].inghe30); tt_inghe50 += parseInt(new_emp_data[c].inghe50);
+                                    tt_inghe100 += parseInt(new_emp_data[c].inghe100); tt_ingvarios += parseInt(new_emp_data[c].ingvarios);
+                                    tt_ingbonificacion += parseInt(new_emp_data[c].ingbonificacion); tt_toting_ind += parseInt(new_emp_data[c].toting_ind);
+                                    tt_descaporteips += parseInt(new_emp_data[c].descaporteips); tt_descanticipos += parseInt(new_emp_data[c].descanticipos);
+                                    tt_descvarios1 += parseInt(new_emp_data[c].descvarios1); tt_descvarios2 += parseInt(new_emp_data[c].descvarios2);
+                                    tt_totdesc_ind += parseInt(new_emp_data[c].totdesc_ind); tt_total += parseInt(new_emp_data[c].total);
+                                }
+                                var sttfoot = '<tr>'+
+                                    '<th colspan="2">TOTAL </th>'+
+                                    '<th style="text-align: right;">'+convertir_rever(tt_ingbasico)+'</th>'+
+                                    '<th style="text-align: right;"></th>'+
+                                    '<th style="text-align: right;">'+convertir_rever(tt_ingbasicomes)+'</th>'+
+                                    '<th style="text-align: right;">'+convertir_rever(tt_ingbasicoadicional)+'</th>'+
+                                    '<th style="text-align: right;">'+convertir_rever(tt_ingboniffam)+'</th>'+
+                                    '<th style="text-align: right;">'+convertir_rever(tt_inghe30)+'</th>'+
+                                    '<th style="text-align: right;">'+convertir_rever(tt_inghe50)+'</th>'+
+                                    '<th style="text-align: right;">'+convertir_rever(tt_inghe100)+'</th>'+
+                                    '<th style="text-align: right;">'+convertir_rever(tt_ingvarios)+'</th>'+
+                                    '<th style="text-align: right;">'+convertir_rever(tt_ingbonificacion)+'</th>'+
+                                    '<th style="text-align: right;">'+convertir_rever(tt_toting_ind)+'</th>'+
+                                    '<th style="text-align: right;">'+convertir_rever(tt_descaporteips)+'</th>'+
+                                    '<th style="text-align: right;">'+convertir_rever(tt_descanticipos)+'</th>'+
+                                    '<th style="text-align: right;">'+convertir_rever(tt_descvarios1)+'</th>'+
+                                    '<th style="text-align: right;">'+convertir_rever(tt_descvarios2)+'</th>'+
+                                    '<th style="text-align: right;">'+convertir_rever(tt_totdesc_ind)+'</th>'+
+                                    '<th style="text-align: right;">'+convertir_rever(tt_total)+'</th>'+
+                                '</tr>';
+                                for (var b=0; b < a_sucursal.length; b++){
+                                    var deposito = null;
+                                    for (var a=0; a < new_dep_data.length; a++){
+                                        if (a_sucursal[b] == new_dep_data[a].cod_sucursal){
+                                            if (deposito != new_dep_data[a].des_dpto){
+                                                var sdiv = '<hr><div id="div_suc_'+new_dep_data[a].cod_sucursal+'_dep_'+new_dep_data[a].coddpto+'">'+
+                                                                '<h4> &nbsp;&nbsp;&nbsp;&nbsp; DEPARTAMENTO: '+new_dep_data[a].des_dpto+'</h4>'+
+                                                                '<table id="table_suc_'+new_dep_data[a].cod_sucursal+'_dep_'+new_dep_data[a].coddpto+'" '+
+                                                                'class="table table-striped table-bordered nowrap suc_'+new_dep_data[a].cod_sucursal+' total" cellspacing="0" style="width:100%">'+
+                                                                    '<thead>'+
+                                                                        '<tr>'+
+                                                                            '<th style="text-align: center;">Legajo</th>'+
+                                                                            '<th style="text-align: center;width: 185px;">Apellidos y Nombres</th>'+
+                                                                            '<th style="text-align: center;">Sal. Básico</th>'+
+                                                                            '<th style="text-align: center;">Dias/Horas</th>'+
+                                                                            '<th style="text-align: center;">Sal. del Mes</th>'+
+                                                                            '<th style="text-align: center;">Sal. Adicional</th>'+
+                                                                            '<th style="text-align: center;">Bonif. Familiar</th>'+
+                                                                            '<th style="text-align: center;">H. Extras 30%</th>'+
+                                                                            '<th style="text-align: center;">H. Extras 50%</th>'+
+                                                                            '<th style="text-align: center;">H. Extras 100%</th>'+
+                                                                            '<th style="text-align: center;">Otros Ing.</th>'+
+                                                                            '<th style="text-align: center;">Ing. Adicionales</th>'+
+                                                                            '<th style="text-align: center;">TOTAL INGRESOS</th>'+
+                                                                            '<th style="text-align: center;">Desc. IPS</th>'+
+                                                                            '<th style="text-align: center;">Anticipos</th>'+
+                                                                            '<th style="text-align: center;">Seguro Médico</th>'+
+                                                                            '<th style="text-align: center;">Desc. Medico</th>'+
+                                                                            '<th style="text-align: center;">TOTAL DESCUENTOS</th>'+
+                                                                            '<th style="text-align: center;">NETO A COBRAR</th>'+
+                                                                        '</tr>'+
+                                                                    '</thead>'+
+                                                                    '<tbody></tbody>'+
+                                                                    '<tfoot></tfoot>'+
+                                                                '</table>'+
+                                                            '</div>';
+                                                $('#div_suc_'+a_sucursal[b]).append(sdiv);
+                                                a_table.push('table_suc_'+new_dep_data[a].cod_sucursal+'_dep_'+new_dep_data[a].coddpto);
+                                                a_departamento.push(new_dep_data[a].coddpto);
+                                                deposito = new_dep_data[a].des_dpto;
+                                            }
+                                        }
+                                    }
+                                }
+                                for (var b=0; b < a_sucursal.length; b++){
+                                    var ts_ingbasico = 0; var ts_ingbasicomes = 0; var ts_ingbasicoadicional = 0;
+                                    var ts_ingboniffam = 0; var ts_inghe30 = 0; var ts_inghe50 = 0;
+                                    var ts_inghe100 = 0; var ts_ingvarios = 0; var ts_ingbonificacion = 0;
+                                    var ts_toting_ind = 0; var ts_descaporteips = 0; var ts_descanticipos = 0;
+                                    var ts_descvarios1 = 0; var ts_descvarios2 = 0; var ts_totdesc_ind = 0;
+                                    var ts_total = 0;
+                                    for (var c=0; c < new_emp_data.length; c++){
+                                        if (new_emp_data[c].cod_sucursal == a_sucursal){
+                                            ts_ingbasico += parseInt(new_emp_data[c].ingbasico); ts_ingbasicomes += parseInt(new_emp_data[c].ingbasicomes);
+                                            ts_ingbasicoadicional += parseInt(new_emp_data[c].ingbasicoadicional); ts_ingboniffam += parseInt(new_emp_data[c].ingboniffam);
+                                            ts_inghe30 += parseInt(new_emp_data[c].inghe30); ts_inghe50 += parseInt(new_emp_data[c].inghe50);
+                                            ts_inghe100 += parseInt(new_emp_data[c].inghe100); ts_ingvarios += parseInt(new_emp_data[c].ingvarios);
+                                            ts_ingbonificacion += parseInt(new_emp_data[c].ingbonificacion); ts_toting_ind += parseInt(new_emp_data[c].toting_ind);
+                                            ts_descaporteips += parseInt(new_emp_data[c].descaporteips); ts_descanticipos += parseInt(new_emp_data[c].descanticipos);
+                                            ts_descvarios1 += parseInt(new_emp_data[c].descvarios1); ts_descvarios2 += parseInt(new_emp_data[c].descvarios2);
+                                            ts_totdesc_ind += parseInt(new_emp_data[c].totdesc_ind); ts_total += parseInt(new_emp_data[c].total);
+                                        }
+                                    }
+                                    for (var a=0; a < a_departamento.length; a++){
+                                        var t_ingbasico = 0; var t_ingbasicomes = 0; var t_ingbasicoadicional = 0;
+                                        var t_ingboniffam = 0; var t_inghe30 = 0; var t_inghe50 = 0;
+                                        var t_inghe100 = 0; var t_ingvarios = 0; var t_ingbonificacion = 0;
+                                        var t_toting_ind = 0; var t_descaporteips = 0; var t_descanticipos = 0;
+                                        var t_descvarios1 = 0; var t_descvarios2 = 0; var t_totdesc_ind = 0;
+                                        var t_total = 0;
+                                        for (var c=0; c < new_emp_data.length; c++){
+                                            var current_legajo = null;
+                                            if (new_emp_data[c].cod_sucursal == a_sucursal[b] && new_emp_data[c].coddpto == a_departamento[a]){
+                                                if (new_emp_data[c].codempleado != current_legajo){
+                                                    var stbody = '<tr>'+
+                                                                    '<td>'+new_emp_data[c].codempleado+'</td>'+
+                                                                    '<td>'+new_emp_data[c].apellidos+', '+new_emp_data[c].nombres+'</td>'+
+                                                                    '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].ingbasico)+'</td>'+
+                                                                    '<td>'+new_emp_data[c].diashorastrab+'</td>'+
+                                                                    '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].ingbasicomes)+'</td>'+
+                                                                    '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].ingbasicoadicional)+'</td>'+
+                                                                    '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].ingboniffam)+'</td>'+
+                                                                    '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].inghe30)+'</td>'+
+                                                                    '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].inghe50)+'</td>'+
+                                                                    '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].inghe100)+'</td>'+
+                                                                    '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].ingvarios)+'</td>'+
+                                                                    '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].ingbonificacion)+'</td>'+
+                                                                    '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].toting_ind)+'</td>'+
+                                                                    '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].descaporteips)+'</td>'+
+                                                                    '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].descanticipos)+'</td>'+
+                                                                    '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].descvarios1)+'</td>'+
+                                                                    '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].descvarios2)+'</td>'+
+                                                                    '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].totdesc_ind)+'</td>'+
+                                                                    '<td style="text-align: right;">'+convertir_rever(new_emp_data[c].total)+'</td>'+
+                                                                 '</tr>';
+                                                    $('#table_suc_'+new_emp_data[c].cod_sucursal+'_dep_'+new_emp_data[c].coddpto+' tbody').append(stbody);
+                                                    current_legajo = new_emp_data[c].codempleado;
+                                                    t_ingbasico += parseInt(new_emp_data[c].ingbasico); t_ingbasicomes += parseInt(new_emp_data[c].ingbasicomes);
+                                                    t_ingbasicoadicional += parseInt(new_emp_data[c].ingbasicoadicional); t_ingboniffam += parseInt(new_emp_data[c].ingboniffam);
+                                                    t_inghe30 += parseInt(new_emp_data[c].inghe30); t_inghe50 += parseInt(new_emp_data[c].inghe50);
+                                                    t_inghe100 += parseInt(new_emp_data[c].inghe100); t_ingvarios += parseInt(new_emp_data[c].ingvarios);
+                                                    t_ingbonificacion += parseInt(new_emp_data[c].ingbonificacion); t_toting_ind += parseInt(new_emp_data[c].toting_ind);
+                                                    t_descaporteips += parseInt(new_emp_data[c].descaporteips); t_descanticipos += parseInt(new_emp_data[c].descanticipos);
+                                                    t_descvarios1 += parseInt(new_emp_data[c].descvarios1); t_descvarios2 += parseInt(new_emp_data[c].descvarios2);
+                                                    t_totdesc_ind += parseInt(new_emp_data[c].totdesc_ind); t_total += parseInt(new_emp_data[c].total);
+                                                }
+                                                var stfoot = '<tr>'+
+                                                                '<th colspan="2">TOTAL POR DEPARTAMENTO</th>'+
+                                                                '<th style="text-align: right;">'+convertir_rever(t_ingbasico)+'</th>'+
+                                                                '<th style="text-align: right;"></th>'+
+                                                                '<th style="text-align: right;">'+convertir_rever(t_ingbasicomes)+'</th>'+
+                                                                '<th style="text-align: right;">'+convertir_rever(t_ingbasicoadicional)+'</th>'+
+                                                                '<th style="text-align: right;">'+convertir_rever(t_ingboniffam)+'</th>'+
+                                                                '<th style="text-align: right;">'+convertir_rever(t_inghe30)+'</th>'+
+                                                                '<th style="text-align: right;">'+convertir_rever(t_inghe50)+'</th>'+
+                                                                '<th style="text-align: right;">'+convertir_rever(t_inghe100)+'</th>'+
+                                                                '<th style="text-align: right;">'+convertir_rever(t_ingvarios)+'</th>'+
+                                                                '<th style="text-align: right;">'+convertir_rever(t_ingbonificacion)+'</th>'+
+                                                                '<th style="text-align: right;">'+convertir_rever(t_toting_ind)+'</th>'+
+                                                                '<th style="text-align: right;">'+convertir_rever(t_descaporteips)+'</th>'+
+                                                                '<th style="text-align: right;">'+convertir_rever(t_descanticipos)+'</th>'+
+                                                                '<th style="text-align: right;">'+convertir_rever(t_descvarios1)+'</th>'+
+                                                                '<th style="text-align: right;">'+convertir_rever(t_descvarios2)+'</th>'+
+                                                                '<th style="text-align: right;">'+convertir_rever(t_totdesc_ind)+'</th>'+
+                                                                '<th style="text-align: right;">'+convertir_rever(t_total)+'</th>'+
+                                                            '</tr>';
+                                                $('#table_suc_'+a_sucursal[b]+'_dep_'+a_departamento[a]+' tfoot').html(stfoot);
+                                            }
+                                        }
+                                    }
+                                    var stsfoot = '<tr>'+
+                                                    '<th colspan="2">TOTAL POR SUCURSAL</th>'+
+                                                    '<th style="text-align: right;">'+convertir_rever(ts_ingbasico)+'</th>'+
+                                                    '<th style="text-align: right;"></th>'+
+                                                    '<th style="text-align: right;">'+convertir_rever(ts_ingbasicomes)+'</th>'+
+                                                    '<th style="text-align: right;">'+convertir_rever(ts_ingbasicoadicional)+'</th>'+
+                                                    '<th style="text-align: right;">'+convertir_rever(ts_ingboniffam)+'</th>'+
+                                                    '<th style="text-align: right;">'+convertir_rever(ts_inghe30)+'</th>'+
+                                                    '<th style="text-align: right;">'+convertir_rever(ts_inghe50)+'</th>'+
+                                                    '<th style="text-align: right;">'+convertir_rever(ts_inghe100)+'</th>'+
+                                                    '<th style="text-align: right;">'+convertir_rever(ts_ingvarios)+'</th>'+
+                                                    '<th style="text-align: right;">'+convertir_rever(ts_ingbonificacion)+'</th>'+
+                                                    '<th style="text-align: right;">'+convertir_rever(ts_toting_ind)+'</th>'+
+                                                    '<th style="text-align: right;">'+convertir_rever(ts_descaporteips)+'</th>'+
+                                                    '<th style="text-align: right;">'+convertir_rever(ts_descanticipos)+'</th>'+
+                                                    '<th style="text-align: right;">'+convertir_rever(ts_descvarios1)+'</th>'+
+                                                    '<th style="text-align: right;">'+convertir_rever(ts_descvarios2)+'</th>'+
+                                                    '<th style="text-align: right;">'+convertir_rever(ts_totdesc_ind)+'</th>'+
+                                                    '<th style="text-align: right;">'+convertir_rever(ts_total)+'</th>'+
+                                                '</tr>';
+                                    $('.suc_'+a_sucursal[b]+' tfoot').last().append(stsfoot);
+                                }
+                                $('.total tfoot').last().append(sttfoot);
+                                for (var a=0; a < a_table.length; a++){
+                                    $('#' + a_table[a]).DataTable().destroy();
+                                    $('#' + a_table[a]).DataTable({
+                                      searching: false,
+                                      language: u.spanish_dt,
+                                      paging: false,
+                                      ordering: false,
+                                      info: false,
+                                      scrollCollapse: true,
+                                      scrollY: 300,
+                                      scrollX: '100%',                
+                                    });
+                                }
+                            } else {
+                                $empty.show();
+                            }
+                            $loading.hide();
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+  </script>
+{% endblock %}

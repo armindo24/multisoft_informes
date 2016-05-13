@@ -6,6 +6,7 @@ from django.db import models
 permissions_list = (("entrar_finanzas", "Finanzas"),
                     ("entrar_ventas", "Ventas"),
                     ("entrar_compras", "Compras"),
+                    ("entrar_rrhh", "RRHH"),
                     ("entrar_admin", "Admin"),
 #                     ("informe_balancegeneral", "Balance General"),
 #                     ("informe_balancegeneralcomprobado", "Balance General Comprobado"),
@@ -28,6 +29,11 @@ permissions_list = (("entrar_finanzas", "Finanzas"),
 #                     ("informe_cuentascobrar", "Cuentas por Cobrar"),
 #                     ("informe_recaudaciones", "Recaudaciones"),
 #                     ("informe_ventaestadisticos", "Estadisticos de Ventas"),
+#                     ("informe_legajos", "Legajos"),
+#                     ("informe_sueldosjornales", "Sueldos y Jornales"),
+#                     ("informe_anticipos", "Anticipos"),
+#                     ("informe_aguinaldos", "Aguinaldos"),
+#                     ("informe_recibos", "Recibos"),
                    )
 
 class CustomPermissions(models.Model):

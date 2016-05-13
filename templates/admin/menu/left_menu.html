@@ -83,6 +83,23 @@
                     <a href="{% url 'finanzas:flujo_fondo' %}"> Flujo de Fondo </a>
                 </li>
 		    {% endif %}
+		    {% if  request.session.modulo_seleccionado == "RRHH"  %}
+                <li>
+                    <a href="{% url 'rrhh:legajos' %}"> Legajos </a>
+                </li>
+                <li>
+                    <a href="{% url 'rrhh:sueldos_jornales' %}"> Liquidaciones de Sueldos y Jornales </a>
+                </li>
+                <li>
+                    <a href="{% url 'rrhh:anticipos' %}"> Anticipos </a>
+                </li>
+                <li>
+                    <a href="{% url 'rrhh:aguinaldos' %}"> Aguinaldos </a>
+                </li>
+                <li>
+                    <a href="{% url 'rrhh:recibos' %}"> Recibos </a>
+                </li>
+            {% endif %}
 			{% if  request.session.modulo_seleccionado == "Admin"  %}
 			<li>
 				<a href="/admin/auth/"> Usuarios </a>
