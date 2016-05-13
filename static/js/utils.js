@@ -15,7 +15,14 @@ var u = {
 
 u.getApiUrl = function () {
     var url = window.location;
-    var port = window.location.port ? ':' + u.api.port : '';
+    var port;
+    if (window.location.port) {
+        if (window.location.port === "8080") {
+            port = ':8080';
+        } else {
+            port = ':' + u.api.port;
+        }
+    }
     return 'http://' + url.hostname + port + u.api.path;
 };
 
