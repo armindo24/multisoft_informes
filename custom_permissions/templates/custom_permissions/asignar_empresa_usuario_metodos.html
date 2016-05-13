@@ -43,7 +43,7 @@
         vector.push("'" + data[a].empresa + "'")
       }
       var str = JSON.stringify({empresas: vector});
-      $.ajax(apiUrl + "/api/v1/empresa/inin/select", {method: 'POST', contentType: 'application/json', data: str}).done(
+      $.ajax(apiUrl + "empresa/inin/select", {method: 'POST', contentType: 'application/json', data: str}).done(
               function (data) {
                 if (data != null) {
                   $('#table').empty();
@@ -127,7 +127,7 @@
     if (vector.length == 0)
       vector.push("'" + "X" + "'");
     var str = JSON.stringify({empresas: vector});
-    $.ajax(apiUrl + "/api/v1/empresa/notin/select", {
+    $.ajax(apiUrl + "empresa/notin/select", {
       method: 'POST',
       contentType: 'application/json',
       data: str

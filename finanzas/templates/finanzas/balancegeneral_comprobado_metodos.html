@@ -425,7 +425,7 @@
   }
 
   function buscar_cuenta() {
-    $.get(api + "/api/v1/cuenta/select/" + document.getElementsByName('empresa')[0].value + "/" + document.getElementsByName('periodo')[0].value,
+    $.get(api + "cuenta/select/" + document.getElementsByName('empresa')[0].value + "/" + document.getElementsByName('periodo')[0].value,
             function (data) {
               if (data != null) {
                 var select = document.getElementsByName("cuentad")[0]
