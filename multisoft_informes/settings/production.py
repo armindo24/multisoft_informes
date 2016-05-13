@@ -19,3 +19,7 @@ DATABASES = {
             'PORT': ''
         }
 }
+
+SESSION_ENGINE = 'redis_sessions.session'
+SESSION_REDIS_UNIX_DOMAIN_SOCKET_PATH = '/tmp/redis.sock'
+SESSION_REDIS_PREFIX = 'session'

@@ -78,10 +78,6 @@ WSGI_APPLICATION = 'multisoft_informes.wsgi.application'
 
 ADMIN_MEDIA_PREFIX = '/static/admin/'
 
-SESSION_ENGINE = 'redis_sessions.session'
-SESSION_REDIS_UNIX_DOMAIN_SOCKET_PATH = '/tmp/redis.sock'
-SESSION_REDIS_PREFIX = 'session'
-
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/
 

@@ -227,6 +227,10 @@ u.get_empresas = function (user_id, cb) {
     });
 };
 
+u.get_empresas_sueldo = function (user_id, cb) {
+    Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas_sueldo, {'usuario': user_id}, {'cb': cb});
+};
+
 u.parseVal = function (i) {
     var n = typeof i === 'string' ?
         parseFloat(i.replace(/[\$]/g, '')) :
