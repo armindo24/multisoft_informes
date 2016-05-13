@@ -15,15 +15,7 @@
     $('#page-wrapper').css('margin-left', '0px');
     $('#my-left-menu').toggle(0);
 
-    var port;
-    if (window.location.port) {
-      if (window.location.port === "8080") {
-        port = ':8080';
-      } else {
-        port = ':' + 3000;
-      }
-    }
-    apiUrl = window.location.hostname + port;
+    apiUrl = u.getApiUrl();
 
     $(".chosen-select").chosen({
       disable_search_threshold: 0,
