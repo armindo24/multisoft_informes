@@ -14,9 +14,7 @@ $(document).ready(function() {
     $('#page-wrapper').css('margin-left','0px');
     $('#my-left-menu').toggle(0);
     
-    var url = window.location.href
-    aux = url.toString().split("http://")
-    aux1 = aux[1].toString().split(":8000")
+    var api = u.getApiUrl();
     
     $(".chosen-select").chosen({
         disable_search_threshold: 0,
@@ -44,7 +42,7 @@ function permisos_empresas(data){
             vector.push("'"+data[a].empresa+"'")
         }
         var str = JSON.stringify({empresas: vector});
-        $.ajax("http://"+aux1[0]+":3000/api/v1/empresa/inin/select",{method:'POST', contentType:'application/json', data: str}).done(
+        $.ajax(api+"api/v1/empresa/inin/select",{method:'POST', contentType:'application/json', data: str}).done(
         function(data) {
             if (data != null){
                 $('#table').empty();
@@ -128,7 +126,7 @@ function search_empresa(b){
     if (vector.length == 0)
         vector.push("'"+"X"+"'");
     var str = JSON.stringify({empresas: vector});
-    $.ajax("http://"+aux1[0]+":3000/api/v1/empresa/notin/select",{method:'POST', contentType:'application/json', data: str}).done(
+    $.ajax(api+"api/v1/empresa/notin/select",{method:'POST', contentType:'application/json', data: str}).done(
             function(data) {
                 if (data != null){
                     var string="";
