@@ -1,174 +1,187 @@
-<style>       
-.span3 {  
+<style>
+  .span3 {
     height: 500px !important;
     overflow: scroll;
-}
+  }
 </style>
 
 <script type="text/javascript">
 
-var lastselect = null;
+  var lastselect = null;
+  var apiUrl;
 
-$(document).ready(function() {
+  $(document).ready(function () {
     $('#addanother-button').hide();
-    $('#page-wrapper').css('margin-left','0px');
+    $('#page-wrapper').css('margin-left', '0px');
     $('#my-left-menu').toggle(0);
-    
-    var url = window.location.href
-    aux = url.toString().split("http://")
-    aux1 = aux[1].toString().split(":8000")
-    
-    $(".chosen-select").chosen({
-        disable_search_threshold: 0,
-        no_results_text: "Oops, nothing found!",
-        width: "200px",
-        allow_single_deselect: true
-        });
-});
 
-function cargar_empresas_permisos(a){
-    if (a.toString().length > 0) {
-        Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario':a});
-    } else {
-        $('#table').empty();
-        $('#addanother-button').hide();
+    var port;
+    if (window.location.port) {
+      if (window.location.port === "8080") {
+        port = ':8080';
+      } else {
+        port = ':' + 3000;
+      }
     }
-}
+    apiUrl = window.location.hostname + port;
 
-function permisos_empresas(data){
+    $(".chosen-select").chosen({
+      disable_search_threshold: 0,
+      no_results_text: "Oops, nothing found!",
+      width: "200px",
+      allow_single_deselect: true
+    });
+  });
+
+  function cargar_empresas_permisos(a) {
+    if (a.toString().length > 0) {
+      Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario': a});
+    } else {
+      $('#table').empty();
+      $('#addanother-button').hide();
+    }
+  }
+
+  function permisos_empresas(data) {
     var string = ""
-    if(data.length > 0){
-        console.log('Hay datos');
-        var vector = [] 
-        for (var a=0; a<data.length; a++){
-            vector.push("'"+data[a].empresa+"'")
-        }
-        var str = JSON.stringify({empresas: vector});
-        $.ajax("http://"+aux1[0]+":3000/api/v1/empresa/inin/select",{method:'POST', contentType:'application/json', data: str}).done(
-        function(data) {
-            if (data != null){
-                $('#table').empty();
-                for (var a=0; a<data.data.length; a++){
+    if (data.length > 0) {
+      console.log('Hay datos');
+      var vector = []
+      for (var a = 0; a < data.length; a++) {
+        vector.push("'" + data[a].empresa + "'")
+      }
+      var str = JSON.stringify({empresas: vector});
+      $.ajax(apiUrl + "/api/v1/empresa/inin/select", {method: 'POST', contentType: 'application/json', data: str}).done(
+              function (data) {
+                if (data != null) {
+                  $('#table').empty();
+                  for (var a = 0; a < data.data.length; a++) {
                     lastselect = a
-                    string='<div id="row-'+a+'" class="row show-grid">'+
-                                '<div class="col-md-10 text-center">'+
-                                    '<div style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 0px; border-top-width: 0px;border-bottom-width: 0px;border-right-width: 0px;border-left-width: 0px;" class="col-md-10 text-center">'+
-                                        '<input class="empresaid" type="hidden" id="empresa-'+a+'" value="'+data.data[a].Cod_Empresa+'">'+
-                                        '<input readonly="readonly" class="form-control" id="empresatext-'+a+'" value="'+data.data[a].Des_Empresa+'">'+
-                                    '</div>'+
-                                    '<div style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 0px;border-top-width: 0px;border-bottom-width: 0px;border-right-width: 0px;border-left-width: 0px;" class="col-md-2 text-center">'+
-                                        '<a title="Buscar" style="margin-left: 10px;" class="btn btn-info btn-sm" onclick="search_empresa('+a+');"><i class="fa fa-search-plus"></i></a>'+
-                                    '</div>'+
-                                '</div>'+
-                                '<div style="height: 56px;" class="col-md-2 text-center">'+
-                                    '<a title="Borrar" class="btn btn-warning btn-sm" onclick="deleteone('+a+')"><i class="fa fa-trash-o"></i></a>'+
-                                '</div>'+
+                    string = '<div id="row-' + a + '" class="row show-grid">' +
+                            '<div class="col-md-10 text-center">' +
+                            '<div style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 0px; border-top-width: 0px;border-bottom-width: 0px;border-right-width: 0px;border-left-width: 0px;" class="col-md-10 text-center">' +
+                            '<input class="empresaid" type="hidden" id="empresa-' + a + '" value="' + data.data[a].Cod_Empresa + '">' +
+                            '<input readonly="readonly" class="form-control" id="empresatext-' + a + '" value="' + data.data[a].Des_Empresa + '">' +
+                            '</div>' +
+                            '<div style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 0px;border-top-width: 0px;border-bottom-width: 0px;border-right-width: 0px;border-left-width: 0px;" class="col-md-2 text-center">' +
+                            '<a title="Buscar" style="margin-left: 10px;" class="btn btn-info btn-sm" onclick="search_empresa(' + a + ');"><i class="fa fa-search-plus"></i></a>' +
+                            '</div>' +
+                            '</div>' +
+                            '<div style="height: 56px;" class="col-md-2 text-center">' +
+                            '<a title="Borrar" class="btn btn-warning btn-sm" onclick="deleteone(' + a + ')"><i class="fa fa-trash-o"></i></a>' +
+                            '</div>' +
                             '</div>';
                     $('#table').append(string);
+                  }
                 }
-            }
-        });
+              });
     } else {
-        console.log('No hay datos');
-        for (var a=0; a<3; a++){
-            lastselect = a
-            string+='<div id="row-'+a+'" class="row show-grid">'+
-                        '<div class="col-md-10 text-center">'+
-                            '<div style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 0px; border-top-width: 0px;border-bottom-width: 0px;border-right-width: 0px;border-left-width: 0px;" class="col-md-10 text-center">'+
-                                '<input class="empresaid" type="hidden" id="empresa-'+a+'">'+
-                                '<input readonly="readonly" class="form-control" id="empresatext-'+a+'">'+
-                            '</div>'+
-                            '<div style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 0px;border-top-width: 0px;border-bottom-width: 0px;border-right-width: 0px;border-left-width: 0px;" class="col-md-2 text-center">'+
-                                '<a title="Buscar" style="margin-left: 10px;" class="btn btn-info btn-sm" onclick="search_empresa('+a+');"><i class="fa fa-search-plus"></i></a>'+
-                            '</div>'+
-                        '</div>'+
-                        '<div style="height: 56px;" class="col-md-2 text-center">'+
-                            '<a title="Borrar" class="btn btn-warning btn-sm" onclick="deleteone('+a+')"><i class="fa fa-trash-o"></i></a>'+
-                        '</div>'+
-                    '</div>';
-        }
+      console.log('No hay datos');
+      for (var a = 0; a < 3; a++) {
+        lastselect = a
+        string += '<div id="row-' + a + '" class="row show-grid">' +
+                '<div class="col-md-10 text-center">' +
+                '<div style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 0px; border-top-width: 0px;border-bottom-width: 0px;border-right-width: 0px;border-left-width: 0px;" class="col-md-10 text-center">' +
+                '<input class="empresaid" type="hidden" id="empresa-' + a + '">' +
+                '<input readonly="readonly" class="form-control" id="empresatext-' + a + '">' +
+                '</div>' +
+                '<div style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 0px;border-top-width: 0px;border-bottom-width: 0px;border-right-width: 0px;border-left-width: 0px;" class="col-md-2 text-center">' +
+                '<a title="Buscar" style="margin-left: 10px;" class="btn btn-info btn-sm" onclick="search_empresa(' + a + ');"><i class="fa fa-search-plus"></i></a>' +
+                '</div>' +
+                '</div>' +
+                '<div style="height: 56px;" class="col-md-2 text-center">' +
+                '<a title="Borrar" class="btn btn-warning btn-sm" onclick="deleteone(' + a + ')"><i class="fa fa-trash-o"></i></a>' +
+                '</div>' +
+                '</div>';
+      }
     }
     $('#table').append(string);
-    $('#addanother-button').show(); 
-}
+    $('#addanother-button').show();
+  }
 
-function addanother(){
-    lastselect = lastselect+1 
-    var string='<div id="row-'+lastselect+'"class="row show-grid">'+
-                    '<div class="col-md-10 text-center">'+
-                        '<div style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 0px; border-top-width: 0px;border-bottom-width: 0px;border-right-width: 0px;border-left-width: 0px;" class="col-md-10 text-center">'+
-                            '<input class="empresaid" type="hidden" id="empresa-'+lastselect+'">'+
-                            '<input readonly="readonly" class="form-control" id="empresatext-'+lastselect+'">'+
-                        '</div>'+
-                        '<div style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 0px;border-top-width: 0px;border-bottom-width: 0px;border-right-width: 0px;border-left-width: 0px;" class="col-md-2 text-center">'+
-                            '<a title="Buscar" style="margin-left: 10px;" class="btn btn-info btn-sm" onclick="search_empresa('+lastselect+');"><i class="fa fa-search-plus"></i></a>'+
-                        '</div>'+
-                    '</div>'+
-                    '<div style="height: 56px;" class="col-md-2 text-center">'+
-                        '<a title="Borrar" class="btn btn-warning btn-sm" onclick="deleteone('+lastselect+')"><i class="fa fa-trash-o"></i></a>'+
-                    '</div>'+
-            '</div>';   
-    $('#table').append(string); 
-}
+  function addanother() {
+    lastselect = lastselect + 1
+    var string = '<div id="row-' + lastselect + '"class="row show-grid">' +
+            '<div class="col-md-10 text-center">' +
+            '<div style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 0px; border-top-width: 0px;border-bottom-width: 0px;border-right-width: 0px;border-left-width: 0px;" class="col-md-10 text-center">' +
+            '<input class="empresaid" type="hidden" id="empresa-' + lastselect + '">' +
+            '<input readonly="readonly" class="form-control" id="empresatext-' + lastselect + '">' +
+            '</div>' +
+            '<div style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 0px;border-top-width: 0px;border-bottom-width: 0px;border-right-width: 0px;border-left-width: 0px;" class="col-md-2 text-center">' +
+            '<a title="Buscar" style="margin-left: 10px;" class="btn btn-info btn-sm" onclick="search_empresa(' + lastselect + ');"><i class="fa fa-search-plus"></i></a>' +
+            '</div>' +
+            '</div>' +
+            '<div style="height: 56px;" class="col-md-2 text-center">' +
+            '<a title="Borrar" class="btn btn-warning btn-sm" onclick="deleteone(' + lastselect + ')"><i class="fa fa-trash-o"></i></a>' +
+            '</div>' +
+            '</div>';
+    $('#table').append(string);
+  }
 
-function deleteone(a){
-    $('#row-'+a).remove();
-}
+  function deleteone(a) {
+    $('#row-' + a).remove();
+  }
 
-function search_empresa(b){
-    $('#current_value').val(b) 
+  function search_empresa(b) {
+    $('#current_value').val(b)
     $("#modalEmpresas").modal("show");
-    $('#tableEmpresas tbody').empty(); 
-    
+    $('#tableEmpresas tbody').empty();
+
     var vector = [];
-    $('.empresaid').each(function(){
-        if (this.value.length > 0)
-            vector.push("'"+this.value+"'");
+    $('.empresaid').each(function () {
+      if (this.value.length > 0)
+        vector.push("'" + this.value + "'");
     });
     if (vector.length == 0)
-        vector.push("'"+"X"+"'");
+      vector.push("'" + "X" + "'");
     var str = JSON.stringify({empresas: vector});
-    $.ajax("http://"+aux1[0]+":3000/api/v1/empresa/notin/select",{method:'POST', contentType:'application/json', data: str}).done(
-            function(data) {
-                if (data != null){
-                    var string="";
-                    for (var a=0; a<data.data.length; a++){
-                        string+='<tr id="empresa-row-'+data.data[a].Cod_Empresa+'">'+
-                                    '<td class="codigo">'+data.data[a].Cod_Empresa+'</td>'+
-                                    '<td class="descripcion">'+data.data[a].Des_Empresa+'</td>'+
-                                    '<td><a class="btn btn-success btn-sm" onclick="cargar_empresa(&quot;'+data.data[a].Cod_Empresa+'&quot;)" title="Selecionar"><i class="fa fa-check"></i></td>'+                              
-                               '</tr>';
-                    }
-                    $('#tableEmpresas tbody').html(string); 
+    $.ajax(apiUrl + "/api/v1/empresa/notin/select", {
+      method: 'POST',
+      contentType: 'application/json',
+      data: str
+    }).done(
+            function (data) {
+              if (data != null) {
+                var string = "";
+                for (var a = 0; a < data.data.length; a++) {
+                  string += '<tr id="empresa-row-' + data.data[a].Cod_Empresa + '">' +
+                          '<td class="codigo">' + data.data[a].Cod_Empresa + '</td>' +
+                          '<td class="descripcion">' + data.data[a].Des_Empresa + '</td>' +
+                          '<td><a class="btn btn-success btn-sm" onclick="cargar_empresa(&quot;' + data.data[a].Cod_Empresa + '&quot;)" title="Selecionar"><i class="fa fa-check"></i></td>' +
+                          '</tr>';
                 }
+                $('#tableEmpresas tbody').html(string);
+              }
             });
-            
-}
 
-function cargar_empresa(a){
-    var row = $('#current_value').val() 
-    $('#empresa-'+row).val($('#empresa-row-'+a).children('.codigo').text());
-    $('#empresatext-'+row).val($('#empresa-row-'+a).children('.descripcion').text());
+  }
+
+  function cargar_empresa(a) {
+    var row = $('#current_value').val()
+    $('#empresa-' + row).val($('#empresa-row-' + a).children('.codigo').text());
+    $('#empresatext-' + row).val($('#empresa-row-' + a).children('.descripcion').text());
     $("#modalEmpresas").modal("hide");
-}
+  }
 
-function save(){
+  function save() {
     var vector = []
-    $('.empresaid').each(function(){
-        if (this.value.length > 0)
-            vector.push(this.value);
+    $('.empresaid').each(function () {
+      if (this.value.length > 0)
+        vector.push(this.value);
     });
     if (vector.length > 0)
-        Dajaxice.custom_permissions.save_permisos_empresa(show_result, {'usuario':$('[name=usuario]').val(),
-                                                                        'empresas': vector});
-}
+      Dajaxice.custom_permissions.save_permisos_empresa(show_result, {
+        'usuario': $('[name=usuario]').val(),
+        'empresas': vector
+      });
+  }
 
-function show_result(data){
+  function show_result(data) {
     if (data == "fail") {
-        alert("Se ha producido un error!");
+      alert("Se ha producido un error!");
     } else {
-        window.location.href = '/custom_permissions/asignar_empresa_usuario/';
+      window.location.href = '/custom_permissions/asignar_empresa_usuario/';
     }
-}
+  }
 
 </script>
