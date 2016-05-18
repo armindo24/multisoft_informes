@@ -13,8 +13,8 @@ client.connect(dbConfig, function (err) {
 
 client.discon = function () {
     client.disconnect(function (err) {
-        if (err) throw err;
-        console.log('Desconectado cliente');
+        if (err)console.log(err);
+        else console.log('Desconectado cliente sueldo');
     });
 };
 
