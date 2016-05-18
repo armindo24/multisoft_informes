@@ -9,8 +9,8 @@ var shell = require('shelljs');
 var app = require('../app');
 var debug = require('debug')('multisoft:server');
 var http = require('http');
-var dbIntegrado = require('./db_integrado');
-var dbSueldo = require('./db_sueldo');
+var dbIntegrado = require('../db_integrado');
+var dbSueldo = require('../db_sueldo');
 
 /**
  * Get port from environment and store in Express.
