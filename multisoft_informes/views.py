@@ -56,6 +56,7 @@ def loggedin(request):
         
     iconos = {"Finanzas":"fa fa-university fa-5x",
               "Ventas":"fa fa-file-text-o fa-5x",
+              "Stock":"fa fa-cube fa-5x",
               "Compras": "fa fa-shopping-cart fa-5x",
               "RRHH": "fa fa-users fa-5x",
               "Admin":"fa fa-cogs fa-5x",
@@ -78,6 +79,8 @@ def menu(request):
     if request.user.has_perm('custom_permissions.'+permisos[q]):
         if q == "Ventas":
             titulo = 'Ventas'
+        elif q == "Stock":
+            titulo = 'Stock'
         elif q == "Finanzas":
             titulo = 'Finanzas'
         elif q == "Compras":
