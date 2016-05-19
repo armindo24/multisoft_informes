@@ -210,10 +210,10 @@
                               '<th style="text-align: right;">' + addCommas((Math.round(data.data[b].CREDITO_ME * 100) / 100).toString()) + '</th>'
                     }
                     string2 += '</tr>';
-                    total_debito += parseInt(data.data[a].DEBITO)
-                    total_credito += parseInt(data.data[a].CREDITO)
-                    total_debito_me += parseFloat(data.data[a].DEBITO_ME)
-                    total_credito_me += parseFloat(data.data[a].CREDITO_ME)
+                    total_debito += parseInt(data.data[b].DEBITO)
+                    total_credito += parseInt(data.data[b].CREDITO)
+                    total_debito_me += parseFloat(data.data[b].DEBITO_ME)
+                    total_credito_me += parseFloat(data.data[b].CREDITO_ME)
                   }
                   if (moneda == 'AM') {
                     string3 += '<tr><td colspan="6" style="text-align: right;"><b>TOTALES</b></td>' +
