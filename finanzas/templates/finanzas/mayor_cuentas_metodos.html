@@ -144,7 +144,10 @@
                 var total_creditoME = 0
                 if (datos[1].dato2.length > 0 && datos[0].dato1.length > 0) {
                   if (moneda == 'AM') {
-                    string2 = '<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th>' +
+                    string2 = '<tr><th>Fecha</th><th>Tipo</th><th>N&#176; Comp.</th><th>Aut.</th><th>N&#176;</th><th>L&#237;nea</th>'+
+                              '<th>C&#243;d. Auxiliar</th><th>Concepto</th><th>Debe M.L.</th><th>Haber M.L.</th><th>Saldo M.L.</th>'+
+                              '<th>Debe M.E.</th><th>Haber M.E.</th><th>Saldo M.E.</th></tr>'+
+                              '<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th>' +
                             '<th style="text-align: right;">' + convertir_rever(datos[1].dato2[0].Debito) + '</th>' +
                             '<th style="text-align: right;">' + convertir_rever(datos[1].dato2[0].Credito) + '</th>'
                     if (datos[1].dato2[0].TipoSaldo == "D") {
@@ -166,9 +169,11 @@
                     total_creditoME = parseFloat(datos[1].dato2[0].CreditoME)
 
                   } else if (moneda == 'LO') {
-                    string2 = '<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th>' +
-                            '<th style="text-align: right;">' + convertir_rever(datos[1].dato2[0].Debito) + '</th>' +
-                            '<th style="text-align: right;">' + convertir_rever(datos[1].dato2[0].Credito) + '</th>'
+                    string2 = '<tr><th>Fecha</th><th>Tipo</th><th>N&#176; Comp.</th><th>Aut.</th><th>N&#176;</th><th>L&#237;nea</th>'+
+                              '<th>C&#243;d. Auxiliar</th><th>Concepto</th><th>Debe</th><th>Haber</th><th>Saldo</th></tr>'+
+                              '<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th>' +
+                              '<th style="text-align: right;">' + convertir_rever(datos[1].dato2[0].Debito) + '</th>' +
+                              '<th style="text-align: right;">' + convertir_rever(datos[1].dato2[0].Credito) + '</th>'
                     if (datos[1].dato2[0].TipoSaldo == "D") {
                       string2 += '<th style="text-align: right;">' + convertir_rever(parseInt(datos[1].dato2[0].Debito) - parseInt(datos[1].dato2[0].Credito)) + '</th></tr>'
                     } else {
@@ -181,9 +186,11 @@
                     total_creditoME = parseFloat(datos[1].dato2[0].CreditoME)
 
                   } else {
-                    string2 = '<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th>' +
-                            '<th style="text-align: right;">' + addCommas((Math.round(datos[1].dato2[0].DebitoME * 100) / 100).toString()) + '</th>' +
-                            '<th style="text-align: right;">' + addCommas((Math.round(datos[1].dato2[0].CreditoME * 100) / 100).toString()) + '</th>'
+                    string2 = '<tr><th>Fecha</th><th>Tipo</th><th>N&#176; Comp.</th><th>Aut.</th><th>N&#176;</th><th>L&#237;nea</th>'+
+                              '<th>C&#243;d. Auxiliar</th><th>Concepto</th><th>Debe</th><th>Haber</th><th>Saldo</th></tr>'+
+                              '<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th>' +
+                              '<th style="text-align: right;">' + addCommas((Math.round(datos[1].dato2[0].DebitoME * 100) / 100).toString()) + '</th>' +
+                              '<th style="text-align: right;">' + addCommas((Math.round(datos[1].dato2[0].CreditoME * 100) / 100).toString()) + '</th>'
                     if (datos[1].dato2[0].TipoSaldo == "D") {
                       string2 += '<th style="text-align: right;">' + addCommas((Math.round((parseFloat(datos[1].dato2[0].DebitoME) - parseFloat(datos[1].dato2[0].CreditoME)) * 100) / 100).toString()) + '</th></tr>'
                     } else {
@@ -197,11 +204,15 @@
                   }
                 } else {
                   if (moneda == 'AM') {
-                    string2 = '<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th></tr>'
+                    string2 = '<tr><th>Fecha</th><th>Tipo</th><th>N&#176; Comp.</th><th>Aut.</th><th>N&#176;</th><th>L&#237;nea</th>'+
+                              '<th>C&#243;d. Auxiliar</th><th>Concepto</th><th>Debe M.L.</th><th>Haber M.L.</th><th>Saldo M.L.</th>'+
+                              '<th>Debe M.E.</th><th>Haber M.E.</th><th>Saldo M.E.</th></tr><tr><th style="text-align: center;" colspan="8">Saldo Anterior</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th></tr>'
                   } else if (moneda == 'LO') {
-                    string2 = '<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th></tr>'
+                    string2 = '<tr><th>Fecha</th><th>Tipo</th><th>N&#176; Comp.</th><th>Aut.</th><th>N&#176;</th><th>L&#237;nea</th>'+
+                              '<th>C&#243;d. Auxiliar</th><th>Concepto</th><th>Debe</th><th>Haber</th><th>Saldo</th></tr><tr><th style="text-align: center;" colspan="8">Saldo Anterior</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th></tr>'
                   } else {
-                    string2 = '<tr><th style="text-align: center;" colspan="8">Saldo Anterior</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th></tr>'
+                    string2 = '<tr><th>Fecha</th><th>Tipo</th><th>N&#176; Comp.</th><th>Aut.</th><th>N&#176;</th><th>L&#237;nea</th>'+
+                              '<th>C&#243;d. Auxiliar</th><th>Concepto</th><th>Debe</th><th>Haber</th><th>Saldo</th></tr>   <tr><th style="text-align: center;" colspan="8">Saldo Anterior</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th><th style="text-align: right;">0</th></tr>'
                   }
                 }
 
@@ -458,13 +469,14 @@
                   }
                   string4 += '</tr>'
                 }
-                $('#tabla-' + cuenta + ' thead').append(string2)
+                $('#tabla-' + cuenta + ' thead').html(string2)
                 $('#tabla-' + cuenta + ' tbody').html(string3)
                 $('#tabla-' + cuenta + ' tfoot').html(string4)
                 string2 = ""
                 string3 = ""
                 string4 = ""
-               $('#tabla-' + cuenta).DataTable({
+                $('#tabla-' + cuenta).DataTable().destroy();
+                $('#tabla-' + cuenta).DataTable({
                         searching: false,
                         language: u.spanish_dt,
                         paging: false,
@@ -521,36 +533,7 @@
                                 '&nbsp;&nbsp;&nbsp;&nbsp;<b>' + data[0].data1[x].Codplancta + '&nbsp;&nbsp;&nbsp;&nbsp;' + data[0].data1[x].NOMBREPLANCTA + '</b>' +
                                 '<table id="tabla-' + data[0].data1[x].Codplancta + '" class="table table-striped table-bordered nowrap puta" cellspacing="0" width="100%">' + 
                                 //style="width:90%" style="padding-top: 0px;margin-top: 5px;">' +
-                                '<thead>' +
-                                '<tr>' +
-                                '<th>Fecha</th>' +
-                                '<th>Tipo</th>' +
-                                '<th>N&#176; Comp.</th>' +
-                                '<th>Aut.</th>' +
-                                '<th>N&#176;</th>' +
-                                '<th>L&#237;nea</th>' +
-                                '<th>C&#243;d. Auxiliar</th>' +
-                                '<th>Concepto</th>'
-                        if (moneda == 'AM') {
-                          string += '<th>Debe M.L.</th>' +
-                                  '<th>Haber M.L.</th>' +
-                                  '<th>Saldo M.L.</th>' +
-                                  '<th>Debe M.E.</th>' +
-                                  '<th>Haber M.E.</th>' +
-                                  '<th>Saldo M.E.</th>'
-                        } else {
-                          string += '<th>Debe</th>' +
-                                  '<th>Haber</th>' +
-                                  '<th>Saldo</th>'
-                        }
-                        string += '</tr>' +
-                                '</thead>' +
-                                '<tbody>' +
-                                '</tbody>' +
-                                '<tfoot>' +
-                                '</tfoot>' +
-                                '</table>'
-                        '</div>'
+                                '<thead></thead><tbody></tbody><tfoot></tfoot></table></div>';
                       }
                       setTimeout('cargar_detalle(' + data[0].data1[x].Codplancta + ',"' + empresa + '",' + periodo + ',"' + fechad + '","' + fechah + '","' + moneda + '","' + tipoasiento + '","' + data[0].data1[x].NOMBREPLANCTA + '")', 1000 * (x + 1));
                       //cargar_detalle('+data[0].data1[x].Codplancta+',"'+empresa+'",'+periodo+',"'+fechad+'","'+fechah+'","'+moneda+'","'+tipoasiento+'","'+ data[0].data1[x].NOMBREPLANCTA +'")
