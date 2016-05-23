@@ -63,7 +63,7 @@ if ($.fn.dataTable) {
 
 u.getApiUrl = function () {
     var url = window.location;
-    var port;
+    var port = '';
     if (window.location.port) {
         if (window.location.port === "8080") {
             port = ':8080';
