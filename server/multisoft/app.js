@@ -42,7 +42,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Register routes
 app.use('/', routes);
-app.use('/users', users);
+app.use('/api/v1/users', users);
 app.use('/api/v1', api);
 app.use('/api/v1/estadisticas', stats);
 app.use('/api/v1/stock', stock);

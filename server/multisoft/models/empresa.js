@@ -1,4 +1,5 @@
 var conn = require('../db_integrado');
+var utils = require('./queryUtils');
 
 var Empresa = {};
 
@@ -22,6 +23,12 @@ Empresa.inin = function (body, cb) {
         if (err) throw err;
         cb(row);
     });
+};
+
+Empresa.list = function (list) {
+    var sql = "Select Cod_Empresa, Des_Empresa from dba.EMPRESA where Cod_Empresa in " + utils.in(list);
+    console.log(sql);
+    return conn.execAsync(sql);
 };
 
 Empresa.clientes = function (empresa, query, cb) {

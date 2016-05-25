@@ -42,7 +42,7 @@ function permisos_empresas(data){
             vector.push("'"+data[a].empresa+"'")
         }
         var str = JSON.stringify({empresas: vector});
-        $.ajax(api+"api/v1/empresa/inin/select",{method:'POST', contentType:'application/json', data: str}).done(
+        $.ajax(api+"empresa/inin/select",{method:'POST', contentType:'application/json', data: str}).done(
         function(data) {
             if (data != null){
                 $('#table').empty();
@@ -126,7 +126,7 @@ function search_empresa(b){
     if (vector.length == 0)
         vector.push("'"+"X"+"'");
     var str = JSON.stringify({empresas: vector});
-    $.ajax(api+"api/v1/empresa/notin/select",{method:'POST', contentType:'application/json', data: str}).done(
+    $.ajax(api+"empresa/notin/select",{method:'POST', contentType:'application/json', data: str}).done(
             function(data) {
                 if (data != null){
                     var string="";
