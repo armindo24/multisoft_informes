@@ -4,6 +4,11 @@ var pg = require('../postgres');
 var _ = require('lodash');
 var Empresa = require('../models/empresa');
 
+router.use(function (req, res, next) {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    next();
+});
+
 // Create a new object, that prototypally inherits from the Error constructor
 function UserNotFoundError(message) {
     this.name = 'UserNotFoundError';
