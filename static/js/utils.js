@@ -1,21 +1,77 @@
 'use strict';
 
-$.fn.dataTable.Api.register('processing()', function (show) {
-    return this.iterator('table', function (ctx) {
-        ctx.oApi._fnProcessingDisplay(ctx, show);
-    });
-});
-
 var u = {
     api: {
-        port: 3000,
+        port: '3000',
         path: '/api/v1/'
     }
 };
 
+if ($.fn.datepicker) {
+    u.defaultDatepicker = function () {
+        $.extend(true, $.fn.datepicker.defaults, {
+            language: "es",
+            orientation: "bottom auto"
+        });
+    };
+}
+
+if ($.fn.dataTable) {
+    $.fn.dataTable.Api.register('processing()', function (show) {
+        return this.iterator('table', function (ctx) {
+            ctx.oApi._fnProcessingDisplay(ctx, show);
+        });
+    });
+    $.fn.dataTable.Api.register('sum()', function () {
+        return this.flatten().reduce(function (a, b) {
+            a = u.parseVal(a);
+            b = u.parseVal(b);
+
+            return a + b;
+        }, 0);
+    });
+
+    u.numFormatter = $.fn.dataTable.render.number('.', ',', 0);
+    u.numFormat = u.numFormatter.display;
+    u.usFormatter = $.fn.dataTable.render.number('.', ',', 2);
+
+    u.defaultDT = function () {
+        $.extend(true, $.fn.dataTable.defaults, {
+            language: u.spanish_dt,
+            deferRender: true,
+            scrollY: 300,
+            scrollX: '100%',
+            scrollCollapse: true,
+            scroller: {
+                displayBuffer: 30,
+                loadingIndicator: true
+            },
+            columnDefs: [
+                {className: "price-value", targets: "price-label"},
+                {className: "price-value", targets: "us-price-label"},
+                {render: u.numFormatter, targets: "price-label"},
+                {render: u.usFormatter, targets: "us-price-label"},
+                {className: "text-center", targets: "text-center"},
+                {visible: false, targets: "grouping-col"}
+            ],
+            searching: false,
+            ordering: false,
+            processing: true
+        });
+    };
+}
+
 u.getApiUrl = function () {
     var url = window.location;
-    return 'http://' + url.hostname + ':' + u.api.port + u.api.path;
+    var port = '';
+    if (window.location.port) {
+        if (window.location.port === "8080") {
+            port = ':8080';
+        } else {
+            port = ':' + u.api.port;
+        }
+    }
+    return 'http://' + url.hostname + port + u.api.path;
 };
 
 var api = u.getApiUrl();
@@ -25,15 +81,6 @@ u.dateFormat = function (date) {
     if (!date) return '';
     return date.split(/[\s]+/)[0];
 };
-
-$.fn.dataTable.Api.register('sum()', function () {
-    return this.flatten().reduce(function (a, b) {
-        a = u.parseVal(a);
-        b = u.parseVal(b);
-
-        return a + b;
-    }, 0);
-});
 
 u.hideNav = function () {
     $('#page-wrapper').css('margin-left', '0px');
@@ -146,25 +193,6 @@ var permisos_empresas = function (data, args) {
     }
 };
 
-var permisos_empresas_sueldo = function (data, args) {
-    if (data.length > 0) {
-        var vector = []
-        for (var a = 0; a < data.length; a++) {
-            vector.push("'" + data[a].empresa + "'")
-        }
-        var str = JSON.stringify({empresas: vector});
-        $.ajax(api + "empresa_sueldo/inin/select", {
-            method: 'POST',
-            contentType: 'application/json',
-            data: str
-        }).done(function (d) {
-                if (args.cb) args.cb(d);
-            }
-        );
-    }
-};
-
-
 u.spanish_dt = {
     "decimal": ",",
     "emptyTable": "No hay datos disponibles",
@@ -191,17 +219,17 @@ u.spanish_dt = {
 };
 
 u.get_empresas = function (user_id, cb) {
-    Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario': user_id}, {'cb': cb});
+    console.log("getempresas");
+    $.ajax({
+        url: api + 'users/' + user_id + '/empresas'
+    }).done(function (res) {
+        cb(res);
+    });
 };
 
 u.get_empresas_sueldo = function (user_id, cb) {
     Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas_sueldo, {'usuario': user_id}, {'cb': cb});
 };
-
-
-u.numFormatter = $.fn.dataTable.render.number('.', ',', 0);
-u.numFormat = u.numFormatter.display;
-u.usFormatter = $.fn.dataTable.render.number('.', ',', 2);
 
 u.parseVal = function (i) {
     var n = typeof i === 'string' ?
@@ -216,38 +244,6 @@ u.debug = function ($p, query) {
         $p.text(JSON.stringify(query));
     }
     console.log("debug", query);
-};
-
-u.defaultDatepicker = function () {
-    $.extend(true, $.fn.datepicker.defaults, {
-        language: "es",
-        orientation: "bottom auto"
-    });
-};
-
-u.defaultDT = function () {
-    $.extend(true, $.fn.dataTable.defaults, {
-        language: u.spanish_dt,
-        deferRender: true,
-        scrollY: 300,
-        scrollX: '100%',
-        scrollCollapse: true,
-        scroller: {
-            displayBuffer: 30,
-            loadingIndicator: true
-        },
-        columnDefs: [
-            {className: "price-value", targets: "price-label"},
-            {className: "price-value", targets: "us-price-label"},
-            {render: u.numFormatter, targets: "price-label"},
-            {render: u.usFormatter, targets: "us-price-label"},
-            {className: "text-center", targets: "text-center"},
-            {visible: false, targets: "grouping-col"}
-        ],
-        searching: false,
-        ordering: false,
-        processing: true
-    });
 };
 
 u.resetSelect = function ($select) {
