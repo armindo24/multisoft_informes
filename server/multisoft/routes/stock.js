@@ -4,11 +4,6 @@ var router = express.Router();
 var Stock = require('../models/stock');
 var Articulo = require('../models/articulo');
 
-router.use(function (req, res, next) {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    next();
-});
-
 var postProcess = function (response, result) {
     response.json({data: result});
 };
