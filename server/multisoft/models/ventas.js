@@ -260,7 +260,6 @@ Ventas.estadisticas.clientes = function (params, query) {
 };
 
 Ventas.estadisticas.articulos = function (params, query) {
-    var articulos = query.articulo.slice(0, maxSelect);
     var sql =
         "SELECT vend = Trim (dba.vtadet.cod_articulo), tipo = if dba.tpocbte.tp_def = " +
         "'NC' then 'credito' else 'venta' endif, nombre = Trim (dba.articulo.des_art ), anho = " +
@@ -277,8 +276,14 @@ Ventas.estadisticas.articulos = function (params, query) {
         "( dba.vtacab.cod_empresa = dba.tpocbte.cod_empresa ) AND " +
         "( dba.vtacab.cod_tp_comp = dba.tpocbte.cod_tp_comp )\n" +
         "AND ( dba.vtacab.anulado = 'N' ) " +
-        "AND ( dba.vtacab.cod_empresa = ? ) " +
-        "AND ((dba.vtadet.cod_articulo IN " + q.in(articulos) + " )) " +
+        "AND ( dba.vtacab.cod_empresa = ? ) ";
+    if (query.articulo) {
+        if (query.articulo.constructor === Array)
+            var articulos = [query.articulo];
+        else var articulos = query.articulo.slice(0, maxSelect);
+        sql += "AND ((dba.vtadet.cod_articulo IN " + q.in(articulos) + " )) ";
+    }
+    sql +=
         "AND ( vtadet.cod_sucursal = ? ) " +
         "AND Date(dba.vtacab.fha_cbte) >= Date (?) " +
         "AND Date(dba.vtacab.fha_cbte) <= Date (?)\n" +
