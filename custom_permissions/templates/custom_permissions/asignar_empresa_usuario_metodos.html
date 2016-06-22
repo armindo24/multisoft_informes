@@ -118,14 +118,17 @@ function search_empresa(b){
     $("#modalEmpresas").modal("show");
     $('#tableEmpresas tbody').empty(); 
     
-    var vector = [];
+    var vector_gestion = [];
     $('.empresaid').each(function(){
-        if (this.value.length > 0)
-            vector.push("'"+this.value+"'");
+        if (this.value.length > 0) {
+            new_vector = this.value.split('-') 
+            if (new_vector[1] == 'Integrado')
+                vector_gestion.push("'"+new_vector[0]+"'");
+        }    
     });
-    if (vector.length == 0)
-        vector.push("'"+"X"+"'");
-    var str = JSON.stringify({empresas: vector});
+    if (vector_gestion.length == 0)
+        vector_gestion.push("'"+"X"+"'");
+    var str = JSON.stringify({empresas: vector_gestion});
     $.ajax(api+"empresa/notin/select",{method:'POST', contentType:'application/json', data: str}).done(
             function(data) {
                 if (data != null){
@@ -134,19 +137,35 @@ function search_empresa(b){
                         string+='<tr id="empresa-row-'+data.data[a].Cod_Empresa+'">'+
                                     '<td class="codigo">'+data.data[a].Cod_Empresa+'</td>'+
                                     '<td class="descripcion">'+data.data[a].Des_Empresa+'</td>'+
-                                    '<td><a class="btn btn-success btn-sm" onclick="cargar_empresa(&quot;'+data.data[a].Cod_Empresa+'&quot;)" title="Selecionar"><i class="fa fa-check"></i></td>'+                              
+                                    '<td class="base">Integrado</td>'+
+                                    '<td><a class="btn btn-success btn-sm" onclick="cargar_empresa(&quot;'+data.data[a].Cod_Empresa+'&quot;,&quot;integrado&quot;)" title="Selecionar"><i class="fa fa-check"></i></td>'+                              
                                '</tr>';
                     }
                     $('#tableEmpresas tbody').html(string); 
                 }
+                $.ajax(api+"empresa_sueldo/notin/select",{method:'POST', contentType:'application/json', data: str}).done(
+                function(data) {
+                    if (data != null){
+                        var string="";
+                        for (var a=0; a<data.data.length; a++){
+                            string+='<tr id="empresa-row-'+data.data[a].Cod_Empresa+'">'+
+                                        '<td class="codigo">'+data.data[a].Cod_Empresa+'</td>'+
+                                        '<td class="descripcion">'+data.data[a].Des_Empresa+'</td>'+
+                                        '<td class="base">Sueldo</td>'+
+                                        '<td><a class="btn btn-success btn-sm" onclick="cargar_empresa(&quot;'+data.data[a].Cod_Empresa+'&quot;,&quot;sueldo&quot;)" title="Selecionar"><i class="fa fa-check"></i></td>'+                              
+                                   '</tr>';
+                        }
+                        $('#tableEmpresas tbody').append(string); 
+                    }
+                    
+                });
             });
-            
 }
 
 function cargar_empresa(a){
     var row = $('#current_value').val() 
-    $('#empresa-'+row).val($('#empresa-row-'+a).children('.codigo').text());
-    $('#empresatext-'+row).val($('#empresa-row-'+a).children('.descripcion').text());
+    $('#empresa-'+row).val($('#empresa-row-'+a).children('.codigo').text()+'-'+$('#empresa-row-'+a).children('.base').text());
+    $('#empresatext-'+row).val($('#empresa-row-'+a).children('.descripcion').text()+' - '+$('#empresa-row-'+a).children('.base').text());
     $("#modalEmpresas").modal("hide");
 }
 

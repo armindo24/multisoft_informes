@@ -50,3 +50,4 @@ class UsuarioEmpresa(models.Model):
         permissions = (("entrar_asignacion", "Asignacion de Empresas"),)
     user = models.ForeignKey(User)
     empresa = models.CharField(max_length=30)
+    db = models.CharField(max_length=10, null=True)
