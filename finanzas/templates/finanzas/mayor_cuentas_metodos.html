@@ -78,7 +78,7 @@
     });
     select_empresa = $select_empresa[0].selectize;
     select_empresa.load(function (callback) {
-      u.get_empresas({{ user }}, function (d) {
+      u.get_empresas({{ user }},'Integrado', function (d) {
         callback(d.data);
       });
     });

@@ -36,13 +36,13 @@ function cargar_empresas_permisos(a){
 function permisos_empresas(data){
     var string = ""
     if(data.length > 0){
-        console.log('Hay datos');
-        var vector = [] 
+        var vector_integrado = [] 
         for (var a=0; a<data.length; a++){
-            vector.push("'"+data[a].empresa+"'")
+            if (data[a].db == "Integrado")
+            vector_integrado.push("'"+data[a].empresa+"'")
         }
-        var str = JSON.stringify({empresas: vector});
-        $.ajax(api+"empresa/inin/select",{method:'POST', contentType:'application/json', data: str}).done(
+        var str_integrado = JSON.stringify({empresas: vector_integrado});
+        $.ajax(api+"empresa/inin/select",{method:'POST', contentType:'application/json', data: str_integrado}).done(
         function(data) {
             if (data != null){
                 $('#table').empty();
@@ -51,8 +51,38 @@ function permisos_empresas(data){
                     string='<div id="row-'+a+'" class="row show-grid">'+
                                 '<div class="col-md-10 text-center">'+
                                     '<div style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 0px; border-top-width: 0px;border-bottom-width: 0px;border-right-width: 0px;border-left-width: 0px;" class="col-md-10 text-center">'+
-                                        '<input class="empresaid" type="hidden" id="empresa-'+a+'" value="'+data.data[a].Cod_Empresa+'">'+
-                                        '<input readonly="readonly" class="form-control" id="empresatext-'+a+'" value="'+data.data[a].Des_Empresa+'">'+
+                                        '<input class="empresaid" type="hidden" id="empresa-'+a+'" value="'+data.data[a].Cod_Empresa+'-Integrado">'+
+                                        '<input readonly="readonly" class="form-control" id="empresatext-'+a+'" value="'+data.data[a].Des_Empresa+' - Integrado">'+
+                                    '</div>'+
+                                    '<div style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 0px;border-top-width: 0px;border-bottom-width: 0px;border-right-width: 0px;border-left-width: 0px;" class="col-md-2 text-center">'+
+                                        '<a title="Buscar" style="margin-left: 10px;" class="btn btn-info btn-sm" onclick="search_empresa('+a+');"><i class="fa fa-search-plus"></i></a>'+
+                                    '</div>'+
+                                '</div>'+
+                                '<div style="height: 56px;" class="col-md-2 text-center">'+
+                                    '<a title="Borrar" class="btn btn-warning btn-sm" onclick="deleteone('+a+')"><i class="fa fa-trash-o"></i></a>'+
+                                '</div>'+
+                            '</div>';
+                    $('#table').append(string);
+                }
+            }
+        });
+        var vector_sueldo = [] 
+        for (var a=0; a<data.length; a++){
+            if (data[a].db == "Sueldo")
+            vector_sueldo.push("'"+data[a].empresa+"'")
+        }
+        var str_sueldo = JSON.stringify({empresas: vector_sueldo});
+        $.ajax(api+"empresa_sueldo/inin/select",{method:'POST', contentType:'application/json', data: str_sueldo}).done(
+        function(data) {
+            if (data != null){
+                //$('#table').empty();
+                for (var a=0; a<data.data.length; a++){
+                    lastselect = a
+                    string='<div id="row-'+a+'" class="row show-grid">'+
+                                '<div class="col-md-10 text-center">'+
+                                    '<div style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 0px; border-top-width: 0px;border-bottom-width: 0px;border-right-width: 0px;border-left-width: 0px;" class="col-md-10 text-center">'+
+                                        '<input class="empresaid" type="hidden" id="empresa-'+a+'" value="'+data.data[a].Cod_Empresa+'-Sueldo">'+
+                                        '<input readonly="readonly" class="form-control" id="empresatext-'+a+'" value="'+data.data[a].Des_Empresa+' - Sueldo">'+
                                     '</div>'+
                                     '<div style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 0px;border-top-width: 0px;border-bottom-width: 0px;border-right-width: 0px;border-left-width: 0px;" class="col-md-2 text-center">'+
                                         '<a title="Buscar" style="margin-left: 10px;" class="btn btn-info btn-sm" onclick="search_empresa('+a+');"><i class="fa fa-search-plus"></i></a>'+
@@ -67,7 +97,6 @@ function permisos_empresas(data){
             }
         });
     } else {
-        console.log('No hay datos');
         for (var a=0; a<3; a++){
             lastselect = a
             string+='<div id="row-'+a+'" class="row show-grid">'+
@@ -128,8 +157,21 @@ function search_empresa(b){
     });
     if (vector_gestion.length == 0)
         vector_gestion.push("'"+"X"+"'");
-    var str = JSON.stringify({empresas: vector_gestion});
-    $.ajax(api+"empresa/notin/select",{method:'POST', contentType:'application/json', data: str}).done(
+    var str_gestion = JSON.stringify({empresas: vector_gestion});
+    
+    var vector_sueldo = [];
+    $('.empresaid').each(function(){
+        if (this.value.length > 0) {
+            new_vector = this.value.split('-') 
+            if (new_vector[1] == 'Sueldo')
+                vector_sueldo.push("'"+new_vector[0]+"'");
+        }    
+    });
+    if (vector_sueldo.length == 0)
+        vector_sueldo.push("'"+"X"+"'");
+    var str_sueldo = JSON.stringify({empresas: vector_sueldo});
+    
+    $.ajax(api+"empresa/notin/select",{method:'POST', contentType:'application/json', data: str_gestion}).done(
             function(data) {
                 if (data != null){
                     var string="";
@@ -143,7 +185,7 @@ function search_empresa(b){
                     }
                     $('#tableEmpresas tbody').html(string); 
                 }
-                $.ajax(api+"empresa_sueldo/notin/select",{method:'POST', contentType:'application/json', data: str}).done(
+                $.ajax(api+"empresa_sueldo/notin/select",{method:'POST', contentType:'application/json', data: str_sueldo}).done(
                 function(data) {
                     if (data != null){
                         var string="";

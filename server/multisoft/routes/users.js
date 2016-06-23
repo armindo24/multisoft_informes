@@ -3,6 +3,7 @@ var router = express.Router();
 var pg = require('../postgres');
 var _ = require('lodash');
 var Empresa = require('../models/empresa');
+var EmpresaSueldo = require('../models/empresa_sueldo');
 
 // Create a new object, that prototypally inherits from the Error constructor
 function UserNotFoundError(message) {
@@ -30,13 +31,29 @@ router.get('/:user', function (req, res, next) {
     });
 });
 
-router.get('/:user/empresas', function (req, res, next) {
+router.get('/:user/empresas/:base', function (req, res, next) {
+//     pg.User.findAll({
+//         where: {
+//             id: req.params.user
+//         }, include: [{
+//             model: pg.UsuarioEmpresa,
+//             where: {
+//                 db: req.params.base
+//             }
+//         }]
+//     });
     pg.User.findById(req.params.user).then(function (user) {
         if (!user)throw new UserNotFoundError();
         return user.getEmpresa();
     }).then(function (empresas) {
-        var include = _.map(empresas, 'empresa');
-        return Empresa.list(include);
+        console.log(empresas);
+        console.log(req.params.base);
+        var include = _(empresas).filter(['db',req.params.base]).map('empresa').value();
+        if (req.params.base == 'Integrado'){
+            return Empresa.list(include);    
+        } else if (req.params.base = "Sueldo") {
+            return EmpresaSueldo.list(include);
+        }
     }).then(function (result) {
         res.json({data: result});
     }).catch(function (error) {

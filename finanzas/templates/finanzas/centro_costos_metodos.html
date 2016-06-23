@@ -79,7 +79,7 @@
     });
     select_empresa = $select_empresa[0].selectize;
     select_empresa.load(function (callback) {
-      u.get_empresas({{ user }}, function (d) {
+      u.get_empresas({{ user }},'Integrado', function (d) {
         callback(d.data);
       });
     });
@@ -217,9 +217,9 @@
                     var total_row = accounts.length
                     for (var b = 1; b < cols.length; b++) {
                       if (a == (total_row - 1)) {
-                        string1 += '<th style="text-align: right;" class="' + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + ' ' + cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + '" id="' + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + '-' + cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + '"></th>'
+                        string1 += '<th style="text-align: right;" class="' + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + ' ' + cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + '" id="' + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + '-' + cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + '"></th>'
                       } else {
-                        string1 += '<td style="text-align: right;" class="' + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + ' ' + cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + '" id="' + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + '-' + cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + '"></td>'
+                        string1 += '<td style="text-align: right;" class="' + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + ' ' + cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + '" id="' + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + '-' + cols[b].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + '"></td>'
                       }
                     }
                     string1 += '</tr>';
@@ -229,21 +229,21 @@
 
                     if (moneda == "LO") {
                       if (data.data[e].TipoSaldo == "D") {
-                        $("[id='" + data.data[e].CodPlanCta.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-" + data.data[e].Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-" + data.data[e].CodPlanAux.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-" + data.data[e].PlanAuxi_Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "']").text(convertir_rever((data.data[e].sum_TotalDb - data.data[e].sum_TotalCr).toString()));
+                        $("[id='" + data.data[e].CodPlanCta.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + "-" + data.data[e].Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + "-" + data.data[e].CodPlanAux.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split("'").join('').split('"').join('') + "-" + data.data[e].PlanAuxi_Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + "']").text(convertir_rever((data.data[e].sum_TotalDb - data.data[e].sum_TotalCr).toString()));
                       } else {
-                        $("[id='" + data.data[e].CodPlanCta.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-" + data.data[e].Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-" + data.data[e].CodPlanAux.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-" + data.data[e].PlanAuxi_Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "']").text(convertir_rever((data.data[e].sum_TotalCr - data.data[e].sum_TotalDb).toString()));
+                        $("[id='" + data.data[e].CodPlanCta.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + "-" + data.data[e].Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + "-" + data.data[e].CodPlanAux.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split("'").join('').split('"').join('') + "-" + data.data[e].PlanAuxi_Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + "']").text(convertir_rever((data.data[e].sum_TotalCr - data.data[e].sum_TotalDb).toString()));
                       }
                     } else {
                       if (data.data[e].TipoSaldo == "D") {
-                        $("[id='" + data.data[e].CodPlanCta.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-" + data.data[e].Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-" + data.data[e].CodPlanAux.toString().split(' ').join('') + "-" + data.data[e].PlanAuxi_Nombre.toString().split(' ').join('') + "']").text(addCommas((Math.round((data.data[e].sum_TotalDbME - data.data[e].sum_TotalCrME) * 100) / 100).toString()));
+                        $("[id='" + data.data[e].CodPlanCta.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + "-" + data.data[e].Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + "-" + data.data[e].CodPlanAux.toString().split(' ').join('').split("'").join('').split('"').join('') + "-" + data.data[e].PlanAuxi_Nombre.toString().split(' ').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + "']").text(addCommas((Math.round((data.data[e].sum_TotalDbME - data.data[e].sum_TotalCrME) * 100) / 100).toString()));
                       } else {
-                        $("[id='" + data.data[e].CodPlanCta.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-" + data.data[e].Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-" + data.data[e].CodPlanAux.toString().split(' ').join('') + "-" + data.data[e].PlanAuxi_Nombre.toString().split(' ').join('') + "']").text(addCommas((Math.round((data.data[e].sum_TotalCrME - data.data[e].sum_TotalDbME) * 100) / 100).toString()));
+                        $("[id='" + data.data[e].CodPlanCta.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + "-" + data.data[e].Nombre.toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + "-" + data.data[e].CodPlanAux.toString().split(' ').join('').split("'").join('').split('"').join('') + "-" + data.data[e].PlanAuxi_Nombre.toString().split(' ').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + "']").text(addCommas((Math.round((data.data[e].sum_TotalCrME - data.data[e].sum_TotalDbME) * 100) / 100).toString()));
                       }
                     }
                   }
                   for (var a = 0; a < accounts.length - 1; a++) {
                     var total = 0;
-                    $("." + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')).each(function () {
+                    $("." + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('')).each(function () {
                       if (moneda == "LO") {
                         if ($(this).text() != null && $(this).text() != "")
                           total += parseInt($(this).text().split('.').join(''));
@@ -253,14 +253,14 @@
                       }
                     });
                     if (moneda == "LO") {
-                      $("[id='" + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-Total']").text(convertir_rever(total))
+                      $("[id='" + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + "-Total']").text(convertir_rever(total))
                     } else {
-                      $("[id='" + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "-Total']").text(addCommas((Math.round((total) * 100) / 100).toString()))
+                      $("[id='" + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + "-Total']").text(addCommas((Math.round((total) * 100) / 100).toString()))
                     }
                   }
                   for (var a = 1; a < cols.length; a++) {
                     var total = 0
-                    $("." + cols[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('')).each(function () {
+                    $("." + cols[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('')).each(function () {
                       if (moneda == "LO") {
                         if ($(this).text() != null && $(this).text() != "")
                           total += parseInt($(this).text().split('.').join(''));
@@ -270,17 +270,17 @@
                       }
                     });
                     if (moneda == "LO") {
-                      $("[id='Total-" + cols[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "']").text(convertir_rever(total))
+                      $("[id='Total-" + cols[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + "']").text(convertir_rever(total))
                     } else {
-                      $("[id='Total-" + cols[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + "']").text(addCommas((Math.round((total) * 100) / 100).toString()))
+                      $("[id='Total-" + cols[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + "']").text(addCommas((Math.round((total) * 100) / 100).toString()))
                     }
                   }
                   var total = 0;
                   for (var a = 0; a < accounts.length - 1; a++) {
                     if (moneda == "LO") {
-                      total += parseInt($("." + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + ".Total").text().split('.').join(''));
+                      total += parseInt($("." + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + ".Total").text().split('.').join(''));
                     } else {
-                      total += parseFloat($("." + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('') + ".Total").text().split('.').join('').replace(',', '.'));
+                      total += parseFloat($("." + accounts[a].toString().split(' ').join('').split('.').join('').split('/').join('').split('$').join('').split('`').join('').split('&').join('').split('(').join('').split(')').join('').split("'").join('').split('"').join('') + ".Total").text().split('.').join('').replace(',', '.'));
                     }
                   }
                   if (moneda == "LO") {

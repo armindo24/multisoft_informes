@@ -107,7 +107,7 @@
 
       selectEmpresa = $selectEmpresa[0].selectize;
       selectEmpresa.load(function (cb) {
-        u.get_empresas({{ user }}, function (res) {
+        u.get_empresas({{ user }},'Integrado', function (res) {
           cb(res.data);
         });
       });

@@ -218,18 +218,18 @@ u.spanish_dt = {
     }
 };
 
-u.get_empresas = function (user_id, cb) {
+u.get_empresas = function (user_id, base, cb) {
     console.log("getempresas");
     $.ajax({
-        url: api + 'users/' + user_id + '/empresas'
+        url: api + 'users/' + user_id + '/empresas/' + base
     }).done(function (res) {
         cb(res);
     });
 };
 
-u.get_empresas_sueldo = function (user_id, cb) {
-    Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas_sueldo, {'usuario': user_id}, {'cb': cb});
-};
+// u.get_empresas_sueldo = function (user_id, cb) {
+//     Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas_sueldo, {'usuario': user_id}, {'cb': cb});
+// };
 
 u.parseVal = function (i) {
     var n = typeof i === 'string' ?

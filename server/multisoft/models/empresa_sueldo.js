@@ -1,4 +1,5 @@
 var conn = require('../db_sueldo');
+var utils = require('./queryUtils');
 
 var Empresa = {};
 
@@ -71,6 +72,12 @@ Empresa.vendedores = function (params, query) {
         "FROM dba.VENDEDOR " +
         "WHERE estado = 'A' ";
 
+    return conn.execAsync(sql);
+};
+
+Empresa.list = function (list) {
+    var sql = "Select Cod_Empresa, Des_Empresa from dba.EMPRESA where Cod_Empresa in " + utils.in(list);
+    console.log(sql);
     return conn.execAsync(sql);
 };
 

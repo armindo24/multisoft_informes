@@ -60,6 +60,9 @@ models.User = sequelize.define('user', {
 models.UsuarioEmpresa = sequelize.define('userEmpresa', {
     empresa: {
         type: Sequelize.STRING(30)
+    },
+    db: {
+        type: Sequelize.STRING(10)
     }
 }, {
     timestamps: false,

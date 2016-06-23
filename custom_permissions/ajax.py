@@ -11,6 +11,7 @@ def get_permisos_empresa(request, usuario):
         for permiso in permisos_cargados:
             dato = {
                 'empresa': permiso.empresa,
+                'db': permiso.db,
             }
             datos.append(dato)
         return json.dumps(datos)
@@ -23,9 +24,11 @@ def save_permisos_empresa(request, usuario, empresas):
     UsuarioEmpresa.objects.filter(user_id=usuario).delete()
     try:
         for empresa in empresas:
+            new_empresa = empresa.split('-')
             usuarioempresa = UsuarioEmpresa()
             usuarioempresa.user_id = usuario
-            usuarioempresa.empresa = empresa
+            usuarioempresa.empresa = new_empresa[0]
+            usuarioempresa.db = new_empresa[1]
             usuarioempresa.save()
         return json.dumps("sucess")
     except:

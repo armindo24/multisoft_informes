@@ -120,7 +120,7 @@
         searchField: 'Des_Empresa',
         preload: true,
         load: function (q, callback) {
-          u.get_empresas({{ user }}, function (d) {
+          u.get_empresas({{ user }},'Integrado', function (d) {
             callback(d.data);
           });
         },
