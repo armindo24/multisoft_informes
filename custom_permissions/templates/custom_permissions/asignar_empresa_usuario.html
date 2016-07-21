@@ -1,42 +1,43 @@
-{% extends 'admin/base_site.html'%}
+{% extends 'admin/base_site.html' %}
 {% load staticfiles %}
 {% block extrahead %}
-	<link rel="stylesheet" href={% static 'css/jquery-ui.css' %}> 
-    <link rel="stylesheet" href={% static 'chosen_v1.4.2/chosen.css' %}>
-    <link rel="stylesheet" href={% static 'chosen_v1.4.2/docsupport/prism.css' %}>
-    <script src={% static 'js/jquery-ui.js' %}></script>
-    <script src={% static 'js/puntos-decimales.js' %}></script>
-    <script src={% static 'js/jquery.maskedinput.min.js' %}></script>
-    <script src={% static 'chosen_v1.4.2/chosen.jquery.js' %}></script>
-	<script src={% static 'chosen_v1.4.2/docsupport/prism.js' %}></script>
-	<script src={% static 'dajaxice/dajaxice.core.js' %}></script>
-	<script src="{% static 'js/utils.js' %}"></script>
-	{% include 'custom_permissions/asignar_empresa_usuario_metodos.html' %}
+  <link rel="stylesheet" href={% static 'css/jquery-ui.css' %}>
+  <link rel="stylesheet" href={% static 'chosen/chosen.css' %}>
+  <script src={% static 'js/jquery-ui.js' %}></script>
+  <script src={% static 'js/puntos-decimales.js' %}></script>
+  <script src={% static 'js/jquery.maskedinput.min.js' %}></script>
+  <script src={% static 'chosen/chosen.jquery.js' %}></script>
+  <script src={% static 'dajaxice/dajaxice.core.js' %}></script>
+  <script src="{% static 'js/utils.js' %}"></script>
+  {% include 'custom_permissions/asignar_empresa_usuario_metodos.html' %}
 {% endblock %}
 
 {% block header %}
-	Asignación de Empresas:
+  Asignación de Empresas:
 {% endblock %}
 
 {% block content %}
-    <select data-placeholder="Usuario..." name="usuario" onchange="cargar_empresas_permisos(this.value);" class="chosen-select" tabindex="2">
-        <option selected></option>
-        {% for usuario in usuarios %}
-            <option value="{{ usuario.id }}">{{ usuario.username }}</option>
-        {% endfor %}
-    </select>
-    
-    <div>
-        <div style="width:50%" id="table">
-        </div>
-        <div style="width:50%; padding-top: 10px;padding-bottom: 10px; text-align: right;">
-            <a id="addanother-button" class="btn btn-primary" onclick="addanother();"><i class="fa fa-plus-square"></i></a>
-        </div>
-        <a id="save-button" class="btn btn-success" onclick="save();"> Guardar <i class="fa fa-floppy-o"></i></a>
-        <a id="cancel-button" class="btn btn-danger" href="/custom_permissions/asignar_empresa_usuario/"> Cancelar <i class="fa fa-times"></i></a>
+  <select data-placeholder="Usuario..." name="usuario" onchange="cargar_empresas_permisos(this.value);"
+          class="chosen-select" tabindex="2">
+    <option selected></option>
+    {% for usuario in usuarios %}
+      <option value="{{ usuario.id }}">{{ usuario.username }}</option>
+    {% endfor %}
+  </select>
+
+  <div>
+    <div style="width:50%" id="table">
     </div>
-    
-<div id="modalEmpresas" class="modal fade bs-example-modal-sm" tabindex="-1" data-backdrop="static" data-keyboard="false" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="false">
+    <div style="width:50%; padding-top: 10px;padding-bottom: 10px; text-align: right;">
+      <a id="addanother-button" class="btn btn-primary" onclick="addanother();"><i class="fa fa-plus-square"></i></a>
+    </div>
+    <a id="save-button" class="btn btn-success" onclick="save();"> Guardar <i class="fa fa-floppy-o"></i></a>
+    <a id="cancel-button" class="btn btn-danger" href="/custom_permissions/asignar_empresa_usuario/"> Cancelar <i
+            class="fa fa-times"></i></a>
+  </div>
+
+  <div id="modalEmpresas" class="modal fade bs-example-modal-sm" tabindex="-1" data-backdrop="static"
+       data-keyboard="false" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="false">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -58,7 +59,22 @@
               <div class="modal-footer">
              </div>
         </div>
+        <div class="modal-body span3">
+          <center>
+            <table id="tableEmpresas" class="table table-striped table-hover table-bordered table-filter scroll">
+              <thead>
+              <th>Codigo</th>
+              <th>Empresa</th>
+              <th>Seleccionar</th>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </center>
+        </div>
+        <div class="modal-footer">
+        </div>
+      </div>
     </div>
-</div>
-<imput type="hidden" id="current_value">
+  </div>
+  <imput type="hidden" id="current_value">
 {% endblock %}

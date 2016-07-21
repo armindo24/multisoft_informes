@@ -50,7 +50,7 @@ router.get('/:user/empresas/:base', function (req, res, next) {
         console.log(req.params.base);
         var include = _(empresas).filter(['db',req.params.base]).map('empresa').value();
         if (req.params.base == 'Integrado'){
-            return Empresa.list(include);    
+            return Empresa.list(include);
         } else if (req.params.base = "Sueldo") {
             return EmpresaSueldo.list(include);
         }

@@ -8,11 +8,6 @@ var postProcess = function (response, result) {
     response.json({data: result});
 };
 
-router.use(function (req, res, next) {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    next();
-});
-
 router.get('/informes/:empresa/articulos', function (req, res, next) {
     Stock.articulos(req.params, req.query).then(function (result) {
         postProcess(res, result);

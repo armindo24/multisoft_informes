@@ -1,7 +1,0 @@
-Django==1.8.7
-django-admin-bootstrapped==2.5.6
-django-autocomplete-light==2.2.10
-six==1.10.0
-sqlany-django==1.12
-sqlanydb==1.0.6.1
-wheel==0.24.0

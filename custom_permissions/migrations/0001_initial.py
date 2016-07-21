@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
             ],
             options={
-                'permissions': (('entrar_finanzas', 'Finanzas'), ('entrar_ventas', 'Ventas'), ('entrar_admin', 'Admin'), ('informe_balancegeneral', 'Balance General'), ('informe_balancegeneralcomprobado', 'Balance General Comprobado'), ('informe_diario', 'Libro Diario'), ('informe_mayorcuenta', 'Libro Mayor de Cuenta'), ('informe_ordenpago', 'Ordenes de Pago')),
+                'permissions': (('entrar_finanzas', 'Finanzas'), ('entrar_ventas', 'Ventas'), ('entrar_stock', 'Stock'), ('entrar_compras', 'Compras'), ('entrar_rrhh', 'RRHH'), ('entrar_admin', 'Admin')),
             },
         ),
         migrations.CreateModel(
@@ -28,5 +28,8 @@ class Migration(migrations.Migration):
                 ('empresa', models.CharField(max_length=30)),
                 ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
             ],
+            options={
+                'permissions': (('entrar_asignacion', 'Asignacion de Empresas'),),
+            },
         ),
     ]

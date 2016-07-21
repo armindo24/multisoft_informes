@@ -1,39 +1,40 @@
-<style>       
-.span3 {  
+<style>
+  .span3 {
     height: 500px !important;
     overflow: scroll;
-}
+  }
 </style>
 
 <script type="text/javascript">
 
-var lastselect = null;
+  var lastselect = null;
+  var apiUrl;
 
-$(document).ready(function() {
+  $(document).ready(function () {
     $('#addanother-button').hide();
-    $('#page-wrapper').css('margin-left','0px');
+    $('#page-wrapper').css('margin-left', '0px');
     $('#my-left-menu').toggle(0);
-    
-    var api = u.getApiUrl();
-    
+
+    apiUrl = u.getApiUrl();
+
     $(".chosen-select").chosen({
-        disable_search_threshold: 0,
-        no_results_text: "Oops, nothing found!",
-        width: "200px",
-        allow_single_deselect: true
-        });
-});
+      disable_search_threshold: 0,
+      no_results_text: "Oops, nothing found!",
+      width: "200px",
+      allow_single_deselect: true
+    });
+  });
 
-function cargar_empresas_permisos(a){
+  function cargar_empresas_permisos(a) {
     if (a.toString().length > 0) {
-        Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario':a});
+      Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas, {'usuario': a});
     } else {
-        $('#table').empty();
-        $('#addanother-button').hide();
+      $('#table').empty();
+      $('#addanother-button').hide();
     }
-}
+  }
 
-function permisos_empresas(data){
+  function permisos_empresas(data) {
     var string = ""
     if(data.length > 0){
         var vector_integrado = [] 
@@ -63,6 +64,7 @@ function permisos_empresas(data){
                                 '</div>'+
                             '</div>';
                     $('#table').append(string);
+                  }
                 }
             }
         });
@@ -116,34 +118,34 @@ function permisos_empresas(data){
         }
     }
     $('#table').append(string);
-    $('#addanother-button').show(); 
-}
+    $('#addanother-button').show();
+  }
 
-function addanother(){
-    lastselect = lastselect+1 
-    var string='<div id="row-'+lastselect+'"class="row show-grid">'+
-                    '<div class="col-md-10 text-center">'+
-                        '<div style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 0px; border-top-width: 0px;border-bottom-width: 0px;border-right-width: 0px;border-left-width: 0px;" class="col-md-10 text-center">'+
-                            '<input class="empresaid" type="hidden" id="empresa-'+lastselect+'">'+
-                            '<input readonly="readonly" class="form-control" id="empresatext-'+lastselect+'">'+
-                        '</div>'+
-                        '<div style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 0px;border-top-width: 0px;border-bottom-width: 0px;border-right-width: 0px;border-left-width: 0px;" class="col-md-2 text-center">'+
-                            '<a title="Buscar" style="margin-left: 10px;" class="btn btn-info btn-sm" onclick="search_empresa('+lastselect+');"><i class="fa fa-search-plus"></i></a>'+
-                        '</div>'+
-                    '</div>'+
-                    '<div style="height: 56px;" class="col-md-2 text-center">'+
-                        '<a title="Borrar" class="btn btn-warning btn-sm" onclick="deleteone('+lastselect+')"><i class="fa fa-trash-o"></i></a>'+
-                    '</div>'+
-            '</div>';   
-    $('#table').append(string); 
-}
+  function addanother() {
+    lastselect = lastselect + 1
+    var string = '<div id="row-' + lastselect + '"class="row show-grid">' +
+            '<div class="col-md-10 text-center">' +
+            '<div style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 0px; border-top-width: 0px;border-bottom-width: 0px;border-right-width: 0px;border-left-width: 0px;" class="col-md-10 text-center">' +
+            '<input class="empresaid" type="hidden" id="empresa-' + lastselect + '">' +
+            '<input readonly="readonly" class="form-control" id="empresatext-' + lastselect + '">' +
+            '</div>' +
+            '<div style="padding-left: 0px;padding-right: 0px;padding-top: 0px;padding-bottom: 0px;border-top-width: 0px;border-bottom-width: 0px;border-right-width: 0px;border-left-width: 0px;" class="col-md-2 text-center">' +
+            '<a title="Buscar" style="margin-left: 10px;" class="btn btn-info btn-sm" onclick="search_empresa(' + lastselect + ');"><i class="fa fa-search-plus"></i></a>' +
+            '</div>' +
+            '</div>' +
+            '<div style="height: 56px;" class="col-md-2 text-center">' +
+            '<a title="Borrar" class="btn btn-warning btn-sm" onclick="deleteone(' + lastselect + ')"><i class="fa fa-trash-o"></i></a>' +
+            '</div>' +
+            '</div>';
+    $('#table').append(string);
+  }
 
-function deleteone(a){
-    $('#row-'+a).remove();
-}
+  function deleteone(a) {
+    $('#row-' + a).remove();
+  }
 
-function search_empresa(b){
-    $('#current_value').val(b) 
+  function search_empresa(b) {
+    $('#current_value').val(b)
     $("#modalEmpresas").modal("show");
     $('#tableEmpresas tbody').empty(); 
     
@@ -209,25 +211,27 @@ function cargar_empresa(a){
     $('#empresa-'+row).val($('#empresa-row-'+a).children('.codigo').text()+'-'+$('#empresa-row-'+a).children('.base').text());
     $('#empresatext-'+row).val($('#empresa-row-'+a).children('.descripcion').text()+' - '+$('#empresa-row-'+a).children('.base').text());
     $("#modalEmpresas").modal("hide");
-}
+  }
 
-function save(){
+  function save() {
     var vector = []
-    $('.empresaid').each(function(){
-        if (this.value.length > 0)
-            vector.push(this.value);
+    $('.empresaid').each(function () {
+      if (this.value.length > 0)
+        vector.push(this.value);
     });
     if (vector.length > 0)
-        Dajaxice.custom_permissions.save_permisos_empresa(show_result, {'usuario':$('[name=usuario]').val(),
-                                                                        'empresas': vector});
-}
+      Dajaxice.custom_permissions.save_permisos_empresa(show_result, {
+        'usuario': $('[name=usuario]').val(),
+        'empresas': vector
+      });
+  }
 
-function show_result(data){
+  function show_result(data) {
     if (data == "fail") {
-        alert("Se ha producido un error!");
+      alert("Se ha producido un error!");
     } else {
-        window.location.href = '/custom_permissions/asignar_empresa_usuario/';
+      window.location.href = '/custom_permissions/asignar_empresa_usuario/';
     }
-}
+  }
 
 </script>
