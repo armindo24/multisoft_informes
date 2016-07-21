@@ -181,23 +181,26 @@ var $messages, $loading, $empty;
                     } else {
                         var ingreso = parseFloat(data.data[a].SALDO);
                     }
+                    if (ingreso < 0 ){
+                        ingreso = ingreso*-1;
                     }
-                    if (data.data[a].Nombre == 'EGRESOS') {
-                        if (moneda == 'local') {
-                            var egreso = parseInt(data.data[a].SALDO);
-                        } else {
-                            var egreso = parseFloat(data.data[a].SALDO);
-                        }
-                    }
+                }
+                if (data.data[a].Nombre == 'EGRESOS') {
                     if (moneda == 'local') {
-                        total_debito += parseInt(data.data[a].TOTAL_DEBITO);
-                        total_credito += parseInt(data.data[a].TOTAL_CREDITO);
-                        total_saldo += parseInt(data.data[a].SALDO);
+                        var egreso = parseInt(data.data[a].SALDO);
                     } else {
-                        total_debito += parseFloat(data.data[a].TOTAL_DEBITO);
-                        total_credito += parseFloat(data.data[a].TOTAL_CREDITO);
-                        total_saldo += parseFloat(data.data[a].SALDO);
+                        var egreso = parseFloat(data.data[a].SALDO);
                     }
+                }
+                if (moneda == 'local') {
+                    total_debito += parseInt(data.data[a].TOTAL_DEBITO);
+                    total_credito += parseInt(data.data[a].TOTAL_CREDITO);
+                    total_saldo += parseInt(data.data[a].SALDO);
+                } else {
+                    total_debito += parseFloat(data.data[a].TOTAL_DEBITO);
+                    total_credito += parseFloat(data.data[a].TOTAL_CREDITO);
+                    total_saldo += parseFloat(data.data[a].SALDO);
+                }
                     if (data.data[a].CodPlanCta.length == 1) {
                         string += '<tr>' +
                                     '<td></td>' +

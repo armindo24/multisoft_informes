@@ -4,6 +4,8 @@ var Mayor = {};
 
 Mayor.cuentas = function (params,cb) {
 
+    console.log(typeof(params.tipoasiento));
+
     if (params.incluir == "NO"){
         var string = "select dba.Asientosdet.Codplancta,plancta_a.Nombre as NOMBREPLANCTA,plancta_a.Codplanctapad,"+
         "dba.f_get_CuentaName (plancta_a.cod_empresa, plancta_a.periodo, plancta_a.codplanctapad ) as NOMBREPLANCTAPAD "+
@@ -14,7 +16,7 @@ Mayor.cuentas = function (params,cb) {
         "and dba.AsientosCab.TipoAsiento = dba.TipoAsiento.TipoAsiento and dba.TipoAsiento.TpDef not in( 'N') "+
         "AND dba.ASIENTOSCAB.Cod_Empresa = '"+params.empresa+"' and dba.ASIENTOSCAB.Periodo = '"+params.periodo+"' AND dba.ASIENTOSCAB.Fecha BETWEEN '"+params.fechad+"' and '"+params.fechah+"' "+
         "AND plancta_a.CodPlanCta >= '"+params.cuentad+"' and plancta_a.CodPlanCta <= '"+params.cuentah+"' "
-        if (params.tipoasiento != 'NINGUNO')
+        if (params.tipoasiento != 'undefined')
             string+="AND dba.TipoAsiento.TipoAsiento = '"+params.tipoasiento+"' "
         string+="group by dba.Asientosdet.Codplancta,NOMBREPLANCTA,plancta_a.Codplanctapad,NOMBREPLANCTAPAD order by dba.Asientosdet.Codplancta"
         conn.exec(string, function(err, row){
@@ -28,7 +30,7 @@ Mayor.cuentas = function (params,cb) {
             "AND dba.ASIENTOSCAB.Cod_Empresa = '"+params.empresa+"' and dba.ASIENTOSCAB.Periodo = '"+params.periodo+"' "+
             "AND dba.ASIENTOSCAB.Fecha BETWEEN '"+params.fechad+"' and '"+params.fechah+"' AND plancta_a.CodPlanCta >= '"+params.cuentad+"' "+
             "and plancta_a.CodPlanCta <= '"+params.cuentah+"' "
-            if (params.tipoasiento != 'NINGUNO')
+            if (params.tipoasiento != 'undefined')
                 string1+="AND dba.TipoAsiento.TipoAsiento = '"+params.tipoasiento+"' "
             string1+="group by NOMBREPLANCTAPAD,plancta_a.Codplanctapad order by plancta_a.Codplanctapad"
             conn.exec(string1, function(err, row){
@@ -47,7 +49,7 @@ Mayor.cuentas = function (params,cb) {
         "AND dba.ASIENTOSCAB.Cod_Empresa = '"+params.empresa+"' and dba.ASIENTOSCAB.Periodo = '"+params.periodo+"' "+
         "AND dba.ASIENTOSCAB.Fecha BETWEEN '"+params.fechad+"' and '"+params.fechah+"' AND plancta_a.CodPlanCta >= '"+params.cuentad+"' " +
         "and plancta_a.CodPlanCta <= '"+params.cuentah+"' "
-        if (params.tipoasiento != 'NINGUNO')
+        if (params.tipoasiento != 'undefined')
             string+="AND dba.TipoAsiento.TipoAsiento = '"+params.tipoasiento+"' "
         string+="UNION select plancta_a.CodPlanCta,plancta_a.Nombre as NOMBREPLANCTA,plancta_a.Codplanctapad,"+
         "dba.f_get_CuentaName (plancta_a.cod_empresa, plancta_a.periodo, plancta_a.codplanctapad ) as NOMBREPLANCTAPAD "+
@@ -65,7 +67,7 @@ Mayor.cuentas = function (params,cb) {
             "AND dba.ASIENTOSCAB.Cod_Empresa = '"+params.empresa+"' and dba.ASIENTOSCAB.Periodo = '"+params.periodo+"' "+
             "AND dba.ASIENTOSCAB.Fecha BETWEEN '"+params.fechad+"' and '"+params.fechah+"' AND plancta_a.CodPlanCta >= '"+params.cuentad+"' "+
             "and plancta_a.CodPlanCta <= '"+params.cuentah+"' "
-            if (params.tipoasiento != 'NINGUNO')
+            if (params.tipoasiento != 'undefined')
                 string1+="AND dba.TipoAsiento.TipoAsiento = '"+params.tipoasiento+"' "
             string1+="group by NOMBREPLANCTAPAD,plancta_a.Codplanctapad "
             string1+="UNION select plancta_a.Codplanctapad,dba.f_get_CuentaName (plancta_a.cod_empresa, plancta_a.periodo, plancta_a.codplanctapad ) as NOMBREPLANCTAPAD "+
@@ -102,7 +104,7 @@ Mayor.cuentasdetalle = function (params,cb) {
     "and dba.TipoAsiento.TpDef not in( 'N') and dba.Asientoscab.Cod_empresa = '"+params.empresa+"' "+
     "and dba.Asientoscab.Periodo = '"+params.periodo+"' and dba.Asientoscab.Fecha BETWEEN '"+params.fechad+"' and '"+params.fechah+"' "+
     "and dba.Asientosdet.Codplancta = '"+params.cuenta+"' "
-    if (params.tipoasiento != 'NINGUNO')
+    if (params.tipoasiento != 'undefined')
         string1+="AND dba.TipoAsiento.TipoAsiento = '"+params.tipoasiento+"' "
     string1+="order by dba.Asientosdet.Codplancta,Fecha"
     console.log(string1)
@@ -118,7 +120,7 @@ Mayor.cuentasdetalle = function (params,cb) {
         "and dba.AsientosCab.TipoAsiento = dba.TipoAsiento.TipoAsiento and dba.TipoAsiento.TpDef not in( 'N') "+
         "and dba.Asientoscab.Cod_empresa = '"+params.empresa+"' and dba.Asientoscab.Periodo = '"+params.periodo+"' "+
         "and dba.Asientoscab.Fecha BETWEEN '"+params.periodo+"-01-01' and dateadd(dd,-1,'"+params.fechad+"') and dba.Asientosdet.Codplancta = '"+params.cuenta+"' "
-        if (params.tipoasiento != 'NINGUNO')
+        if (params.tipoasiento != 'undefined')
             string2+="AND dba.TipoAsiento.TipoAsiento = '"+params.tipoasiento+"' "
         string2+="group by dba.Asientosdet.CodPlanCta,plancta_a.TipoSaldo "
         conn.exec(string2, function(err, row){
@@ -145,7 +147,7 @@ Mayor.cuentasaux = function (params,cb) {
                     if (params.cuentaad != 'NINGUNA' && params.cuentaah != 'NINGUNA')
                         string+="and DBA.PLANAUXI.CodPlanAux >= '"+params.cuentaad+"' and DBA.PLANAUXI.CodPlanAux <= '"+params.cuentaah+"' "; 
                     string+="and DBA.ASIENTOSCAB.Fecha BETWEEN '"+params.fechad+"' and '"+params.fechah+"' ";
-                    if (params.tipoasiento != 'NINGUNO')
+                    if (params.tipoasiento != 'undefined')
                         string+="AND dba.ASIENTOSCAB.TipoAsiento = '"+params.tipoasiento+"' ";
                     string+="GROUP BY DBA.PLANAUXI.CodPlanCta,Cuenta,DBA.PLANAUXI.CodPlanAux,Auxiliar ORDER BY DBA.PLANAUXI.CodPlanCta,DBA.PLANAUXI.CodPlanAux";
         console.log(string)
@@ -165,7 +167,7 @@ Mayor.cuentasaux = function (params,cb) {
                             if (params.cuentaad != 'NINGUNA' && params.cuentaah != 'NINGUNA')
                                 string1+="and DBA.PLANAUXI.CodPlanAux >= '"+params.cuentaad+"' and DBA.PLANAUXI.CodPlanAux <= '"+params.cuentaah+"' "; 
                             string1+="and DBA.ASIENTOSCAB.Fecha BETWEEN '"+params.fechad+"' and '"+params.fechah+"' ";
-                            if (params.tipoasiento != 'NINGUNO')
+                            if (params.tipoasiento != 'undefined')
                                 string1+="AND dba.ASIENTOSCAB.TipoAsiento = '"+params.tipoasiento+"' ";
                             string1+="GROUP BY DBA.PLANAUXI.CodPlanCta,Cuenta ORDER BY DBA.PLANAUXI.CodPlanCta";
             console.log(string1)
@@ -190,7 +192,7 @@ Mayor.cuentasaux = function (params,cb) {
                     if (params.cuentaad != 'NINGUNA' && params.cuentaah != 'NINGUNA')
                         string+="and DBA.PLANAUXI.CodPlanAux >= '"+params.cuentaad+"' and DBA.PLANAUXI.CodPlanAux <= '"+params.cuentaah+"' "; 
                     string+="and DBA.ASIENTOSCAB.Fecha BETWEEN '"+params.fechad+"' and '"+params.fechah+"' ";
-                    if (params.tipoasiento != 'NINGUNO')
+                    if (params.tipoasiento != 'undefined')
                         string+="AND dba.ASIENTOSCAB.TipoAsiento = '"+params.tipoasiento+"' ";
                     //string+="GROUP BY DBA.PLANAUXI.CodPlanCta,Cuenta,DBA.PLANAUXI.CodPlanAux,Auxiliar ORDER BY DBA.PLANAUXI.CodPlanCta,DBA.PLANAUXI.CodPlanAux";
                     string+="union SELECT DBA.PLANAUXI.CodPlanCta,DBA.PLANCTA.Nombre as Cuenta,DBA.PLANAUXI.CodPlanAux,DBA.PLANAUXI.Nombre as Auxiliar "+
@@ -217,7 +219,7 @@ Mayor.cuentasaux = function (params,cb) {
                             if (params.cuentaad != 'NINGUNA' && params.cuentaah != 'NINGUNA')
                                 string1+="and DBA.PLANAUXI.CodPlanAux >= '"+params.cuentaad+"' and DBA.PLANAUXI.CodPlanAux <= '"+params.cuentaah+"' "; 
                             string1+="and DBA.ASIENTOSCAB.Fecha BETWEEN '"+params.fechad+"' and '"+params.fechah+"' ";
-                            if (params.tipoasiento != 'NINGUNO')
+                            if (params.tipoasiento != 'undefined')
                                 string1+="AND dba.ASIENTOSCAB.TipoAsiento = '"+params.tipoasiento+"' ";
                             //string1+="GROUP BY DBA.PLANAUXI.CodPlanCta,Cuenta ORDER BY DBA.PLANAUXI.CodPlanCta";
                             string1+="union SELECT DBA.PLANAUXI.CodPlanCta,DBA.PLANCTA.Nombre as Cuenta "+
@@ -256,7 +258,7 @@ Mayor.cuentasdetalleaux = function (params,cb) {
                  "and DBA.ASIENTOSCAB.Cod_Empresa = DBA.ASIENTOSDET.Cod_Empresa and DBA.ASIENTOSCAB.Periodo = DBA.ASIENTOSDET.Periodo "+ 
                  "and DBA.ASIENTOSCAB.NroTransac = DBA.ASIENTOSDET.NroTransac and DBA.ASIENTOSCAB.TipoAsiento = DBA.TIPOASIENTO.TipoAsiento "+ 
                  "and DBA.TIPOASIENTO.TpDef not in( 'N') ";
-                 if (params.tipoasiento != 'NINGUNO')
+                 if (params.tipoasiento != 'undefined')
                     string+="AND dba.ASIENTOSCAB.TipoAsiento = '"+params.tipoasiento+"' ";
                  string+="and DBA.PLANAUXI.PERIODO = '"+params.periodo+"' and DBA.PLANAUXI.Imputable = 'S' and DBA.PLANAUXI.Cod_Empresa = '"+params.empresa+"' "+
                  "and DBA.PLANAUXI.CodPlanAux = '"+params.cuenta+"' and DBA.PLANAUXI.CodPlanCta = '"+params.path+"' and DBA.ASIENTOSCAB.Fecha BETWEEN '"+params.fechad+"' and '"+params.fechah+"' "+
@@ -274,7 +276,7 @@ Mayor.cuentasdetalleaux = function (params,cb) {
                       "and DBA.PLANCTA.Periodo = DBA.PLANAUXI.Periodo and DBA.PLANCTA.CodPlanCta = DBA.PLANAUXI.CodPlanCta and DBA.ASIENTOSCAB.Cod_Empresa = DBA.ASIENTOSDET.Cod_Empresa "+ 
                       "and DBA.ASIENTOSCAB.Periodo = DBA.ASIENTOSDET.Periodo and DBA.ASIENTOSCAB.NroTransac = DBA.ASIENTOSDET.NroTransac and DBA.ASIENTOSCAB.TipoAsiento = DBA.TIPOASIENTO.TipoAsiento "+ 
                       "and DBA.TIPOASIENTO.TpDef not in( 'N') ";
-                      if (params.tipoasiento != 'NINGUNO')
+                      if (params.tipoasiento != 'undefined')
                           string1+="AND dba.ASIENTOSCAB.TipoAsiento = '"+params.tipoasiento+"' ";
                       string1+="and DBA.PLANAUXI.PERIODO = '"+params.periodo+"' and DBA.PLANAUXI.Imputable = 'S' and DBA.PLANAUXI.Cod_Empresa = '"+params.empresa+"' and DBA.PLANAUXI.CodPlanAux = '"+params.cuenta+"' and DBA.PLANAUXI.CodPlanCta = '"+params.path+"' "+ 
                                "and DBA.ASIENTOSCAB.Fecha BETWEEN '"+params.periodo+"-01-01' and dateadd(dd,-1,'"+params.fechad+"') GROUP BY DBA.PLANAUXI.CodPlanAux,DBA.PLANCTA.TipoSaldo ORDER BY DBA.PLANAUXI.CodPlanAux";
