@@ -9,8 +9,8 @@
   {% include 'ventas/_filtro.html' with name="sucursal" %}
   {% include 'ventas/_filtro.html' with name="tipoop" placeholder="Tipo" title="Tipo OP" %}
   <!-- {% include 'ventas/_filtro.html' with name="comprobante" %} -->
-  {% include 'ventas/_filtro.html' with name="tipoproveedor" placeholder="Tipo" title="T. Proveedor" %}
-  {% include 'ventas/_filtro.html' with name="proveedor" %}
+  <!-- {% include 'ventas/_filtro.html' with name="tipoproveedor" placeholder="Tipo" title="T. Proveedor" %}
+  {% include 'ventas/_filtro.html' with name="proveedor" %} -->
   <div class="col-sm-6">
     <div class="form-group">
       <label for="fecha" class="col-md-4 control-label">Fecha:</label>
@@ -24,6 +24,7 @@
       </div>
     </div>
   </div>
+  {% include 'ventas/_filtro.html' with name="moneda" %}
 {% endblock %}
 
 

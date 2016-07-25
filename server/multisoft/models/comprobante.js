@@ -47,4 +47,11 @@ Comprobante.presupuesto = function (params, query, cb) {
     });
 };
 
+Comprobante.op = function (params, cb) {
+    conn.exec("select Cod_Tp_Comp,des_tp_comp from dba.tpocbte where tp_def = 'OP' AND ( dba.tpocbte.cod_empresa = '" + params.empresa + "' ) ORDER BY dba.tpocbte.cod_tp_comp", function (err, row) {
+        if (err) throw err;
+        cb(row);
+    });
+};
+
 module.exports = Comprobante;
