@@ -117,7 +117,7 @@ router.get('/sucursal/select/:empresa', function (req, res, next) {
 });
 
 //list orden de pago
-router.get('/ordenpago/list/:empresa/:sucursal/:tipoop/:tipoproveedor/:proveedor/:desde/:hasta', function (req, res, next) {
+router.get('/ordenpago/list/:empresa/:sucursal/:tipoop/:moneda/:desde/:hasta', function (req, res, next) {
     OrdenPago.all(req.params, function (result) {
         res.json({data: result});
     });
@@ -360,6 +360,12 @@ router.get('/ordencompra/list', function (req, res, next) {
 
 router.get('/compras/:empresa/comprobantes/tipos', function (req, res, next) {
     Comprobante.compras(req.params, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/op/:empresa/comprobantes/tipos', function (req, res, next) {
+    Comprobante.op(req.params, function (result) {
         res.json({data: result});
     });
 });
