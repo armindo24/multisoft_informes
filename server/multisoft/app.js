@@ -6,6 +6,7 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var config = require('config');
+var redis = require('redis')
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
@@ -26,6 +27,29 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
+if (app.get('env') === 'production') {
+    var client = redis.createClient('/var/run/redis/redis.sock');
+    app.use(function (req, res, next) {
+        if (req.cookies && req.cookies.sessionid) {
+            var sessionid = 'session:' + req.cookies['sessionid'];
+            client.get(sessionid, function (err, data) {
+                if (data) {
+                    var sessionData = new Buffer(data, 'base64').toString();
+                    var sessionObjString = sessionData.substring(sessionData.indexOf(":") + 1);
+                    var sessionObjJSON = JSON.parse(sessionObjString);
+                    req.user = sessionObjJSON['_auth_user_id'];
+                    req.loggedin = true;
+                    next();
+                } else {
+                    res.status(401).send('Unauthorized');
+                }
+            });
+        } else {
+            res.status(401).send('Unauthorized');
+        }
+    });
+}
 
 // Register routes
 app.use('/', routes);
@@ -58,27 +82,6 @@ if (app.get('env') === 'development') {
     app.use(function (req, res, next) {
         res.setHeader("Access-Control-Allow-Origin", "*");
         next();
-    });
-} else {
-    var redis = require('redis'), client = redis.createClient('/var/run/redis/redis.sock');
-    app.use(function (req, res, next) {
-        if (req.cookies && req.cookies.sessionid) {
-            var sessionid = 'session:' + req.cookies['sessionid'];
-            client.get(sessionid, function (err, data) {
-                if (data) {
-                    var sessionData = new Buffer(data, 'base64').toString();
-                    var sessionObjString = sessionData.substring(sessionData.indexOf(":") + 1);
-                    var sessionObjJSON = JSON.parse(sessionObjString);
-                    req.user = sessionObjJSON['_auth_user_id'];
-                    req.loggedin = true;
-                    next();
-                } else {
-                    res.status(401).send('Unauthorized');
-                }
-            });
-        } else {
-            res.status(401).send('Unauthorized');
-        }
     });
 }
 
