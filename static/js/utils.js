@@ -2,7 +2,7 @@
 
 var u = {
     api: {
-        port: '3000',
+        port: '8000',
         path: '/api/v1/'
     }
 };

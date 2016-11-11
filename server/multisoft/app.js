@@ -60,7 +60,7 @@ if (app.get('env') === 'development') {
         next();
     });
 } else {
-    var redis = require('redis'), client = redis.createClient('/tmp/redis.sock');
+    var redis = require('redis'), client = redis.createClient('/var/run/redis/redis.sock');
     app.use(function (req, res, next) {
         if (req.cookies && req.cookies.sessionid) {
             var sessionid = 'session:' + req.cookies['sessionid'];
