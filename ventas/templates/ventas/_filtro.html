@@ -4,9 +4,23 @@
       {% if title %}{{ title }}{% else %}{{ name|capfirst }}{% endif %}:</label>
 
     <div class="col-md-6">
+      {% if search_button or name == 'cuentad' or name == 'cuentah' or name == 'cuenta-aux-d' or name == 'cuenta-aux-h' or name == 'articulo' %}
+        <div style="position:relative;">
+      {% endif %}
       <select id="select-{{ name }}" name="{{ name }}"{% if class %} class="{{ class }}"{% endif %}
               placeholder="{% if placeholder %}{{ placeholder }}{% elif title %}{{ title }}{% else %}{{ name|capfirst }}{% endif %}...">
       </select>
+      {% if search_button or name == 'cuentad' or name == 'cuentah' or name == 'cuenta-aux-d' or name == 'cuenta-aux-h' or name == 'articulo' %}
+        <button type="button"
+                class="btn btn-info btn-xs js-filter-search"
+                data-filter="{{ name }}"
+                style="position:absolute;right:-36px;top:2px;height:30px;min-width:30px;padding:0 8px;"
+                title="Buscar en {{ title|default:name }}"
+                onclick="focusFilterSearch('{{ name }}')">
+          <i class="fa fa-search"></i>
+        </button>
+        </div>
+      {% endif %}
     </div>
   </div>
 </div>

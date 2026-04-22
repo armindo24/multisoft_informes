@@ -1,0 +1,31 @@
+CREATE TABLE "DBA"."rpt_costo_articulo_full_hist" (
+	"cod_empresa" CHAR(2) NOT NULL,
+	"anio" INTEGER NOT NULL,
+	"mes" INTEGER NOT NULL,
+	"periodo" CHAR(6) NOT NULL,
+	"fecha_desde" DATE NOT NULL,
+	"fecha_hasta" DATE NOT NULL,
+	"cod_articulo" CHAR(14) NOT NULL,
+	"cod_pt_reacondicionado" CHAR(14) NOT NULL DEFAULT '',
+	"des_art" VARCHAR(255) NULL,
+	"fob_usd_origen" NUMERIC(16,4) NOT NULL DEFAULT 0,
+	"porcentaje_costo_total_importacion" NUMERIC(16,4) NOT NULL DEFAULT 0,
+	"costo_total_us_actual" NUMERIC(16,4) NOT NULL DEFAULT 0,
+	"servicio_clasificacion_director" NUMERIC(16,4) NOT NULL DEFAULT 0,
+	"servicio_clasificacion_proveedor" NUMERIC(16,4) NOT NULL DEFAULT 0,
+	"servicio_no_gr" NUMERIC(16,4) NOT NULL DEFAULT 0,
+	"estuche_gr" NUMERIC(16,4) NOT NULL DEFAULT 0,
+	"prospecto_gr" NUMERIC(16,4) NOT NULL DEFAULT 0,
+	"inkjet_gr" NUMERIC(16,4) NOT NULL DEFAULT 0,
+	"sticker_sello_seguridad" NUMERIC(16,4) NOT NULL DEFAULT 0,
+	"solvente_celofane" NUMERIC(16,4) NOT NULL DEFAULT 0,
+	"total_costo_produccion_gs" NUMERIC(16,4) NOT NULL DEFAULT 0,
+	"total_costo_produccion_us" NUMERIC(16,4) NOT NULL DEFAULT 0,
+	"costo_total_final_us" NUMERIC(16,4) NOT NULL DEFAULT 0,
+	"fecha_generacion" TIMESTAMP NOT NULL DEFAULT CURRENT TIMESTAMP,
+	"session_id" CHAR(15) NULL,
+	"client_session_id" VARCHAR(40) NULL,
+	PRIMARY KEY ( "cod_empresa" ASC, "anio" ASC, "mes" ASC, "cod_articulo" ASC, "cod_pt_reacondicionado" ASC )
+) IN "system";
+
+COMMENT ON TABLE "DBA"."rpt_costo_articulo_full_hist" IS 'Historico mensual consolidado del informe costo_articulo_full para ecuacion BC materiales.';

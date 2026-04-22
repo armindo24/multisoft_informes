@@ -1,0 +1,450 @@
+/* Admin overrides to ensure action buttons are visible */
+.form-actions {
+  clear: both;
+  display: block;
+  overflow: auto;
+  position: relative;
+  z-index: 2;
+  margin-top: 20px;
+  padding-top: 10px;
+}
+
+.form-actions .pull-right,
+.form-actions .pull-left {
+  position: relative;
+  z-index: 3;
+}
+
+#content-main,
+#page-wrapper {
+  overflow: visible;
+}
+
+/* Navbar user alignment */
+.navbar-top-links.navbar-right {
+  float: right;
+  margin-right: 10px;
+}
+
+.navbar-text.user-info {
+  margin-right: 8px;
+}
+
+/* Global: hide left-menu toggle arrow and push user to the far right */
+#toggle-left-menu{
+  display:none;
+}
+.navbar-top-links.navbar-right{
+  position:absolute;
+  right:8px;
+  top:0;
+  margin-right:0;
+}
+
+/* Compact title bar */
+.navbar-brand{
+  font-size:14px;
+}
+@media (min-width:768px){
+  .navbar-brand{
+    font-size:15px;
+  }
+}
+nav.navbar{
+  min-height:32px;
+}
+.navbar-brand{
+  padding-top:4px;
+  padding-bottom:4px;
+  line-height:20px;
+}
+.navbar-brand{
+  font-size:13px;
+}
+@media (min-width:768px){
+  .navbar-brand{
+    font-size:14px;
+  }
+}
+.navbar-top-links.navbar-right{
+  top: -4px;
+  right: 6px;
+}
+.navbar-text.user-info{
+  font-size:12px;
+}
+.navbar-top-links > li > a{
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+/* Compact, modern filter form */
+.panel-group .panel{
+  border-radius:10px;
+}
+.panel-group{
+  margin-bottom: 10px;
+}
+.panel-heading{
+  padding: 6px 10px;
+  font-size:13px;
+}
+.panel-body{
+  padding: 8px 10px;
+}
+.form-horizontal .form-group{
+  margin-bottom: 4px;
+}
+.form-control,
+select,
+input[type="text"],
+input[type="number"],
+input[type="date"]{
+  height: 28px;
+  padding: 3px 6px;
+  font-size: 11px;
+  border-radius: 6px;
+}
+.input-group-addon,
+.input-group-btn{
+  padding: 3px 6px;
+  font-size: 11px;
+}
+.modal-footer{
+  padding: 6px 10px;
+}
+.btn{
+  padding: 3px 8px;
+  font-size: 11px;
+  border-radius: 6px;
+}
+
+/* Modern primary action button */
+.btn-modern{
+  background: linear-gradient(135deg, #2d89ef, #1f5fbf);
+  border: 1px solid rgba(0,0,0,0.12);
+  color: #fff;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(31,95,191,0.25);
+}
+.btn-modern:hover,
+.btn-modern:focus{
+  background: linear-gradient(135deg, #1f5fbf, #1a4f9e);
+  color: #fff;
+}
+
+/* Admin index: modern add/change buttons */
+.admin-model-actions{
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+.btn-admin-add,
+.btn-admin-change{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  border: 1px solid rgba(0,0,0,0.12);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.btn-admin-add{
+  color: #fff;
+  background: linear-gradient(135deg, #1d8b4f, #146c43);
+}
+.btn-admin-change{
+  color: #3c2a00;
+  background: linear-gradient(135deg, #ffd86b, #ffb347);
+}
+.btn-admin-add:hover,
+.btn-admin-add:focus,
+.btn-admin-change:hover,
+.btn-admin-change:focus{
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(0,0,0,0.16);
+  text-decoration: none;
+}
+
+/* Email config: larger labels and inputs */
+.email-config .control-label{
+  font-size: 13px;
+}
+.email-config .form-control,
+.email-config input[type="text"],
+.email-config input[type="email"],
+.email-config input[type="password"],
+.email-config input[type="number"]{
+  height: 34px;
+  font-size: 13px;
+  padding: 6px 10px;
+}
+
+/* Compact datepicker */
+.datepicker,
+.datepicker table{
+  font-size: 12px;
+}
+.datepicker table tr td,
+.datepicker table tr th{
+  width: 24px;
+  height: 24px;
+  padding: 1px;
+}
+.datepicker .datepicker-switch,
+.datepicker .prev,
+.datepicker .next{
+  padding: 1px 3px;
+}
+
+/* Modern dark sidebar */
+.ms-sidebar{
+  background: #f8f9fb;
+  width: 230px;
+  min-height: 100vh;
+  border-right: 1px solid rgba(0,0,0,0.08);
+  display:block !important;
+  visibility:visible !important;
+  position: fixed;
+  top: 50px;
+  left: 0;
+  z-index: 10;
+  overflow-y: auto;
+}
+.ms-sidebar .navbar-collapse{
+  display:block !important;
+  height:auto !important;
+  visibility:visible !important;
+}
+
+/* Hide any legacy sidebar containers to avoid overlap */
+.sidebar:not(.ms-sidebar){
+  display:none !important;
+}
+.ms-sidebar .sidebar-nav{
+  padding: 10px 8px;
+}
+.ms-search{
+  position: relative;
+  margin: 6px 6px 12px;
+}
+.ms-nav-buttons{
+  display:flex;
+  gap:8px;
+  padding: 6px;
+}
+.ms-nav-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  background:#fff;
+  border:1px solid rgba(0,0,0,0.12);
+  color:#2d1b3a;
+  padding:6px 8px;
+  border-radius:8px;
+  font-size:12px;
+  cursor:pointer;
+  text-decoration:none;
+}
+.ms-nav-btn i{ color:#7a4ccf; }
+.ms-nav-btn:hover{ background:#eef2f6; }
+.ms-search i{
+  position:absolute;
+  left:10px;
+  top:50%;
+  transform: translateY(-50%);
+  color:#6b6f7a;
+  font-size:12px;
+}
+.ms-search input{
+  width:100%;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.12);
+  color:#2d1b3a;
+  padding: 6px 10px 6px 28px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.ms-sidebar .nav>li>a{
+  color:#2d1b3a;
+  padding: 9px 10px;
+  border-radius: 8px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:13px;
+}
+.ms-sidebar .nav>li>a:hover{
+  background: #eef2f6;
+}
+.ms-sidebar .nav>li>a i{
+  width:16px;
+  text-align:center;
+}
+.ms-section{
+  color:#6b6f7a;
+  font-weight:600;
+  font-size:12px;
+  margin: 10px 10px 6px;
+  text-transform: uppercase;
+}
+.ms-item a.active{
+  background: #e8eef6;
+}
+
+/* Ensure admin "Add" button is visible in changelist */
+.object-tools{
+  display:block;
+  margin: 10px 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.object-tools.form-inline.pull-left.inline{
+  float: none;
+}
+.object-tools .btn{
+  display:inline-block;
+}
+
+#page-wrapper{
+  margin-left: 230px !important;
+  padding-top: 4px !important;
+}
+
+/* Ensure content never sits under the fixed sidebar */
+.panel-group,
+#content-main,
+#resultado{
+  position: relative;
+  z-index: 1;
+}
+
+/* Sidebar menu spacing and ordering */
+.ms-sidebar .nav,
+.ms-sidebar .nav>li{
+  width:100%;
+  display:block;
+}
+.ms-sidebar .nav>li>a{
+  justify-content:flex-start;
+  white-space: nowrap;
+}
+.ms-sidebar .nav>li>a span{
+  display:inline-block;
+  margin-left:2px;
+}
+.ms-section{
+  display:block;
+  width:100%;
+  background: transparent;
+  padding-top:6px;
+}
+
+/* Compact filter panel */
+.panel-heading{
+  padding: 8px 12px;
+}
+.panel-body{
+  padding: 10px 12px;
+}
+.modal-footer{
+  padding: 8px 12px;
+}
+.form-horizontal .form-group{
+  margin-bottom: 8px;
+}
+
+/* Asignación de Empresas: larger text, icons, buttons */
+.asignar-empresas-page{
+  font-size: 13px;
+}
+.asignar-empresas-page .chosen-container .chosen-single{
+  height: 32px;
+  line-height: 30px;
+  font-size: 13px;
+}
+.asignar-empresas-page .chosen-container .chosen-results{
+  font-size: 13px;
+}
+.asignar-empresas-page #table{
+  font-size: 13px;
+}
+.asignar-empresas-page #table input,
+.asignar-empresas-page #table select,
+.asignar-empresas-page #table .form-control{
+  font-size: 13px;
+  height: 32px;
+  padding: 4px 8px;
+}
+.asignar-empresas-page .asignar-acciones .btn{
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 8px;
+}
+.asignar-empresas-page .asignar-acciones .btn i{
+  font-size: 14px;
+}
+.asignar-empresas-page .btn i{
+  font-size: 14px;
+}
+#modalEmpresas .modal-title,
+#modalEmpresas h3{
+  font-size: 16px;
+}
+#modalEmpresas table td,
+#modalEmpresas table th{
+  font-size: 12px;
+}
+
+/* Active sessions table tweaks */
+.btn.btn-xs{
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 6px;
+}
+
+/* Active sessions table: compact text */
+.active-sessions-table,
+.active-sessions-table th,
+.active-sessions-table td{
+  font-size: 12px;
+}
+.active-sessions-table th{
+  white-space: nowrap;
+}
+.active-sessions-table td{
+  vertical-align: middle;
+}
+
+/* DB config status badge */
+.db-status{
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+.db-status-ok{
+  background: #e7f6ed;
+  color: #1d7a3a;
+}
+.db-status-error{
+  background: #fdecea;
+  color: #a61b1b;
+}
+.db-status-warn{
+  background: #fff4d6;
+  color: #8a5a00;
+}
+.db-status-unknown{
+  background: #eef2f7;
+  color: #465064;
+}

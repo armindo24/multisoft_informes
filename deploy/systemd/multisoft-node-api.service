@@ -1,0 +1,16 @@
+[Unit]
+Description=Multisoft Node API legacy
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/multisoft/multisoft_informes/server/multisoft
+Environment=NODE_ENV=production
+Environment=PORT=3000
+ExecStart=/bin/bash -lc 'source ~/.nvm/nvm.sh && nvm use 12.22.12 >/dev/null && node ./bin/www'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

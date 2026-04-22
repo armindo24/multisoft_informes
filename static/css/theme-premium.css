@@ -1,0 +1,173 @@
+/* MultiSoft SIG - Tema Premium Compacto (v4)
+   - Header más bajo
+   - Filtros sticky + acciones alineadas
+   - Chips de filtros activos
+   - Tablas densas con encabezado sticky
+*/
+
+:root{
+  --ms-topbar-height: 56px;
+  --ms-sticky-gap: 8px;
+  --ms-sticky-offset: calc(var(--ms-topbar-height) + var(--ms-sticky-gap));
+  --ms-table-sticky-top: calc(var(--ms-sticky-offset) + 140px);
+}
+
+/* 1) Reducir “aire” superior general */
+#page-wrapper{
+  padding-top: calc(var(--ms-topbar-height) + 6px) !important;
+}
+#page-wrapper .page-header{
+  margin: 8px 0 8px !important;
+}
+
+/* 2) Card de filtros sticky */
+.ms-sticky-filter{
+  position: sticky;
+  top: var(--ms-sticky-offset);
+  z-index: 1200;
+}
+
+/* Cuando el panel está colapsado, igual debe verse compacto */
+.ms-filter-card .panel-heading{
+  cursor: pointer;
+}
+
+/* 3) Acciones (Filtrar/Cancelar a la izq, Export a la der) */
+.ms-filter-actions{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ms-filter-actions__left,
+.ms-filter-actions__right{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 4) Chips de filtros activos */
+.ms-active-filters{
+  margin: 8px 0 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ms-chip{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #d8e0ec;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(20, 46, 82, 0.06);
+  font-size: 12px;
+  color: #22344f;
+  line-height: 1;
+}
+.ms-chip__label{
+  font-weight: 700;
+  color: #1f3556;
+}
+.ms-chip__value{
+  font-weight: 600;
+  color: #2a4b78;
+}
+
+/* 5) Tabla con encabezado sticky (cuando el contenedor permita scroll) */
+#resultado{
+  position: relative;
+}
+#resultado .dataTables_scrollHead thead th,
+#resultado table thead th{
+  position: sticky;
+  top: var(--ms-table-sticky-top, calc(var(--ms-sticky-offset) + 140px)); /* calculado dinámicamente */
+  z-index: 20;
+}
+
+/* Para pantallas chicas, bajamos un poco el offset */
+@media (max-width: 991px){
+  :root{ --ms-topbar-height: 52px; }
+  #resultado .dataTables_scrollHead thead th,
+  #resultado table thead th{
+    top: calc(var(--ms-sticky-offset) + 98px);
+  }
+}
+
+/* 6) Botones export más “acción”, menos botón clásico */
+.report-compact .btn-export-excel,
+.report-compact .btn-export-pdf,
+.report-compact .btn-filter-modern,
+.report-compact .btn-cancel-modern{
+  box-shadow: 0 2px 8px rgba(20,46,82,.10);
+}
+.report-compact .btn-export-excel i,
+.report-compact .btn-export-pdf i,
+.report-compact .btn-filter-modern i,
+.report-compact .btn-cancel-modern i{
+  margin-left: 6px;
+}
+
+/* 7) Sidebar un poco más “premium” sin romper tu CSS actual */
+#my-left-menu.ms-sidebar .ms-item a{
+  border-radius: 10px;
+}
+#my-left-menu.ms-sidebar .ms-item a:hover{
+  background: rgba(42, 117, 214, 0.08);
+}
+
+
+/* 6) KPI resumen */
+.ms-kpis{
+  margin: 6px 0 10px;
+}
+.ms-kpi-grid{
+  display: grid;
+  grid-template-columns: repeat(6, minmax(140px, 1fr));
+  gap: 10px;
+}
+@media (max-width: 1400px){
+  .ms-kpi-grid{ grid-template-columns: repeat(3, minmax(160px, 1fr)); }
+}
+@media (max-width: 768px){
+  .ms-kpi-grid{ grid-template-columns: repeat(2, minmax(150px, 1fr)); }
+}
+.ms-kpi{
+  border: 1px solid #d8e0ec;
+  background: #fff;
+  border-radius: 14px;
+  padding: 10px 12px;
+  box-shadow: 0 2px 10px rgba(20, 46, 82, 0.06);
+  line-height: 1.1;
+  min-height: 64px;
+}
+.ms-kpi__title{
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  color: #1f3556;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.ms-kpi__value{
+  font-size: 16px;
+  font-weight: 800;
+  color: #22344f;
+  font-variant-numeric: tabular-nums;
+}
+.ms-kpi__sub{
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #5b6f8f;
+}
+.ms-kpi--ok{
+  border-color: #bfe5c7;
+  background: linear-gradient(135deg, #ffffff, #f0fbf3);
+}
+.ms-kpi--bad{
+  border-color: #f3c1c1;
+  background: linear-gradient(135deg, #ffffff, #fff2f2);
+}

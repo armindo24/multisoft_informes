@@ -1,10 +1,11 @@
-from django.conf.urls import url
+#from django.conf.urls import url
+from django.urls import path
 from . import views
 
 urlpatterns = [
-    url(r'^legajos/$', views.legajos, name='legajos'),
-    url(r'^sueldos_jornales/$', views.sueldos_jornales, name='sueldos_jornales'),
-    url(r'^anticipos/$', views.anticipos, name='anticipos'),
-    url(r'^aguinaldos/$', views.aguinaldos, name='aguinaldos'),
-    url(r'^recibos/$', views.recibos, name='recibos'),
+    path('legajos/', views.legajos, name='legajos'),
+    path('sueldos_jornales/', views.sueldos_jornales, name='sueldos_jornales'),
+    path('anticipos/', views.anticipos, name='anticipos'),
+    path('aguinaldos/', views.aguinaldos, name='aguinaldos'),
+    path('recibos/', views.recibos, name='recibos'),
 ]

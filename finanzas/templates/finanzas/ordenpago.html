@@ -8,6 +8,14 @@
   {% include 'ventas/_filtro.html' with name="empresa" %}
   {% include 'ventas/_filtro.html' with name="sucursal" %}
   {% include 'ventas/_filtro.html' with name="tipoop" placeholder="Tipo" title="Tipo OP" %}
+  <div class="col-sm-6">
+    <div class="form-group">
+      <label for="solo-anticipo" class="col-md-4 control-label">Solo Anticipo:</label>
+      <div class="col-md-6">
+        <input type="checkbox" id="solo-anticipo" />
+      </div>
+    </div>
+  </div>
   <!-- {% include 'ventas/_filtro.html' with name="comprobante" %} -->
   <!-- {% include 'ventas/_filtro.html' with name="tipoproveedor" placeholder="Tipo" title="T. Proveedor" %}
   {% include 'ventas/_filtro.html' with name="proveedor" %} -->
@@ -38,6 +46,7 @@
   <div id="table-div">
     
     </div>
+  <div id="totals" style="display:none; margin-top: 6px;"></div>
 
   
   {% include 'finanzas/ordenpago_metodos.html' %}

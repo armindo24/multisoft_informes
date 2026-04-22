@@ -1,0 +1,2269 @@
+{% extends 'finanzas/base.html' %}
+{% load static %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <script src="{% static 'lodash/dist/lodash.min.js' %}"></script>
+{% endblock %}
+
+{% block header %}
+  Costo Articulo Full:
+{% endblock %}
+
+{% block filters %}
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="empresa" %}
+    {% include 'ventas/_filtro.html' with name="articulo" title="Articulo" %}
+    {% include 'ventas/_filtro.html' with name="tipo" title="Tipo" %}
+
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="select-estado" class="col-md-4 control-label">Estado:</label>
+        <div class="col-md-6">
+          <select id="select-estado" name="estado" placeholder="Estado..."></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="agrupacion_display" class="col-md-4 control-label">Agrupacion:</label>
+        <div class="col-md-6">
+          <div class="input-group">
+            <input type="text" id="agrupacion_display" class="form-control" placeholder="Todos" readonly>
+            <span class="input-group-btn">
+              <button type="button" id="btn-agrupacion-modal" class="btn btn-info" onclick="openAgrupacionModal(); return false;">
+                <i class="fa fa-search"></i>
+              </button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label class="col-md-4 control-label">Fecha:</label>
+        <div class="col-md-6">
+          <div class="input-group input-daterange datepicker">
+            <input type="text" class="form-control" id="fechad" name="fechad">
+            <span class="input-group-addon">hasta</span>
+            <input type="text" class="form-control" id="fechah" name="fechah">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label class="col-md-4 control-label">Calcular Toda Empresa:</label>
+        <div class="col-md-6">
+          <label class="checkbox-inline">
+            <input type="checkbox" id="calcular_empresa" name="calcular_empresa" value="S"> Si
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6" style="display:none;">
+      <div class="form-group">
+        <label class="col-md-4 control-label">Inventario Fisico:</label>
+        <div class="col-md-6">
+          <label class="checkbox-inline">
+            <input type="checkbox" id="inventario_fisico" name="inventario_fisico" value="S"> Si
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label class="col-md-4 control-label">Ecuacion BC Materiales:</label>
+        <div class="col-md-6">
+          <label class="checkbox-inline">
+            <input type="checkbox" id="ecuacion_mat" name="ecuacion_mat" value="S"> Si
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div id="ebc-mat-extra-filters" style="display:none;">
+      <div class="col-sm-6">
+        <div class="form-group">
+          <label for="periodo" class="col-md-4 control-label">Periodo:</label>
+          <div class="col-md-6">
+            <input type="text" class="form-control" id="periodo" name="periodo" placeholder="Ej: 202510">
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6">
+        <div class="form-group">
+          <label for="anho" class="col-md-4 control-label">Año:</label>
+          <div class="col-md-6">
+            <input type="text" class="form-control" id="anho" name="anho" placeholder="Ej: 2025">
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 ebc-mat-dispatch-filter" style="display:none;">
+        <div class="form-group">
+          <label for="cod_despachante" class="col-md-4 control-label">Despachante:</label>
+          <div class="col-md-6">
+            <input type="text" class="form-control" id="cod_despachante" name="cod_despachante" placeholder="Codigo despachante">
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 ebc-mat-dispatch-filter" style="display:none;">
+        <div class="form-group">
+          <label for="nro_despacho" class="col-md-4 control-label">Nro Despacho:</label>
+          <div class="col-md-6">
+            <input type="text" class="form-control" id="nro_despacho" name="nro_despacho" placeholder="Numero de despacho">
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6" style="display:none;">
+        <div class="form-group">
+          <label for="cierre" class="col-md-4 control-label">Cierre:</label>
+          <div class="col-md-6">
+            <select id="cierre" name="cierre" class="form-control">
+              <option value="">Todos</option>
+              <option value="S">Si</option>
+              <option value="N">No</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6" style="display:none;">
+        <div class="form-group">
+          <label for="tipo_despacho" class="col-md-4 control-label">Tipo:</label>
+          <div class="col-md-6">
+            <input type="text" class="form-control" id="tipo_despacho" name="tipo_despacho" placeholder="A / C">
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 ebc-mat-comp-date-filter" style="display:none;">
+        <div class="form-group">
+          <label class="col-md-4 control-label">Fecha Inicio:</label>
+          <div class="col-md-6">
+            <div class="input-group input-daterange datepicker">
+              <input type="text" class="form-control" id="fecha_inicio_desde" name="fecha_inicio_desde">
+              <span class="input-group-addon">hasta</span>
+              <input type="text" class="form-control" id="fecha_inicio_hasta" name="fecha_inicio_hasta">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 ebc-mat-comp-date-filter" style="display:none;">
+        <div class="form-group">
+          <label class="col-md-4 control-label">Fecha Fin:</label>
+          <div class="col-md-6">
+            <div class="input-group input-daterange datepicker">
+              <input type="text" class="form-control" id="fecha_fin_desde" name="fecha_fin_desde">
+              <span class="input-group-addon">hasta</span>
+              <input type="text" class="form-control" id="fecha_fin_hasta" name="fecha_fin_hasta">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6" style="display:none;">
+        <div class="form-group">
+          <label for="estado_compuesto" class="col-md-4 control-label">Estado Comp.:</label>
+          <div class="col-md-6">
+            <input type="text" class="form-control" id="estado_compuesto" name="estado_compuesto" placeholder="Estado">
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6" style="display:none;">
+        <div class="form-group">
+          <label for="tipo_compuesto" class="col-md-4 control-label">Tipo Comp.:</label>
+          <div class="col-md-6">
+            <input type="text" class="form-control" id="tipo_compuesto" name="tipo_compuesto" placeholder="Tipo compuesto">
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6" style="display:none;">
+        <div class="form-group">
+          <label for="realizadopor" class="col-md-4 control-label">Realizado por:</label>
+          <div class="col-md-6">
+            <input type="text" class="form-control" id="realizadopor" name="realizadopor" placeholder="Operador1;Operador2">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block filter_footer %}
+  <div class="ms-filter-actions__left">
+    <a id="btn-procesar-costo-articulo-full" type="button" class="btn btn-filter-modern">Procesar <i class="fa fa-cogs"></i></a>
+    <a type="button" class="btn btn-cancel-modern" onclick="runGlobalCancelar()">Cancelar <i class="fa fa-stop"></i></a>
+  </div>
+  <div class="ms-filter-actions__right">
+    <a type="button" class="btn btn-export-excel" onclick="exportExcel()">Excel <i class="fa fa-file-excel-o"></i></a>
+    <a type="button" class="btn btn-export-pdf" onclick="exportPdf()">PDF <i class="fa fa-file-pdf-o"></i></a>
+  </div>
+{% endblock %}
+
+{% block table %}
+  <thead>
+  <tr>
+    <th>Codigo</th>
+    <th>Descripcion</th>
+    <th>Tipo</th>
+    <th>Estado</th>
+    <th>Costo Promedio Gs</th>
+    <th>Costo Ultimo Gs</th>
+    <th>Costo Promedio U$</th>
+    <th>Costo Ultimo U$</th>
+    <th>Moneda</th>
+    <th>IVA</th>
+    <th>Existencia</th>
+  </tr>
+  </thead>
+{% endblock %}
+
+{% block extra_foot %}
+  <style>
+    #resultado div.dataTables_sizing {
+      display: none !important;
+      height: 0 !important;
+      overflow: hidden !important;
+    }
+    #resultado .dataTables_scrollHead thead tr[role="row"][style*="height: 0"],
+    #resultado .dataTables_scrollHead thead tr[role="row"][style*="height: 2px"] {
+      visibility: collapse !important;
+      height: 0 !important;
+      min-height: 0 !important;
+      max-height: 0 !important;
+      border: 0 !important;
+    }
+    #resultado .dataTables_scrollHead thead tr[role="row"][style*="height: 0"] th,
+    #resultado .dataTables_scrollHead thead tr[role="row"][style*="height: 2px"] th,
+    #resultado .dataTables_scrollHead thead tr[role="row"][style*="height: 0"] td,
+    #resultado .dataTables_scrollHead thead tr[role="row"][style*="height: 2px"] td {
+      padding: 0 !important;
+      height: 0 !important;
+      line-height: 0 !important;
+      border: 0 !important;
+    }
+    #resultado .dataTables_scrollHead table {
+      margin-bottom: 0 !important;
+    }
+    #resultado .dataTables_scrollHead {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: #dfeaf6;
+    }
+    #resultado .dataTables_scrollHead th,
+    #resultado .dataTables_scrollHead td {
+      height: auto !important;
+    }
+    #resultado .dataTables_processing {
+      width: auto !important;
+      min-width: 180px;
+      margin-left: 0 !important;
+      left: auto !important;
+      right: 12px !important;
+      top: 8px !important;
+      padding: 6px 10px !important;
+      border-radius: 8px;
+      border: 1px solid #cfe0f6;
+      background: rgba(247, 251, 255, 0.96) !important;
+      color: #1f4f8b !important;
+      box-shadow: 0 6px 18px rgba(0,0,0,.12);
+      z-index: 5 !important;
+      pointer-events: none;
+    }
+    #resultado .dataTables_wrapper {
+      position: relative;
+    }
+    #resultado {
+      position: relative;
+      overflow: auto;
+      max-height: calc(100vh - 260px);
+      min-height: 260px;
+      border: 1px solid #d8e3f1;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.75);
+    }
+    #resultado table.dataTable {
+      table-layout: auto;
+      width: max-content !important;
+      min-width: 100% !important;
+      margin-bottom: 0 !important;
+    }
+    #resultado table.dataTable.ms-ebc-mat {
+      table-layout: fixed;
+      width: auto !important;
+      min-width: 2260px !important;
+    }
+    #resultado .dataTables_scrollHeadInner,
+    #resultado .dataTables_scrollHeadInner table,
+    #resultado .dataTables_scrollBody table {
+      width: auto !important;
+    }
+    #resultado .dataTables_scrollHeadInner {
+      min-width: 2260px !important;
+    }
+    #resultado table.dataTable thead th {
+      position: sticky;
+      top: 0;
+      z-index: 6;
+      background: #dfeaf6;
+      box-shadow: inset 0 -1px 0 #b8cbe0;
+    }
+    #resultado table.dataTable thead tr.ms-head-detail th {
+      top: 38px;
+      z-index: 7;
+    }
+    #resultado table.dataTable.ms-ebc-mat thead th {
+      z-index: 6;
+    }
+    #resultado table.dataTable.ms-ebc-mat thead th {
+      white-space: normal;
+      word-break: normal;
+      overflow-wrap: normal;
+      font-size: 10px;
+      line-height: 1.2;
+      padding: 8px 6px;
+      text-align: center;
+      vertical-align: middle;
+    }
+    #resultado table.dataTable.ms-ebc-mat tbody td {
+      font-size: 10px;
+      padding: 6px 8px;
+      line-height: 1.35;
+      border-color: #d4deeb;
+    }
+    #resultado table.dataTable tbody td {
+      vertical-align: top;
+    }
+    #resultado table.dataTable tbody tr td:empty {
+      min-height: 0 !important;
+    }
+    #resultado table.dataTable tbody tr.ms-empty-row,
+    #resultado table.dataTable tbody tr.ms-empty-row td {
+      display: none !important;
+      height: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      line-height: 0 !important;
+    }
+    #resultado table.dataTable th.col-anio,
+    #resultado table.dataTable td.col-anio {
+      min-width: 56px;
+      width: 56px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    #resultado table.dataTable th.col-mes,
+    #resultado table.dataTable td.col-mes {
+      min-width: 48px;
+      width: 48px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    #resultado table.dataTable th.col-cod-py,
+    #resultado table.dataTable td.col-cod-py {
+      min-width: 86px;
+      width: 86px;
+      white-space: nowrap;
+    }
+    #resultado table.dataTable th.col-cod-reacond,
+    #resultado table.dataTable td.col-cod-reacond {
+      min-width: 96px;
+      width: 96px;
+      white-space: nowrap;
+    }
+    #resultado table.dataTable th.col-producto,
+    #resultado table.dataTable td.col-producto {
+      min-width: 420px;
+      width: 420px;
+      white-space: normal;
+      word-break: normal;
+      overflow-wrap: anywhere;
+    }
+    #resultado table.dataTable.ms-ebc-mat thead th.col-anio,
+    #resultado table.dataTable.ms-ebc-mat tbody td.col-anio {
+      position: sticky;
+      left: 0;
+      z-index: 8;
+      background: #eef4fb;
+    }
+    #resultado table.dataTable.ms-ebc-mat thead th.col-mes,
+    #resultado table.dataTable.ms-ebc-mat tbody td.col-mes {
+      position: sticky;
+      left: 56px;
+      z-index: 8;
+      background: #eef4fb;
+    }
+    #resultado table.dataTable.ms-ebc-mat thead th.col-cod-py,
+    #resultado table.dataTable.ms-ebc-mat tbody td.col-cod-py {
+      position: sticky;
+      left: 104px;
+      z-index: 8;
+      background: #eef4fb;
+    }
+    #resultado table.dataTable.ms-ebc-mat thead th.col-cod-reacond,
+    #resultado table.dataTable.ms-ebc-mat tbody td.col-cod-reacond {
+      position: sticky;
+      left: 190px;
+      z-index: 8;
+      background: #eef4fb;
+    }
+    #resultado table.dataTable.ms-ebc-mat thead th.col-producto,
+    #resultado table.dataTable.ms-ebc-mat tbody td.col-producto {
+      position: sticky;
+      left: 286px;
+      z-index: 8;
+      box-shadow: 1px 0 0 #c9d6e5;
+    }
+    #resultado table.dataTable.ms-ebc-mat thead th.col-producto,
+    #resultado table.dataTable.ms-ebc-mat tbody td.col-producto {
+      background: #f9fbfe;
+    }
+    #resultado table.dataTable.ms-ebc-mat tbody td.col-producto {
+      font-size: 11px;
+    }
+    #resultado table.dataTable.ms-ebc-mat tbody td.col-producto .ms-producto-cell {
+      display: block;
+      min-width: 400px;
+      white-space: normal;
+      word-break: normal;
+      overflow-wrap: anywhere;
+    }
+    #resultado table.dataTable th.col-fob,
+    #resultado table.dataTable td.col-fob {
+      min-width: 120px;
+      width: 120px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #resultado table.dataTable th.col-pct,
+    #resultado table.dataTable td.col-pct {
+      min-width: 108px;
+      width: 108px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    #resultado table.dataTable th.col-num-us,
+    #resultado table.dataTable td.col-num-us {
+      min-width: 118px;
+      width: 118px;
+      text-align: right;
+      white-space: nowrap;
+    }
+    #resultado table.dataTable th.col-num-gs,
+    #resultado table.dataTable td.col-num-gs {
+      min-width: 88px;
+      width: 88px;
+      text-align: right;
+      white-space: nowrap;
+    }
+    #resultado table.dataTable th.col-num-gs-wide,
+    #resultado table.dataTable td.col-num-gs-wide {
+      min-width: 155px;
+      width: 155px;
+      text-align: right;
+      white-space: nowrap;
+    }
+    #resultado table.dataTable th.col-total-gs,
+    #resultado table.dataTable td.col-total-gs {
+      min-width: 120px;
+      width: 120px;
+      text-align: right;
+      white-space: nowrap;
+      background: #f3f7fc;
+    }
+    #resultado table.dataTable th.col-total-us,
+    #resultado table.dataTable td.col-total-us {
+      min-width: 110px;
+      width: 110px;
+      text-align: right;
+      white-space: nowrap;
+      background: #f3f7fc;
+    }
+    #resultado table.dataTable.ms-ebc-mat thead th.col-anio,
+    #resultado table.dataTable.ms-ebc-mat thead th.col-mes,
+    #resultado table.dataTable.ms-ebc-mat thead th.col-cod-py,
+    #resultado table.dataTable.ms-ebc-mat thead th.col-cod-reacond,
+    #resultado table.dataTable.ms-ebc-mat thead th.col-producto {
+      z-index: 9;
+    }
+    #resultado table.dataTable.ms-ebc-mat thead th .ms-col-title {
+      display: block;
+      min-width: 100%;
+      white-space: normal;
+      word-break: normal;
+      overflow-wrap: normal;
+    }
+    #resultado table.dataTable.ms-ebc-mat tbody tr:nth-child(even) td.col-anio,
+    #resultado table.dataTable.ms-ebc-mat tbody tr:nth-child(even) td.col-mes,
+    #resultado table.dataTable.ms-ebc-mat tbody tr:nth-child(even) td.col-cod-py,
+    #resultado table.dataTable.ms-ebc-mat tbody tr:nth-child(even) td.col-cod-reacond,
+    #resultado table.dataTable.ms-ebc-mat tbody tr:nth-child(even) td.col-producto {
+      background: #eef3f9;
+    }
+    .ms-progress-box {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 420px;
+      max-width: calc(100vw - 40px);
+      z-index: 5002;
+      padding: 16px 18px;
+      border: 1px solid #cfe0f6;
+      border-radius: 12px;
+      background: rgba(247, 251, 255, 0.99);
+      box-shadow: 0 14px 36px rgba(0,0,0,.22);
+      text-align: center;
+    }
+    .ms-progress-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1f4f8b;
+      margin-bottom: 10px;
+    }
+    .ms-progress-sub {
+      font-size: 12px;
+      color: #587399;
+      margin-bottom: 10px;
+    }
+    .ms-progress-percent {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1f5fbf;
+      margin-bottom: 10px;
+    }
+    .ms-progress-bar-wrap {
+      width: 100%;
+      height: 14px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #dfeaf8;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,.08);
+    }
+    .ms-progress-bar {
+      width: 0%;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #2a75d6, #4ea3ff);
+      transition: width .35s ease;
+    }
+    .ms-progress-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 5001;
+      background: rgba(20, 35, 58, 0.18);
+      backdrop-filter: blur(1px);
+    }
+    .ms-progress-debug {
+      margin-top: 12px;
+      text-align: left;
+      font-size: 12px;
+      color: #33557d;
+      background: #eef5fd;
+      border: 1px solid #d4e3f7;
+      border-radius: 8px;
+      padding: 10px 12px;
+      max-height: 160px;
+      overflow: auto;
+    }
+    .ms-progress-debug-line {
+      margin-bottom: 4px;
+    }
+    .ms-progress-debug-line:last-child {
+      margin-bottom: 0;
+    }
+    .ms-progress-debug-line.is-error {
+      color: #b43c2f;
+      font-weight: 700;
+    }
+    .ms-progress-meta {
+      margin-top: 10px;
+      font-size: 11px;
+      color: #5c7394;
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .ms-progress-meta strong {
+      color: #244b7a;
+    }
+  </style>
+  <div id="ms-progress-backdrop-costo-articulo-full" class="ms-progress-backdrop"></div>
+  <div id="ms-progress-costo-articulo-full" class="ms-progress-box">
+    <div id="ms-progress-label-costo-articulo-full" class="ms-progress-label">Procesando informe...</div>
+    <div id="ms-progress-sub-costo-articulo-full" class="ms-progress-sub">Ejecutando consulta, aguarde un momento.</div>
+    <div id="ms-progress-percent-costo-articulo-full" class="ms-progress-percent">0%</div>
+    <div class="ms-progress-bar-wrap">
+      <div id="ms-progress-bar-costo-articulo-full" class="ms-progress-bar"></div>
+    </div>
+    <div class="ms-progress-meta">
+      <div><strong>Session:</strong> <span id="ms-progress-session-costo-articulo-full">-</span></div>
+      <div><strong>Debug Recall:</strong> <span id="ms-progress-debug-flag-costo-articulo-full">N</span></div>
+    </div>
+    <div id="ms-progress-debug-costo-articulo-full" class="ms-progress-debug"></div>
+  </div>
+  <div id="agrupacion-picker-backdrop" style="display:none;position:fixed;inset:0;z-index:4190;background:rgba(0,0,0,.25);"></div>
+  <div id="agrupacionModal" class="panel panel-default" style="display:none; position:fixed; z-index:4200; top:72px; left:50%; transform:translateX(-50%); width:78%; max-width:980px; border:2px solid #5b9bd5; box-shadow:0 8px 24px rgba(0,0,0,.25); background:#fff; font-size:12px;">
+    <div class="panel-heading" style="display:flex;justify-content:space-between;align-items:center; padding:8px 10px;">
+      <strong style="font-size:12px;">Agrupacion de Articulos</strong>
+      <button type="button" class="btn btn-danger btn-xs" id="agrupacion-picker-close">Cerrar</button>
+    </div>
+    <div class="panel-body" style="padding:10px;">
+      <ul class="nav nav-tabs" role="tablist">
+        <li role="presentation" class="active"><a href="#agrupacion-incluir" aria-controls="agrupacion-incluir" role="tab" data-toggle="tab">Incluir</a></li>
+        <li role="presentation"><a href="#agrupacion-excluir" aria-controls="agrupacion-excluir" role="tab" data-toggle="tab">Excluir</a></li>
+      </ul>
+      <div class="tab-content" style="padding-top: 15px;">
+        <div role="tabpanel" class="tab-pane active" id="agrupacion-incluir">
+              <div class="form-group">
+                <label>Familia</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="inc_cod_familia" placeholder="Ej: 01;02 o 01:05">
+                  <span class="input-group-btn">
+                    <button type="button" class="btn btn-info btn-agr-ref" data-target="inc_cod_familia" data-level="familia">...</button>
+                  </span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Grupo</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="inc_cod_grupo" placeholder="Ej: 001;002 o 001:010">
+                  <span class="input-group-btn">
+                    <button type="button" class="btn btn-info btn-agr-ref" data-target="inc_cod_grupo" data-level="grupo">...</button>
+                  </span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Sub Grupo</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="inc_cod_subgrupo" placeholder="Ej: 001;010">
+                  <span class="input-group-btn">
+                    <button type="button" class="btn btn-info btn-agr-ref" data-target="inc_cod_subgrupo" data-level="subgrupo">...</button>
+                  </span>
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label>Individual</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="inc_cod_individual" placeholder="Ej: 001;050 o 001:100">
+                  <span class="input-group-btn">
+                    <button type="button" class="btn btn-info btn-agr-ref" data-target="inc_cod_individual" data-level="individual">...</button>
+                  </span>
+                </div>
+              </div>
+        </div>
+        <div role="tabpanel" class="tab-pane" id="agrupacion-excluir">
+              <div class="form-group">
+                <label>Familia</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="exc_cod_familia" placeholder="Ej: 01;02 o 01:05">
+                  <span class="input-group-btn">
+                    <button type="button" class="btn btn-info btn-agr-ref" data-target="exc_cod_familia" data-level="familia">...</button>
+                  </span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Grupo</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="exc_cod_grupo" placeholder="Ej: 001;002 o 001:010">
+                  <span class="input-group-btn">
+                    <button type="button" class="btn btn-info btn-agr-ref" data-target="exc_cod_grupo" data-level="grupo">...</button>
+                  </span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Sub Grupo</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="exc_cod_subgrupo" placeholder="Ej: 001;010">
+                  <span class="input-group-btn">
+                    <button type="button" class="btn btn-info btn-agr-ref" data-target="exc_cod_subgrupo" data-level="subgrupo">...</button>
+                  </span>
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label>Individual</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="exc_cod_individual" placeholder="Ej: 001;050 o 001:100">
+                  <span class="input-group-btn">
+                    <button type="button" class="btn btn-info btn-agr-ref" data-target="exc_cod_individual" data-level="individual">...</button>
+                  </span>
+                </div>
+              </div>
+        </div>
+      </div>
+      <div class="alert alert-info" style="margin-top:15px; margin-bottom:10px;">
+        Referencias: `100:300` interpreta del 100 al 300. `100;300` interpreta 100 o 300.
+      </div>
+      <div style="text-align:center;">
+        <button type="button" class="btn btn-primary" id="btn-agrupacion-aceptar">Aceptar</button>
+        <button type="button" class="btn btn-default" id="btn-agrupacion-cancelar">Cancelar</button>
+      </div>
+    </div>
+  </div>
+  <div id="agrupacion-ref-backdrop" style="display:none;position:fixed;inset:0;z-index:4290;background:rgba(0,0,0,.18);"></div>
+  <div id="agrupacion-ref-picker" class="panel panel-default" style="display:none; position:fixed; z-index:4300; top:92px; left:50%; transform:translateX(-50%); width:52%; max-width:760px; border:2px solid #5b9bd5; box-shadow:0 8px 24px rgba(0,0,0,.25); background:#fff; font-size:12px;">
+    <div class="panel-heading" style="display:flex;justify-content:space-between;align-items:center; padding:8px 10px;">
+      <strong id="agrupacion-ref-title" style="font-size:12px;">Seleccionar</strong>
+      <button type="button" class="btn btn-danger btn-xs" id="agrupacion-ref-close">Cerrar</button>
+    </div>
+    <div class="panel-body" style="padding:8px;">
+      <input type="text" id="agrupacion-ref-search" class="form-control" placeholder="Buscar..." style="margin-bottom:8px; height:28px; font-size:12px;">
+      <div style="max-height:340px;overflow:auto;">
+        <table class="table table-striped table-bordered" id="agrupacion-ref-table" style="font-size:11px; margin-bottom:0; table-layout:fixed; width:100%;">
+          <thead>
+            <tr>
+              <th style="width:120px; position:sticky; top:0; z-index:2; background:#f3f6fb;">Codigo</th>
+              <th style="position:sticky; top:0; z-index:2; background:#f3f6fb;">Descripcion</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script>
+    var api = u.getApiUrl();
+    var pageParams = new URLSearchParams(window.location.search || '');
+    var query = {
+      empresa: '',
+      empresa_despachos: '',
+      empresaDespachos: '',
+      sucursal: '',
+      articulo: '',
+      tipo: '',
+      estado: '',
+      agrupacion: '',
+      deposito: '',
+      fechad: '',
+      fechah: '',
+      solo_hijos: 'N',
+      calcular_empresa: 'N',
+      inventario_fisico: 'N',
+      ecuacion_orig: 'N',
+      ecuacion_mat: 'N',
+      recalcular: 'N',
+      inc_cod_familia: '',
+      exc_cod_familia: '',
+      inc_cod_grupo: '',
+      exc_cod_grupo: '',
+      inc_cod_subgrupo: '',
+      exc_cod_subgrupo: '',
+      inc_cod_individual: '',
+      exc_cod_individual: '',
+      periodo: '',
+      anho: '',
+      cod_despachante: '',
+      nro_despacho: '',
+      cierre: '',
+      tipo_despacho: '',
+      fecha_inicio_desde: '',
+      fecha_inicio_hasta: '',
+      fecha_fin_desde: '',
+      fecha_fin_hasta: '',
+      estado_compuesto: '',
+      tipo_compuesto: '',
+      realizadopor: '',
+      debug_recall: (pageParams.get('debug_recall') || pageParams.get('recall_dbg') || 'N').toUpperCase() === 'S' ? 'S' : 'N'
+    };
+
+    var select_empresa, select_sucursal, select_deposito, select_articulo, select_tipo, select_estado;
+    var dataTable = null;
+    var lastRows = [];
+    var activeInformeRequest = null;
+    var activeInformePollTimer = null;
+    var activeInformeJobId = '';
+    var activeInformePollFailures = 0;
+    var currentMode = 'normal';
+    var frontendBuildId = 'caf_2026_03_26_v2';
+    var warnedEbcOrig = false;
+    var agrupacionRefRows = [];
+    var agrupacionRefContext = null;
+    var agrupacionGroupPreview = {};
+    var progressInterval = null;
+    var progressValue = 0;
+    var informeRunning = false;
+    var progressStartedAt = null;
+    var progressMode = 'normal';
+    var progressDebugTimer = null;
+    var progressStepIndex = -1;
+    var progressRenderedSteps = [];
+    var currentProgressSessionId = '';
+
+    function escapeHtml(text) {
+      return String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function getProgressSteps(mode) {
+      if (mode === 'ebc_mat') {
+        return [
+          {data: 'anio', className: 'col-anio'},
+          {data: 'mes', className: 'col-mes'},
+          {data: 'cod_articulo'},
+          {data: 'cod_pt_reacondicionado'},
+          {data: 'des_art', className: 'col-producto'},
+          {data: 'fob_usd_origen', render: renderUs, className: 'col-fob'},
+          {data: 'porcentaje_costo_total_importacion', render: renderPct},
+          {data: 'costo_total_us_actual', render: renderUs},
+          {data: 'servicio_clasificacion_director', render: renderGs},
+          {data: 'servicio_clasificacion_proveedor', render: renderGs},
+          {data: 'servicio_no_gr', render: renderGs},
+          {data: 'estuche_gr', render: renderGs},
+          {data: 'prospecto_gr', render: renderGs},
+          {data: 'inkjet_gr', render: renderGs},
+          {data: 'sticker_sello_seguridad', render: renderGs},
+          {data: 'solvente_celofane', render: renderGs},
+          {data: 'total_costo_produccion_gs', render: renderGs},
+          {data: 'total_costo_produccion_us', render: renderUs},
+          {data: 'costo_total_final_us', render: renderUs}
+        ];
+      }
+      if (mode === 'ebc_orig') {
+        return [
+          'Preparando filtros del informe.',
+          'Cargando articulos temporales para el calculo.',
+          'Ejecutando procesos de Ecuacion BC Original.',
+          'Leyendo el resultado de Ecuacion BC Original.'
+        ];
+      }
+      return [
+        'Preparando filtros del informe.',
+        'Consultando datos del informe.'
+      ];
+    }
+
+    function renderProgressDebug() {
+      var html = progressRenderedSteps.map(function (item) {
+        return '<div class="ms-progress-debug-line' + (item.error ? ' is-error' : '') + '">' +
+          '<strong>' + escapeHtml(item.time) + '</strong> ' + escapeHtml(item.text) +
+          '</div>';
+      }).join('');
+      $('#ms-progress-debug-costo-articulo-full').html(html || '<div class="ms-progress-debug-line">Iniciando...</div>');
+    }
+
+    function addProgressDebug(text, isError) {
+      var now = new Date();
+      var hh = String(now.getHours()).padStart(2, '0');
+      var mm = String(now.getMinutes()).padStart(2, '0');
+      var ss = String(now.getSeconds()).padStart(2, '0');
+      progressRenderedSteps.push({
+        time: hh + ':' + mm + ':' + ss,
+        text: text,
+        error: !!isError
+      });
+      if (progressRenderedSteps.length > 8) {
+        progressRenderedSteps = progressRenderedSteps.slice(progressRenderedSteps.length - 8);
+      }
+      renderProgressDebug();
+    }
+
+    function startProgressDebug(mode) {
+      progressMode = mode || 'normal';
+      progressStartedAt = Date.now();
+      progressStepIndex = -1;
+      progressRenderedSteps = [];
+      addProgressDebug('Solicitud iniciada.');
+      if (progressDebugTimer) {
+        clearInterval(progressDebugTimer);
+      }
+      progressDebugTimer = setInterval(function () {
+        var steps = getProgressSteps(progressMode);
+        var elapsed = Math.floor((Date.now() - progressStartedAt) / 3500);
+        var nextIndex = Math.min(elapsed, steps.length - 1);
+        if (nextIndex > progressStepIndex) {
+          progressStepIndex = nextIndex;
+          addProgressDebug(steps[progressStepIndex]);
+        }
+      }, 700);
+    }
+
+    function stopProgressDebug() {
+      if (progressDebugTimer) {
+        clearInterval(progressDebugTimer);
+        progressDebugTimer = null;
+      }
+    }
+
+    function buildClientSessionId() {
+      return String(Date.now()) + '-' + Math.floor(Math.random() * 1000000);
+    }
+
+    function parseLocaleNumber(value) {
+      if (value === null || value === undefined || value === '') return 0;
+      if (typeof value === 'number') return isNaN(value) ? 0 : value;
+      var text = String(value).trim();
+      if (!text) return 0;
+      if (text.indexOf(',') >= 0) {
+        text = text.replace(/\./g, '').replace(',', '.');
+      }
+      var n = Number(text);
+      return isNaN(n) ? 0 : n;
+    }
+
+    function renderGs(value) {
+      return u.numFormatter.display(Math.round(parseLocaleNumber(value)));
+    }
+
+    function renderUs(value) {
+      return u.usFormatter.display(parseLocaleNumber(value));
+    }
+
+    function renderPct(value) {
+      var n = Number(value || 0);
+      if (isNaN(n)) n = 0;
+      var txt = (Math.round(n * 100) / 100).toString().replace('.', ',');
+      if (txt.indexOf(',') >= 0) {
+        txt = txt.replace(/,0$/, '').replace(/,00$/, '');
+      }
+      return txt + '%';
+    }
+
+    function renderProducto(value, type) {
+      var text = String(value || '').trim();
+      if (type !== 'display') {
+        return text;
+      }
+      return '<div class="ms-producto-cell" title="' + escapeHtml(text) + '">' + escapeHtml(text) + '</div>';
+    }
+
+    function getEbcMatHeaderDefs() {
+      return [
+        { title: 'AÑO' },
+        { title: 'MES' },
+        { title: 'CÓDIGO<br>PY' },
+        { title: 'CÓDIGO PY<br>REACOND.' },
+        { title: 'PRODUCTO' },
+        { title: 'FOB U$S<br>(CARTILLA EN ORIGEN)' },
+        { title: '% CTO. TOTAL<br>IMPORT.' },
+        { title: 'CTO. TOTAL USD<br>(ACTUAL)' },
+        { title: 'Serv. colocación sticker /<br>engomado Gs.' },
+        { title: 'Serv. colocación<br>prospecto Gs.' },
+        { title: 'Servicio MO<br>Gs.' },
+        { title: 'Estuche<br>Gs.' },
+        { title: 'Prospecto<br>Gs.' },
+        { title: 'Inkjet<br>Gs.' },
+        { title: 'Sticker / Sello de<br>Seguridad' },
+        { title: 'Solvente /<br>Cuchara' },
+        { title: 'TOTAL COSTO<br>PRODUCCIÓN GS.' },
+        { title: 'TOTAL COSTO<br>PRODUCCIÓN U$S' },
+        { title: 'COSTO TOTAL<br>FINAL U$S' }
+      ];
+    }
+
+    function renderManualEbcMatTable(rows, columns) {
+      var $tableDiv = $('#resultado');
+      var headerDefs = getEbcMatHeaderDefs();
+      var colgroup = columns.map(function (col) {
+        return '<col style="width:' + escapeHtml(col.width || 'auto') + ';">';
+      }).join('');
+      var thead = '<thead><tr>' + headerDefs.map(function (header, index) {
+        var className = (columns[index] && columns[index].className) ? columns[index].className : '';
+        return '<th class="' + escapeHtml(className) + '"><div class="ms-col-title">' + header.title + '</div></th>';
+      }).join('') + '</tr></thead>';
+      var tbody = '';
+
+      if (!rows || !rows.length) {
+        tbody = '<tbody><tr><td colspan="' + columns.length + '" style="text-align:center;">No hay datos disponibles</td></tr></tbody>';
+      } else {
+        tbody = '<tbody>' + rows.map(function (row) {
+          return '<tr>' + columns.map(function (col) {
+            var rawValue = row[col.data];
+            var rendered = rawValue;
+            if (typeof col.render === 'function') {
+              rendered = col.render(rawValue, 'display', row);
+            } else {
+              rendered = escapeHtml(rawValue === null || rawValue === undefined ? '' : String(rawValue));
+            }
+            return '<td class="' + escapeHtml(col.className || '') + '">' + rendered + '</td>';
+          }).join('') + '</tr>';
+        }).join('') + '</tbody>';
+      }
+
+      $tableDiv.html(
+        '<table id="results" class="table table-striped table-bordered dataTable ms-ebc-mat ms-ebc-mat-manual" cellspacing="0">' +
+          '<colgroup>' + colgroup + '</colgroup>' +
+          thead +
+          tbody +
+        '</table>'
+      );
+      $tableDiv.show();
+    }
+
+    function setProgressValue(value) {
+      progressValue = Math.max(0, Math.min(100, value || 0));
+      $('#ms-progress-percent-costo-articulo-full').text(Math.round(progressValue) + '%');
+      $('#ms-progress-bar-costo-articulo-full').css('width', progressValue + '%');
+    }
+
+    function startEstimatedProgress() {
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
+      setProgressValue(7);
+      progressInterval = setInterval(function () {
+        if (progressValue < 35) {
+          setProgressValue(progressValue + 7);
+        } else if (progressValue < 60) {
+          setProgressValue(progressValue + 4);
+        } else if (progressValue < 80) {
+          setProgressValue(progressValue + 2);
+        } else if (progressValue < 92) {
+          setProgressValue(progressValue + 1);
+        }
+      }, 900);
+    }
+
+    function showProgress(message, mode) {
+      informeRunning = true;
+      currentProgressSessionId = buildClientSessionId();
+      $('#ms-progress-label-costo-articulo-full').text(message || 'Procesando informe...');
+      $('#ms-progress-sub-costo-articulo-full').text('Ejecutando consulta, aguarde un momento.');
+      $('#ms-progress-session-costo-articulo-full').text(currentProgressSessionId);
+      $('#ms-progress-debug-flag-costo-articulo-full').text(query.debug_recall || 'N');
+      $('#ms-progress-backdrop-costo-articulo-full').show();
+      $('#ms-progress-costo-articulo-full').show();
+      $('#btn-procesar-costo-articulo-full').addClass('is-disabled').css({'pointer-events': 'none', 'opacity': 0.7});
+      startProgressDebug(mode || progressMode);
+      startEstimatedProgress();
+    }
+
+    function showProgressError(message) {
+      stopProgressDebug();
+      setProgressValue(Math.max(progressValue, 92));
+      $('#ms-progress-label-costo-articulo-full').text('No se pudo completar el informe');
+      $('#ms-progress-sub-costo-articulo-full').text(message || 'La consulta fallo antes de devolver una respuesta.');
+      addProgressDebug(message || 'La consulta fallo antes de devolver una respuesta.', true);
+    }
+
+    function hideProgress() {
+      stopProgressDebug();
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+      }
+      setProgressValue(100);
+      setTimeout(function () {
+        informeRunning = false;
+        currentProgressSessionId = '';
+        $('#ms-progress-costo-articulo-full').hide();
+        $('#ms-progress-backdrop-costo-articulo-full').hide();
+        $('#btn-procesar-costo-articulo-full').removeClass('is-disabled').css({'pointer-events': '', 'opacity': ''});
+        setProgressValue(0);
+      }, 250);
+    }
+
+    function clearActiveInformeRequest() {
+      activeInformeRequest = null;
+    }
+
+    function clearActiveInformePolling() {
+      if (activeInformePollTimer) {
+        clearTimeout(activeInformePollTimer);
+        activeInformePollTimer = null;
+      }
+      activeInformeJobId = '';
+      activeInformePollFailures = 0;
+    }
+
+    function resetAsyncInformeState() {
+      clearActiveInformePolling();
+      clearActiveInformeRequest();
+      activeInformeJobId = '';
+      lastRows = [];
+      if (dataTable && currentMode === 'ebc_mat') {
+        dataTable.clear().draw();
+      }
+      if (currentMode === 'ebc_mat') {
+        renderManualEbcMatTable([], buildColumns('ebc_mat'));
+      }
+      informeRunning = false;
+      currentProgressSessionId = '';
+      $('#ms-progress-costo-articulo-full').hide();
+      $('#ms-progress-backdrop-costo-articulo-full').hide();
+      $('#btn-procesar-costo-articulo-full').removeClass('is-disabled').css({'pointer-events': '', 'opacity': ''});
+      setProgressValue(0);
+    }
+
+    function renderTableHeader(mode) {
+      var $thead = $('#resultado table thead');
+      if (mode === 'ebc_mat') {
+        $thead.html('<tr>' + getEbcMatHeaderDefs().map(function (header) {
+          return '<th><div class="ms-col-title">' + header.title + '</div></th>';
+        }).join('') + '</tr>');
+      } else if (mode === 'ebc_orig') {
+        $thead.html(
+          '<tr class="ms-head-group">' +
+          '<th colspan="2">MATERIALES BIENES DE CAMBIO</th>' +
+          '<th colspan="3">Inventario Inicial</th>' +
+          '<th colspan="3">Compras</th>' +
+          '<th colspan="2">Costo de Mat. utilizados p/ reacond. en el mes</th>' +
+          '<th colspan="2">Diferencia de Inventario</th>' +
+          '<th colspan="2">Baja para Destruccion</th>' +
+          '<th colspan="5">Inventario Final</th>' +
+          '</tr>' +
+          '<tr class="ms-head-detail">' +
+          '<th>Articulo</th>' +
+          '<th>Descripcion Articulo</th>' +
+          '<th>Unid.</th>' +
+          '<th>Costo Ut. Rep.</th>' +
+          '<th>Costo Total</th>' +
+          '<th>Unid.</th>' +
+          '<th>Costo Unit.</th>' +
+          '<th>Total</th>' +
+          '<th>Unid.</th>' +
+          '<th>Reposicion</th>' +
+          '<th>Unid.</th>' +
+          '<th>Reposicion</th>' +
+          '<th>Unid.</th>' +
+          '<th>Reposicion</th>' +
+          '<th>Unid.</th>' +
+          '<th>Costo Ut. Rep.</th>' +
+          '<th>Costo Total</th>' +
+          '<th>Recuento</th>' +
+          '<th>Diferencia</th>' +
+          '</tr>'
+        );
+      } else {
+        $thead.html(
+          '<tr>' +
+          '<th>Codigo</th>' +
+          '<th>Descripcion</th>' +
+          '<th>Tipo</th>' +
+          '<th>Estado</th>' +
+          '<th>Costo Promedio Gs</th>' +
+          '<th>Costo Ultimo Gs</th>' +
+          '<th>Costo Promedio U$</th>' +
+          '<th>Costo Ultimo U$</th>' +
+          '<th>Moneda</th>' +
+          '<th>IVA</th>' +
+          '<th>Existencia</th>' +
+          '</tr>'
+        );
+      }
+    }
+
+    function cleanupGhostHeader() {
+      $('#resultado table.dataTable tbody tr').each(function () {
+        var $tr = $(this);
+        var text = $.trim($tr.text().replace(/\u00a0/g, ' '));
+        if (!text) {
+          $tr.addClass('ms-empty-row');
+        } else {
+          $tr.removeClass('ms-empty-row');
+        }
+      });
+    }
+
+    function updateResultViewportHeight() {
+      var $result = $('#resultado');
+      if (!$result.length) {
+        return;
+      }
+      var viewportHeight = window.innerHeight || document.documentElement.clientHeight || 900;
+      var top = $result.offset() ? $result.offset().top : 0;
+      var available = Math.max(320, viewportHeight - top - 24);
+      $result.css('max-height', available + 'px');
+    }
+
+    function refreshTableLayout() {
+      cleanupGhostHeader();
+      updateResultViewportHeight();
+      if (!dataTable) {
+        return;
+      }
+      if (currentMode === 'ebc_mat') {
+        return;
+      }
+      dataTable.columns.adjust().draw(false);
+    }
+
+    function buildColumns(mode) {
+      if (mode === 'ebc_mat') {
+        return [
+          {data: 'anio', className: 'col-anio', width: '56px'},
+          {data: 'mes', className: 'col-mes', width: '48px'},
+          {data: 'cod_articulo', className: 'col-cod-py', width: '86px'},
+          {data: 'cod_pt_reacondicionado', className: 'col-cod-reacond', width: '96px'},
+          {data: 'des_art', className: 'col-producto', width: '420px', render: renderProducto},
+          {data: 'fob_usd_origen', render: renderUs, className: 'col-fob col-num-us', width: '120px'},
+          {data: 'porcentaje_costo_total_importacion', render: renderPct, className: 'col-pct', width: '108px'},
+          {data: 'costo_total_us_actual', render: renderUs, className: 'col-num-us', width: '118px'},
+          {data: 'servicio_clasificacion_director', render: renderGs, className: 'col-num-gs-wide', width: '155px'},
+          {data: 'servicio_clasificacion_proveedor', render: renderGs, className: 'col-num-gs-wide', width: '155px'},
+          {data: 'servicio_no_gr', render: renderGs, className: 'col-num-gs'},
+          {data: 'estuche_gr', render: renderGs, className: 'col-num-gs'},
+          {data: 'prospecto_gr', render: renderGs, className: 'col-num-gs'},
+          {data: 'inkjet_gr', render: renderGs, className: 'col-num-gs'},
+          {data: 'sticker_sello_seguridad', render: renderGs, className: 'col-num-gs-wide', width: '155px'},
+          {data: 'solvente_celofane', render: renderGs, className: 'col-num-gs'},
+          {data: 'total_costo_produccion_gs', render: renderGs, className: 'col-total-gs', width: '120px'},
+          {data: 'total_costo_produccion_us', render: renderUs, className: 'col-total-us', width: '110px'},
+          {data: 'costo_total_final_us', render: renderUs, className: 'col-total-us', width: '110px'}
+        ];
+      }
+      if (mode === 'ebc_orig') {
+        return [
+          {data: 'cod_articulo'},
+          {data: 'des_art'},
+          {data: 'unidad_inventario_inicial', render: u.usFormatter},
+          {data: 'costo_ut_rep_inicial', render: u.usFormatter},
+          {data: 'costo_total_inicial', render: u.usFormatter},
+          {data: 'unidad_compras', render: u.usFormatter},
+          {data: 'costo_unitario_compras', render: u.usFormatter},
+          {data: 'total_compras', render: u.usFormatter},
+          {data: 'unidad_costo_reacondicionamiento', render: u.usFormatter},
+          {data: 'reposicion_reacondicionamiento', render: u.usFormatter},
+          {data: 'unidad_diferencia_inventario', render: u.usFormatter},
+          {data: 'reposicion_diferencia_inventario', render: u.usFormatter},
+          {data: 'unidad_baja_destruccion', render: u.usFormatter},
+          {data: 'reposicion_baja_destruccion', render: u.usFormatter},
+          {data: 'unidad_inventario_final', render: u.usFormatter},
+          {data: 'costo_ut_rep_final', render: u.usFormatter},
+          {data: 'costo_total_final', render: u.usFormatter},
+          {data: 'recuento', render: u.usFormatter},
+          {data: 'diferencia_recuento', render: u.usFormatter}
+        ];
+      }
+      return [
+        {data: 'cod_articulo'},
+        {data: 'des_art'},
+        {data: 'cod_tp_art'},
+        {data: 'estado'},
+        {data: 'cto_prom_gs', render: u.numFormatter},
+        {data: 'cto_ult_gs', render: u.numFormatter},
+        {data: 'cto_prom_me', render: u.usFormatter},
+        {data: 'cto_ult_me', render: u.usFormatter},
+        {data: 'codmoneda'},
+        {data: 'iva', render: u.usFormatter},
+        {data: 'existencia', render: u.usFormatter}
+      ];
+    }
+
+    function ensureStaticTable(mode, columns) {
+      var $tableDiv = $('#resultado');
+      if (dataTable && currentMode !== mode) {
+        dataTable.destroy();
+        dataTable = null;
+      }
+      currentMode = mode;
+      if (mode === 'ebc_mat') {
+        renderManualEbcMatTable([], columns);
+        return null;
+      }
+      renderTableHeader(mode);
+      $tableDiv.show();
+      $tableDiv.find('table').toggleClass('ms-ebc-mat', mode === 'ebc_mat');
+      if (!dataTable) {
+        u.defaultDT();
+        dataTable = $tableDiv.find('table').DataTable({
+          scrollY: false,
+          scrollX: false,
+          scrollCollapse: false,
+          scroller: false,
+          paging: false,
+          lengthChange: false,
+          autoWidth: false,
+          data: [],
+          columns: columns,
+          order: [],
+          initComplete: function () {
+            cleanupGhostHeader();
+          },
+          drawCallback: function () {
+            cleanupGhostHeader();
+          }
+        });
+      } else {
+        dataTable.clear().draw();
+      }
+      return dataTable;
+    }
+
+    function applyAsyncProgress(status) {
+      status = status || {};
+      if (typeof status.progress === 'number' && status.progress >= 0) {
+        setProgressValue(Math.max(progressValue, Math.min(99, status.progress)));
+      }
+      if (status.step) {
+        $('#ms-progress-label-costo-articulo-full').text(status.step);
+        addProgressDebug(status.step + (status.message ? ': ' + status.message : ''));
+      }
+      if (status.message) {
+        $('#ms-progress-sub-costo-articulo-full').text(status.message);
+      }
+    }
+
+    function buildExportHeaders(mode) {
+      if (mode === 'ebc_mat') {
+        return [
+          'ANIO', 'MES', 'CODIGO PY', 'CODIGO PY REACOND.', 'PRODUCTO',
+          'FOB U$S (CARTILLA EN ORIGEN)', '% CTO. TOTAL IMPORT.', 'CTO. TOTAL USD (ACTUAL)',
+          'Serv. colocacion sticker / engomado Gs.', 'Serv. colocacion prospecto Gs.', 'Servicio MO Gs.',
+          'Estuche Gs.', 'Prospecto Gs.', 'Inkjet Gs.', 'Sticker / Sello de Seguridad',
+          'Solvente / Cuchara', 'TOTAL COSTO PRODUCCION Gs.', 'TOTAL COSTO PRODUCCION U$S',
+          'COSTO TOTAL FINAL U$S'
+        ];
+      }
+      if (mode === 'ebc_orig') {
+        return [
+          'Articulo', 'Descripcion Articulo',
+          'Unid. Inv. Inicial', 'Costo Ut. Rep. Inicial', 'Costo Total Inicial',
+          'Unid. Compras', 'Costo Unit. Compras', 'Total Compras',
+          'Unid. Costo Reacond.', 'Reposicion Reacond.',
+          'Unid. Dif. Inventario', 'Reposicion Dif. Inventario',
+          'Unid. Baja Destruccion', 'Reposicion Baja Destruccion',
+          'Unid. Inventario Final', 'Costo Ut. Rep. Final', 'Costo Total Final',
+          'Recuento', 'Diferencia'
+        ];
+      }
+      return ['Codigo', 'Descripcion', 'Tipo', 'Estado', 'Costo Promedio Gs', 'Costo Ultimo Gs', 'Costo Promedio U$', 'Costo Ultimo U$', 'Moneda', 'IVA', 'Existencia'];
+    }
+
+    function rowToExport(mode, r) {
+      if (mode === 'ebc_mat') {
+        return [
+          r.anio || '',
+          r.mes || '',
+          r.cod_articulo || '',
+          r.cod_pt_reacondicionado || '',
+          r.des_art || '',
+          r.fob_usd_origen || 0,
+          r.porcentaje_costo_total_importacion || 0,
+          r.costo_total_us_actual || 0,
+          r.servicio_clasificacion_director || 0,
+          r.servicio_clasificacion_proveedor || 0,
+          r.servicio_no_gr || 0,
+          r.estuche_gr || 0,
+          r.prospecto_gr || 0,
+          r.inkjet_gr || 0,
+          r.sticker_sello_seguridad || 0,
+          r.solvente_celofane || 0,
+          r.total_costo_produccion_gs || 0,
+          r.total_costo_produccion_us || 0,
+          r.costo_total_final_us || 0
+        ];
+      }
+      if (mode === 'ebc_orig') {
+        return [
+          r.cod_articulo || '',
+          r.des_art || '',
+          r.unidad_inventario_inicial || 0,
+          r.costo_ut_rep_inicial || 0,
+          r.costo_total_inicial || 0,
+          r.unidad_compras || 0,
+          r.costo_unitario_compras || 0,
+          r.total_compras || 0,
+          r.unidad_costo_reacondicionamiento || 0,
+          r.reposicion_reacondicionamiento || 0,
+          r.unidad_diferencia_inventario || 0,
+          r.reposicion_diferencia_inventario || 0,
+          r.unidad_baja_destruccion || 0,
+          r.reposicion_baja_destruccion || 0,
+          r.unidad_inventario_final || 0,
+          r.costo_ut_rep_final || 0,
+          r.costo_total_final || 0,
+          r.recuento || 0,
+          r.diferencia_recuento || 0
+        ];
+      }
+      return [
+        r.cod_articulo || '',
+        r.des_art || '',
+        r.cod_tp_art || '',
+        r.estado || '',
+        r.cto_prom_gs || 0,
+        r.cto_ult_gs || 0,
+        r.cto_prom_me || 0,
+        r.cto_ult_me || 0,
+        r.codmoneda || '',
+        r.iva || 0,
+        r.existencia || 0
+      ];
+    }
+
+    function asSN(id) {
+      return $('#' + id).is(':checked') ? 'S' : 'N';
+    }
+
+    function syncChecks() {
+      query.solo_hijos = asSN('solo_hijos');
+      query.calcular_empresa = asSN('calcular_empresa');
+      query.inventario_fisico = asSN('inventario_fisico');
+      query.ecuacion_orig = asSN('ecuacion_orig');
+      query.ecuacion_mat = asSN('ecuacion_mat');
+      query.recalcular = (query.inventario_fisico === 'S' || query.ecuacion_orig === 'S' || query.ecuacion_mat === 'S') ? 'S' : 'N';
+      $('#ebc-mat-extra-filters').toggle(query.ecuacion_mat === 'S');
+    }
+
+    function initDateRange() {
+      var now = new Date();
+      var start = new Date(now.getFullYear(), now.getMonth(), 1);
+      var defaultValue = $.fn.datepicker.DPGlobal.formatDate(now, 'yyyy-mm-dd', 'es');
+      var defaultStartValue = $.fn.datepicker.DPGlobal.formatDate(start, 'yyyy-mm-dd', 'es');
+
+      $('#fechad').datepicker({
+        format: 'yyyy-mm-dd',
+        language: 'es',
+        autoclose: true
+      }).datepicker('setDate', start).on('changeDate', function () {
+        resetAsyncInformeState();
+        query.fechad = $(this).val();
+      });
+
+      $('#fechah').datepicker({
+        format: 'yyyy-mm-dd',
+        language: 'es',
+        autoclose: true
+      }).datepicker('setDate', now).on('changeDate', function () {
+        resetAsyncInformeState();
+        query.fechah = $(this).val();
+      });
+
+      query.fechad = $('#fechad').val();
+      query.fechah = $('#fechah').val();
+
+      ['fecha_inicio_desde', 'fecha_inicio_hasta', 'fecha_fin_desde', 'fecha_fin_hasta'].forEach(function (fieldId) {
+        var value = fieldId.indexOf('_desde') >= 0 ? defaultStartValue : defaultValue;
+        $('#' + fieldId).datepicker({
+          format: 'yyyy-mm-dd',
+          language: 'es',
+          autoclose: true
+        }).datepicker('setDate', fieldId.indexOf('fecha_inicio_') === 0 ? start : now)
+          .on('changeDate', function () {
+            resetAsyncInformeState();
+            query[fieldId] = $(this).val();
+          });
+        query[fieldId] = $('#' + fieldId).val() || value;
+      });
+    }
+
+    function initEbcMatInputs() {
+      [
+        'periodo',
+        'anho',
+        'cod_despachante',
+        'nro_despacho',
+        'cierre',
+        'tipo_despacho',
+        'estado_compuesto',
+        'tipo_compuesto',
+        'realizadopor'
+      ].forEach(function (fieldId) {
+        $('#' + fieldId).on('change keyup', function () {
+          query[fieldId] = $.trim($(this).val());
+        });
+      });
+
+      var now = new Date();
+      $('#periodo').val(String(now.getFullYear()) + String(now.getMonth() + 1).padStart(2, '0'));
+      $('#anho').val(String(now.getFullYear()));
+      query.periodo = $('#periodo').val();
+      query.anho = $('#anho').val();
+      query.cod_despachante = $.trim($('#cod_despachante').val());
+      query.nro_despacho = $.trim($('#nro_despacho').val());
+      query.cierre = $('#cierre').val() || '';
+      query.tipo_despacho = $.trim($('#tipo_despacho').val());
+      query.estado_compuesto = $.trim($('#estado_compuesto').val());
+      query.tipo_compuesto = $.trim($('#tipo_compuesto').val());
+      query.realizadopor = $.trim($('#realizadopor').val());
+    }
+
+    function syncEbcPeriodoFromFecha() {
+      var fecha = $('#fechad').val() || $('#fechah').val();
+      if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+        return;
+      }
+      var parts = fecha.split('-');
+      var periodo = parts[0] + parts[1];
+      $('#periodo').val(periodo);
+      $('#anho').val(parts[0]);
+      query.periodo = periodo;
+      query.anho = parts[0];
+    }
+
+    function syncEbcCompDatesFromMainRange() {
+      var desde = $('#fechad').val() || '';
+      var hasta = $('#fechah').val() || '';
+      if (desde || hasta) {
+        var inicioDesde = desde || hasta;
+        var inicioHasta = hasta || desde;
+        var finDesde = desde || hasta;
+        var finHasta = hasta || desde;
+        $('#fecha_inicio_desde').val(inicioDesde);
+        $('#fecha_inicio_hasta').val(inicioHasta);
+        $('#fecha_fin_desde').val(finDesde);
+        $('#fecha_fin_hasta').val(finHasta);
+        query.fecha_inicio_desde = inicioDesde;
+        query.fecha_inicio_hasta = inicioHasta;
+        query.fecha_fin_desde = finDesde;
+        query.fecha_fin_hasta = finHasta;
+      }
+    }
+
+    function validateEbcMatRequest(reqData) {
+      if (reqData.ecuacion_mat !== 'S') {
+        return null;
+      }
+
+      var required = [
+        ['periodo', 'Periodo'],
+        ['anho', 'Año']
+      ];
+
+      for (var i = 0; i < required.length; i++) {
+        var field = required[i];
+        if (!$.trim(reqData[field[0]] || '')) {
+          return 'Debe completar "' + field[1] + '" para Ecuacion BC Materiales.';
+        }
+      }
+
+      if (!/^\d{6,8}$/.test($.trim(reqData.periodo || ''))) {
+        return 'El campo "Periodo" debe tener formato YYYYMM.';
+      }
+
+      if (!/^\d{4}$/.test($.trim(reqData.anho || ''))) {
+        return 'El campo "Año" debe tener 4 dígitos.';
+      }
+
+      return null;
+    }
+
+    function initSelects() {
+      $.extend(true, $.fn.selectize.defaults, {
+        onChange: function (value) {
+          query[this.$input.attr('name')] = value;
+        }
+      });
+
+      select_empresa = $('#select-empresa').selectize({
+        valueField: 'Cod_Empresa',
+        labelField: 'Des_Empresa',
+        searchField: 'Des_Empresa',
+        onChange: function (value) {
+          query.empresa = value;
+          syncEmpresaDespachos();
+          updateEmpresaVisual(value);
+          u.resetSelect(select_articulo);
+          if (!value) return;
+          select_articulo.enable();
+        }
+      })[0].selectize;
+
+      select_empresa.load(function (cb) {
+        u.get_empresas({{ user }}, 'Integrado', function (res) {
+          var data = res.data || [];
+          cb(data);
+          if (!select_empresa.getValue() && data.length) {
+            var first = data[0].Cod_Empresa || data[0].cod_empresa || '';
+            if (first) {
+              select_empresa.setValue(first);
+              syncEmpresaDespachos();
+              updateEmpresaVisual(first);
+            }
+          }
+        });
+      });
+
+      select_tipo = $('#select-tipo').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: 'name'
+      })[0].selectize;
+      select_tipo.load(function (cb) {
+        $.get(api + 'stock/tipos/articulos').done(function (res) {
+          cb(res.data || []);
+        }).fail(function () {
+          cb();
+        });
+      });
+
+      select_articulo = $('#select-articulo').selectize({
+        valueField: 'id',
+        labelField: 'name',
+        searchField: ['id', 'name'],
+        maxItems: 10,
+        load: function (q, cb) {
+          if (!query.empresa) return cb();
+          if (q.length < 2) return cb();
+          $.get(api + 'stock/' + query.empresa + '/articulos', {
+            articulo: q,
+            tipo: query.tipo
+          }).done(function (res) {
+            cb(res.data || []);
+          }).fail(function () {
+            cb();
+          });
+        },
+        render: {
+          option: function (item, escape) {
+            return '<div>' + escape(item.id) + ' - ' + escape(item.name) + '</div>';
+          },
+          item: function (item, escape) {
+            return '<div>' + escape(item.id) + ' - ' + escape(item.name) + '</div>';
+          }
+        }
+      })[0].selectize;
+      select_articulo.disable();
+
+      select_estado = $('#select-estado').selectize({
+        options: [
+          {value: '', text: 'Todos'},
+          {value: 'A', text: 'Activo'},
+          {value: 'I', text: 'Inactivo'}
+        ],
+        valueField: 'value',
+        labelField: 'text',
+        searchField: 'text'
+      })[0].selectize;
+      select_estado.setValue('');
+
+      window.query = query;
+      window.select_empresa = select_empresa;
+      window.select_articulo = select_articulo;
+      window.getInforme = getInforme;
+    }
+
+    function updateEmpresaVisual(value) {
+      var $select = $('#select-empresa');
+      var $wrapper = $select.closest('.form-group').find('.selectize-control').first();
+      var displayText = value || '';
+      try {
+        if (select_empresa && value) {
+          var opt = select_empresa.options[value];
+          if (opt) {
+            displayText = (opt.Cod_Empresa || opt.cod_empresa || value) + ' - ' + (opt.Des_Empresa || opt.des_empresa || '');
+          }
+        }
+      } catch (e) {}
+
+      if (!$wrapper.length) return;
+      var $hint = $('#empresa-visual-hint');
+      if (!$hint.length) {
+        $hint = $('<div id="empresa-visual-hint" style="margin-top:4px;font-size:11px;color:#1f4a7a;font-weight:600;"></div>');
+        $wrapper.after($hint);
+      }
+      $hint.text(displayText ? ('Empresa seleccionada: ' + displayText) : 'Empresa seleccionada: -');
+    }
+
+    function buildAgrupacionSummary() {
+      var labels = [
+        ['inc_cod_familia', 'Familia en '],
+        ['exc_cod_familia', 'Familia no en '],
+        ['inc_cod_grupo', 'Grupo en '],
+        ['exc_cod_grupo', 'Grupo no en '],
+        ['inc_cod_subgrupo', 'SubGrupo en '],
+        ['exc_cod_subgrupo', 'SubGrupo no en '],
+        ['inc_cod_individual', 'Individual en '],
+        ['exc_cod_individual', 'Individual no en ']
+      ];
+      var parts = [];
+      labels.forEach(function (item) {
+        if (query[item[0]]) {
+          parts.push(item[1] + query[item[0]]);
+        }
+      });
+      $('#agrupacion_display').val(parts.join(' | ') || 'Todos');
+      if (typeof msRenderActiveFilters === 'function') {
+        msRenderActiveFilters();
+      }
+    }
+
+    function syncAgrupacionModal() {
+      $('#inc_cod_familia').val(query.inc_cod_familia);
+      $('#exc_cod_familia').val(query.exc_cod_familia);
+      $('#inc_cod_grupo').val(query.inc_cod_grupo);
+      $('#exc_cod_grupo').val(query.exc_cod_grupo);
+      $('#inc_cod_subgrupo').val(query.inc_cod_subgrupo);
+      $('#exc_cod_subgrupo').val(query.exc_cod_subgrupo);
+      $('#inc_cod_individual').val(query.inc_cod_individual);
+      $('#exc_cod_individual').val(query.exc_cod_individual);
+    }
+
+    function openAgrupacionModal() {
+      syncAgrupacionModal();
+      $('#agrupacion-picker-backdrop').show();
+      $('#agrupacionModal').show();
+    }
+
+    function closeAgrupacionModal() {
+      $('#agrupacionModal').hide();
+      $('#agrupacion-picker-backdrop').hide();
+    }
+
+    function closeAgrupacionRefPicker() {
+      $('#agrupacion-ref-picker').hide();
+      $('#agrupacion-ref-backdrop').hide();
+      agrupacionRefRows = [];
+      agrupacionRefContext = null;
+    }
+
+    function renderAgrupacionRefRows(rows) {
+      var html = '';
+      (rows || []).forEach(function (row) {
+        var rowClass = row.__kind === 'group-preview' ? ' class="info"' : '';
+        var code = row.__kind === 'group-preview' ? ('&boxvr;&nbsp;' + _.escape(row.id || '')) : _.escape(row.id || '');
+        html += '<tr class="js-agrupacion-ref-row" data-id="' + _.escape(row.id || '') + '"' +
+          ' data-name="' + _.escape(row.name || '') + '"' +
+          ' data-familia="' + _.escape(row.familia || '') + '"' +
+          ' data-grupo="' + _.escape(row.grupo || '') + '"' +
+          ' data-subgrupo="' + _.escape(row.subgrupo || '') + '"' + rowClass + '>' +
+          '<td>' + code + '</td>' +
+          '<td>' + _.escape(row.name || '') + '</td>' +
+          '</tr>';
+      });
+      if (!html) {
+        html = '<tr><td colspan="2" class="text-center">No se encontraron registros.</td></tr>';
+      }
+      $('#agrupacion-ref-table tbody').html(html);
+    }
+
+    function appendAgrupacionValue(targetId, value) {
+      var $target = $('#' + targetId);
+      var current = $.trim($target.val());
+      if (!current) {
+        $target.val(value);
+        return;
+      }
+      var parts = current.split(';').map(function (item) { return $.trim(item); }).filter(Boolean);
+      if (parts.indexOf(value) === -1) {
+        parts.push(value);
+      }
+      $target.val(parts.join(';'));
+    }
+
+    function setAgrupacionParentValues(ctx, row) {
+      if (!ctx || !row) return;
+      var prefix = ctx.targetId.indexOf('exc_') === 0 ? 'exc_' : 'inc_';
+      if (ctx.level === 'grupo' && row.familia && !$.trim($('#' + prefix + 'cod_familia').val())) {
+        $('#' + prefix + 'cod_familia').val(row.familia);
+      }
+      if (ctx.level === 'subgrupo') {
+        if (row.familia && !$.trim($('#' + prefix + 'cod_familia').val())) $('#' + prefix + 'cod_familia').val(row.familia);
+        if (row.grupo && !$.trim($('#' + prefix + 'cod_grupo').val())) $('#' + prefix + 'cod_grupo').val(row.grupo);
+      }
+      if (ctx.level === 'individual') {
+        if (row.familia && !$.trim($('#' + prefix + 'cod_familia').val())) $('#' + prefix + 'cod_familia').val(row.familia);
+        if (row.grupo && !$.trim($('#' + prefix + 'cod_grupo').val())) $('#' + prefix + 'cod_grupo').val(row.grupo);
+        if (row.subgrupo && !$.trim($('#' + prefix + 'cod_subgrupo').val())) $('#' + prefix + 'cod_subgrupo').val(row.subgrupo);
+      }
+    }
+
+    function getAgrupacionRefUrl(level) {
+      if (level === 'familia') return api + 'stock/familias';
+      if (level === 'grupo') return api + 'stock/grupos';
+      if (level === 'subgrupo') return api + 'stock/subgrupos';
+      return api + 'stock/individuales';
+    }
+
+    function getAgrupacionRefParams(level, targetId) {
+      var isExclude = targetId.indexOf('exc_') === 0;
+      var prefix = isExclude ? 'exc_' : 'inc_';
+      var params = {};
+      if (level === 'grupo' || level === 'subgrupo' || level === 'individual') {
+        params.familia = $.trim($('#' + prefix + 'cod_familia').val());
+      }
+      if (level === 'subgrupo' || level === 'individual') {
+        params.grupo = $.trim($('#' + prefix + 'cod_grupo').val());
+      }
+      if (level === 'individual') {
+        params.subgrupo = $.trim($('#' + prefix + 'cod_subgrupo').val());
+      }
+      return params;
+    }
+
+    function openAgrupacionRefPicker(targetId, level) {
+      var params = getAgrupacionRefParams(level, targetId);
+      if ((level === 'grupo' || level === 'subgrupo' || level === 'individual') && !params.familia) {
+        alert('Primero debe seleccionar la familia.');
+        return;
+      }
+      if ((level === 'subgrupo' || level === 'individual') && !params.grupo) {
+        alert('Primero debe seleccionar el grupo.');
+        return;
+      }
+      if (level === 'individual' && !params.subgrupo) {
+        alert('Primero debe seleccionar el sub grupo.');
+        return;
+      }
+
+      agrupacionRefContext = { targetId: targetId, level: level };
+      $('#agrupacion-ref-title').text('Seleccionar ' + ({
+        familia: 'Familia',
+        grupo: 'Grupo',
+        subgrupo: 'Sub Grupo',
+        individual: 'Individual'
+      }[level] || 'Valor'));
+      $('#agrupacion-ref-search').val('');
+      $('#agrupacion-ref-table tbody').html('<tr><td colspan="2" class="text-center">Cargando...</td></tr>');
+      $('#agrupacion-ref-backdrop').show();
+      $('#agrupacion-ref-picker').show();
+
+      $.get(getAgrupacionRefUrl(level), params).done(function (res) {
+        agrupacionRefRows = (res && res.data) ? res.data : [];
+        renderAgrupacionRefRows(agrupacionRefRows);
+      }).fail(function () {
+        agrupacionRefRows = [];
+        renderAgrupacionRefRows([]);
+      });
+    }
+
+    function buildRequestData() {
+      syncChecks();
+      syncEmpresaDespachos();
+      return {
+        frontend_build: frontendBuildId,
+        client_session_id: currentProgressSessionId,
+        sucursal: query.sucursal,
+        articulo: query.articulo,
+        tipo: query.tipo,
+        estado: query.estado,
+        agrupacion: query.agrupacion,
+        deposito: query.deposito,
+        fechad: query.fechad,
+        fechah: query.fechah,
+        solo_hijos: query.solo_hijos,
+        calcular_empresa: query.calcular_empresa,
+        inventario_fisico: query.inventario_fisico,
+        ecuacion_orig: query.ecuacion_orig,
+        ecuacion_mat: query.ecuacion_mat,
+        recalcular: query.recalcular,
+        inc_cod_familia: query.inc_cod_familia,
+        exc_cod_familia: query.exc_cod_familia,
+        inc_cod_grupo: query.inc_cod_grupo,
+        exc_cod_grupo: query.exc_cod_grupo,
+        inc_cod_subgrupo: query.inc_cod_subgrupo,
+        exc_cod_subgrupo: query.exc_cod_subgrupo,
+        inc_cod_individual: query.inc_cod_individual,
+        exc_cod_individual: query.exc_cod_individual,
+        periodo: query.periodo,
+        anho: query.anho,
+        cod_despachante: query.cod_despachante,
+        nro_despacho: query.nro_despacho,
+        cierre: query.cierre,
+        tipo_despacho: query.tipo_despacho,
+        fecha_inicio_desde: query.fecha_inicio_desde,
+        fecha_inicio_hasta: query.fecha_inicio_hasta,
+        fecha_fin_desde: query.fecha_fin_desde,
+        fecha_fin_hasta: query.fecha_fin_hasta,
+        estado_compuesto: query.estado_compuesto,
+        tipo_compuesto: query.tipo_compuesto,
+        realizadopor: query.realizadopor,
+        debug_recall: query.debug_recall
+      };
+    }
+
+    function syncEmpresaDespachos() {
+      var empresaBase = (query.empresa || '').trim();
+      var empresaDespachos = empresaBase === 'IN' ? 'BG' : empresaBase;
+      query.empresa_despachos = empresaDespachos;
+      query.empresaDespachos = empresaDespachos;
+      return empresaDespachos;
+    }
+
+    function hideOptionalFilters() {
+      ['#calcular_empresa', '#select-tipo', '#select-estado', '#periodo', '#anho'].forEach(function (selector) {
+        var $field = $(selector);
+        if ($field.length) {
+          $field.closest('.col-sm-6').hide();
+        }
+      });
+    }
+
+    function runInformeAsync(reqData, mode, columns) {
+      var startUrl = api + 'stock/informes/' + query.empresa + '/costo_articulo_full_async/start';
+      var statusUrl = api + 'stock/informes/' + query.empresa + '/costo_articulo_full_async/status';
+      var resultUrl = api + 'stock/informes/' + query.empresa + '/costo_articulo_full_async/result';
+
+      ensureStaticTable(mode, columns);
+      showProgress('Iniciando informe...', mode);
+      reqData = $.extend({}, reqData, {
+        frontend_build: frontendBuildId,
+        client_session_id: currentProgressSessionId
+      });
+      activeInformePollFailures = 0;
+      $('#ms-progress-sub-costo-articulo-full').text('Preparando ejecucion en segundo plano.');
+
+      activeInformeRequest = $.ajax({
+        method: 'GET',
+        url: startUrl,
+        data: reqData,
+        timeout: 30000
+      }).done(function (res) {
+        var job = res && res.data ? res.data : {};
+        activeInformeJobId = job.job_id || '';
+        applyAsyncProgress(job);
+
+        var pollStatus = function () {
+          activeInformeRequest = $.ajax({
+            method: 'GET',
+            url: statusUrl,
+            data: { job_id: activeInformeJobId },
+            timeout: 120000
+          }).done(function (statusRes) {
+            var status = statusRes && statusRes.data ? statusRes.data : {};
+            activeInformePollFailures = 0;
+            applyAsyncProgress(status);
+
+            if (status.status === 'done') {
+              activeInformeRequest = $.ajax({
+                method: 'GET',
+                url: resultUrl,
+                data: { job_id: activeInformeJobId },
+                timeout: 30000
+              }).done(function (resultRes) {
+                lastRows = resultRes && resultRes.data ? resultRes.data : [];
+                ensureStaticTable(mode, columns);
+                if (mode === 'ebc_mat') {
+                  renderManualEbcMatTable(lastRows, columns);
+                } else if (dataTable) {
+                  dataTable.clear();
+                  dataTable.rows.add(lastRows).draw();
+                }
+                addProgressDebug('Informe recibido. Registros: ' + lastRows.length + '.');
+                clearActiveInformePolling();
+                clearActiveInformeRequest();
+                hideProgress();
+                setTimeout(function () {
+                  refreshTableLayout();
+                }, 0);
+              }).fail(function (e) {
+                clearActiveInformePolling();
+                clearActiveInformeRequest();
+                var detail = 'No se pudo obtener el resultado final del informe.';
+                if (e && e.responseJSON && e.responseJSON.error) {
+                  detail = e.responseJSON.error;
+                }
+                showProgressError(detail);
+                setTimeout(function () {
+                  hideProgress();
+                }, 2200);
+              }).always(function () {
+                clearActiveInformeRequest();
+              });
+              return;
+            }
+
+            if (status.status === 'error') {
+              clearActiveInformePolling();
+              clearActiveInformeRequest();
+              showProgressError(status.error || status.message || 'El job finalizo con error.');
+              setTimeout(function () {
+                hideProgress();
+              }, 2200);
+              return;
+            }
+
+            activeInformePollTimer = setTimeout(pollStatus, 2500);
+          }).fail(function (e) {
+            clearActiveInformeRequest();
+            activeInformePollFailures += 1;
+            if (activeInformePollFailures <= 3) {
+              addProgressDebug('Reintentando consulta de progreso (' + activeInformePollFailures + '/3).');
+              $('#ms-progress-sub-costo-articulo-full').text('El servidor sigue procesando el informe. Reintentando...');
+              activeInformePollTimer = setTimeout(pollStatus, 4000);
+              return;
+            }
+            clearActiveInformePolling();
+            var detail = 'No se pudo consultar el progreso del informe.';
+            if (e && e.responseJSON && e.responseJSON.error) {
+              detail = e.responseJSON.error;
+            }
+            showProgressError(detail);
+            setTimeout(function () {
+              hideProgress();
+            }, 2200);
+          }).always(function () {
+            if (!activeInformePollTimer) {
+              clearActiveInformeRequest();
+            }
+          });
+        };
+
+        activeInformePollTimer = setTimeout(pollStatus, 800);
+      }).fail(function (e) {
+        clearActiveInformePolling();
+        clearActiveInformeRequest();
+        var detail = 'No se pudo iniciar el informe en segundo plano.';
+        if (e && e.responseJSON && e.responseJSON.error) {
+          detail = e.responseJSON.error;
+        }
+        showProgressError(detail);
+        setTimeout(function () {
+          hideProgress();
+        }, 2200);
+      }).always(function () {
+        if (!activeInformeJobId) {
+          clearActiveInformeRequest();
+        }
+      });
+    }
+
+    function getInforme() {
+      if (informeRunning || activeInformeRequest || activeInformePollTimer) {
+        return;
+      }
+      if ((!query.empresa || query.empresa === 'undefined') && select_empresa && typeof select_empresa.getValue === 'function') {
+        query.empresa = select_empresa.getValue() || '';
+      }
+      syncEmpresaDespachos();
+      if (!query.empresa) {
+        alert('Debe seleccionar la empresa.');
+        return;
+      }
+
+      var $tableDiv = $('#resultado');
+      var mode = 'normal';
+      var currentReqData = buildRequestData();
+      var validationError = validateEbcMatRequest(currentReqData);
+      if (validationError) {
+        alert(validationError);
+        return;
+      }
+      if (currentReqData.ecuacion_orig === 'S') {
+        mode = 'ebc_orig';
+      } else if (currentReqData.ecuacion_mat === 'S') {
+        mode = 'ebc_mat';
+      }
+      var columns = buildColumns(mode);
+
+      if (mode === 'ebc_mat') {
+        runInformeAsync(currentReqData, mode, columns);
+        return;
+      }
+
+      if (dataTable && currentMode !== mode) {
+        dataTable.destroy();
+        dataTable = null;
+      }
+      currentMode = mode;
+
+      if (!dataTable) {
+        showProgress('Procesando informe...', mode);
+        $tableDiv.show();
+        renderTableHeader(mode);
+        u.defaultDT();
+        dataTable = $tableDiv.find('table').DataTable({
+          scrollY: false,
+          scrollX: false,
+          scrollCollapse: false,
+          scroller: false,
+          lengthChange: false,
+          autoWidth: false,
+          ajax: function (d, cb) {
+            var reqData = buildRequestData();
+            showProgress('Consultando datos del informe...', mode);
+            activeInformeRequest = $.ajax({
+              method: 'GET',
+              url: api + 'stock/informes/' + query.empresa + '/costo_articulo_full',
+              data: reqData,
+              timeout: 10 * 60 * 1000
+            }).done(function (res) {
+              lastRows = res.data || [];
+              addProgressDebug('Informe recibido. Registros: ' + lastRows.length + '.');
+              hideProgress();
+              cb(res);
+              setTimeout(function () {
+                refreshTableLayout();
+              }, 0);
+            }).fail(function (e) {
+              lastRows = [];
+              cb({ data: [] });
+              if (dataTable) {
+                dataTable.processing(false);
+              }
+              var detail = 'La conexion con el servicio se corto antes de responder.';
+              if (e && e.status) {
+                detail = 'Error del servidor (' + e.status + ').';
+              }
+              showProgressError(detail);
+              setTimeout(function () {
+                hideProgress();
+              }, 2200);
+              u.serverDown(e);
+            }).always(function () {
+              clearActiveInformeRequest();
+            });
+          },
+          columns: columns,
+          order: [[0, 'asc']],
+          initComplete: function () {
+            cleanupGhostHeader();
+          },
+          drawCallback: function () {
+            cleanupGhostHeader();
+          }
+        });
+      } else {
+        showProgress('Actualizando informe...', mode);
+        dataTable.clear().draw();
+        dataTable.processing(true);
+        dataTable.ajax.reload(function () {
+          dataTable.processing(false);
+          addProgressDebug('Informe actualizado.');
+          setTimeout(function () {
+            refreshTableLayout();
+          }, 0);
+          hideProgress();
+        }, true);
+      }
+    }
+
+    function exportExcel() {
+      if (!lastRows.length) {
+        alert('No hay datos para exportar.');
+        return;
+      }
+      var headers = buildExportHeaders(currentMode);
+      var lines = [headers.join('\t')];
+      for (var i = 0; i < lastRows.length; i++) {
+        lines.push(rowToExport(currentMode, lastRows[i]).join('\t'));
+      }
+      var blob = new Blob([lines.join('\n')], {type: 'application/vnd.ms-excel;charset=utf-8;'});
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'costo_articulo_full.xls';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    }
+
+    function exportPdf() {
+      if (!lastRows.length) {
+        alert('No hay datos para exportar.');
+        return;
+      }
+      window.print();
+    }
+
+    $(document).ready(function () {
+      console.log('[COSTO_ARTICULO_FULL] frontend_build=' + frontendBuildId);
+      updateResultViewportHeight();
+      $(window).on('resize.costoArticuloFull', _.throttle(updateResultViewportHeight, 120));
+      window.msActiveFiltersAllowList = [
+        'empresa',
+        'articulo',
+        'tipo',
+        'estado',
+        'agrupacion_display',
+        'fechad',
+        'fechah',
+        'calcular_empresa',
+        'ecuacion_mat',
+        'periodo',
+        'anho'
+      ];
+      u.hideNav();
+      hideOptionalFilters();
+      initDateRange();
+      initEbcMatInputs();
+      syncEbcPeriodoFromFecha();
+      syncEbcCompDatesFromMainRange();
+      initSelects();
+      syncEmpresaDespachos();
+      $('#resultado').hide();
+      buildAgrupacionSummary();
+      syncChecks();
+      $('#btn-procesar-costo-articulo-full').on('click', function (e) {
+        e.preventDefault();
+        getInforme();
+      });
+      $('#btn-agrupacion-modal').on('click', function (e) {
+        e.preventDefault();
+        openAgrupacionModal();
+      });
+      $('#btn-agrupacion-aceptar').on('click', function () {
+        query.inc_cod_familia = $.trim($('#inc_cod_familia').val());
+        query.exc_cod_familia = $.trim($('#exc_cod_familia').val());
+        query.inc_cod_grupo = $.trim($('#inc_cod_grupo').val());
+        query.exc_cod_grupo = $.trim($('#exc_cod_grupo').val());
+        query.inc_cod_subgrupo = $.trim($('#inc_cod_subgrupo').val());
+        query.exc_cod_subgrupo = $.trim($('#exc_cod_subgrupo').val());
+        query.inc_cod_individual = $.trim($('#inc_cod_individual').val());
+        query.exc_cod_individual = $.trim($('#exc_cod_individual').val());
+        buildAgrupacionSummary();
+        closeAgrupacionModal();
+      });
+      $('#agrupacion-picker-close, #btn-agrupacion-cancelar, #agrupacion-picker-backdrop').on('click', function (e) {
+        e.preventDefault();
+        closeAgrupacionModal();
+      });
+      $(document).on('click', '.btn-agr-ref', function (e) {
+        e.preventDefault();
+        openAgrupacionRefPicker($(this).data('target'), $(this).data('level'));
+      });
+      $('#agrupacion-ref-close, #agrupacion-ref-backdrop').on('click', function (e) {
+        e.preventDefault();
+        closeAgrupacionRefPicker();
+      });
+      $('#agrupacion-ref-search').on('keyup', function () {
+        var q = ($(this).val() || '').toLowerCase();
+        if (!q) {
+          renderAgrupacionRefRows(agrupacionRefRows);
+          return;
+        }
+        renderAgrupacionRefRows((agrupacionRefRows || []).filter(function (row) {
+          return String(row.id || '').toLowerCase().indexOf(q) >= 0 ||
+            String(row.name || '').toLowerCase().indexOf(q) >= 0;
+        }));
+      });
+      $(document).on('click', '.js-agrupacion-ref-row', function () {
+        if (!agrupacionRefContext) return;
+        setAgrupacionParentValues(agrupacionRefContext, {
+          familia: $(this).data('familia'),
+          grupo: $(this).data('grupo'),
+          subgrupo: $(this).data('subgrupo')
+        });
+        appendAgrupacionValue(agrupacionRefContext.targetId, $(this).data('id'));
+        closeAgrupacionRefPicker();
+      });
+
+      $('#ecuacion_orig').on('change', function () {
+        if ($(this).is(':checked')) {
+          $('#ecuacion_mat').prop('checked', false);
+          if (!warnedEbcOrig) {
+            alert('Aviso: puede variar los valores del informe en caso que no haya procesado antes la opcion Ecuacion BC Materiales.');
+            warnedEbcOrig = true;
+          }
+        }
+        syncChecks();
+      });
+      $('#ecuacion_mat').on('change', function () {
+        if ($(this).is(':checked')) {
+          $('#ecuacion_orig').prop('checked', false);
+          syncEbcPeriodoFromFecha();
+          syncEbcCompDatesFromMainRange();
+        }
+        syncChecks();
+      });
+      $('#solo_hijos,#calcular_empresa,#inventario_fisico').on('change', syncChecks);
+      $('#fechad,#fechah').on('changeDate change', function () {
+        if ($('#ecuacion_mat').is(':checked')) {
+          syncEbcPeriodoFromFecha();
+          syncEbcCompDatesFromMainRange();
+        }
+      });
+    });
+  </script>
+{% endblock %}

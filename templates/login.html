@@ -1,88 +1,141 @@
-{% load admin_static bootstrapped_goodies_tags %}{% load url from future %}
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="es">
 <head>
-
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="">
-  <meta name="author" content="">
-
-  <title>MultiSoft - SIG</title>
+  <title>MultiSoft SIG</title>
   <link href="{% static "icon/favicon.ico" %}" rel="Shortcut Icon">
 
-  <!-- Bootstrap Core CSS -->
   <link href="{% static "css/bootstrap.min.css" %}" rel="stylesheet">
-
-  <!-- MetisMenu CSS -->
   <link href="{% static "css/plugins/metisMenu/metisMenu.min.css" %}" rel="stylesheet">
-
-  <!-- Custom CSS -->
   <link href="{% static "css/sb-admin-2.css" %}" rel="stylesheet">
-
-  <!-- Custom Fonts -->
+  <link href="{% static "css/login-enterprise.css" %}" rel="stylesheet">
   <link href="{% static "font-awesome/css/font-awesome.min.css" %}" rel="stylesheet" type="text/css">
-
-  <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-  <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-  <!--[if lt IE 9]>
-        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
-    <![endif]-->
-
 </head>
 
 <body>
+  <div class="login-page">
+    <div class="login-card">
+      {% if request and not request.is_secure %}
+        <div class="ms-warn" role="status">
+          <i class="fa fa-lock" aria-hidden="true"></i>
+          <div>
+            <strong>Conexión no segura.</strong>
+            Para un acceso empresarial, publique el sistema con <strong>HTTPS</strong>.
+          </div>
+        </div>
+      {% endif %}
 
-<div class="container">
-  <div class="row">
-    <div class="col-md-4 col-md-offset-4">
-      <div class="login-panel panel panel-default">
-        <div class="panel-heading">
-          <h3 class="panel-title">Por Favor Ingrese</h3>
+      <div class="login-brand">
+        <img src="{% static "img/logo_empresa.png" %}" alt="logo"
+             onerror="this.onerror=null;this.src='{% static "img/logo_default.svg" %}';">
+        <div>
+          <h1>MultiSoft SIG</h1>
+          <p class="subtitle">Acceso al sistema</p>
         </div>
-        <div class="panel-body">
-          <form id="formulario" action="/accounts/auth/" method="post">{% csrf_token %}
-            <fieldset>
-              <div class="form-group">
-                <input class="form-control" placeholder="Usuario" type="text" name="username" value="" autofocus>
-              </div>
-              <div class="form-group">
-                <input class="form-control" placeholder="Contraseña" name="password" type="password" value="">
-              </div>
-              <!-- Change this to a button or input when using this as a form -->
-              <a onclick="$('#formulario').submit()" class="btn btn-lg btn-success btn-block" id="loginBtn">Ingresar</a>
-              <input type="hidden" name="next" value="{{ next }}">
-            </fieldset>
-          </form>
+      </div>
+
+      <form id="formulario" action="{% url 'login' %}" method="post">{% csrf_token %}
+        <div class="form-group">
+          <label class="sr-only" for="id_username">Usuario</label>
+          <div class="input-with-icon">
+            <i class="fa fa-user"></i>
+            <input id="id_username" class="form-control" placeholder="Usuario" type="text" name="username"
+                   value="{{ form.username.value|default:'' }}" autofocus>
+          </div>
         </div>
+
+        <div class="form-group">
+          <label class="sr-only" for="id_password">Contraseña</label>
+          <div class="input-with-icon">
+            <i class="fa fa-lock"></i>
+            <input id="id_password" class="form-control" placeholder="Contraseña" name="password" type="password" value="">
+          </div>
+          <div class="ms-pass-tools">
+            <span class="ms-show-pass" id="msShowPass">Mostrar</span>
+          </div>
+
+          <div id="msCapsLock" class="ms-caps" style="display:none;" role="status" aria-live="polite">
+            <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+            <div>Mayúsculas activadas.</div>
+          </div>
+        </div>
+
+        {% if form.errors %}
+          <div class="ms-error">
+            <i class="fa fa-exclamation-circle" aria-hidden="true" style="margin-top:2px;"></i>
+            <div>
+              No pudimos iniciar sesión. Verificá tu usuario y contraseña e intentá de nuevo.
+              <span class="ms-error-hint">Si el problema persiste, contactá al administrador.</span>
+            </div>
+          </div>
+        {% endif %}
+
+        <div class="ms-row">
+          <label class="ms-remember">
+            <input type="checkbox" name="remember" value="1">
+            Recordarme
+          </label>
+          <a href="/accounts/password_reset/">¿Olvidó su contraseña?</a>
+        </div>
+
+        <input type="hidden" name="next" value="{{ next }}">
+        <button id="msLoginBtn" type="submit" class="btn btn-primary btn-block btn-lg">
+          <span class="ms-btn-spinner" aria-hidden="true"></span>
+          <span class="ms-btn-text">Ingresar</span>
+        </button>
+      </form>
+
+      <div class="login-footer">
+        <span class="ms-meta">© {% now "Y" %} MultiSoft</span>
+        <span class="ms-meta">v1.0.0</span>
       </div>
     </div>
   </div>
-</div>
 
-<!-- jQuery Version 1.11.0 -->
-<script src="{% static "js/jquery-1.11.0.js" %}"></script>
+  <script src="{% static "js/jquery-1.11.0.js" %}"></script>
+  <script src="{% static "js/bootstrap.min.js" %}"></script>
+  <script>
+    (function(){
+      var btn = document.getElementById('msShowPass');
+      var input = document.getElementById('id_password');
+      var caps = document.getElementById('msCapsLock');
+      var form = document.getElementById('formulario');
+      var loginBtn = document.getElementById('msLoginBtn');
 
-<!-- Bootstrap Core JavaScript -->
-<script src="{% static "js/bootstrap.min.js" %}"></script>
+      if(btn && input){
+        btn.addEventListener('click', function(){
+          var isPass = input.getAttribute('type') === 'password';
+          input.setAttribute('type', isPass ? 'text' : 'password');
+          btn.textContent = isPass ? 'Ocultar' : 'Mostrar';
+        });
+      }
 
-<!-- Metis Menu Plugin JavaScript -->
-<script src="{% static "js/metisMenu.min.js" %}"></script>
+      // CapsLock warning
+      function updateCaps(e){
+        if(!caps || !e || !e.getModifierState) return;
+        var on = e.getModifierState('CapsLock');
+        caps.style.display = on ? 'flex' : 'none';
+      }
+      if(input){
+        input.addEventListener('keydown', updateCaps);
+        input.addEventListener('keyup', updateCaps);
+        input.addEventListener('focus', function(e){ updateCaps(e); });
+        input.addEventListener('blur', function(){ if(caps) caps.style.display = 'none'; });
+      }
 
-<!-- Custom Theme JavaScript -->
-<script src="{% static "js/sb-admin-2.js" %}"></script>
-
-
-<script>
-  $("#formulario").keyup(function (event) {
-    if (event.keyCode == 13) {
-      $("#loginBtn").click();
-    }
-  });
-</script>
+      // Loading state on submit
+      if(form && loginBtn){
+        form.addEventListener('submit', function(){
+          loginBtn.classList.add('is-loading');
+          loginBtn.setAttribute('disabled', 'disabled');
+          var txt = loginBtn.querySelector('.ms-btn-text');
+          if(txt) txt.textContent = 'Ingresando...';
+        });
+      }
+    })();
+  </script>
 </body>
-
 </html>

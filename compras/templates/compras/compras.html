@@ -47,7 +47,7 @@
     <th>Timbrado</th>
     <th>Gravada</th>
     <th>IVA</th>
-    <th>Excenta</th>
+    <th>Exenta</th>
     <th>Total</th>
     <th>Estado</th>
     <th>Tipo IVA</th>
@@ -56,9 +56,9 @@
   </thead>
   <tfoot>
   <tr>
-    <th colspan="9" style="text-align:right">Total:</th>
+    <th colspan="10" style="text-align:right">Total:</th>
     <th></th>
-    <th colspan="3"></th>
+    <th colspan="2"></th>
   </tr>
   </tfoot>
 {% endblock %}
@@ -614,18 +614,18 @@
 
       // Total over all pages
       var total = api
-              .column(9)
+              .column(10)
               .data()
               .reduce(function (a, b) {
                 return parseVal(a) + parseVal(b);
               }, 0);
       // Update footer
       if ($('#select-moneda').val() == 'GS') {
-        $(api.column(9).footer()).html(
+        $(api.column(10).footer()).html(
                 convertir_rever(total)
         );
       } else {
-        $(api.column(9).footer()).html(
+        $(api.column(10).footer()).html(
                 addCommas(total)
         );
       }

@@ -1,0 +1,17 @@
+[Unit]
+Description=Multisoft Next.js (CentOS 9)
+After=network.target
+
+[Service]
+Type=simple
+User=multisoft
+Group=multisoft
+WorkingDirectory=/opt/multisoft/multisoft_informes/frontend-next
+Environment=NODE_ENV=production
+Environment=PORT=3001
+ExecStart=/bin/bash -lc 'source /home/multisoft/.nvm/nvm.sh && nvm use 20.19.0 >/dev/null && npm run start'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

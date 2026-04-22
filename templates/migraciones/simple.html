@@ -1,0 +1,53 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <style>
+    .migration-page {
+      padding: 24px;
+    }
+
+    .migration-card {
+      background: #fff;
+      border: 1px solid #d8e1ee;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(36, 54, 86, 0.08);
+      max-width: 760px;
+      padding: 28px 30px;
+    }
+
+    .migration-kicker {
+      color: #6f7f98;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .migration-title {
+      color: #1f3556;
+      font-size: 30px;
+      font-weight: 800;
+      margin: 0 0 10px 0;
+    }
+
+    .migration-text {
+      color: #5b6b82;
+      font-size: 15px;
+      line-height: 1.6;
+      margin: 0;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="migration-page">
+    <div class="migration-card">
+      <div class="migration-kicker">{{ titulo }}</div>
+      <h1 class="migration-title">{{ subtitulo }}</h1>
+      <p class="migration-text">Pantalla preparada para el modulo de migraciones.</p>
+    </div>
+  </div>
+{% endblock %}

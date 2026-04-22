@@ -1,0 +1,29 @@
+{
+  "name": "multisoft_informes",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "powershell -ExecutionPolicy Bypass -File .\\start-dev-next.ps1",
+    "dev:legacy": "powershell -ExecutionPolicy Bypass -File .\\start-dev.ps1",
+    "dev:next": "powershell -ExecutionPolicy Bypass -File .\\start-dev-next.ps1",
+    "dev:front": "cd frontend-next && npm run dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://bitbucket.org/multisoftapp/multisoft_informes.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "homepage": "https://bitbucket.org/multisoftapp/multisoft_informes#readme",
+  "dependencies": {
+    "bootstrap": "^5.3.8",
+    "font-awesome": "^4.7.0",
+    "sqlanywhere": "^1.0.27"
+  },
+  "devDependencies": {
+    "concurrently": "^6.5.1"
+  }
+}

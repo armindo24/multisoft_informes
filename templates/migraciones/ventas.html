@@ -1,0 +1,760 @@
+{% extends 'finanzas/base.html' %}
+{% load static %}
+
+{% block header %}
+  Migraciones - Ventas:
+{% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <style>
+    .migration-filters .control-label {
+      width: 22%;
+      text-align: right;
+    }
+    .migration-filters .form-group > .col-md-6 {
+      width: 78%;
+    }
+    .migration-filters .migration-control,
+    .migration-filters #select-empresa,
+    .migration-filters #select-tipo-comprobante,
+    .migration-filters #select-sucursal,
+    .migration-filters #periodo,
+    .migration-filters #periodo .form-control {
+      width: 100%;
+    }
+    .migration-filters .migration-control,
+    .migration-filters #select-empresa,
+    .migration-filters #select-tipo-comprobante,
+    .migration-filters #select-sucursal,
+    .migration-filters #periodo .form-control {
+      min-height: 38px;
+      border: 1px solid #ced9ea;
+      border-radius: 8px;
+      color: #22344f;
+      font-size: 13px;
+      padding: 8px 12px;
+    }
+    .mig-upload-card {
+      margin-top: 2px;
+      background: #fff;
+      border: 1px solid #d8e3f2;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(26, 55, 99, 0.07);
+      overflow: hidden;
+    }
+    .mig-upload-card .head {
+      padding: 8px 10px;
+      border-bottom: 1px solid #e2e9f5;
+      font-size: 15px;
+      font-weight: 700;
+      color: #1f3556;
+      background: linear-gradient(180deg, #f9fbff, #f2f7ff);
+    }
+    .mig-upload-card .body {
+      padding: 14px;
+    }
+    .mig-help {
+      margin-bottom: 12px;
+      color: #4a5f82;
+      font-size: 12px;
+    }
+    .mig-upload-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .mig-upload-row input[type="file"] {
+      flex: 1 1 420px;
+    }
+    .mig-alert {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+    .mig-alert-error {
+      background: #fff4f4;
+      border: 1px solid #f1c5c5;
+      color: #8d1f1f;
+    }
+    .mig-alert-info {
+      background: #f4f8ff;
+      border: 1px solid #cfdcf5;
+      color: #234064;
+    }
+    .mig-alert-warning {
+      background: #fff9ea;
+      border: 1px solid #f1dfaa;
+      color: #7a5b00;
+    }
+    .mig-summary {
+      margin-top: 14px;
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .mig-summary-card {
+      background: #f7fbff;
+      border: 1px solid #d8e3f2;
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .mig-summary-card b {
+      display: block;
+      color: #1f3556;
+      font-size: 12px;
+    }
+    .mig-summary-card span {
+      font-size: 18px;
+      font-weight: 700;
+      color: #234064;
+    }
+    .mig-table-wrap {
+      margin-top: 14px;
+      overflow-x: auto;
+      overflow-y: auto;
+      max-height: 420px;
+      border: 1px solid #cfd8e3;
+      border-radius: 6px;
+      background: #ffffff;
+      box-shadow: inset 0 0 0 1px #eef3f8;
+    }
+    .mig-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      table-layout: auto;
+      white-space: nowrap;
+      background: #ffffff;
+      color: #1f1f1f;
+    }
+    .mig-table th, .mig-table td {
+      border: 1px solid #d9e1ea;
+      padding: 3px 6px;
+      vertical-align: top;
+    }
+    .mig-table th {
+      background: #eef3f7;
+      color: #24384d;
+      font-weight: 600;
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      text-align: center;
+      border-bottom: 2px solid #b8c7d6;
+    }
+    .mig-table td {
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 180px;
+      background: #fff;
+    }
+    .mig-table tbody tr:nth-child(even) td {
+      background: #fbfdff;
+    }
+    .mig-table tbody tr:hover td {
+      background: #f4f9ff;
+    }
+    .mig-table .is-error {
+      background: #fff4f4;
+    }
+    .mig-table .is-error td {
+      background: #fff7f7 !important;
+    }
+    .mig-table .is-warning td {
+      background: #fff6e6 !important;
+    }
+    .mig-table td:nth-child(1),
+    .mig-table td:nth-child(2),
+    .mig-table td:nth-child(3),
+    .mig-table td:nth-child(4),
+    .mig-table td:nth-child(11),
+    .mig-table td:nth-child(12),
+    .mig-table td:nth-child(13),
+    .mig-table td:nth-child(15),
+    .mig-table td:nth-child(16),
+    .mig-table td:nth-child(22),
+    .mig-table td:nth-child(23),
+    .mig-table td:nth-child(27),
+    .mig-table td:nth-child(28),
+    .mig-table td:nth-child(29),
+    .mig-table td:nth-child(30),
+    .mig-table td:nth-child(31),
+    .mig-table td:nth-child(32),
+    .mig-table td:nth-child(33),
+    .mig-table td:nth-child(34),
+    .mig-table td:nth-child(35),
+    .mig-table td:nth-child(36),
+    .mig-table td:nth-child(37) {
+      text-align: center;
+    }
+    .mig-table td:nth-child(12),
+    .mig-table td:nth-child(13),
+    .mig-table td:nth-child(16),
+    .mig-table td:nth-child(22),
+    .mig-table td:nth-child(23),
+    .mig-table td:nth-child(24),
+    .mig-table td:nth-child(25),
+    .mig-table td:nth-child(28),
+    .mig-table td:nth-child(29),
+    .mig-table td:nth-child(30) {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .mig-table th:nth-child(11),
+    .mig-table td:nth-child(11) {
+      text-align: left;
+    }
+    .mig-table th:nth-child(14),
+    .mig-table td:nth-child(14),
+    .mig-table th:nth-child(31),
+    .mig-table td:nth-child(31) {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .mig-errors {
+      margin-top: 14px;
+      padding-left: 18px;
+      color: #8d1f1f;
+      font-size: 12px;
+    }
+    .mig-process {
+      margin-top: 14px;
+      padding: 10px 14px 10px 28px;
+      border-radius: 8px;
+      border: 1px solid #a7e3d7;
+      background: #e6fbf6;
+      color: #0f5f54;
+      font-size: 12px;
+    }
+    .mig-process li + li {
+      margin-top: 4px;
+    }
+    .mig-loading {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid #c7e7ff;
+      background: #eef7ff;
+      color: #1f3556;
+      font-size: 12px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+    .mig-progress {
+      flex: 1 1 auto;
+      height: 8px;
+      background: #d7e9fb;
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+    .mig-progress-bar {
+      height: 100%;
+      width: 40%;
+      background: linear-gradient(90deg, #2d6cdf, #52a8ff);
+      border-radius: 999px;
+      animation: migbar 1.2s ease-in-out infinite;
+    }
+    .mig-spinner {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid #b9d7f7;
+      border-top-color: #2d6cdf;
+      animation: migspin 0.8s linear infinite;
+    }
+    @keyframes migspin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes migbar {
+      0% { transform: translateX(-60%); }
+      50% { transform: translateX(40%); }
+      100% { transform: translateX(160%); }
+    }
+    @media (max-width: 900px) {
+      .migration-filters .control-label,
+      .migration-filters .form-group > .col-md-6 {
+        width: 100%;
+        text-align: left;
+      }
+      .migration-filters .form-group {
+        margin-bottom: 10px;
+      }
+      .mig-summary {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+{% endblock %}
+
+{% block filters %}
+  <div class="row migration-filters">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="select-empresa" class="col-md-4 control-label">Empresa:</label>
+        <div class="col-md-6">
+          <select id="select-empresa" name="empresa" class="form-control migration-control">
+            <option value="">Seleccione...</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="periodo" class="col-md-4 control-label">Periodo:</label>
+        <div class="col-md-6">
+          <div id="periodo" class="input-date">
+            <input type="text" class="form-control migration-control" name="periodo">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="select-tipo-comprobante" class="col-md-4 control-label">Tipo comprobante:</label>
+        <div class="col-md-6">
+          <select id="select-tipo-comprobante" name="tipo_comprobante" class="form-control migration-control">
+            <option value="">Seleccione...</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="select-sucursal" class="col-md-4 control-label">Sucursal:</label>
+        <div class="col-md-6">
+          <select id="select-sucursal" name="sucursal" class="form-control migration-control">
+            <option value="">Seleccione...</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block filter_footer %}
+  <div class="ms-filter-actions__left">
+    <a type="button" class="btn btn-cancel-modern" href="/migraciones/ventas/">Limpiar pantalla <i class="fa fa-eraser"></i></a>
+  </div>
+  <div class="ms-filter-actions__right">
+    <form method="post" id="ventas-migrate-form" style="display:inline;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="migrar">
+      <input type="hidden" name="empresa" id="migrar-empresa" value="{{ selected_empresa|default:'' }}">
+      <input type="hidden" name="empresa_desc" id="migrar-empresa-desc" value="">
+      <input type="hidden" name="periodo" id="migrar-periodo" value="{{ selected_periodo|default:'' }}">
+      <input type="hidden" name="tipo_comprobante" id="migrar-tipo-comprobante" value="{{ selected_tipo|default:'' }}">
+      <input type="hidden" name="sucursal" id="migrar-sucursal" value="{{ selected_sucursal|default:'' }}">
+      <button type="submit" class="btn btn-filter-modern" id="btn-migrar-ventas" {% if not validation_ok %}disabled{% endif %}>
+        Migrar <i class="fa fa-check"></i>
+      </button>
+    </form>
+  </div>
+{% endblock %}
+
+{% block inner_content %}
+  <div class="text-center" id="messages">
+    <h3 id="empty" style="display:none;">Seleccione empresa y periodo.</h3>
+  </div>
+
+  {% if importacion_mensaje %}
+    <div class="mig-alert {% if importacion_habilitada %}mig-alert-info{% else %}mig-alert-warning{% endif %}">
+      {{ importacion_mensaje }}
+    </div>
+  {% endif %}
+
+  {% if migration_message %}
+    <div class="mig-alert {% if migration_ok %}mig-alert-info{% else %}mig-alert-error{% endif %}">
+      {{ migration_message }}
+    </div>
+  {% endif %}
+
+  <div class="mig-loading" id="mig-loading">
+    <span class="mig-spinner"></span>
+    Migrando ventas, por favor espere...
+    <div class="mig-progress" aria-hidden="true">
+      <div class="mig-progress-bar"></div>
+    </div>
+  </div>
+
+  {% if migration_process %}
+    <ul class="mig-process">
+      {% for item in migration_process %}
+        <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <div class="mig-upload-card" id="mig-upload-card" style="display:none;">
+    <div class="head">Carga de Excel</div>
+    <div class="body">
+      <div class="mig-help">
+        Formato esperado para control de ventas: <b>Fha.Cbte, Linea, Comp_Numero, Razon Social, Ruc, Cta Cliente, Aux Cliente, Cod Articulo, Descrip, Cant., Precio, Total, Condicion vta., Mon., Cambio, Direccion, Telefono, Observ, Gravado_5, Total_Iva_5, Gravado_10, Total_Iva_10, Exenta, Anul., Anulado_El, Anulado_Por, Total Neto, %PartGravado, MontoPartGravado, NroTimb, Establec., PtoExp., Cuotas</b>.
+        El Sistema controla el archivo antes de cualquier migracion.
+      </div>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="validar">
+        <input type="hidden" name="empresa" id="upload-empresa" value="{{ selected_empresa|default:'' }}">
+        <input type="hidden" name="periodo" id="upload-periodo" value="{{ selected_periodo|default:'' }}">
+        <input type="hidden" name="tipo_comprobante" id="upload-tipo-comprobante" value="{{ selected_tipo|default:'' }}">
+        <input type="hidden" name="sucursal" id="upload-sucursal" value="{{ selected_sucursal|default:'' }}">
+        <div class="mig-upload-row">
+          <input type="file" name="archivo_excel" class="form-control" accept=".xls,.xlsx" required>
+          <button type="submit" class="btn btn-filter-modern">Validar Excel <i class="fa fa-upload"></i></button>
+        </div>
+      </form>
+
+      {% if upload_error %}
+        <div class="mig-alert mig-alert-error">{{ upload_error }}</div>
+      {% endif %}
+
+      {% if upload_result %}
+        <div class="mig-alert mig-alert-info">
+          Los datos ya fueron controlados para la empresa, periodo y filtros seleccionados.
+        </div>
+        <div class="mig-summary">
+          <div class="mig-summary-card">
+            <b>Total filas</b>
+            <span>{{ upload_result.summary.total_rows }}</span>
+          </div>
+          <div class="mig-summary-card">
+            <b>Filas validas</b>
+            <span>{{ upload_result.summary.valid_rows }}</span>
+          </div>
+          <div class="mig-summary-card">
+            <b>Filas con error</b>
+            <span>{{ upload_result.summary.error_rows }}</span>
+          </div>
+        </div>
+
+        {% if upload_result.preview_rows %}
+          <div class="mig-table-wrap">
+            <table class="mig-table">
+              <thead>
+                <tr>
+                  <th>Fila</th>
+                  <th>Empresa</th>
+                  <th>Fha.Cbte</th>
+                  <th>Linea</th>
+                  <th>Comp_Numero</th>
+                  <th>Razon Social</th>
+                  <th>Ruc</th>
+                  <th>Cta Cliente</th>
+                  <th>Aux Cliente</th>
+                  <th>Cod Articulo</th>
+                  <th>Descrip</th>
+                  <th>Cant.</th>
+                  <th>Precio</th>
+                  <th>Total</th>
+                  <th>Condicion vta.</th>
+                  <th>Mon.</th>
+                  <th>Cambio</th>
+                  <th>Direccion</th>
+                  <th>Telefono</th>
+                  <th>Observ</th>
+                  <th>Gravado_5</th>
+                  <th>Total_Iva_5</th>
+                  <th>Gravado_10</th>
+                  <th>Total_Iva_10</th>
+                  <th>Exenta</th>
+                  <th>Anul.</th>
+                  <th>Anulado_El</th>
+                  <th>Anulado_Por</th>
+                  <th>Total Neto</th>
+                  <th>%PartGravado</th>
+                  <th>MontoPartGravado</th>
+                  <th>NroTimb</th>
+                  <th>Establec.</th>
+                  <th>PtoExp.</th>
+                  <th>Cuotas</th>
+                  <th>Tipo Comp.</th>
+                  <th>Sucursal</th>
+                  <th>Estado</th>
+                  <th>Detalle</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in upload_result.preview_rows %}
+                  <tr class="{% if row.estado == 'ERROR' %}is-error{% elif row.detalle_error and 'Cliente no existe' in row.detalle_error %}is-warning{% endif %}">
+                    <td>{{ row.fila }}</td>
+                    <td>{{ row.cod_empresa }}</td>
+                    <td>{{ row.fha_cbte }}</td>
+                    <td>{{ row.linea }}</td>
+                    <td>{{ row.comp_numero }}</td>
+                    <td>{{ row.razon_social }}</td>
+                    <td>{{ row.ruc }}</td>
+                    <td>{{ row.cta_cliente }}</td>
+                    <td>{{ row.aux_cliente }}</td>
+                    <td>{{ row.cod_articulo }}</td>
+                    <td>{{ row.descrip }}</td>
+                    <td>{{ row.cantidad }}</td>
+                    <td>{{ row.pr_unit }}</td>
+                    <td>{{ row.total }}</td>
+                    <td>{{ row.cod_con_vta }}</td>
+                    <td>{{ row.codmoneda }}</td>
+                    <td>{{ row.fact_cambio }}</td>
+                    <td>{{ row.direccion }}</td>
+                    <td>{{ row.telefono }}</td>
+                    <td>{{ row.observ }}</td>
+                    <td>{{ row.to_gravado_5 }}</td>
+                    <td>{{ row.total_iva_5 }}</td>
+                    <td>{{ row.to_gravado_10 }}</td>
+                    <td>{{ row.total_iva_10 }}</td>
+                    <td>{{ row.exenta }}</td>
+                    <td>{{ row.anulado }}</td>
+                    <td>{{ row.anulado_el }}</td>
+                    <td>{{ row.anulado_por }}</td>
+                    <td>{{ row.total_neto }}</td>
+                    <td>{{ row.porcpartgravado }}</td>
+                    <td>{{ row.montopartgravado }}</td>
+                    <td>{{ row.nrotimb }}</td>
+                    <td>{{ row.cod_establecimiento }}</td>
+                    <td>{{ row.cod_ptoexpedicion }}</td>
+                    <td>{{ row.cuotas }}</td>
+                    <td>{{ row.cod_tp_comp }}</td>
+                    <td>{{ row.cod_sucursal }}</td>
+                    <td>{{ row.estado }}</td>
+                    <td>{{ row.detalle_error }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <script>
+            (function () {
+              var table = document.querySelector('.mig-table');
+              if (!table) return;
+              var rows = table.querySelectorAll('tbody tr');
+              rows.forEach(function (tr) {
+                var part = tr.querySelector('td:nth-child(30)');
+                if (!part) return;
+                var txt = String(part.textContent || '').trim();
+                if (!txt) return;
+                txt = txt.replace(/\.0+$/, '').replace(/,0+$/, '');
+                part.textContent = txt;
+                var cant = tr.querySelector('td:nth-child(12)');
+                if (cant) {
+                  var ctxt = String(cant.textContent || '').trim();
+                  if (ctxt) {
+                    ctxt = ctxt.replace(/\.0+$/, '').replace(/,0+$/, '');
+                    cant.textContent = ctxt;
+                  }
+                }
+                var nroTimb = tr.querySelector('td:nth-child(32)');
+                if (nroTimb && nroTimb.textContent) {
+                  nroTimb.textContent = String(nroTimb.textContent).replace(/,/g, '');
+                }
+              });
+            })();
+          </script>
+        {% endif %}
+
+        {% if upload_result.errors %}
+          <ul class="mig-errors">
+            {% for err in upload_result.errors %}
+              <li>{{ err }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+
+  <script>
+    var query = {};
+    window.msActiveFiltersAllowList = ['empresa', 'periodo', 'tipo_comprobante', 'sucursal'];
+    var today = new Date();
+    var importacionHabilitada = {% if importacion_habilitada %}true{% else %}false{% endif %};
+    var importacionMensaje = '{{ importacion_mensaje|default:""|escapejs }}';
+    var apiRoot = (window.u && typeof u.getApiUrl === 'function') ? u.getApiUrl() : '/api/v1/';
+
+    function syncPeriodoDefault() {
+      var year = String(today.getFullYear());
+      query.periodo = year;
+      $('#periodo .form-control').datepicker('setDate', today);
+    }
+
+    function renderVentasAvailability() {
+      var empresa = query.empresa || '';
+      $('#upload-empresa').val(empresa);
+      $('#upload-periodo').val(query.periodo || '');
+      $('#upload-tipo-comprobante').val(query.tipo_comprobante || '');
+      $('#upload-sucursal').val(query.sucursal || '');
+      $('#migrar-empresa').val(empresa);
+      $('#migrar-periodo').val(query.periodo || '');
+      $('#migrar-tipo-comprobante').val(query.tipo_comprobante || '');
+      $('#migrar-sucursal').val(query.sucursal || '');
+      if (!empresa || !query.periodo) {
+        $('#mig-upload-card').hide();
+        $('#empty').show();
+        return;
+      }
+      if (!importacionHabilitada) {
+        $('#mig-upload-card').hide();
+        if (importacionMensaje) {
+          $('#empty').text(importacionMensaje);
+        }
+        $('#empty').show();
+        return;
+      }
+      $('#empty').hide();
+      $('#mig-upload-card').show();
+    }
+
+    function loadEmpresaDependentData() {
+      var empresa = query.empresa || '';
+      if (!empresa) {
+        $('#select-sucursal').html('<option value=\"\">Seleccione...</option>');
+        $('#select-tipo-comprobante').html('<option value=\"\">Seleccione...</option>');
+        renderVentasAvailability();
+        return;
+      }
+      $.get(apiRoot + 'sucursal/select/' + empresa).done(function (res) {
+        var data = (res && res.data) ? res.data : [];
+        var html = '<option value=\"\">Seleccione...</option>';
+        for (var i = 0; i < data.length; i++) {
+          var cod = data[i].Cod_Sucursal || data[i].cod_sucursal || '';
+          var nom = data[i].Des_Sucursal || data[i].des_sucursal || cod;
+          html += '<option value=\"' + cod + '\">' + nom + '</option>';
+        }
+        $('#select-sucursal').html(html);
+        var sucursalValue = query.sucursal || '{{ selected_sucursal|default:""|escapejs }}';
+        if (!sucursalValue && data.length) {
+          sucursalValue = data[0].Cod_Sucursal || data[0].cod_sucursal || '';
+        }
+        query.sucursal = sucursalValue || '';
+        $('#select-sucursal').val(query.sucursal);
+        $('#upload-sucursal').val(query.sucursal);
+      });
+
+      $.get(apiRoot + 'empresas/' + empresa + '/comprobantes/tipos/ventas_migracion').done(function (res) {
+        var data = (res && res.data) ? res.data : [];
+        var html = '<option value=\"\">Seleccione...</option>';
+        for (var i = 0; i < data.length; i++) {
+          var cod = data[i].Cod_Tp_Comp || data[i].cod_tp_comp || '';
+          var nom = data[i].Des_Tp_Comp || data[i].des_tp_comp || cod;
+          html += '<option value=\"' + cod + '\">' + nom + '</option>';
+        }
+        $('#select-tipo-comprobante').html(html);
+        var tipoValue = query.tipo_comprobante || '{{ selected_tipo|default:""|escapejs }}';
+        if (!tipoValue && data.length) {
+          tipoValue = data[0].Cod_Tp_Comp || data[0].cod_tp_comp || '';
+        }
+        query.tipo_comprobante = tipoValue || '';
+        $('#select-tipo-comprobante').val(query.tipo_comprobante);
+        $('#upload-tipo-comprobante').val(query.tipo_comprobante);
+      });
+      renderVentasAvailability();
+    }
+
+    function refreshEmpresaContext() {
+      if (!query.empresa) {
+        importacionHabilitada = false;
+        importacionMensaje = '';
+        loadEmpresaDependentData();
+        return;
+      }
+      $.get(apiRoot + 'empresas/' + query.empresa + '/importar_ventas').done(function (res) {
+        var data = (res && res.data) ? res.data : [];
+        var row = data[0] || {};
+        var flag = (row.importar_ventas || row.IMPORTAR_VENTAS || 'N').toString().toUpperCase();
+        importacionHabilitada = flag === 'S';
+        importacionMensaje = importacionHabilitada ? '' : 'La empresa seleccionada no tiene habilitada la opcion Importar Ventas.';
+        loadEmpresaDependentData();
+      }).fail(function () {
+        importacionHabilitada = false;
+        importacionMensaje = 'No se pudo verificar si la empresa tiene habilitada la opcion Importar Ventas.';
+        loadEmpresaDependentData();
+      });
+    }
+
+    $(document).ready(function () {
+      $('#periodo .form-control').datepicker({
+        format: 'yyyy',
+        startView: 2,
+        minViewMode: 2,
+        maxViewMode: 2,
+        language: 'es',
+        autoclose: true
+      });
+
+      $('#periodo .form-control').on('changeDate change input', function (e) {
+        query.periodo = (e && e.format) ? e.format('yyyy') : ($(this).val() || '').trim();
+        renderVentasAvailability();
+      });
+
+      function updateEmpresaDesc() {
+        var text = $('#select-empresa option:selected').text() || '';
+        $('#migrar-empresa-desc').val(text);
+      }
+
+      $('#select-empresa').on('change', function () {
+        query.empresa = $(this).val() || '';
+        query.tipo_comprobante = '';
+        query.sucursal = '';
+        refreshEmpresaContext();
+        updateEmpresaDesc();
+      });
+
+      $('#select-tipo-comprobante').on('change', function () {
+        query.tipo_comprobante = $(this).val() || '';
+        $('#upload-tipo-comprobante').val(query.tipo_comprobante);
+      });
+
+      $('#select-sucursal').on('change', function () {
+        query.sucursal = $(this).val() || '';
+        $('#upload-sucursal').val(query.sucursal);
+      });
+
+      $.ajax({
+        url: apiRoot + 'users/' + {{ user }} + '/empresas/Integrado',
+        cache: false
+      }).done(function (d) {
+        var list = ((d && d.data) ? d.data : []).map(function (r) {
+          return {
+            value: r.Cod_Empresa || r.cod_empresa || '',
+            text: r.Des_Empresa || r.des_empresa || r.Cod_Empresa || r.cod_empresa || ''
+          };
+        }).filter(function (r) { return r.value; });
+
+        var html = '<option value=\"\">Seleccione...</option>';
+        for (var i = 0; i < list.length; i++) {
+          html += '<option value=\"' + list[i].value + '\">' + list[i].text + '</option>';
+        }
+        $('#select-empresa').html(html);
+
+        if (list.length) {
+          var selectedValue = '{{ selected_empresa|default:""|escapejs }}' || list[0].value;
+          $('#select-empresa').val(selectedValue);
+          query.empresa = selectedValue;
+        }
+        if ('{{ selected_periodo|default:""|escapejs }}') {
+          query.periodo = '{{ selected_periodo|default:""|escapejs }}';
+          $('#periodo .form-control').datepicker('update', '{{ selected_periodo|default:""|escapejs }}');
+        } else {
+          syncPeriodoDefault();
+        }
+        query.tipo_comprobante = '{{ selected_tipo|default:""|escapejs }}';
+        query.sucursal = '{{ selected_sucursal|default:""|escapejs }}';
+        updateEmpresaDesc();
+        refreshEmpresaContext();
+      }).fail(function () {
+        $('#empty').text('No se pudo cargar la lista de empresas.');
+        $('#empty').show();
+      });
+
+      $('#ventas-migrate-form').on('submit', function () {
+        $('#mig-loading').css('display', 'flex');
+        $('#btn-migrar-ventas').prop('disabled', true);
+      });
+    });
+  </script>
+{% endblock %}

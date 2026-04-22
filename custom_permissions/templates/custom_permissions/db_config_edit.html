@@ -1,0 +1,208 @@
+﻿{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Configuración de Base de Datos{% endblock %}
+
+{% block content %}
+<div class="panel panel-default email-config">
+  <div class="panel-heading">
+    <h4 class="panel-title" style="display:flex; align-items:center; gap:10px;">
+      Configuración: {{ config.get_db_type_display }}
+      <span id="db-status-badge" class="db-status db-status-unknown">Estado: --</span>
+    </h4>
+  </div>
+  <div class="panel-body">
+    {% if messages %}
+      <div style="margin-bottom:10px;">
+        {% for message in messages %}
+          <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    <form method="post" class="form-horizontal">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="col-md-3 control-label">Deshabilitar conexión</label>
+        <div class="col-md-9">
+          <input type="checkbox" id="db-disabled" name="disabled" {% if config.disabled %}checked{% endif %}>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-md-3 control-label">Motor</label>
+        <div class="col-md-9">
+          {% if config.db_type == 'postgres' %}
+            <select class="form-control form-control-lg" name="db_engine">
+              <option value="postgres" selected>PostgreSQL</option>
+            </select>
+          {% else %}
+            <select class="form-control form-control-lg" name="db_engine" id="db-engine">
+              <option value="sqlanywhere" {% if config.db_engine == 'sqlanywhere' %}selected{% endif %}>Sybase SQL Anywhere</option>
+              <option value="postgres" {% if config.db_engine == 'postgres' %}selected{% endif %}>PostgreSQL</option>
+            </select>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-md-3 control-label">Host</label>
+        <div class="col-md-9">
+          <input type="text" class="form-control form-control-lg" name="host" id="cfg-host" value="{{ active_profile.host }}">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-md-3 control-label">Puerto</label>
+        <div class="col-md-9">
+          <input type="number" class="form-control form-control-lg" name="port" id="cfg-port" value="{{ active_profile.port }}">
+        </div>
+      </div>
+
+      <div class="form-group" id="sqlanywhere-server-group">
+        <label class="col-md-3 control-label">Servidor (SQL Anywhere)</label>
+        <div class="col-md-9">
+          <input type="text" class="form-control form-control-lg" name="server" id="cfg-server" value="{{ active_profile.server }}">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-md-3 control-label">Base de datos</label>
+        <div class="col-md-9">
+          <input type="text" class="form-control form-control-lg" name="database" id="cfg-database" value="{{ active_profile.database }}">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-md-3 control-label">Usuario</label>
+        <div class="col-md-9">
+          <input type="text" class="form-control form-control-lg" name="username" id="cfg-username" value="{{ active_profile.username }}">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-md-3 control-label">Contraseña</label>
+        <div class="col-md-9">
+          <input type="password" class="form-control form-control-lg" name="password" id="cfg-password" value="{{ active_profile.password }}">
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" name="action" value="save" class="btn btn-primary btn-modern">
+          <i class="fa fa-save"></i> Guardar configuración
+        </button>
+        <button type="submit" name="action" value="test" class="btn btn-default btn-modern" style="margin-left:8px;">
+          <i class="fa fa-plug"></i> Probar conexión
+        </button>
+        {% if config.db_type == 'integrado' or config.db_type == 'sueldo' %}
+          <button type="submit" name="action" value="reconnect" class="btn btn-warning btn-modern" style="margin-left:8px;">
+            <i class="fa fa-refresh"></i> Reconectar
+          </button>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+{{ engine_profiles|json_script:"engine-profiles-data" }}
+
+<script>
+  (function () {
+    var dbType = '{{ config.db_type }}';
+    var dbEngineSel = document.getElementById('db-engine');
+    var sqlServerGroup = document.getElementById('sqlanywhere-server-group');
+    var inputHost = document.getElementById('cfg-host');
+    var inputPort = document.getElementById('cfg-port');
+    var inputServer = document.getElementById('cfg-server');
+    var inputDb = document.getElementById('cfg-database');
+    var inputUser = document.getElementById('cfg-username');
+    var inputPass = document.getElementById('cfg-password');
+    var profilesEl = document.getElementById('engine-profiles-data');
+    var profiles = {};
+    if (profilesEl) {
+      try { profiles = JSON.parse(profilesEl.textContent || '{}'); } catch (e) { profiles = {}; }
+    }
+    var badge = document.getElementById('db-status-badge');
+    var disabled = document.getElementById('db-disabled');
+
+    function readCurrent() {
+      return {
+        host: inputHost ? inputHost.value : '',
+        port: inputPort ? inputPort.value : '',
+        server: inputServer ? inputServer.value : '',
+        database: inputDb ? inputDb.value : '',
+        username: inputUser ? inputUser.value : '',
+        password: inputPass ? inputPass.value : ''
+      };
+    }
+
+    function writeCurrent(profile) {
+      profile = profile || {};
+      if (inputHost) inputHost.value = profile.host || '';
+      if (inputPort) inputPort.value = profile.port || '';
+      if (inputServer) inputServer.value = profile.server || '';
+      if (inputDb) inputDb.value = profile.database || '';
+      if (inputUser) inputUser.value = profile.username || '';
+      if (inputPass) inputPass.value = profile.password || '';
+    }
+
+    function refreshEngineFields() {
+      if (!dbEngineSel || !sqlServerGroup) return;
+      sqlServerGroup.style.display = dbEngineSel.value === 'postgres' ? 'none' : '';
+    }
+    function setBadge(text, cls) {
+      if (!badge) return;
+      badge.textContent = text;
+      badge.className = 'db-status ' + cls;
+    }
+    function refresh() {
+      if (disabled && disabled.checked) {
+        setBadge('Estado: Deshabilitado', 'db-status-warn');
+        return;
+      }
+      if (dbType !== 'integrado' && dbType !== 'sueldo') {
+        setBadge('Estado: N/A', 'db-status-unknown');
+        return;
+      }
+      var isLocalDev = ['localhost', '127.0.0.1'].indexOf(window.location.hostname) !== -1 || window.location.port === '8000' || window.location.port === '3000';
+      var apiBase = isLocalDev
+        ? 'http://' + window.location.hostname + ':3000/api/v1/'
+        : window.location.protocol + '//' + window.location.host + '/api/v1/';
+      var url = apiBase + (dbType === 'sueldo' ? 'sueldo/status' : 'integrado/status');
+      fetch(url)
+        .then(function (r) { return r.json(); })
+        .then(function (st) {
+          if (st && st.enabled === false) {
+            var reason = st.reason ? (' - ' + st.reason) : '';
+            setBadge('Estado: Error' + reason, 'db-status-error');
+          } else {
+            var eng = (st && (st.engine || st.configured_engine)) ? (' (' + (st.engine || st.configured_engine) + ')') : '';
+            setBadge('Estado: OK' + eng, 'db-status-ok');
+          }
+        })
+        .catch(function () {
+          setBadge('Estado: Error', 'db-status-error');
+        });
+    }
+    if (disabled) {
+      disabled.addEventListener('change', refresh);
+    }
+    if (dbEngineSel) {
+      dbEngineSel.addEventListener('change', function () {
+        var previous = this.getAttribute('data-prev-engine') || 'sqlanywhere';
+        profiles[previous] = readCurrent();
+        var selected = dbEngineSel.value;
+        writeCurrent(profiles[selected] || {});
+        this.setAttribute('data-prev-engine', selected);
+        refreshEngineFields();
+      });
+      dbEngineSel.setAttribute('data-prev-engine', dbEngineSel.value);
+    }
+    refreshEngineFields();
+    refresh();
+    setInterval(refresh, 5000);
+  })();
+</script>
+{% endblock %}
+

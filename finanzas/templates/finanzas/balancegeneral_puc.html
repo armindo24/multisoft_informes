@@ -1,0 +1,184 @@
+{% extends 'finanzas/base.html' %}
+
+{% block header %}
+  Balance General PUC:
+{% endblock %}
+
+{% block filters %}
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="empresa" %}
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="periodo" class="col-md-4 control-label">Periodo:</label>
+
+        <div class="col-md-6">
+          <div id="periodo" class="input-date"><input type="text" class="form-control" name="periodo"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="cuentad" placeholder="Cuenta" title="Cta. desde" %}
+    {% include 'ventas/_filtro.html' with name="cuentah" placeholder="Cuenta" title="Cta. hasta" %}
+  </div>
+
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="fecha" class="col-md-4 control-label">Fecha:</label>
+
+        <div class="col-md-6">
+          <div id="fecha" class="input-daterange input-group input-date">
+            <input type="text" class="input-sm form-control" name="mesd"/>
+            <span class="input-group-addon">a</span>
+            <input type="text" class="input-sm form-control" name="mesh"/>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="nivel" class="col-md-4 control-label">Nivel:</label>
+
+        <div class="col-md-6">
+          <div><input type="text" class="form-control" id="nivel" name="nivel" value="0"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="practicado_al" class="col-md-4 control-label">Practicado al:</label>
+        <div class="col-md-6">
+          <div id="practicado_al" class="input-date"><input type="text" class="form-control" name="practicado_al"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="recalcular_saldos" class="col-md-4 control-label">Recalcular saldos:</label>
+        <div class="col-md-6">
+          <select id="recalcular_saldos" name="recalcular_saldos" class="form-control">
+            <option value="N" selected>NO</option>
+            <option value="S">SI</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="codigo_entidad" class="col-md-4 control-label">Codigo de Entidad:</label>
+
+        <div class="col-md-6">
+          <div><input type="text" class="form-control" id="codigo_entidad" name="codigo_entidad" value=""></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="select-moneda" class="col-md-4 control-label">Moneda:</label>
+        <div class="col-md-6">
+          <select id="select-moneda" name="moneda" class="form-control">
+            <option value="local" selected>Local</option>
+            <option value="extranjera">Extranjera</option>
+            <option value="ambas">Ambas</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="balance_cuentas_puc" class="col-md-4 control-label">Balance cuentas del PUC:</label>
+        <div class="col-md-6">
+          <label style="margin-top:7px; font-weight:600;">
+            <input type="checkbox" id="balance_cuentas_puc" name="balance_cuentas_puc"> Activar
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6"></div>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-12">
+      <input type="hidden" name="incluir" id="incluir" value="NO"/>
+      <input type="hidden" name="auxiliar" id="auxiliar" value="NO"/>
+    </div>
+  </div>
+
+{% endblock %}
+
+{% block filter_footer %}
+  <div class="ms-filter-actions__left">
+    <a type="button" class="btn btn-filter-modern" onclick="runGlobalFiltrar()">Filtrar <i class="fa fa-search"></i></a>
+    <a type="button" class="btn btn-cancel-modern" onclick="runGlobalCancelar()">Cancelar <i class="fa fa-stop"></i></a>
+  </div>
+  <div class="ms-filter-actions__right">
+    <a type="button" class="btn btn-filter-modern" style="background:linear-gradient(135deg,#3d8bdb,#2967b0);border-color:#2967b0;" onclick="exportarDatosPuc()">Exportar Datos <i class="fa fa-download"></i></a>
+    <a type="button" class="btn btn-export-excel" onclick="runGlobalExcel()">Excel <i class="fa fa-file-excel-o"></i></a>
+    <a type="button" class="btn btn-export-pdf" onclick="runGlobalPdf()">PDF <i class="fa fa-file-pdf-o"></i></a>
+  </div>
+{% endblock %}
+
+{% block inner_content %}
+  <style>
+    /* Moneda como select nativo: evita solapar botones del footer */
+    #select-moneda {
+      min-height: 34px;
+    }
+    .ms-filter-actions__left,
+    .ms-filter-actions__right {
+      position: relative;
+      z-index: 1;
+    }
+
+    #table-div {
+      font-size: 11px;
+    }
+    #resultados thead th,
+    #resultados tbody td,
+    #resultados tfoot td {
+      font-size: 11px;
+      padding: 4px 6px;
+    }
+    #resultados thead th:nth-child(1),
+    #resultados tbody td:nth-child(1) {
+      width: 18%;
+    }
+    #resultados thead th:nth-child(2),
+    #resultados tbody td:nth-child(2) {
+      width: 57%;
+    }
+    #resultados thead th:nth-child(3),
+    #resultados tbody td:nth-child(3) {
+      width: 25%;
+      text-align: right;
+    }
+    #resultados thead th:nth-child(4),
+    #resultados tbody td:nth-child(4) {
+      text-align: right;
+    }
+    #resultados tfoot td {
+      padding-top: 2px;
+      padding-bottom: 2px;
+      line-height: 1.2;
+      vertical-align: top;
+    }
+  </style>
+  <div class="text-center" id="messages">
+    <h3 id="loading" style="display: none;">Cargando...</h3>
+    <h3 id="empty" style="display: none;">No hay datos disponibles</h3>
+  </div>
+
+  <div id="table-div"></div>
+  {% include 'finanzas/balancegeneral_puc_metodos.html' %}
+{% endblock %}

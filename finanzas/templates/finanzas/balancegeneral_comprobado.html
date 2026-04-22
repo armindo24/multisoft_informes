@@ -4,6 +4,10 @@
   Balance de Comprobaci&#243;n:
 {% endblock %}
 
+{% block extrahead %}
+  {{ block.super }}
+{% endblock %}
+
 {% block filters %}
   <div class="row">
     {% include 'ventas/_filtro.html' with name="empresa" %}
@@ -69,13 +73,84 @@
 {% endblock %}
 
 {% block inner_content %}
+  <style>
+    #resultados {
+      table-layout: fixed;
+    }
+    #resultados thead th {
+      font-size: 9px;
+      padding: 2px 5px;
+      white-space: nowrap;
+    }
+    #resultados thead th,
+    #resultados tbody td,
+    #resultados tfoot td {
+      font-size: 11px;
+      padding: 4px 6px;
+    }
+    #resultados thead th:nth-child(1),
+    #resultados tbody td:nth-child(1) { width: 9%; }
+    #resultados thead th:nth-child(2),
+    #resultados tbody td:nth-child(2) { width: 33%; }
+    #resultados thead th:nth-child(3),
+    #resultados tbody td:nth-child(3),
+    #resultados thead th:nth-child(4),
+    #resultados tbody td:nth-child(4),
+    #resultados thead th:nth-child(5),
+    #resultados tbody td:nth-child(5),
+    #resultados thead th:nth-child(6),
+    #resultados tbody td:nth-child(6) {
+      width: 14.5%;
+      text-align: right;
+    }
+    /* Quitar negrita de datos del detalle */
+    #resultados tbody b,
+    #resultados tbody u {
+      font-weight: 400;
+      text-decoration: none;
+    }
+    /* Totales siempre destacados y un poco más abajo */
+    #resultados tfoot td,
+    #resultados tfoot b {
+      font-weight: 700;
+    }
+    #resultados tfoot td {
+      padding-top: 8px;
+      padding-bottom: 8px;
+    }
+    /* Quitar tono salmón del detalle */
+    #resultados tbody tr td {
+      background: #fff !important;
+      color: #1f3556;
+    }
+    #resultados tbody tr:nth-child(even) td {
+      background: #f8fbff !important;
+    }
+    #resultados tbody tr.danger td {
+      background: #fff !important;
+      color: #1f3556 !important;
+    }
+    #resultados tfoot tr.danger td {
+      background: #fff !important;
+      color: #1f3556 !important;
+    }
+    #resultados tfoot td {
+      background: #fff !important;
+      color: #1f3556 !important;
+    }
+    .dataTables_wrapper .dataTables_scrollFoot tfoot tr.danger td,
+    .dataTables_wrapper .dataTables_scrollFoot tfoot td {
+      background: #fff !important;
+      color: #1f3556 !important;
+    }
+  </style>
   <div class="text-center" id="messages">
     <h3 id="loading" style="display: none;">Cargando...</h3>
 
     <h3 id="empty" style="display: none;">No hay datos disponibles</h3>
   </div>
     
-  <div id="table-div">
+  <div id="table-div" class="report-compact">
   
   </div>
   <br>

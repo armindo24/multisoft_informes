@@ -61,6 +61,55 @@
 
 
 {% block inner_content %}
+  <style>
+    #table-div table.table {
+      table-layout: fixed;
+    }
+    #table-div table.table thead th,
+    #table-div table.table tbody td,
+    #table-div table.table tbody th,
+    #table-div table.table tfoot td,
+    #table-div table.table tfoot th {
+      font-size: 11px;
+      padding: 3px 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #table-div table.table thead th:nth-child(1),
+    #table-div table.table tbody td:nth-child(1) { width: 78px; }   /* Fecha */
+    #table-div table.table thead th:nth-child(2),
+    #table-div table.table tbody td:nth-child(2) { width: 40px; }   /* Tipo */
+    #table-div table.table thead th:nth-child(3),
+    #table-div table.table tbody td:nth-child(3) { width: 62px; }   /* N° Comp */
+    #table-div table.table thead th:nth-child(4),
+    #table-div table.table tbody td:nth-child(4) { width: 36px; }   /* Aut */
+    #table-div table.table thead th:nth-child(5),
+    #table-div table.table tbody td:nth-child(5) { width: 55px; }   /* N° */
+    #table-div table.table thead th:nth-child(6),
+    #table-div table.table tbody td:nth-child(6) { width: 46px; }   /* Línea */
+    #table-div table.table thead th:nth-child(7),
+    #table-div table.table tbody td:nth-child(7) {
+      width: 330px;                                                  /* Concepto */
+      white-space: normal;
+      word-break: break-word;
+    }
+    #table-div table.table thead th:nth-child(8),
+    #table-div table.table tbody td:nth-child(8),
+    #table-div table.table thead th:nth-child(9),
+    #table-div table.table tbody td:nth-child(9),
+    #table-div table.table thead th:nth-child(10),
+    #table-div table.table tbody td:nth-child(10),
+    #table-div table.table thead th:nth-child(11),
+    #table-div table.table tbody td:nth-child(11),
+    #table-div table.table thead th:nth-child(12),
+    #table-div table.table tbody td:nth-child(12),
+    #table-div table.table thead th:nth-child(13),
+    #table-div table.table tbody td:nth-child(13) {
+      width: 92px;
+      text-align: right;
+    }
+  </style>
   <div class="text-center" id="messages">
     <h3 id="loading" style="display: none;">Cargando...</h3>
 

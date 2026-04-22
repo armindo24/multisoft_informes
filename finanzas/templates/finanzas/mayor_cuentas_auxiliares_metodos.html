@@ -20,6 +20,7 @@
 
   $(document).ready(function () {
     u.hideNav();
+    $.ajaxSetup({ cache: false });
     initSelects();
     initDates();
     $incluir = $('#incluir');
@@ -118,7 +119,11 @@
       labelField: 'Nombre',
       searchField: 'Nombre',
       onChange: function (value) {
-        query.cuentad = value;
+        query.cuentad = (value || '').toString().trim();
+        if (!query.cuentah && query.cuentad) {
+          query.cuentah = query.cuentad;
+          if (select_cuentah) select_cuentah.setValue(query.cuentah, true);
+        }
         buscarCuentaAuxiliar();
       }
     });
@@ -130,7 +135,11 @@
       labelField: 'Nombre',
       searchField: 'Nombre',
       onChange: function (value) {
-        query.cuentah = value;
+        query.cuentah = (value || '').toString().trim();
+        if (!query.cuentad && query.cuentah) {
+          query.cuentad = query.cuentah;
+          if (select_cuentad) select_cuentad.setValue(query.cuentad, true);
+        }
         buscarCuentaAuxiliar();
       }
     });
@@ -149,11 +158,12 @@
         }
       },
       load: function (q, cb) {
-        if (!q.length) return cb();
+        if (!query.empresa || !query.periodo || !query.cuentad || !query.cuentah) return cb();
         $.ajax({
           method: 'GET',
           url: api + 'empresas/' + query.empresa + '/auxiliares',
-          data: {filter: q, periodo: query.periodo, cuentad: query.cuentad, cuentah: query.cuentah}
+          data: {filter: (q || ''), periodo: query.periodo, cuentad: query.cuentad, cuentah: query.cuentah},
+          cache: false
         }).done(function (res) {
           cb(res.data);
         }).fail(function () {
@@ -193,6 +203,11 @@
         {value: 'AM', text: 'Ambas'}
       ]
     });
+    var selectMoneda = document.getElementById('select-moneda').selectize;
+    if (selectMoneda) {
+      selectMoneda.setValue('LO', true);
+    }
+    query.moneda = 'LO';
   }
 
   function checkTime(i) {
@@ -551,17 +566,31 @@
   }
 
   function getInforme() {
-    var empresa = query.empresa;
+    var empresa = query.empresa || (select_empresa ? select_empresa.getValue() : '');
     var periodo = query.periodo;
-    var cuentad = query.cuentad;
-    var cuentah = query.cuentah;
+    var cuentad = (select_cuentad ? select_cuentad.getValue() : query.cuentad);
+    var cuentah = (select_cuentah ? select_cuentah.getValue() : query.cuentah);
     var cuentaad = query['cuenta-aux-d'];
     var cuentaah = query['cuenta-aux-h'];
     var fechad = query.desde;
     var fechah = query.hasta;
-    var moneda = query.moneda;
+    var moneda = query.moneda || 'LO';
+    query.moneda = moneda;
     var incluir = $incluir.prop('checked');
-    var tipoasiento = query.tipoAsiento;
+    var tipoasiento = query.tipoAsiento || (select_tipo_asiento ? select_tipo_asiento.getValue() : 'NINGUNO');
+
+    cuentad = (cuentad || '').toString().trim();
+    cuentah = (cuentah || '').toString().trim();
+    if (!cuentad && cuentah) cuentad = cuentah;
+    if (!cuentah && cuentad) cuentah = cuentad;
+    if (!cuentad) cuentad = '1';
+    if (!cuentah) cuentah = '9';
+    if (!tipoasiento) tipoasiento = 'NINGUNO';
+
+    query.empresa = empresa;
+    query.cuentad = cuentad;
+    query.cuentah = cuentah;
+    query.tipoAsiento = tipoasiento;
 
     if (incluir) {
       incluir = "SI"
@@ -655,16 +684,23 @@
 
     $.ajax({
       url: api + 'cuenta/select/' + query.empresa + '/' + query.periodo,
-      method: 'GET'
+      method: 'GET',
+      cache: false
     }).done(function (d) {
+      var rows = ((d && d.data) ? d.data : []).map(function (r) {
+        return {
+          CodPlanCta: (typeof r.CodPlanCta !== 'undefined' && r.CodPlanCta !== null) ? r.CodPlanCta : r.codplancta,
+          Nombre: (typeof r.Nombre !== 'undefined' && r.Nombre !== null) ? r.Nombre : r.nombre
+        };
+      }).filter(function (r) { return !!r.CodPlanCta; });
       //cargar resultados y habilitar options
       select_cuentad.load(function (cb) {
-        cb(d.data);
+        cb(rows);
         select_cuentad.enable();
       });
 
       select_cuentah.load(function (cb) {
-        cb(d.data);
+        cb(rows);
         select_cuentah.enable();
       });
     }).fail(function () {
@@ -683,6 +719,8 @@
     if (!query.cuentad || !query.cuentad.length || !query.cuentah || !query.cuentah.length) return;
     select_cuenta_auxd.enable();
     select_cuenta_auxh.enable();
+    select_cuenta_auxd.load(function (cb) { cb(); });
+    select_cuenta_auxh.load(function (cb) { cb(); });
   }
 </script>
 

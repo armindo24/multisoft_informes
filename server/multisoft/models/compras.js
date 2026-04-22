@@ -3,6 +3,57 @@ var util = require('util');
 var q = require('./queryUtils');
 var Compras = {};
 
+function hasValue(value) {
+    return value !== undefined && value !== null && String(value).trim() !== '';
+}
+
+function dbIsPostgres() {
+    try {
+        if (typeof conn.getStatus === 'function') {
+            var st = conn.getStatus() || {};
+            var eng = String(st.engine || st.configured_engine || '').toLowerCase();
+            if (eng === 'postgres') return true;
+            if (eng === 'sqlanywhere') return false;
+        }
+    } catch (e) {}
+    return String(conn._engine || '').toLowerCase() === 'postgres';
+}
+
+function top10Prefix() {
+    return dbIsPostgres() ? 'SELECT ' : 'SELECT top 10 ';
+}
+
+function top10Suffix() {
+    return dbIsPostgres() ? ' LIMIT 10' : '';
+}
+
+function monedaCompraCondition(monedaValue, fieldExpr) {
+    var normField = "upper(trim(coalesce(" + fieldExpr + ",'')))";
+    var m = String(monedaValue || '').toUpperCase();
+    if (m === 'GS' || m === 'PYG' || m === 'LO' || m === 'LOCAL') {
+        return " AND " + normField + " IN ('GS','PYG') ";
+    }
+    if (m === 'US' || m === 'USD' || m === 'EX' || m === 'EXTRANJERA') {
+        return " AND " + normField + " IN ('US','USD') ";
+    }
+    return "";
+}
+
+function asentadaCompraCondition(asentadaValue, fieldExpr) {
+    var v = String(asentadaValue || '').toUpperCase().trim();
+    // PR: procesada/asentada, PE: pendiente/no asentada.
+    if (!v || v === 'PR' || v === 'S' || v === 'SI') {
+        return " AND " + fieldExpr + " = 'S' ";
+    }
+    if (v === 'PE' || v === 'N' || v === 'NO') {
+        return " AND " + fieldExpr + " = 'N' ";
+    }
+    if (v === 'ALL' || v === 'A' || v === 'TODOS') {
+        return "";
+    }
+    return " AND " + fieldExpr + " = 'S' ";
+}
+
 Compras.all = function (filters, cb) {
     //conn.exec("SET ROWCOUNT 100"); //TODO: solucionar resultados muy grandes
 
@@ -36,11 +87,15 @@ Compras.all = function (filters, cb) {
                 "and ( DBA.FACTCAB.Cod_Empresa = DBA.PROVEED.Cod_Empresa ) and ( DBA.FACTCAB.CodProv = DBA.PROVEED.CodProv ) "+ 
                 "and ( DBA.FACTCAB.Cod_Empresa = DBA.DPTO.cod_empresa ) and ( DBA.FACTCAB.Cod_Sucursal = DBA.DPTO.cod_sucursal ) "+ 
                 "and ( DBA.FACTCAB.CodDpto = DBA.DPTO.coddpto ) AND ( FactCab.cod_empresa = '"+filters.empresa+"') AND (FACTCAB.Cod_Sucursal = '"+filters.sucursal+"') "+
-                "AND (FACTCAB.CodDpto = '"+filters.departamento+"') AND (FACTCAB.CodMoneda = '"+filters.moneda+"') AND ( DATE (DBA.FACTCAB.FechaFact) >= DATE ('"+filters.compras_start+"') ) "+  
+                "AND (FACTCAB.CodMoneda = '"+filters.moneda+"') AND ( DATE (DBA.FACTCAB.FechaFact) >= DATE ('"+filters.compras_start+"') ) "+  
                 "AND ( tpocbte.tp_def <> 'RT') AND ( DATE (DBA.FACTCAB.FechaFact) <= DATE ('"+filters.compras_end+"') )";
 
 
     var sql = util.format("SELECT %s FROM %s WHERE %s", select, from, where);
+
+    if (hasValue(filters.departamento)) {
+        sql += " AND (FACTCAB.CodDpto = '" + String(filters.departamento).trim() + "') ";
+    }
     
     if (filters.tipooc) {
         sql += " AND (dba.FACTCAB.Cod_Tp_Comp IN " + q.in(filters.tipooc) + ") ";
@@ -114,7 +169,7 @@ Compras.articulo = function (filters, cb){
                 "and dba.FACTCAB.NroFact = dba.FACTDET.NroFact and dba.FACTCAB.Cod_Tp_Comp = dba.FACTDET.Cod_Tp_Comp and dba.FACTDET.CodProv = dba.PROVEED.CodProv "+
                 "and dba.FACTDET.Cod_Empresa = dba.PROVEED.Cod_Empresa and dba.FACTDET.Cod_Tp_Comp = dba.TPOCBTE.Cod_Tp_Comp and dba.FACTDET.Cod_Empresa = dba.TPOCBTE.Cod_Empresa "+
                 "and dba.FACTDET.Cod_Articulo = dba.ARTICULO.Cod_Articulo and dba.FACTDET.Cod_Empresa = dba.ARTICULO.Cod_Empresa and dba.TPOCBTE.tp_def <> 'RT' "+ 
-                "and dba.FACTDET.Cod_Empresa = '"+filters.empresa+"' and dba.FACTCAB.Cod_Sucursal = '"+filters.sucursal+"' and dba.FACTCAB.CodDpto = '"+filters.departamento+"' "+
+                "and dba.FACTDET.Cod_Empresa = '"+filters.empresa+"' and dba.FACTCAB.Cod_Sucursal = '"+filters.sucursal+"' "+
                 "and dba.FACTCAB.anulado = 'N' and dba.FACTCAB.CodMoneda = '"+filters.moneda+"' "+
                 "and ( DATE (dba.FACTCAB.FechaFact) >= DATE ('"+filters.compras_start+"') ) "+  
                 "and ( DATE (dba.FACTCAB.FechaFact) <= DATE ('"+filters.compras_end+"') )";
@@ -129,11 +184,15 @@ Compras.articulo = function (filters, cb){
                 "and dba.FACTCAB.NroFact = dba.FACTDET.NroFact and dba.FACTCAB.Cod_Tp_Comp = dba.FACTDET.Cod_Tp_Comp and dba.FACTDET.CodProv = dba.PROVEED.CodProv "+
                 "and dba.FACTDET.Cod_Empresa = dba.PROVEED.Cod_Empresa and dba.FACTDET.Cod_Tp_Comp = dba.TPOCBTE.Cod_Tp_Comp and dba.FACTDET.Cod_Empresa = dba.TPOCBTE.Cod_Empresa "+
                 "and dba.FACTDET.Cod_Articulo = dba.ARTICULO.Cod_Articulo and dba.FACTDET.Cod_Empresa = dba.ARTICULO.Cod_Empresa and dba.TPOCBTE.tp_def <> 'RT' "+ 
-                "and dba.FACTDET.Cod_Empresa = '"+filters.empresa+"' and dba.FACTCAB.Cod_Sucursal = '"+filters.sucursal+"' and dba.FACTCAB.CodDpto = '"+filters.departamento+"' "+
+                "and dba.FACTDET.Cod_Empresa = '"+filters.empresa+"' and dba.FACTCAB.Cod_Sucursal = '"+filters.sucursal+"' "+
                 "and dba.FACTCAB.anulado = 'N' and dba.FACTCAB.CodMoneda = '"+filters.moneda+"' "+
                 "and ( DATE (dba.FACTCAB.FechaFact) >= DATE ('"+filters.compras_start+"') ) "+  
                 "and ( DATE (dba.FACTCAB.FechaFact) <= DATE ('"+filters.compras_end+"') )";
   }
+
+    if (hasValue(filters.departamento)) {
+        sql += " AND (dba.FACTCAB.CodDpto = '" + String(filters.departamento).trim() + "') ";
+    }
   
      if (filters.tipooc) {
         sql += " AND (dba.FACTCAB.Cod_Tp_Comp IN " + q.in(filters.tipooc) + ") ";
@@ -164,7 +223,7 @@ Compras.ranking_aticulo = function (filters, cb) {
     var select = ""
     
     if (filters.moneda == "GS"){
-        select = "SELECT top 10 "+
+        select = top10Prefix()+
                     "DBA.FACTDET.Cod_Articulo,"+
                     "DBA.ARTICULO.Des_Art,"+ 
                     "cast(SUM(DBA.FACTDET.Cantidad * DBA.FACTDET.Pr_Unit) as decimal (20,0)) AS TotalItem "+ 
@@ -181,10 +240,9 @@ Compras.ranking_aticulo = function (filters, cb) {
                     "AND DBA.FACTDET.Cod_Articulo = DBA.ARTICULO.Cod_Articulo "+ 
                     "AND ( DBA.FactCab.cod_empresa = '"+filters.empresa+"') "+ 
                     "AND Date (FactCab.FechaFact) >= Date ('"+filters.compras_start+"') "+ 
-                    "AND Date (FactCab.FechaFact) <= Date('"+filters.compras_end+"') "+ 
-                    "AND DBA.FACTCAB.CodMoneda = 'GS' ";
+                    "AND Date (FactCab.FechaFact) <= Date('"+filters.compras_end+"') ";
     } else {
-        select = "SELECT top 10 "+
+        select = top10Prefix()+
                     "DBA.FACTDET.Cod_Articulo,"+
                     "DBA.ARTICULO.Des_Art,"+ 
                     "cast(SUM(DBA.FACTDET.Cantidad * DBA.FACTDET.Pr_Unit) as decimal (20,2)) AS TotalItem "+ 
@@ -201,38 +259,42 @@ Compras.ranking_aticulo = function (filters, cb) {
                     "AND DBA.FACTDET.Cod_Articulo = DBA.ARTICULO.Cod_Articulo "+ 
                     "AND ( DBA.FactCab.cod_empresa = '"+filters.empresa+"') "+ 
                     "AND Date (FactCab.FechaFact) >= Date ('"+filters.compras_start+"') "+ 
-                    "AND Date (FactCab.FechaFact) <= Date('"+filters.compras_end+"') "+ 
-                    "AND DBA.FACTCAB.CodMoneda = 'US' ";
+                    "AND Date (FactCab.FechaFact) <= Date('"+filters.compras_end+"') ";
     }
     
     if (filters.articulo) {
         select += " AND (dba.FACTDET.Cod_Articulo IN " + q.in(filters.articulo) + ") ";
     } 
+
+    select += monedaCompraCondition(filters.moneda, "DBA.FACTCAB.CodMoneda");
     
     select+= "GROUP BY "+ 
                   "DBA.FACTDET.Cod_Articulo,"+ 
                   "DBA.ARTICULO.Des_Art "+ 
               "ORDER BY "+ 
-                  "TotalItem DESC";
+                  "TotalItem DESC" + top10Suffix();
         
     console.log(select);
     
     conn.exec(select, function (err, r) {
-        if (err) throw err;
+        if (err) {
+            console.error('[Compras.ranking_aticulo] error:', err.message || err);
+            return cb([]);
+        }
         cb(r);
     });
 };
     
 Compras.ranking_proveedor = function (filters, cb) {
     //conn.exec("SET ROWCOUNT 100"); //TODO: solucionar resultados muy grandes
-
-    var select = ""
-    
+    var totalExpr = "cast(SUM( (DBA.FACTCAB.TotalExen + (DBA.FACTCAB.TotalGrav - (CASE WHEN DBA.FACTCAB.IVAIncluido = 'S' THEN DBA.FACTCAB.IVA ELSE 0 END))) * (CASE WHEN dba.tpocbte.tp_def = 'NP' THEN -1 ELSE 1 END) ) as decimal (20,__SCALE__)) AS TotalCompras ";
+    var selectBase = "";
+    var dateExpr = "__DATE_EXPR__";
     if (filters.moneda == "GS"){
-        select = "SELECT top 10 "+
+        selectBase = top10Prefix()+
                     "DBA.Proveed.CodProv,"+ 
                     "DBA.Proveed.RazonSocial,"+ 
-                    "cast(SUM ( (DBA.FACTCAB.TotalExen + (DBA.FACTCAB.TotalGrav - IF ( DBA.FACTCAB.IVAIncluido = 'S' ) THEN DBA.FACTCAB.IVA ELSE 0 ENDIF)) * if (dba.tpocbte.tp_def = 'NP' ) then - 1 else    1 endif) as decimal (20,0)) AS TotalCompras "+ 
+                    totalExpr.replace('__SCALE__', '0') + 
                  "FROM "+ 
                     "DBA.proveed,"+ 
                     "DBA.FACTCAB,"+ 
@@ -240,18 +302,17 @@ Compras.ranking_proveedor = function (filters, cb) {
                  "WHERE "+ 
                     "( DBA.FACTCAB.Cod_Empresa = DBA.Proveed.Cod_Empresa ) "+ 
                     "AND ( DBA.FACTCAB.CodProv = DBA.Proveed.CodProv ) "+ 
-                    "AND ( DBA.FACTCAB.Asentado = 'S' ) "+ 
+                    "AND ( 1=1 ) "+ 
                     "AND ( DBA.FACTCAB.COD_EMPRESA = DBA.TPOCBTE.COD_EMPRESA) "+ 
                     "AND ( DBA.FACTCAB.COD_TP_COMP = DBA.TPOCBTE.COD_TP_COMP) "+ 
                     "AND ( FactCab.cod_empresa = '"+filters.empresa+"') "+ 
-                    "AND Date (FactCab.FechaFact) >= Date ('"+filters.compras_start+"') "+ 
-                    "AND Date (FactCab.FechaFact) <= Date('"+filters.compras_end+"') "+ 
-                    "AND dba.factcab.codmoneda = 'GS' "; 
+                    "AND " + dateExpr + " >= Date ('"+filters.compras_start+"') "+ 
+                    "AND " + dateExpr + " <= Date('"+filters.compras_end+"') "; 
     } else {
-        select = "SELECT top 10 "+
+        selectBase = top10Prefix()+
                     "DBA.Proveed.CodProv,"+ 
                     "DBA.Proveed.RazonSocial,"+ 
-                    "cast(SUM ( (DBA.FACTCAB.TotalExen + (DBA.FACTCAB.TotalGrav - IF ( DBA.FACTCAB.IVAIncluido = 'S' ) THEN DBA.FACTCAB.IVA ELSE 0 ENDIF)) * if (dba.tpocbte.tp_def = 'NP' ) then - 1 else    1 endif) as decimal (20,2)) AS TotalCompras "+ 
+                    totalExpr.replace('__SCALE__', '2') + 
                  "FROM "+ 
                     "DBA.proveed,"+ 
                     "DBA.FACTCAB,"+ 
@@ -259,31 +320,70 @@ Compras.ranking_proveedor = function (filters, cb) {
                  "WHERE "+ 
                     "( DBA.FACTCAB.Cod_Empresa = DBA.Proveed.Cod_Empresa ) "+ 
                     "AND ( DBA.FACTCAB.CodProv = DBA.Proveed.CodProv ) "+ 
-                    "AND ( DBA.FACTCAB.Asentado = 'S' ) "+ 
+                    "AND ( 1=1 ) "+ 
                     "AND ( DBA.FACTCAB.COD_EMPRESA = DBA.TPOCBTE.COD_EMPRESA) "+ 
                     "AND ( DBA.FACTCAB.COD_TP_COMP = DBA.TPOCBTE.COD_TP_COMP) "+ 
                     "AND ( FactCab.cod_empresa = '"+filters.empresa+"') "+ 
-                    "AND Date (FactCab.FechaFact) >= Date ('"+filters.compras_start+"') "+ 
-                    "AND Date (FactCab.FechaFact) <= Date('"+filters.compras_end+"') "+ 
-                    "AND dba.factcab.codmoneda = 'US' "; 
+                    "AND " + dateExpr + " >= Date ('"+filters.compras_start+"') "+ 
+                    "AND " + dateExpr + " <= Date('"+filters.compras_end+"') "; 
     }
-    
+
+    var proveedorCond = "";
     if (filters.proveedor) {
-        select += " AND (dba.FACTCAB.CodProv IN " + q.in(filters.proveedor) + ") ";
-    } 
-    
-    select+= "GROUP BY "+ 
-                  "DBA.Proveed.CodProv,"+  
-                  "DBA.Proveed.RazonSocial "+ 
-              "ORDER BY "+ 
-                  "TotalCompras DESC";
-        
-    console.log(select);
-    
-    conn.exec(select, function (err, r) {
-        if (err) throw err;
-        cb(r);
+        proveedorCond = " AND (dba.FACTCAB.CodProv IN " + q.in(filters.proveedor) + ") ";
+    }
+    var sucursalCond = hasValue(filters.sucursal)
+        ? (" AND (dba.FACTCAB.Cod_Sucursal = '" + String(filters.sucursal).trim() + "') ")
+        : "";
+    var monedaCond = monedaCompraCondition(filters.moneda, "dba.factcab.codmoneda");
+    var asentadaCond = asentadaCompraCondition(filters.asentada, "dba.factcab.asentado");
+    var asentadaAllCond = asentadaCompraCondition('ALL', "dba.factcab.asentado");
+    var groupOrder = "GROUP BY DBA.Proveed.CodProv,DBA.Proveed.RazonSocial ORDER BY TotalCompras DESC" + top10Suffix();
+
+    function buildSql(useSucursal, useMoneda, dateField, useAllAsentada) {
+        var dateSql = "Date(FactCab." + dateField + ")";
+        return selectBase.replace(new RegExp("__DATE_EXPR__", "g"), dateSql) +
+            proveedorCond +
+            (useSucursal ? sucursalCond : "") +
+            (useAllAsentada ? asentadaAllCond : asentadaCond) +
+            (useMoneda ? monedaCond : "") +
+            groupOrder;
+    }
+
+    function execWithFallback(sql, next) {
+        console.log(sql);
+        conn.exec(sql, function (err, rows) {
+            if (err) return next(err);
+            next(null, rows || []);
+        });
+    }
+
+    var dateFields = ['FechaFact', 'FechaIngreso', 'FechaCarga'];
+    var allowAsentadaFallback = String(filters.asentada || '').toUpperCase().trim() !== 'ALL';
+    var attempts = [];
+    dateFields.forEach(function (df) {
+        attempts.push({ useSucursal: true, useMoneda: true, dateField: df, label: 'base/' + df, useAllAsentada: false });
+        attempts.push({ useSucursal: true, useMoneda: false, dateField: df, label: 'sin_moneda/' + df, useAllAsentada: false });
+        attempts.push({ useSucursal: false, useMoneda: false, dateField: df, label: 'general/' + df, useAllAsentada: false });
+        if (allowAsentadaFallback) {
+            attempts.push({ useSucursal: true, useMoneda: true, dateField: df, label: 'base_all_asentada/' + df, useAllAsentada: true });
+            attempts.push({ useSucursal: true, useMoneda: false, dateField: df, label: 'sin_moneda_all_asentada/' + df, useAllAsentada: true });
+            attempts.push({ useSucursal: false, useMoneda: false, dateField: df, label: 'general_all_asentada/' + df, useAllAsentada: true });
+        }
     });
+
+    (function runAttempt(i) {
+        if (i >= attempts.length) return cb([]);
+        var at = attempts[i];
+        execWithFallback(buildSql(at.useSucursal, at.useMoneda, at.dateField, at.useAllAsentada), function (err, rows) {
+            if (err) {
+                console.error('[Compras.ranking_proveedor] ' + at.label + ' error:', err.message || err);
+                return runAttempt(i + 1);
+            }
+            if (rows && rows.length) return cb(rows);
+            runAttempt(i + 1);
+        });
+    })(0);
 };
 
 

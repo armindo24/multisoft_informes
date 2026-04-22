@@ -1,0 +1,96 @@
+/* Sidebar-style menu for /accounts/menu */
+.menu-page{
+  display:flex;
+  gap: 24px;
+  padding: 0 12px 20px 0;
+}
+
+.menu-sidebar{
+  width: 280px;
+  background: #fff;
+  border-right: 1px solid rgba(0,0,0,0.08);
+  padding: 0;
+  margin-left: 0;
+}
+
+.menu-nav{
+  display:flex;
+  gap: 8px;
+  padding: 0 10px 8px;
+}
+.menu-nav-btn{
+  display:inline-flex;
+  align-items:center;
+  gap: 6px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background:#f7f7f7;
+  color:#2d1b3a;
+  padding: 6px 10px;
+  border-radius: 8px;
+  text-decoration:none;
+  font-size:13px;
+  cursor:pointer;
+}
+.menu-nav-btn i{ color:#7a4ccf; }
+.menu-nav-btn:hover{ background:#f0f0f0; }
+
+.menu-title{
+  padding: 6px 18px 12px;
+  font-weight: 700;
+  color: #2d1b3a;
+}
+
+/* Hide old left-menu toggle arrow on this page */
+#toggle-left-menu{
+  display:none;
+}
+
+/* Push logged-in user to the far right in navbar */
+.navbar-top-links.navbar-right{
+  position:absolute;
+  right:8px;
+  top:0;
+  margin-right:0;
+}
+
+.menu-group{
+  border-top: 1px solid rgba(0,0,0,0.06);
+}
+.menu-group-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding: 10px 18px;
+  font-weight:600;
+  color:#3b2a4b;
+  background:#f5f5f5;
+}
+.menu-chevron{
+  color:#7a4ccf;
+}
+
+.menu-group-items{
+  display:flex;
+  flex-direction:column;
+}
+.menu-item{
+  padding: 10px 18px;
+  color:#1976d2;
+  text-decoration:none;
+  border-top: 1px solid rgba(0,0,0,0.04);
+}
+.menu-item:hover{
+  background:#f3f6fb;
+}
+
+.menu-content{
+  flex:1;
+  padding: 10px 0;
+}
+.menu-content-card{
+  max-width: 640px;
+  background:#fff;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 8px;
+  padding: 20px;
+}

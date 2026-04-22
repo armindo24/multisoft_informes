@@ -2,7 +2,7 @@
 
 var u = {
     api: {
-        port: '8000',
+        port: '3000',
         path: '/api/v1/'
     }
 };
@@ -63,15 +63,20 @@ if ($.fn.dataTable) {
 
 u.getApiUrl = function () {
     var url = window.location;
-    var port = '';
-    if (window.location.port) {
-        if (window.location.port === "8080") {
-            port = ':8080';
-        } else {
-            port = ':' + u.api.port;
-        }
+    var isLocalDev = (
+        url.hostname === 'localhost' ||
+        url.hostname === '127.0.0.1' ||
+        url.port === '8000' ||
+        url.port === '3000'
+    );
+
+    // En desarrollo local, seguir usando Node en :3000.
+    // Detras de Caddy/HTTPS, usar mismo host/origen y dejar que el reverse proxy enrute /api/v1/.
+    if (isLocalDev) {
+        return 'http://' + url.hostname + ':' + u.api.port + u.api.path;
     }
-    return 'http://' + url.hostname + port + u.api.path;
+
+    return url.protocol + '//' + url.host + u.api.path;
 };
 
 var api = u.getApiUrl();
@@ -227,9 +232,38 @@ u.get_empresas = function (user_id, base, cb) {
     });
 };
 
-// u.get_empresas_sueldo = function (user_id, cb) {
-//     Dajaxice.custom_permissions.get_permisos_empresa(permisos_empresas_sueldo, {'usuario': user_id}, {'cb': cb});
-// };
+u.showSueldoDisabled = function (reason) {
+    var $messages = $("#messages");
+    if ($messages.length) {
+        var $empty = $messages.find("#empty");
+        if ($empty.length) {
+            $empty.text("No está configurada la conexión con la base de datos de Sueldo. " + (reason || ""));
+            $empty.show();
+        } else {
+            $messages.append('<div class="alert alert-warning">No está configurada la conexión con la base de datos de Sueldo. ' + (reason || '') + '</div>');
+        }
+    } else {
+        alert("No está configurada la conexión con la base de datos de Sueldo. " + (reason || ""));
+    }
+};
+
+u.get_empresas_sueldo = function (user_id, cb) {
+    var api = u.getApiUrl();
+    $.get(api + 'sueldo/status').done(function (st) {
+        if (!st || st.enabled === false) {
+            u.showSueldoDisabled(st && st.reason ? st.reason : '');
+            if (cb) cb({data: []});
+            return;
+        }
+        $.get(api + 'users/' + user_id + '/empresas/Sueldo').done(function (d) {
+            if (cb) cb(d);
+        }).fail(function () {
+            if (cb) cb({data: []});
+        });
+    }).fail(function () {
+        if (cb) cb({data: []});
+    });
+};
 
 u.parseVal = function (i) {
     var n = typeof i === 'string' ?

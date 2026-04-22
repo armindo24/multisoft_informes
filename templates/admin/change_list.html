@@ -1,7 +1,9 @@
 {% extends "admin/base_site.html" %}
-{% load i18n admin_static admin_list bootstrapped_goodies_tags %}
-{% load url from future %}
 {% load admin_urls %}
+{% load admin_list %}
+{% load render_utils %}
+{% load static %}
+{% load i18n %}
 
 {% block extrastyle %}
   {{ block.super }}
@@ -19,6 +21,30 @@
 {% block extrahead %}
 {{ block.super }}
 {{ media.js }}
+<script type="text/javascript">
+  (function($) {
+    $(document).ready(function() {
+      var $table = $('#result_list');
+      if (!$table.length) return;
+      // Add "Modificar" column header
+      var $headRow = $table.find('thead tr').first();
+      if ($headRow.find('.col-modificar').length === 0) {
+        $headRow.append('<th class="col-modificar">Modificar</th>');
+      }
+      // Add buttons per row using first link in the row
+      $table.find('tbody tr').each(function(){
+        var $row = $(this);
+        if ($row.find('td.col-modificar').length) return;
+        var href = $row.find('a').first().attr('href');
+        if (!href) {
+          $row.append('<td class="col-modificar"></td>');
+          return;
+        }
+        $row.append('<td class="col-modificar"><a class="btn btn-sm btn-primary" href="'+href+'">Modificar</a></td>');
+      });
+    });
+  })(django.jQuery);
+</script>
 {% if action_form %}
   {% if actions_on_top or actions_on_bottom %}
     <script type="text/javascript">
@@ -91,6 +117,14 @@
 
 {% block content %}
 <form class="" id="changelist-form" action="" method="post"{% if cl.formset.is_multipart %} enctype="multipart/form-data"{% endif %}>{% csrf_token %}
+
+{% if has_add_permission %}
+<div class="object-tools" style="margin-bottom:12px;">
+  <a href="{% url cl.opts|admin_urlname:'add' %}{% if is_popup %}?_popup=1{% endif %}" class="btn btn-primary">
+    <i class="icon-plus icon-white"></i> {% blocktrans with cl.opts.verbose_name as name %}Add {{ name }}{% endblocktrans %}
+  </a>
+</div>
+{% endif %}
 
 {% if cl.formset.errors %}
 <div class="row-fluid">

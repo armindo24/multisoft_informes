@@ -1,75 +1,68 @@
-var _ = require('lodash');
-var Sequelize = require('sequelize');
-var config = require('config'), pg = config.get('postgres');
+var config = require('config');
+var Pg = require('pg');
 
-var sequelize = new Sequelize(pg.database, pg.user, pg.password, {
-    host: pg.host,
-    dialect: 'postgres',
+var pgCfg = config.get('postgres') || {};
 
-    pool: {
-        max: 5,
-        min: 0,
-        idle: 10000
-    }
+var pool = new Pg.Pool({
+    host: pgCfg.host || 'localhost',
+    port: pgCfg.port || 5432,
+    database: pgCfg.database,
+    user: pgCfg.user,
+    password: pgCfg.password,
+    max: 5,
+    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 5000
 });
+
+function q(sql, params) {
+    return pool.query(sql, params || []).then(function (res) {
+        return res.rows || [];
+    });
+}
+
+function attachGetEmpresa(userRow) {
+    if (!userRow) return null;
+    userRow.getEmpresa = function () {
+        return q(
+            "SELECT empresa, db FROM custom_permissions_usuarioempresa WHERE user_id = $1",
+            [userRow.id]
+        );
+    };
+    return userRow;
+}
 
 var models = {};
 
-models.User = sequelize.define('user', {
-    password: {
-        type: Sequelize.STRING(128)
+models.User = {
+    findAll: function () {
+        var sql =
+            "SELECT id, username, email, first_name AS \"firstName\", last_name AS \"lastName\", " +
+            "is_superuser AS \"isSuperuser\", is_staff AS \"isStaff\", is_active AS \"isActive\" " +
+            "FROM auth_user WHERE is_active = TRUE ORDER BY username";
+        return q(sql).then(function (rows) {
+            return rows.map(attachGetEmpresa);
+        });
     },
-    firstName: {
-        type: Sequelize.STRING,
-        field: 'first_name'
-    },
-    lastName: {
-        type: Sequelize.STRING,
-        field: 'last_name'
-    },
-    username: {
-        type: Sequelize.STRING
-    },
-    email: {
-        type: Sequelize.STRING(254)
-    },
-    isSuperuser: {
-        type: Sequelize.BOOLEAN,
-        field: 'is_superuser'
-    },
-    isStaff: {
-        type: Sequelize.BOOLEAN,
-        field: 'is_staff'
-    },
-    isActive: {
-        type: Sequelize.BOOLEAN,
-        field: 'is_active'
+    findById: function (id) {
+        var sql =
+            "SELECT id, username, email, first_name AS \"firstName\", last_name AS \"lastName\", " +
+            "is_superuser AS \"isSuperuser\", is_staff AS \"isStaff\", is_active AS \"isActive\" " +
+            "FROM auth_user WHERE id = $1 LIMIT 1";
+        return q(sql, [id]).then(function (rows) {
+            if (!rows.length) return null;
+            return attachGetEmpresa(rows[0]);
+        });
     }
-}, {
-    defaultScope: {
-        where: {
-            isActive: true
-        },
-        attributes: {exclude: ['password', 'isStaff', 'isActive', 'isSuperuser']}
-    },
-    timestamps: false,
-    underscored: true,
-    tableName: 'auth_user'
-});
+};
 
-models.UsuarioEmpresa = sequelize.define('userEmpresa', {
-    empresa: {
-        type: Sequelize.STRING(30)
-    },
-    db: {
-        type: Sequelize.STRING(10)
+models.UsuarioEmpresa = {
+    findAllByUser: function (userId) {
+        return q(
+            "SELECT empresa, db FROM custom_permissions_usuarioempresa WHERE user_id = $1",
+            [userId]
+        );
     }
-}, {
-    timestamps: false,
-    underscored: true,
-    tableName: 'custom_permissions_usuarioempresa'
-});
-
-models.User.hasMany(models.UsuarioEmpresa, {as: 'empresa'});
+};
 
 module.exports = models;
+

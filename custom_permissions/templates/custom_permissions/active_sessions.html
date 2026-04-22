@@ -1,0 +1,59 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Usuarios conectados{% endblock %}
+
+{% block content %}
+<div class="panel panel-default email-config">
+  <div class="panel-heading">
+    <h4 class="panel-title">Sesiones activas</h4>
+  </div>
+  <div class="panel-body">
+    <p><strong>Usuarios:</strong> {{ total_users }} &nbsp; | &nbsp; <strong>Sesiones:</strong> {{ total_sessions }}</p>
+
+    <div class="table-responsive">
+      <table class="table table-striped table-bordered active-sessions-table">
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Sesiones</th>
+            <th>Últ. act.</th>
+            <th>IP</th>
+            <th>Agente</th>
+            <th>Expira</th>
+            <th>Acc.</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td>{{ row.username }}</td>
+            <td>{{ row.full_name }}</td>
+            <td>{{ row.email }}</td>
+            <td>{{ row.sessions }}</td>
+            <td>{{ row.last_activity|default:"" }}</td>
+            <td>{{ row.ip_address }}</td>
+            <td>{{ row.user_agent }}</td>
+            <td>{{ row.expires }}</td>
+            <td>
+              <form method="post" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="logout_user">
+                <input type="hidden" name="user_id" value="{{ row.id }}">
+                <button type="submit" class="btn btn-danger btn-xs">Cerrar</button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8">No hay usuarios con sesión activa.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

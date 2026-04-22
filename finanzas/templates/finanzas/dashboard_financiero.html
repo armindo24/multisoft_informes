@@ -1,0 +1,282 @@
+{% extends 'finanzas/base.html' %}
+{% load static %}
+
+{% block header %}
+  Dashboard financiero:
+{% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <link href="{% static 'c3/c3.min.css' %}" rel="stylesheet" type="text/css">
+  <script src="{% static 'd3/d3.min.js' %}"></script>
+  <script src="{% static 'c3/c3.min.js' %}"></script>
+  <style>
+    #resultado { display: none; }
+    .df-wrap { margin-top: 2px; }
+    .dashboard-filters .form-group { margin-bottom: 4px; }
+    .dashboard-filters .control-label {
+      padding-top: 4px;
+      width: 28%;
+      text-align: right;
+    }
+    .dashboard-filters .form-group > .col-md-6 {
+      width: 72%;
+    }
+    .dashboard-filters .selectize-control,
+    .dashboard-filters .selectize-control .selectize-input,
+    .dashboard-filters .input-group.input-date {
+      width: 100%;
+    }
+    .dashboard-filters .selectize-control.single .selectize-input > div {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .df-kpis { display: flex; gap: 8px; flex-wrap: nowrap; margin-bottom: 8px; }
+    .df-kpi {
+      flex: 1 1 0;
+      border: 1px solid #d8e3f2;
+      border-radius: 10px;
+      background: linear-gradient(180deg, #ffffff, #f6f9ff);
+      box-shadow: 0 2px 10px rgba(26, 55, 99, 0.08);
+      padding: 10px 12px;
+      min-height: 72px;
+    }
+    .df-kpi .title { color: #2a4163; font-size: 12px; font-weight: 700; margin-bottom: 2px; }
+    .df-kpi .value { color: #1b2f4f; font-size: 18px; font-weight: 700; line-height: 1.1; white-space: nowrap; }
+    .df-kpi .value small { font-size: 12px; font-weight: 700; color: #3f5d86; }
+
+    .df-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+    .df-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+    .df-card {
+      border: 1px solid #d8e3f2;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 2px 10px rgba(26, 55, 99, 0.07);
+      overflow: hidden;
+    }
+    .df-card .head {
+      padding: 8px 10px;
+      border-bottom: 1px solid #e2e9f5;
+      font-size: 15px;
+      font-weight: 700;
+      color: #1f3556;
+      background: linear-gradient(180deg, #f9fbff, #f2f7ff);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .df-card .body { padding: 10px; }
+    .df-head-actions { display: inline-flex; gap: 6px; }
+    .df-head-actions .btn {
+      border: 1px solid #d6e0ef;
+      background: #fff;
+      color: #36527c;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      line-height: 1.2;
+    }
+    #chart-ing-eg, #chart-flujo { min-height: 220px; }
+    .c3 svg { font-family: "Segoe UI", Tahoma, sans-serif; }
+    .c3-axis path, .c3-axis line { stroke: #d4e0f0; }
+    .c3-axis text, .c3-legend-item text { fill: #415978; font-size: 11px; }
+    .c3-axis-y text { font-size: 10px; }
+    .c3-grid line { stroke: #edf2fb; }
+
+    .df-bars .row { display: grid; grid-template-columns: 120px 1fr 140px; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .df-bars .label { font-size: 12px; color: #304d78; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .df-bars .track { background: #edf2fb; border-radius: 999px; height: 10px; overflow: hidden; }
+    .df-bars .bar { height: 100%; border-radius: 999px; }
+    .df-bars .val { text-align: right; font-size: 12px; color: #1f3556; font-weight: 700; }
+
+    .df-list { margin: 0; padding: 0; list-style: none; }
+    .df-list li {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(88px, auto) 16px;
+      gap: 4px;
+      padding: 6px 0;
+      border-bottom: 1px solid #edf2fb;
+      font-size: 11px;
+      align-items: center;
+    }
+    .df-list li:last-child { border-bottom: none; }
+    .df-list .t-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #1f3556;
+      font-weight: 600;
+    }
+    .df-list .t-name i { color: #4b86d7; font-size: 12px; }
+    .df-list .t-val {
+      text-align: right;
+      color: #2f4468;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: visible;
+    }
+    .df-list .t-ok {
+      color: #2db36b;
+      text-align: center;
+      font-size: 12px;
+    }
+
+    .df-alerts li {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 46px 52px 56px minmax(84px, auto) 16px;
+      gap: 4px;
+      align-items: center;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .df-alerts .a-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #1f3556;
+      font-weight: 600;
+    }
+    .df-alerts .a-name i {
+      color: #2d9a62;
+      font-size: 12px;
+    }
+    .df-alerts .a-label,
+    .df-alerts .a-days,
+    .df-alerts .a-delta {
+      color: #6a7e9d;
+      text-align: right;
+    }
+    .df-alerts .a-amount {
+      text-align: right;
+      font-weight: 700;
+      color: #2f4468;
+      white-space: nowrap;
+      overflow: visible;
+    }
+    .df-alerts .a-ok {
+      color: #2db36b;
+      text-align: center;
+      font-size: 12px;
+    }
+
+    @media (max-width: 1200px) {
+      .df-kpis { flex-wrap: wrap; }
+      .df-kpi { flex: 1 1 calc(50% - 8px); }
+    }
+    @media (max-width: 1100px) {
+      .df-grid-2, .df-grid-3 { grid-template-columns: 1fr; }
+      .df-kpi { flex: 1 1 100%; }
+      .dashboard-filters .control-label { width: 34%; }
+      .dashboard-filters .form-group > .col-md-6 { width: 66%; }
+      .df-alerts li { grid-template-columns: minmax(0, 1fr) 46px 52px 56px minmax(98px, auto) 16px; }
+    }
+  </style>
+{% endblock %}
+
+{% block filters %}
+  <div class="dashboard-filters">
+    {% include 'ventas/_filtro.html' with name="empresa" col=3 %}
+    <div class="col-sm-3">
+      <div class="form-group">
+        <label for="periodo" class="col-md-4 control-label">Periodo:</label>
+        <div class="col-md-6">
+          <div id="periodo" class="input-date"><input type="text" class="form-control" name="periodo"></div>
+        </div>
+      </div>
+    </div>
+    {% include 'ventas/_filtro.html' with name="sucursal" col=3 %}
+    <div class="col-sm-3">
+      <div class="form-group">
+        <label class="col-md-4 control-label">Fecha:</label>
+        <div class="col-md-6">
+          <div id="fecha" class="input-daterange input-group input-date">
+            <input type="text" class="input-sm form-control" name="start"/>
+            <span class="input-group-addon">a</span>
+            <input type="text" class="input-sm form-control" name="end"/>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% include 'ventas/_filtro.html' with name="moneda" col=3 %}
+  </div>
+{% endblock %}
+
+{% block filter_footer %}
+  <div class="ms-filter-actions__left">
+    <a type="button" class="btn btn-filter-modern" onclick="runGlobalFiltrar()">Filtrar <i class="fa fa-search"></i></a>
+    <a type="button" class="btn btn-cancel-modern" onclick="runGlobalCancelar()">Cancelar <i class="fa fa-stop"></i></a>
+  </div>
+  <div class="ms-filter-actions__right"></div>
+{% endblock %}
+
+{% block inner_content %}
+  <div id="messages" class="text-center" style="margin-bottom:8px;">
+    <h3 id="loading" style="display:none;">Cargando...</h3>
+    <h3 id="empty" style="display:none;">No hay datos disponibles</h3>
+  </div>
+
+  <div class="df-wrap" id="df-wrap">
+    <div class="df-kpis">
+      <div class="df-kpi"><div class="title">Saldo en Bancos</div><div class="value" id="kpi-bancos">Gs 0</div></div>
+      <div class="df-kpi"><div class="title">Ingresos del Mes</div><div class="value" id="kpi-ingresos">Gs 0</div></div>
+      <div class="df-kpi"><div class="title">Egresos del Mes</div><div class="value" id="kpi-egresos">Gs 0</div></div>
+      <div class="df-kpi"><div class="title">Resultado Neto</div><div class="value" id="kpi-neto">Gs 0</div></div>
+      <div class="df-kpi"><div class="title">Cuentas por Cobrar</div><div class="value" id="kpi-cxc">Gs 0</div></div>
+    </div>
+
+    <div class="df-grid-2">
+      <div class="df-card">
+        <div class="head">
+          <span>Ingresos vs Egresos</span>
+          <span class="df-head-actions">
+            <button type="button" class="btn" title="Ver barras"><i class="fa fa-bar-chart"></i></button>
+            <button type="button" class="btn" title="Actualizar"><i class="fa fa-refresh"></i></button>
+          </span>
+        </div>
+        <div class="body">
+          <div id="chart-ing-eg"></div>
+        </div>
+      </div>
+      <div class="df-card">
+        <div class="head">
+          <span>Flujo de Caja</span>
+          <span class="df-head-actions">
+            <button type="button" class="btn">Día</button>
+            <button type="button" class="btn">Semana</button>
+            <button type="button" class="btn">Mes</button>
+          </span>
+        </div>
+        <div class="body">
+          <div id="chart-flujo"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="df-grid-3">
+      <div class="df-card">
+        <div class="head">Top clientes</div>
+        <div class="body"><ul class="df-list" id="top-clientes"></ul></div>
+      </div>
+      <div class="df-card">
+        <div class="head">Top proveedores</div>
+        <div class="body"><ul class="df-list" id="top-proveedores"></ul></div>
+      </div>
+      <div class="df-card">
+        <div class="head">Alertas financieras</div>
+        <div class="body"><ul class="df-list df-alerts" id="alertas-fin"></ul></div>
+      </div>
+    </div>
+  </div>
+
+  {% include 'finanzas/dashboard_financiero_metodos.html' %}
+{% endblock %}

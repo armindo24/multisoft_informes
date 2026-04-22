@@ -1,5 +1,7 @@
 var express = require('express');
 var router = express.Router();
+var fs = require('fs');
+var path = require('path');
 
 var Calificacion = require('../models/calificacion');
 var Empresa = require('../models/empresa');
@@ -8,6 +10,7 @@ var Comprobante = require('../models/comprobante');
 var Proveedor = require('../models/proveedor');
 var Sucursal = require('../models/sucursal');
 var OrdenPago = require('../models/ordenpago');
+var OrdenPagoFinanciero = require('../models/ordenpago_financiero');
 var CuentaContable = require('../models/cuentacontable');
 var Balance = require('../models/balance');
 var TipoAsiento = require('../models/tipoasiento');
@@ -19,6 +22,7 @@ var Grupo = require('../models/grupo');
 var CentroCostos = require('../models/centrocostos');
 var ExtractoCuenta = require('../models/extractoCuenta');
 var Rubro = require('../models/rubro');
+var Control = require('../models/control');
 var Articulo = require('../models/articulo');
 var Activo = require('../models/activo');
 var FlowCash = require('../models/flowcash');
@@ -27,6 +31,7 @@ var Tipooc = require('../models/tipooc');
 var OrdenCompra = require('../models/ordencompra');
 var Usuarios = require('../models/usuarios');
 var Compras = require('../models/compras');
+var Migraciones = require('../models/migraciones');
 var Presupuesto = require('../models/presupuesto');
 var Cuentas_pagar = require('../models/cuentas_pagar');
 var Fondo_Fijo = require('../models/fondo_fijo');
@@ -44,6 +49,8 @@ var Departamento_Sueldo = require('../models/departamento_sueldo');
 var Anticipos = require('../models/anticipos_sueldo');
 var Aguinaldos = require('../models/aguinaldos_sueldo');
 var Recibos = require('../models/recibos_sueldo');
+var dbSueldo = require('../db_sueldo');
+var dbIntegrado = require('../db_integrado');
 
 var postProcess = function (response, result) {
     response.json({data: result});
@@ -51,6 +58,11 @@ var postProcess = function (response, result) {
 
 router.use(function (req, res, next) {
     res.setHeader("Access-Control-Allow-Origin", "*");
+    // Evita 304/cache entre motores distintos (SQLAnywhere/PostgreSQL).
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    res.setHeader("Surrogate-Control", "no-store");
     next();
 });
 
@@ -59,6 +71,16 @@ router.get('/empresa/select', function (req, res, next) {
     Empresa.all(req.query)
         .then(function (result) {
             res.json({data: result});
+        }).catch(function (error) {
+            next(error);
+        });
+});
+
+router.get('/empresa/meta/:empresa', function (req, res, next) {
+    Empresa.meta(req.params.empresa)
+        .then(function (result) {
+            var row = Array.isArray(result) ? (result[0] || {}) : (result || {});
+            res.json({data: row});
         }).catch(function (error) {
             next(error);
         });
@@ -75,36 +97,228 @@ router.get('/empresa_sueldo/select', function (req, res, next) {
 });
 
 //empresas select option notin
+router.post('/empresa/notin/select', function (req, res, next) {
+    Empresa.notin(req.body, function (result) {
+        res.json({data: result});
+    });
+});
+router.get('/empresa/notin/select', function (req, res, next) {
+    Empresa.notin(req.query, function (result) {
+        res.json({data: result});
+    });
+});
 router.post('/empresa/notin/select/', function (req, res, next) {
     Empresa.notin(req.body, function (result) {
         res.json({data: result});
     });
 });
+router.get('/empresa/notin/select/', function (req, res, next) {
+    Empresa.notin(req.query, function (result) {
+        res.json({data: result});
+    });
+});
 
 //empresas_sueldo select option notin
+router.post('/empresa_sueldo/notin/select', function (req, res, next) {
+    EmpresaSueldo.notin(req.body, function (result) {
+        res.json({data: result});
+    });
+});
+router.get('/empresa_sueldo/notin/select', function (req, res, next) {
+    EmpresaSueldo.notin(req.query, function (result) {
+        res.json({data: result});
+    });
+});
 router.post('/empresa_sueldo/notin/select/', function (req, res, next) {
     EmpresaSueldo.notin(req.body, function (result) {
         res.json({data: result});
     });
 });
+router.get('/empresa_sueldo/notin/select/', function (req, res, next) {
+    EmpresaSueldo.notin(req.query, function (result) {
+        res.json({data: result});
+    });
+});
 
 //empresas select option in
+router.post('/empresa/inin/select', function (req, res, next) {
+    Empresa.inin(req.body, function (result) {
+        res.json({data: result});
+    });
+});
+router.get('/empresa/inin/select', function (req, res, next) {
+    Empresa.inin(req.query, function (result) {
+        res.json({data: result});
+    });
+});
 router.post('/empresa/inin/select/', function (req, res, next) {
     Empresa.inin(req.body, function (result) {
         res.json({data: result});
     });
 });
+router.get('/empresa/inin/select/', function (req, res, next) {
+    Empresa.inin(req.query, function (result) {
+        res.json({data: result});
+    });
+});
 
 //empresas_sueldo select option in
+router.post('/empresa_sueldo/inin/select', function (req, res, next) {
+    EmpresaSueldo.inin(req.body, function (result) {
+        res.json({data: result});
+    });
+});
+router.get('/empresa_sueldo/inin/select', function (req, res, next) {
+    EmpresaSueldo.inin(req.query, function (result) {
+        res.json({data: result});
+    });
+});
 router.post('/empresa_sueldo/inin/select/', function (req, res, next) {
     EmpresaSueldo.inin(req.body, function (result) {
         res.json({data: result});
     });
 });
+router.get('/empresa_sueldo/inin/select/', function (req, res, next) {
+    EmpresaSueldo.inin(req.query, function (result) {
+        res.json({data: result});
+    });
+});
+
+// sueldo DB status
+router.get('/sueldo/status', function (req, res, next) {
+    if (typeof dbSueldo.getStatus === 'function') return res.json(dbSueldo.getStatus());
+    res.json({ enabled: !dbSueldo._disabled, reason: dbSueldo._disabled_reason || '', engine: '', configured_engine: '' });
+});
+
+// sueldo reconnect
+router.post('/sueldo/reconnect', function (req, res, next) {
+    if (typeof dbSueldo.reconnect !== 'function') {
+        return res.status(500).json({ ok: false, error: 'Reconnect no disponible' });
+    }
+    dbSueldo.reconnect(function (err) {
+        if (err) {
+            return res.status(400).json({ ok: false, error: err.message || String(err) });
+        }
+        return res.json({ ok: true });
+    });
+});
+
+// update db config (persist + apply)
+router.post('/db_config/update', function (req, res, next) {
+    try {
+        var body = req.body || {};
+        var dbType = body.db_type;
+        if (dbType !== 'integrado' && dbType !== 'sueldo') {
+            return res.status(400).json({ ok: false, error: 'db_type inválido' });
+        }
+        var host = body.host || '';
+        var port = body.port || 0;
+        if (port && host && host.indexOf(':') === -1) {
+            host = host + ':' + port;
+        }
+        var cfg = {
+            db_engine: body.db_engine || 'sqlanywhere',
+            host: host,
+            Server: body.server || '',
+            DatabaseName: body.database || '',
+            UserID: body.username || '',
+            Password: body.password || '',
+            disabled: !!body.disabled
+        };
+
+        var configPath = path.join(__dirname, '..', 'config', 'local.json');
+        var fileData = {};
+        if (fs.existsSync(configPath)) {
+            try {
+                fileData = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            } catch (e) {
+                fileData = {};
+            }
+        }
+        if (!fileData[dbType]) fileData[dbType] = {};
+        fileData[dbType].dbConfig = cfg;
+        fs.writeFileSync(configPath, JSON.stringify(fileData, null, 2), 'utf8');
+
+        var target = dbType === 'sueldo' ? dbSueldo : dbIntegrado;
+        if (typeof target.applyConfig === 'function') {
+            target.applyConfig(cfg, function (err) {
+                if (err) {
+                    return res.status(400).json({ ok: false, error: err.message || String(err) });
+                }
+                return res.json({ ok: true });
+            });
+        } else {
+            return res.json({ ok: true });
+        }
+    } catch (e) {
+        res.status(500).json({ ok: false, error: e && e.message ? e.message : String(e) });
+    }
+});
+
+// integrado/CPA Bancos DB status
+router.get('/integrado/status', function (req, res, next) {
+    if (typeof dbIntegrado.getStatus === 'function') return res.json(dbIntegrado.getStatus());
+    res.json({ enabled: !dbIntegrado._disabled, reason: dbIntegrado._disabled_reason || '', engine: '', configured_engine: '' });
+});
+
+// quick diagnostic for current engines
+router.get('/db/engines', function (req, res, next) {
+    var integrado = (typeof dbIntegrado.getStatus === 'function')
+        ? dbIntegrado.getStatus()
+        : { enabled: !dbIntegrado._disabled, reason: dbIntegrado._disabled_reason || '', engine: '', configured_engine: '' };
+    var sueldo = (typeof dbSueldo.getStatus === 'function')
+        ? dbSueldo.getStatus()
+        : { enabled: !dbSueldo._disabled, reason: dbSueldo._disabled_reason || '', engine: '', configured_engine: '' };
+    res.json({ integrado: integrado, sueldo: sueldo });
+});
+
+// integrado/CPA Bancos reconnect
+router.post('/integrado/reconnect', function (req, res, next) {
+    if (typeof dbIntegrado.reconnect !== 'function') {
+        return res.status(500).json({ ok: false, error: 'Reconnect no disponible' });
+    }
+    dbIntegrado.reconnect(function (err) {
+        if (err) {
+            return res.status(400).json({ ok: false, error: err.message || String(err) });
+        }
+        return res.json({ ok: true });
+    });
+});
+
+// test db connection (sqlanywhere) via node
+router.post('/db_test/sqlanywhere', function (req, res, next) {
+    try {
+        var sqlanywhere = require('sqlanywhere');
+        var cfg = req.body || {};
+        var conn = sqlanywhere.createConnection();
+        conn.connect({
+            host: cfg.host,
+            Server: cfg.server,
+            DatabaseName: cfg.database,
+            UserID: cfg.username,
+            Password: cfg.password
+        }, function (err) {
+            if (err) {
+                return res.status(400).json({ ok: false, error: err.message || String(err) });
+            }
+            conn.disconnect(function () {
+                res.json({ ok: true });
+            });
+        });
+    } catch (e) {
+        res.status(500).json({ ok: false, error: e && e.message ? e.message : String(e) });
+    }
+});
 
 //proveedores select option
 router.get('/proveedor/select/:empresa/:tipo', function (req, res, next) {
     Proveedor.all(req.params, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/proveedor/select/:empresa', function (req, res, next) {
+    Proveedor.list(req.params, {}, function (result) {
         res.json({data: result});
     });
 });
@@ -123,9 +337,28 @@ router.get('/ordenpago/list/:empresa/:sucursal/:tipoop/:moneda/:desde/:hasta', f
     });
 });
 
+router.get('/ordenpago_financiero/list/:empresa/:tipoop/:moneda/:proveedor/:desde/:hasta', function (req, res, next) {
+    OrdenPagoFinanciero.all(req.params, function (result) {
+        res.json({data: result});
+    });
+});
+
 //cuentas select option
 router.get('/cuenta/select/:empresa/:periodo', function (req, res, next) {
     CuentaContable.all(req.params, function (result) {
+        res.json({data: result});
+    });
+});
+
+// lista plan de cuentas (formulario de busqueda)
+router.get('/cuenta/plancta/:empresa/:periodo', function (req, res, next) {
+    CuentaContable.planList(req.params, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/cuenta/puc/select/:empresa/:periodo', function (req, res, next) {
+    CuentaContable.pucList(req.params, function (result) {
         res.json({data: result});
     });
 });
@@ -147,13 +380,43 @@ router.post('/cuentaauxi/query/:periodo/:empresa/:cuentad/:cuentah', function (r
 //list balance general
 router.get('/balancegeneral/list/', function (req, res, next) {
     Balance.general(req.query, function (result) {
+        if (result && result.rows) {
+            return res.json({ data: result.rows, warning: result.warning || '' });
+        }
         res.json({data: result});
+    });
+});
+
+router.get('/balancegeneral_puc/list/', function (req, res, next) {
+    Balance.generalPuc(req.query, function (result) {
+        if (result && result.rows) {
+            res.json({
+                data: result.rows,
+                resultado: result.resultado || { local: 0, extranjera: 0 },
+                warning: result.warning || ''
+            });
+            return;
+        }
+        res.json({data: result});
+    });
+});
+
+router.get('/balanceintegral/auxiliares', function (req, res, next) {
+    Balance.integralAuxiliares(req.query, function (result) {
+        res.json({
+            clientes: (result && result.clientes) ? result.clientes : [],
+            proveedores: (result && result.proveedores) ? result.proveedores : [],
+            warning: (result && result.warning) ? result.warning : ''
+        });
     });
 });
 
 //list balance comprobado
 router.get('/balancecomprobado/list/:empresa/:periodo/:periodoant/:mes/:mesant/:nivel/:moneda', function (req, res, next) {
     Balance.comprobado(req.params, function (result) {
+        if (result && result.rows) {
+            return res.json({ data: result.rows, warning: result.warning || '' });
+        }
         res.json({data: result});
     });
 });
@@ -162,6 +425,22 @@ router.get('/balancecomprobado/list/:empresa/:periodo/:periodoant/:mes/:mesant/:
 router.get('/tipoasiento/select/', function (req, res, next) {
     TipoAsiento.all(function (result) {
         res.json({data: result});
+    });
+});
+
+router.get('/control/cierre/:empresa/:periodo', function (req, res, next) {
+    Control.cierre(req.params, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.post('/migraciones/asientos/import', function (req, res, next) {
+    Migraciones.importAsientos(req.body || {}, function (err, result) {
+        if (err) return next(err);
+        if (!result || result.ok === false) {
+            return res.status(400).json(result || { ok: false, error: 'No se pudo migrar.' });
+        }
+        res.json(result);
     });
 });
 
@@ -215,6 +494,16 @@ router.get('/empresas/:empresa/clientes', function (req, res, next) {
         });
 });
 
+router.get('/empresas/:empresa/meta', function (req, res, next) {
+    Empresa.meta(req.params.empresa)
+        .then(function (result) {
+            res.json({data: result || []});
+        })
+        .catch(function (error) {
+            next(error);
+        });
+});
+
 router.get('/empresas/:empresa/bancos', function (req, res, next) {
     Empresa.bancos(req.params, req.query, function (result) {
         res.json({data: result});
@@ -236,6 +525,39 @@ router.get('/clientes/tipos', function (req, res, next) {
 router.get('/empresas/:empresa/comprobantes/tipos', function (req, res, next) {
     Comprobante.empresa(req.params, function (result) {
         res.json({data: result});
+    });
+});
+
+router.get('/empresas/:empresa/comprobantes/tipos/ventas_migracion', function (req, res, next) {
+    Comprobante.ventasMigracion(req.params, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/empresas/:empresa/importar_ventas', function (req, res, next) {
+    Empresa.importarVentas(req.params.empresa, function (result) {
+        res.json({data: result});
+    });
+});
+
+router.post('/migraciones/ventas/referencias', function (req, res, next) {
+    Migraciones.ventasReferencias(req.body || {}, function (err, result) {
+        if (err) return next(err);
+        res.json(result || { ok: false, data: {} });
+    });
+});
+
+router.post('/migraciones/ventas/clientes/crear', function (req, res, next) {
+    Migraciones.crearClientesVentas(req.body || {}, function (err, result) {
+        if (err) return next(err);
+        res.json(result || { ok: false, created: [] });
+    });
+});
+
+router.post('/migraciones/ventas/import', function (req, res, next) {
+    Migraciones.importVentas(req.body || {}, function (err, result) {
+        if (err) return next(err);
+        res.json(result || { ok: false });
     });
 });
 
@@ -301,13 +623,37 @@ router.get('/empresas/:empresa/rubros/:rubro/subrubros', function (req, res, nex
 });
 
 router.get('/empresas/:empresa/articulos', function (req, res, next) {
-    Articulo.list(req.params, {}, function (result) {
+    Articulo.list(req.params, req.query || {}, function (result) {
         res.json({data: result});
     });
 });
 
 router.get('/ventas/:empresa/articulos', function (req, res, next) {
     Ventas.articulos(req.params, req.query).then(function (result) {
+        res.json({data: result});
+    }).catch(function (err) {
+        next(err);
+    });
+});
+
+router.get('/estadisticas/ventas/clientes', function (req, res, next) {
+    Ventas.estadisticas.clientes(req.params, req.query).then(function (result) {
+        res.json({data: result});
+    }).catch(function (err) {
+        next(err);
+    });
+});
+
+router.get('/estadisticas/ventas/articulos', function (req, res, next) {
+    Ventas.estadisticas.articulos(req.params, req.query).then(function (result) {
+        res.json({data: result});
+    }).catch(function (err) {
+        next(err);
+    });
+});
+
+router.get('/estadisticas/ventas/vendedores', function (req, res, next) {
+    Ventas.estadisticas.vendedores(req.params, req.query).then(function (result) {
         res.json({data: result});
     }).catch(function (err) {
         next(err);

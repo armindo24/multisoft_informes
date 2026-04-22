@@ -1,131 +1,91 @@
-<div  id="my-left-menu" class="navbar-default sidebar" role="navigation">
-	<div class="sidebar-nav navbar-collapse">
-		<ul class="nav" id="side-menu">
-			<li>
-				<a class="active" href="/accounts/loggedin/"><i class="fa fa-home fa-fw"></i> Inicio </a>
-			</li>
-			{% if  request.session.modulo_seleccionado == "Ventas"  %}
-				<li>
-					<a href="{% url 'ventas:resumido' %}"> Ventas - Resumido y Detallado </a>
-			    </li>
-			    <li>
-                    <a href="{% url 'ventas:presupuesto' %}"> Presupuestos </a>
-                </li>
-                <li>
-                    <a href="{% url 'ventas:cuentas_comprar' %}"> Cuentas por Cobrar a Clientes </a>
-                </li>
-                <li>
-                    <a href="{% url 'ventas:recaudaciones' %}"> Planillas de Recaudaciones </a>
-                </li>
-                <li>
-                    <a href="{% url 'ventas:estadisticas' %}"> Estadísticas de Ventas </a>
-                </li>
-		    {% endif %}
-		    {% if  request.session.modulo_seleccionado == "Stock"  %}
-		        <li>
-                    <a href="{% url 'stock:articulos' %}"> General de Productos </a>
-                </li>
-                <!-- <li>
-                    <a href="{% url 'stock:precios' %}"> Ficha de Productos en Unidades </a>
-                </li> -->
-                <li>
-                    <a href="{% url 'stock:existencia_deposito' %}"> Existencias por Depósitos </a>
-                </li>
-                <li>
-                    <a href="{% url 'stock:valorizado' %}"> Existencias valorizadas </a>
-                </li>
-                <li>
-                    <a href="{% url 'stock:precios' %}"> Control de Precios </a>
-                </li>
-            {% endif %}
-		    {% if  request.session.modulo_seleccionado == "Compras"  %}
-                <li>
-                    <a href="{% url 'compras:ordencompra' %}"> Orden de Compra </a>
-                </li>
-                <li>
-                    <a href="{% url 'compras:compras' %}"> Compras - Resumido y Detallado (Comprobante y Proveedor) </a>
-                </li>
-                <li>
-                    <a href="{% url 'compras:compras_articulo' %}"> Compras por Artículos </a>
-                </li>
-                <li>
-                    <a href="{% url 'compras:saldos_proveedores' %}"> Cuentas por Pagar </a>
-                </li>
-                <li>
-                    <a href="{% url 'compras:fondo_fijo' %}"> Fondo Fijo </a>
-                </li>
-                <li>
-                    <a href="{% url 'compras:gastos_rendir' %}"> Gastos por Rendir </a>
-                </li>
-                <li>
-                    <a href="{% url 'compras:compras_estadisticos' %}"> Estadísticas de Compras </a>
-                </li>
-            {% endif %}
-			{% if  request.session.modulo_seleccionado == "Finanzas"  %}
-				<li>
-					<a href="#"> Balances <span class="fa arrow"></span></a>
-						<ul class="nav nav-second-level">
-							<li>
-								<a href="{% url 'finanzas:balancegeneral' %}"> General y Estado de Resultado </a>
-						    </li>
-							<li>
-								<a href="{% url 'finanzas:balancegeneral_comprobado' %}"> Comprobado </a>
-						    </li>
-						</ul>
-				</li>
-				<li>
-					<a href="#"> Libros <span class="fa arrow"></span></a>
-						<ul class="nav nav-second-level">
-							<li>
-								<a href="{% url 'finanzas:diario_comprobado' %}"> Diario </a>
-						    </li>
-							<li>
-								<a href="{% url 'finanzas:mayor_cuentas' %}"> Mayor de Cuentas </a>
-						    </li>
-						    <li>
-                                <a href="{% url 'finanzas:mayor_cuentasauxiliar' %}"> Mayor de Cuentas Auxiliares</a>
-                            </li>
-						</ul>
-				</li>
-				<li>
-					<a href="{% url 'finanzas:ordenpago' %}"> &#211;rdenes de Pago </a>
-			    </li>
-			    <li>
-                    <a href="{% url 'finanzas:centro_costos' %}"> Centro de Costos </a>
-                </li>
-                <li>
-                    <a href="{% url 'finanzas:extracto_cuentas_banco' %}"> Extracto Cuenta Bancaria </a>
-                </li>
-                <li>
-                    <a href="{% url 'finanzas:flujo_fondo' %}"> Flujo de Fondo </a>
-                </li>
-		    {% endif %}
-		    {% if  request.session.modulo_seleccionado == "RRHH"  %}
-                <li>
-                    <a href="{% url 'rrhh:legajos' %}"> Legajos </a>
-                </li>
-                <li>
-                    <a href="{% url 'rrhh:sueldos_jornales' %}"> Liquidaciones de Sueldos y Jornales </a>
-                </li>
-                <li>
-                    <a href="{% url 'rrhh:anticipos' %}"> Anticipos </a>
-                </li>
-                <li>
-                    <a href="{% url 'rrhh:aguinaldos' %}"> Aguinaldos </a>
-                </li>
-                <li>
-                    <a href="{% url 'rrhh:recibos' %}"> Recibos </a>
-                </li>
-            {% endif %}
-			{% if  request.session.modulo_seleccionado == "Admin"  %}
-			<li>
-				<a href="/admin/auth/"> Usuarios </a>
-			</li>
-			<li>
-                <a href="{% url 'custom_permissions:asignar_empresa_usuario' %}"> Asignación de Empresas </a>
-            </li>
-			{% endif %}
-    	</ul>
-  	</div>
+﻿<div id="my-left-menu" class="navbar-default sidebar ms-sidebar" role="navigation">
+  <div class="sidebar-nav navbar-collapse">
+    <div class="ms-nav-buttons">
+      <a class="ms-nav-btn" href="/accounts/loggedin/"><i class="fa fa-home"></i><span>Inicio</span></a>
+      <button class="ms-nav-btn" type="button" onclick="window.history.back();"><i class="fa fa-arrow-left"></i><span>Volver</span></button>
+    </div>
+    <div class="ms-search">
+      <i class="fa fa-search"></i>
+      <input type="text" placeholder="Buscar">
+    </div>
+
+    <ul class="nav" id="side-menu">
+      {% if not request.session.modulo_seleccionado %}
+        <li class="ms-section">Admin</li>
+        <li class="ms-item"><a href="/admin/auth/"><i class="fa fa-user"></i><span>Usuarios</span></a></li>
+        <li class="ms-item"><a href="/admin/auth/group/"><i class="fa fa-users"></i><span>Grupos</span></a></li>
+        <li class="ms-item"><a href="{% url 'custom_permissions:asignar_empresa_usuario' %}"><i class="fa fa-sitemap"></i><span>Asignación de Empresas</span></a></li>
+      {% endif %}
+
+      {% if  request.session.modulo_seleccionado == "Ventas"  %}
+        <li class="ms-section">Ventas</li>
+        <li class="ms-item"><a href="{% url 'ventas:resumido' %}"><i class="fa fa-file-text-o"></i><span>Ventas - Resumido y Detallado</span></a></li>
+        <li class="ms-item"><a href="{% url 'ventas:presupuesto' %}"><i class="fa fa-line-chart"></i><span>Presupuestos</span></a></li>
+        <li class="ms-item"><a href="{% url 'ventas:cuentas_comprar' %}"><i class="fa fa-credit-card"></i><span>Cuentas por Cobrar a Clientes</span></a></li>
+        <li class="ms-item"><a href="{% url 'ventas:recaudaciones' %}"><i class="fa fa-money"></i><span>Planillas de Recaudaciones</span></a></li>
+        <li class="ms-item"><a href="{% url 'ventas:estadisticas' %}"><i class="fa fa-bar-chart"></i><span>Estadísticas de Ventas</span></a></li>
+      {% endif %}
+
+      {% if  request.session.modulo_seleccionado == "Stock"  %}
+        <li class="ms-section">Stock</li>
+        <li class="ms-item"><a href="{% url 'stock:articulos' %}"><i class="fa fa-cube"></i><span>General de Productos</span></a></li>
+        <li class="ms-item"><a href="{% url 'stock:existencia_deposito' %}"><i class="fa fa-archive"></i><span>Existencias por Depósitos</span></a></li>
+        <li class="ms-item"><a href="{% url 'stock:valorizado' %}"><i class="fa fa-database"></i><span>Existencias valorizadas</span></a></li>
+        <li class="ms-item"><a href="{% url 'stock:precios' %}"><i class="fa fa-tags"></i><span>Control de Precios</span></a></li>
+        <li class="ms-item"><a href="{% url 'stock:costo_articulo_full' %}"><i class="fa fa-cogs"></i><span>Costo Articulo Full</span></a></li>
+      {% endif %}
+
+      {% if  request.session.modulo_seleccionado == "Compras"  %}
+        <li class="ms-section">Compras</li>
+        <li class="ms-item"><a href="{% url 'compras:ordencompra' %}"><i class="fa fa-shopping-cart"></i><span>Orden de Compra</span></a></li>
+        <li class="ms-item"><a href="{% url 'compras:compras' %}"><i class="fa fa-file-text-o"></i><span>Compras - Resumido y Detallado</span></a></li>
+        <li class="ms-item"><a href="{% url 'compras:compras_articulo' %}"><i class="fa fa-list"></i><span>Compras por Artículos</span></a></li>
+        <li class="ms-item"><a href="{% url 'compras:saldos_proveedores' %}"><i class="fa fa-credit-card"></i><span>Cuentas por Pagar</span></a></li>
+        <li class="ms-item"><a href="{% url 'compras:fondo_fijo' %}"><i class="fa fa-briefcase"></i><span>Fondo Fijo</span></a></li>
+        <li class="ms-item"><a href="{% url 'compras:gastos_rendir' %}"><i class="fa fa-ticket"></i><span>Gastos por Rendir</span></a></li>
+        <li class="ms-item"><a href="{% url 'compras:compras_estadisticos' %}"><i class="fa fa-bar-chart"></i><span>Estadísticas de Compras</span></a></li>
+      {% endif %}
+
+      {% if  request.session.modulo_seleccionado == "Finanzas"  %}
+        <li class="ms-section">Balances</li>
+        <li class="ms-item"><a href="{% url 'finanzas:balancegeneral' %}"><i class="fa fa-line-chart"></i><span>General y Estado de Resultado</span></a></li>
+        <li class="ms-item"><a href="{% url 'finanzas:balancegeneral_puc' %}"><i class="fa fa-sitemap"></i><span>Balance General PUC</span></a></li>
+        <li class="ms-item"><a href="{% url 'finanzas:balance_integral' %}"><i class="fa fa-balance-scale"></i><span>Balance Integral</span></a></li>
+        <li class="ms-item"><a href="{% url 'finanzas:balancegeneral_comprobado' %}"><i class="fa fa-check-circle"></i><span>Comprobado</span></a></li>
+
+        <li class="ms-section">Libros</li>
+        <li class="ms-item"><a href="{% url 'finanzas:diario_comprobado' %}"><i class="fa fa-book"></i><span>Diario</span></a></li>
+        <li class="ms-item"><a href="{% url 'finanzas:mayor_cuentas' %}"><i class="fa fa-book"></i><span>Mayor de Cuentas</span></a></li>
+        <li class="ms-item"><a href="{% url 'finanzas:mayor_cuentasauxiliar' %}"><i class="fa fa-book"></i><span>Mayor de Cuentas Auxiliares</span></a></li>
+
+        <li class="ms-section">Pagos</li>
+        <li class="ms-item"><a href="{% url 'finanzas:ordenpago_financiero' %}"><i class="fa fa-money"></i><span>Órdenes de Pago - Financiero</span></a></li>
+        <li class="ms-item"><a href="{% url 'finanzas:ordenpago' %}"><i class="fa fa-money"></i><span>Órdenes de Pago</span></a></li>
+
+        <li class="ms-section">Otros</li>
+        <li class="ms-item"><a href="{% url 'finanzas:centro_costos' %}"><i class="fa fa-sitemap"></i><span>Centro de Costos</span></a></li>
+        <li class="ms-item"><a href="{% url 'finanzas:extracto_cuentas_banco' %}"><i class="fa fa-university"></i><span>Extracto Cuenta Bancaria</span></a></li>
+        <li class="ms-item"><a href="{% url 'finanzas:flujo_fondo' %}"><i class="fa fa-random"></i><span>Flujo de Fondo</span></a></li>
+        <li class="ms-item"><a href="{% url 'finanzas:dashboard_financiero' %}"><i class="fa fa-dashboard"></i><span>Dashboard financiero</span></a></li>
+      {% endif %}
+
+      {% if  request.session.modulo_seleccionado == "RRHH"  %}
+        <li class="ms-section">RRHH</li>
+        <li class="ms-item"><a href="{% url 'rrhh:legajos' %}"><i class="fa fa-id-card"></i><span>Legajos</span></a></li>
+        <li class="ms-item"><a href="{% url 'rrhh:sueldos_jornales' %}"><i class="fa fa-users"></i><span>Liquidaciones de Sueldos y Jornales</span></a></li>
+        <li class="ms-item"><a href="{% url 'rrhh:anticipos' %}"><i class="fa fa-money"></i><span>Anticipos</span></a></li>
+        <li class="ms-item"><a href="{% url 'rrhh:aguinaldos' %}"><i class="fa fa-gift"></i><span>Aguinaldos</span></a></li>
+        <li class="ms-item"><a href="{% url 'rrhh:recibos' %}"><i class="fa fa-file-text-o"></i><span>Recibos</span></a></li>
+      {% endif %}
+
+      {% if  request.session.modulo_seleccionado == "Admin"  %}
+        <li class="ms-section">Admin</li>
+        <li class="ms-item"><a href="/admin/auth/"><i class="fa fa-user"></i><span>Usuarios</span></a></li>
+        <li class="ms-item"><a href="/admin/auth/group/"><i class="fa fa-users"></i><span>Grupos</span></a></li>
+        <li class="ms-item"><a href="{% url 'custom_permissions:asignar_empresa_usuario' %}"><i class="fa fa-sitemap"></i><span>Asignación de Empresas</span></a></li>
+        <li class="ms-item"><a href="{% url 'custom_permissions:active_sessions' %}"><i class="fa fa-signal"></i><span>Usuarios Conectados</span></a></li>
+      {% endif %}
+    </ul>
+  </div>
 </div>
 

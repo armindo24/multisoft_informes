@@ -1,0 +1,72 @@
+{% extends 'finanzas/base.html' %}
+
+{% block header %}
+  Ordenes de Pago - Financiero:
+{% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <style>
+    .opf-filters .form-group {
+      margin-bottom: 6px;
+    }
+    .opf-filters .control-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #253a5a;
+      padding-top: 5px;
+    }
+    .opf-filters .form-control,
+    .opf-filters .selectize-input,
+    .opf-filters .input-group-addon {
+      height: 34px;
+      min-height: 34px;
+      font-size: 13px;
+      border-radius: 8px;
+    }
+    .opf-filters .input-group-addon {
+      background: #f2f6fc;
+    }
+    #report-header.report-financiero {
+      margin-bottom: 8px !important;
+    }
+  </style>
+{% endblock %}
+
+{% block filters %}
+  <div class="opf-filters">
+    {% include 'ventas/_filtro.html' with name="empresa" %}
+    {% include 'ventas/_filtro.html' with name="proveedor" placeholder="Proveedor" title="Proveedor" %}
+    {% include 'ventas/_filtro.html' with name="moneda" %}
+    {% include 'ventas/_filtro.html' with name="tipoop" placeholder="Tipo" title="Tipo OP" %}
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="fecha" class="col-md-4 control-label">Fecha:</label>
+
+        <div class="col-md-6">
+          <div id="fecha" class="input-daterange input-group input-date">
+            <input type="text" class="input-sm form-control" name="desde"/>
+            <span class="input-group-addon">a</span>
+            <input type="text" class="input-sm form-control" name="hasta"/>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block inner_content %}
+  <div class="text-center" id="messages">
+    <h3 id="loading" style="display: none;">Cargando...</h3>
+    <h3 id="empty" style="display: none;">No hay datos disponibles</h3>
+  </div>
+
+  <div id="report-header" class="report-financiero" style="display:none; margin-bottom: 6px;">
+    <div><b>Reporte de Ordenes de Pago</b></div>
+    <div id="report-filters" style="margin-top: 4px;"></div>
+  </div>
+
+  <div id="table-div" class="report-financiero"></div>
+
+  {% include 'finanzas/ordenpago_financiero_metodos.html' %}
+{% endblock %}

@@ -72,10 +72,13 @@
   <div class="row">
     <div class="col-sm-6">
       <div class="form-group">
-        <label for="moneda" class="col-md-4 control-label">Moneda Extranjera:</label>
-
+        <label for="select-moneda" class="col-md-4 control-label">Moneda:</label>
         <div class="col-md-6">
-          <input type="checkbox" name="moneda" id="moneda"/>
+          <select id="select-moneda" name="moneda" class="form-control">
+            <option value="local" selected>Local</option>
+            <option value="extranjera">Extranjera</option>
+            <option value="ambas">Ambas</option>
+          </select>
         </div>
       </div>
     </div>
@@ -83,6 +86,40 @@
 {% endblock %}
 
 {% block inner_content %}
+  <style>
+    /* Moneda como select nativo: evita solapar botones del footer */
+    #select-moneda {
+      min-height: 34px;
+    }
+    #table-div {
+      font-size: 11px;
+    }
+    #resultados thead th,
+    #resultados tbody td,
+    #resultados tfoot td {
+      font-size: 11px;
+      padding: 4px 6px;
+    }
+    #resultados thead th:nth-child(1),
+    #resultados tbody td:nth-child(1) {
+      width: 18%;
+    }
+    #resultados thead th:nth-child(2),
+    #resultados tbody td:nth-child(2) {
+      width: 57%;
+    }
+    #resultados thead th:nth-child(3),
+    #resultados tbody td:nth-child(3) {
+      width: 25%;
+      text-align: right;
+    }
+    #resultados tfoot td {
+      padding-top: 2px;
+      padding-bottom: 2px;
+      line-height: 1.2;
+      vertical-align: top;
+    }
+  </style>
   <div class="text-center" id="messages">
     <h3 id="loading" style="display: none;">Cargando...</h3>
 

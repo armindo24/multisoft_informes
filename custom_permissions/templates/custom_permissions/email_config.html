@@ -1,0 +1,128 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Configuración de Email{% endblock %}
+
+{% block content %}
+<div class="panel panel-default email-config">
+  <div class="panel-heading">
+    <h4 class="panel-title">Especifique los datos del servidor de correo saliente</h4>
+  </div>
+  <div class="panel-body">
+    <form method="post" class="form-horizontal">
+      {% csrf_token %}
+      {% if messages %}
+        <div style="margin-bottom:10px;">
+          {% for message in messages %}
+            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+      <div class="form-group">
+        <label class="col-md-3 control-label">Habilitar configuración</label>
+        <div class="col-md-9">
+          <input type="checkbox" name="enabled" {% if config.enabled %}checked{% endif %}>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-md-3 control-label">Servidor (Host)</label>
+        <div class="col-md-9">
+          <input type="text" class="form-control form-control-lg" name="host" value="{{ config.host }}">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-md-3 control-label">Puerto</label>
+        <div class="col-md-9">
+          <input type="number" class="form-control form-control-lg" name="port" value="{{ config.port }}">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-md-3 control-label">Remitente (Nombre)</label>
+        <div class="col-md-9">
+          <input type="text" class="form-control form-control-lg" name="from_name" value="{{ config.from_name }}">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-md-3 control-label">Remitente (Email)</label>
+        <div class="col-md-9">
+          <input type="email" class="form-control form-control-lg" name="from_email" value="{{ config.from_email }}">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-md-3 control-label">Responder a (Nombre)</label>
+        <div class="col-md-9">
+          <input type="text" class="form-control form-control-lg" name="reply_to_name" value="{{ config.reply_to_name }}">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-md-3 control-label">Responder a (Email)</label>
+        <div class="col-md-9">
+          <input type="email" class="form-control form-control-lg" name="reply_to_email" value="{{ config.reply_to_email }}">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-md-3 control-label">Envelope From</label>
+        <div class="col-md-9">
+          <input type="email" class="form-control form-control-lg" name="envelope_from" value="{{ config.envelope_from }}">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-md-3 control-label">Usar SSL</label>
+        <div class="col-md-9">
+          <input type="checkbox" name="use_ssl" {% if config.use_ssl %}checked{% endif %}>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-md-3 control-label">Usar StartTLS</label>
+        <div class="col-md-9">
+          <input type="checkbox" name="use_tls" {% if config.use_tls %}checked{% endif %}>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-md-3 control-label">Usar autenticación</label>
+        <div class="col-md-9">
+          <input type="checkbox" name="use_auth" {% if config.use_auth %}checked{% endif %}>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-md-3 control-label">Usuario</label>
+        <div class="col-md-9">
+          <input type="text" class="form-control form-control-lg" name="username" value="{{ config.username }}">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-md-3 control-label">Contraseña</label>
+        <div class="col-md-9">
+          <input type="password" class="form-control form-control-lg" name="password" value="{{ config.password }}">
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" name="action" value="save" class="btn btn-primary btn-modern">
+          <i class="fa fa-save"></i> Guardar configuración de Email
+        </button>
+        <div style="display:inline-flex; align-items:center; gap:8px; margin-left:10px;">
+          <input type="email" class="form-control form-control-lg" name="test_email" placeholder="Email de prueba">
+          <button type="submit" name="action" value="test" class="btn btn-default btn-modern">
+            <i class="fa fa-envelope"></i> Enviar prueba
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

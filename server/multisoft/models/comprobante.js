@@ -9,6 +9,32 @@ Comprobante.empresa = function (params, cb) {
     });
 };
 
+Comprobante.ventasMigracion = function (params, cb) {
+    var sql = "select Cod_Tp_Comp, upper(des_tp_comp) as des_tp_comp, activo, cod_tipodoc, tpomvto " +
+        "from DBA.TPOCBTE " +
+        "where activo = 'S' " +
+        "and Cod_Empresa = '" + params.empresa + "' " +
+        "and cod_tipodoc = 'FR' " +
+        "and tp_def in ('CR','CT') " +
+        "order by Cod_Tp_Comp";
+    conn.exec(sql, function (err, row) {
+        if (row && row.length) return cb(row);
+
+        var fallbackSql = "select Cod_Tp_Comp, upper(des_tp_comp) as des_tp_comp, activo, cod_tipodoc, tpomvto " +
+            "from DBA.TPOCBTE " +
+            "where activo = 'S' " +
+            "and Cod_Empresa = '" + params.empresa + "' " +
+            "and tp_def in ('CR','CT') " +
+            "order by Cod_Tp_Comp";
+        conn.exec(fallbackSql, function (fallbackErr, fallbackRow) {
+            if (fallbackRow && fallbackRow.length) return cb(fallbackRow);
+            Comprobante.empresa(params, function (defaultRow) {
+                cb(defaultRow || []);
+            });
+        });
+    });
+};
+
 Comprobante.cobrar = function (params, filter, cb) {
     var sql = "SELECT cbte.cod_tp_comp, cbte.des_tp_comp, cbte.tp_def, def.Descrip   " +
         "FROM DBA.TPOCBTE cbte " +

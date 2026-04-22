@@ -1,0 +1,14 @@
+sig.multisoft.local {
+    tls C:\Caddy\certs\sig.multisoft.local.pem C:\Caddy\certs\sig.multisoft.local-key.pem
+
+    encode gzip
+
+    @api path /api/*
+    handle @api {
+        reverse_proxy 127.0.0.1:3000
+    }
+
+    handle {
+        reverse_proxy 127.0.0.1:8000
+    }
+}

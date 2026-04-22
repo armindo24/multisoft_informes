@@ -1,0 +1,747 @@
+<script type="text/javascript">
+window.msPlanCuentaPickerPath = 'cuenta/puc/select/';
+window.msPlanCuentaPickerVariant = 'puc';
+var query = {};
+var api = u.getApiUrl();
+
+var today = new Date();
+var total_saldo = 0;
+var pucRows = [];
+var empresaMeta = null;
+
+var select_empresa, $select_empresa;
+var select_cuentad, $select_cuentad;
+var select_cuentah, $select_cuentah;
+var select_moneda;
+
+var $messages, $loading, $empty;
+
+function clearBackendWarning() {
+  if ($messages && $messages.length) {
+    $messages.find('.backend-warning').remove();
+  }
+}
+
+function showBackendWarning(text) {
+  clearBackendWarning();
+  if (!text) return;
+  if ($messages && $messages.length) {
+    $messages.prepend('<div class="alert alert-warning backend-warning" style="margin-bottom:8px;">' + text + '</div>');
+  } else {
+    alert(text);
+  }
+}
+
+$(document).ready(function () {
+  u.hideNav();
+  initSelect();
+
+  $messages = $("#messages");
+  $loading = $messages.find("#loading");
+  $empty = $messages.find("#empty");
+
+  select_empresa = $select_empresa[0].selectize;
+  select_cuentad = $select_cuentad[0].selectize;
+  select_cuentah = $select_cuentah[0].selectize;
+  select_moneda = $('#select-moneda');
+  select_cuentad.disable();
+  select_cuentah.disable();
+  query.moneda = select_moneda.val() || 'local';
+  select_moneda.on('change', function () {
+    query.moneda = $(this).val() || 'local';
+  });
+  query.recalcular_saldos = ($('#recalcular_saldos').val() || 'N').toUpperCase();
+  $('#recalcular_saldos').on('change', function () {
+    query.recalcular_saldos = ($(this).val() || 'N').toUpperCase();
+  });
+  query.balance_cuentas_puc = $('#balance_cuentas_puc').is(':checked') ? 'SI' : 'NO';
+  $('#balance_cuentas_puc').on('change', function () {
+    query.balance_cuentas_puc = $(this).is(':checked') ? 'SI' : 'NO';
+  });
+
+  initDate();
+  $('#table-div').empty();
+});
+
+function initDate() {
+  u.defaultDatepicker();
+
+  $('#periodo .form-control').datepicker({
+    format: "yyyy",
+    startView: 2,
+    minViewMode: 2,
+    maxViewMode: 2,
+    autoclose: true
+  });
+
+  $('.input-daterange').datepicker({
+    todayBtn: "linked",
+    startView: 1,
+    minViewMode: 1,
+    maxViewMode: 1,
+    format: "MM",
+    autoclose: true
+  });
+
+  $('.input-daterange .form-control').datepicker().on('changeDate', function (e) {
+    query[this.name] = e.format('mm');
+    if (this.name === 'mesh' || this.name === 'mesd') {
+      updatePracticadoAlFromFilters();
+    }
+  });
+
+  $('#periodo .form-control').datepicker().on('changeDate', function () {
+    query[this.name] = this.value;
+    updatePracticadoAlFromFilters();
+    buscarCuentaPuc();
+  });
+
+  $('#practicado_al .form-control').datepicker({
+    format: "yyyy-mm-dd",
+    autoclose: true,
+    todayHighlight: true
+  }).on('changeDate', function (e) {
+    query.practicado_al = e.format('yyyy-mm-dd');
+    var parts = (query.practicado_al || '').split('-');
+    if (parts.length === 3) {
+      // Solo sincroniza Fecha Hasta (mesh), no toca Fecha Desde (mesd)
+      query.mesh = parts[1];
+      $('#fecha [name=mesh]').datepicker('setDate', new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, 1));
+    }
+  });
+
+  $('.input-date .form-control').datepicker('setDate', today);
+  $('.input-date .form-control').datepicker('update');
+  $('#practicado_al .form-control').datepicker('setDate', today);
+  $('#practicado_al .form-control').datepicker('update');
+  query.periodo = String(today.getFullYear());
+  query.mesd = padLeft((today.getMonth() + 1), 2, '0');
+  query.mesh = padLeft((today.getMonth() + 1), 2, '0');
+  updatePracticadoAlFromFilters();
+}
+
+function updatePracticadoAlFromFilters() {
+  var year = parseInt(query.periodo, 10);
+  var month = parseInt(query.mesh || query.mesd, 10);
+  if (isNaN(year)) year = today.getFullYear();
+  if (isNaN(month) || month < 1 || month > 12) month = today.getMonth() + 1;
+
+  var lastDay = lastDayOfMonth(year, month);
+  var pract = String(year) + '-' + padLeft(month, 2, '0') + '-' + padLeft(lastDay, 2, '0');
+  $('#practicado_al .form-control').val(pract);
+  query.practicado_al = pract;
+}
+
+function initSelect() {
+  $.extend(true, $.fn.selectize.defaults, {
+    onChange: function (value) {
+      query[this.$input.attr('name')] = value;
+    }
+  });
+
+  $select_empresa = $('#select-empresa').selectize({
+    valueField: 'Cod_Empresa',
+    labelField: 'Des_Empresa',
+    searchField: 'Des_Empresa',
+    onChange: function (value) {
+      query.empresa = value;
+      cargarMetaEmpresa();
+      buscarCuentaPuc();
+    },
+    preload: true,
+    load: function (q, callback) {
+      u.get_empresas({{ user }}, 'Integrado', function (d) {
+        callback(d.data);
+      });
+    }
+  });
+
+  $select_cuentad = $('#select-cuentad').selectize({
+    valueField: 'CodPlanCta',
+    labelField: 'Nombre',
+    searchField: 'Nombre'
+  });
+
+  $select_cuentah = $('#select-cuentah').selectize({
+    valueField: 'CodPlanCta',
+    labelField: 'Nombre',
+    searchField: 'Nombre'
+  });
+
+  // Moneda queda como <select> nativo para evitar superposición con botones/chips.
+
+}
+
+function cargarMetaEmpresa() {
+  empresaMeta = null;
+  $('#codigo_entidad').val('');
+  if (!query.empresa) return;
+
+  $.get(api + 'empresas/' + query.empresa + '/meta').done(function (res) {
+    var row = (res && res.data && res.data.length) ? res.data[0] : null;
+    empresaMeta = row || null;
+    var codEnt = '';
+    if (row) {
+      codEnt = row.codigo_entidad || row.CODIGO_ENTIDAD || row.codigoEntidad || '';
+    }
+    $('#codigo_entidad').val(codEnt);
+  });
+}
+
+function addCommas(nStr) {
+  nStr += '';
+  var x = nStr.split('.');
+  var x1 = x[0];
+  var x2 = x.length > 1 ? ',' + x[1] : '';
+  var rgx = /(\d+)(\d{3})/;
+  while (rgx.test(x1)) {
+    x1 = x1.replace(rgx, '$1' + '.' + '$2');
+  }
+  return x1 + x2;
+}
+
+function setDefaultRange() {
+  var desde = (select_cuentad.getValue() || '').toString().trim();
+  var hasta = (select_cuentah.getValue() || '').toString().trim();
+  // Compatibilidad PowerBuilder: por defecto usa 1..9 (no primer/ultimo valor cargado).
+  if (!desde) {
+    desde = '1';
+    select_cuentad.addOption({ CodPlanCta: '1', Nombre: '1' });
+    select_cuentad.setValue('1', true);
+    query.cuentad = desde;
+  }
+  if (!hasta) {
+    hasta = '9';
+    select_cuentah.addOption({ CodPlanCta: '9', Nombre: '9' });
+    select_cuentah.setValue('9', true);
+    query.cuentah = hasta;
+  }
+}
+
+function getInforme() {
+  var nivel = $("#nivel").val();
+  var isLocal = true;
+  var isMixed = false;
+  total_saldo = 0;
+  var total_saldo_local = 0;
+  var total_saldo_me = 0;
+  pucRows = [];
+
+  query.moneda = query.moneda || (select_moneda ? select_moneda.val() : 'local');
+  if (query.practicado_al) {
+    var pa = query.practicado_al.split('-');
+    if (pa.length === 3) {
+      query.mesh = pa[1];
+    }
+  }
+  query.incluir = "NO";
+  query.aux = "NO";
+  query.recalcular_saldos = query.recalcular_saldos || 'N';
+  query.balance_cuentas_puc = query.balance_cuentas_puc || 'NO';
+  query.nivel = (!nivel || nivel === " " || nivel === "0") ? 0 : nivel;
+  isLocal = (query.moneda === 'local');
+  isMixed = (query.moneda === 'ambas');
+
+  setDefaultRange();
+
+  if (!query.periodo || !query.empresa || !query.cuentad || !query.cuentah) {
+    alert("No hay datos suficientes para generar el listado");
+    return;
+  }
+
+  $('#table-div').empty();
+  $loading.show();
+  $empty.hide();
+  clearBackendWarning();
+
+  $.ajax({ method: 'GET', url: api + 'balancegeneral_puc/list/', data: query }).done(function (data) {
+    showBackendWarning(data && data.warning ? data.warning : '');
+    if (data.data.length > 0) {
+      pucRows = data.data.slice(0);
+      $('#table-div').empty();
+      var table_headers = isMixed
+        ? '<thead><tr><th style="width:20%;">Cuenta</th><th style="width:45%;">Descripción</th><th style="width:17.5%;">Guaraníes</th><th style="width:17.5%;">Dólares</th></tr></thead>'
+        : '<thead><tr><th style="width:25%;">Cuenta</th><th style="width:50%;">Descripción</th><th style="width:25%;">Saldo</th></tr></thead>';
+      var table_string = '<table id ="resultados" class="table table-striped table-bordered nowrap report-results-table" cellspacing="0" width="100%">' +
+        table_headers +
+        '<tbody></tbody><tfoot></tfoot></table>';
+      $('#table-div').append(table_string);
+
+      var body = "";
+      var footer = "";
+      var len = data.data.length;
+      function gv(obj, keys, fallback) {
+        for (var i = 0; i < keys.length; i++) {
+          var k = keys[i];
+          if (obj && typeof obj[k] !== 'undefined' && obj[k] !== null) return obj[k];
+        }
+        return (typeof fallback === 'undefined') ? '' : fallback;
+      }
+      function num(v) {
+        var n = parseFloat(String(v === null || typeof v === 'undefined' ? '0' : v).replace(/\./g, '').replace(',', '.'));
+        return isNaN(n) ? 0 : n;
+      }
+
+      for (var a = 0; a < len; a++) {
+        var row = data.data[a];
+        var codPlanCta = gv(row, ['CodPlanCta', 'codplancta', 'codplanctauni'], '');
+        var nombre = gv(row, ['Nombre', 'nombre', 'nombreuni'], '');
+        var nivelRow = parseInt(gv(row, ['Nivel', 'nivel'], 0), 10) || 0;
+        var saldo = num(gv(row, ['SALDO', 'saldo', 'Saldo'], 0));
+        var saldoLocal = num(gv(row, ['SALDO_LOCAL', 'saldo_local'], 0));
+        var saldoMe = num(gv(row, ['SALDO_ME', 'saldo_me'], 0));
+        if (!isMixed) {
+          total_saldo += isLocal ? Math.round(saldo) : saldo;
+        } else {
+          total_saldo_local += Math.round(saldoLocal);
+          total_saldo_me += saldoMe;
+        }
+        if (isNaN(total_saldo)) total_saldo = 0;
+        if (isNaN(total_saldo_local)) total_saldo_local = 0;
+        if (isNaN(total_saldo_me)) total_saldo_me = 0;
+
+        if (saldo < 0) {
+          body += '<tr class="danger">';
+        } else {
+          body += '<tr>';
+        }
+
+        body += '<td>' + (codPlanCta || '') + '</td>';
+
+        if (nivelRow <= 1) {
+          body += '<td><b>' + (nombre || '') + '</b></td>';
+        } else if (nivelRow <= 3) {
+          body += '<td style="padding-left:' + (((nivelRow || 1) - 1) * 16) + 'px;"><b>' + (nombre || '') + '</b></td>';
+        } else {
+          body += '<td style="padding-left:' + (((nivelRow || 1) - 1) * 16) + 'px;">' + (nombre || '') + '</td>';
+        }
+
+        if (isMixed) {
+          body += '<td style="text-align:right;">' + convertir_rever(saldoLocal) + '</td>';
+          body += '<td style="text-align:right;">' + addCommas((Math.round(saldoMe * 100) / 100).toString()) + '</td>';
+        } else if (isLocal) {
+          body += '<td style="text-align:right;">' + convertir_rever(saldo) + '</td>';
+        } else {
+          body += '<td style="text-align:right;">' + addCommas((Math.round(saldo * 100) / 100).toString()) + '</td>';
+        }
+        body += '</tr>';
+      }
+
+      if (isMixed) {
+        footer += '<tr><td>&nbsp;</td><td><b>TOTALES</b></td>';
+        footer += '<td style="text-align:right;"><b>' + convertir_rever(total_saldo_local) + '</b></td>';
+        footer += '<td style="text-align:right;"><b>' + addCommas((Math.round(total_saldo_me * 100) / 100).toString()) + '</b></td></tr>';
+      } else {
+        footer += '<tr><td>&nbsp;</td><td><b>TOTALES</b></td>';
+        footer += '<td style="text-align:right;"><b>' + (isLocal ? convertir_rever(total_saldo) : addCommas((Math.round(total_saldo * 100) / 100).toString())) + '</b></td></tr>';
+      }
+
+      $('#resultados tbody').html(body);
+      $('#resultados tfoot').html(footer);
+      $('#resultados').DataTable().destroy();
+      $('#resultados').DataTable({
+        searching: false,
+        language: u.spanish_dt,
+        paging: false,
+        ordering: false,
+        info: false,
+        scrollCollapse: true,
+        scrollY: 460,
+        scrollX: '100%'
+      });
+    } else {
+      $empty.show();
+    }
+    $loading.hide();
+  }).fail(function () {
+    $loading.hide();
+    $empty.show();
+    clearBackendWarning();
+  });
+}
+
+function lastDayOfMonth(year, month) {
+  return new Date(year, month, 0).getDate();
+}
+
+function padLeft(value, length, char) {
+  var s = String(value || '');
+  while (s.length < length) s = (char || '0') + s;
+  return s;
+}
+
+function padRight(value, length) {
+  var s = String(value || '');
+  while (s.length < length) s += ' ';
+  return s;
+}
+
+function yyyymmddFromSelection() {
+  var year = parseInt(query.periodo || new Date().getFullYear(), 10);
+  var month = parseInt(query.mesh || query.mesd || (today.getMonth() + 1), 10);
+  var day = lastDayOfMonth(year, month);
+  return String(year) + padLeft(month, 2, '0') + padLeft(day, 2, '0');
+}
+
+function yyyymmddCompact() {
+  var year = parseInt(query.periodo || new Date().getFullYear(), 10);
+  var month = parseInt(query.mesh || query.mesd || (today.getMonth() + 1), 10);
+  var day = lastDayOfMonth(year, month);
+  return String(year) + padLeft(month, 2, '0') + padLeft(day, 2, '0');
+}
+
+function exportarDatosPuc() {
+  if (!pucRows.length) {
+    alert('No existe datos a ser exportados, verifique detalles.');
+    return;
+  }
+
+  var codigoUnico = (($('#codigo_entidad').val() || '') + '').trim();
+  if (!codigoUnico) {
+    alert('Debe ingresar el Codigo de Entidad.');
+    return;
+  }
+
+  var esCasaDeBolsa = empresaMeta && (empresaMeta.es_casa_de_bolsa || 'N') === 'S';
+  var ruc = empresaMeta ? ((empresaMeta.ruc || empresaMeta.ruc_base || '') + '').trim() : '';
+  if (!esCasaDeBolsa && !ruc) {
+      alert('Debe ingresar el RUC con dígito verificador.');
+      return;
+  }
+
+  var fechaYmd = yyyymmddFromSelection();
+  var fechaCompacta = yyyymmddCompact();
+  var cabecera = esCasaDeBolsa ? ('EEFF-' + codigoUnico + '-' + fechaCompacta) : ('EEFF-' + codigoUnico + '-' + ruc + '-' + fechaCompacta);
+  var formulario = esCasaDeBolsa ? '001' : '002';
+  var fila1 = esCasaDeBolsa ? 'EEFF001   ' : 'EEFF002   ';
+  var contenido = [];
+
+  if (esCasaDeBolsa) {
+    contenido.push(fila1 + fechaYmd + codigoUnico + padLeft(pucRows.length, 9, ' '));
+  } else {
+    var baseCab = fila1 + fechaYmd + codigoUnico + ruc;
+    var espacios = 61 - baseCab.length - String(pucRows.length).length;
+    if (espacios < 0) espacios = 0;
+    contenido.push(baseCab + new Array(espacios + 1).join(' ') + String(pucRows.length));
+  }
+
+  for (var i = 0; i < pucRows.length; i++) {
+    var row = pucRows[i];
+    var cuenta = padRight(row.CodPlanCta || '', 18);
+    var simbolo = (row.simbolo || 'PYG').toString().trim();
+    var tipoCuenta = (row.tipo_cuenta || '').toString().trim();
+    var monto = Math.round(Math.abs(parseFloat(row.SALDO || 0)));
+    var montoRellenado = padLeft(monto, 18, '0') + '00';
+    var nroLinea = padLeft(i + 1, 9, '0');
+    contenido.push(formulario + cuenta + simbolo + '0' + tipoCuenta + fechaYmd + montoRellenado + nroLinea);
+  }
+
+  var blob = new Blob([contenido.join('\r\n')], { type: 'text/plain;charset=utf-8' });
+  var link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = cabecera + '.txt';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(function () { URL.revokeObjectURL(link.href); }, 1000);
+  alert('Datos exportados con éxito.');
+}
+
+function buscarCuentaPuc() {
+  u.resetSelect(select_cuentad);
+  u.resetSelect(select_cuentah);
+  if (!query.empresa || !query.periodo) {
+    return;
+  }
+
+  $.get(api + 'cuenta/puc/select/' + query.empresa + '/' + query.periodo).done(function (d) {
+    var rows = ((d && d.data) ? d.data : []).map(function (r) {
+      var cod = (typeof r.CodPlanCta !== 'undefined' && r.CodPlanCta !== null) ? r.CodPlanCta : r.codplancta;
+      var nom = (typeof r.Nombre !== 'undefined' && r.Nombre !== null) ? r.Nombre : r.nombre;
+      return {
+        CodPlanCta: (cod || '').toString().trim(),
+        Nombre: (nom || '').toString()
+      };
+    }).filter(function (r) { return !!r.CodPlanCta; });
+    select_cuentad.load(function (cb) {
+      cb(rows);
+      select_cuentad.enable();
+    });
+
+    select_cuentah.load(function (cb) {
+      cb(rows);
+      select_cuentah.enable();
+    });
+  }).fail(function () {
+    select_cuentad.load(function (cb) { cb(); });
+    select_cuentah.load(function (cb) { cb(); });
+  });
+}
+
+function exportExcel() {
+  var table = document.getElementById('resultados');
+  if (!table) {
+    alert('No hay datos para exportar.');
+    return;
+  }
+  var rows = table.querySelectorAll('tr');
+  var lines = [];
+  for (var i = 0; i < rows.length; i++) {
+    var cells = rows[i].querySelectorAll('th,td');
+    if (!cells.length) continue;
+    var values = [];
+    for (var j = 0; j < cells.length; j++) {
+      var text = (cells[j].innerText || '').replace(/\r?\n/g, ' ').trim();
+      values.push('"' + text.replace(/"/g, '""') + '"');
+    }
+    lines.push(values.join(';'));
+  }
+  var csv = '\uFEFF' + lines.join('\n');
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  var link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'balance_general_puc.csv';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function exportPdf() {
+  var table = document.getElementById('resultados');
+  if (!table) {
+    alert('No hay datos para exportar.');
+    return;
+  }
+  var resultado = document.getElementById('resultado-ejercicio-puc');
+  var win = window.open('', '_blank');
+  if (!win) return;
+  win.document.open();
+  win.document.write('<html><head><title>Balance General PUC</title><meta charset="utf-8">');
+  win.document.write('<style>body{font-family:Arial,Helvetica,sans-serif;font-size:11px;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ccc;padding:4px 6px;text-align:left;}th{background:#eef3fb;}</style>');
+  win.document.write('</head><body><h3>Balance General PUC</h3>');
+  win.document.write(table.outerHTML);
+  if (resultado) {
+    win.document.write('<div style="margin-top:10px;">' + resultado.innerHTML + '</div>');
+  }
+  win.document.write('</body></html>');
+  win.document.close();
+  win.focus();
+  win.print();
+}
+
+// Override: formato especial cuando se tilda "balance cuentas del PUC"
+function toNumber(v) {
+  var n = parseFloat(v);
+  return isNaN(n) ? 0 : n;
+}
+
+function getInforme() {
+  var nivel = $("#nivel").val();
+  var isLocal = true;
+  var isMixed = false;
+  var isPucChecked = (query.balance_cuentas_puc === 'SI');
+  total_saldo = 0;
+  var total_saldo_local = 0;
+  var total_saldo_me = 0;
+  pucRows = [];
+
+  query.moneda = query.moneda || (select_moneda ? select_moneda.val() : 'local');
+  var practicadoInput = (($('#practicado_al .form-control').val() || '') + '').trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(practicadoInput)) {
+    query.practicado_al = practicadoInput;
+  }
+  query.balance_cuentas_puc = $('#balance_cuentas_puc').is(':checked') ? 'SI' : 'NO';
+  isPucChecked = (query.balance_cuentas_puc === 'SI');
+
+  if (query.practicado_al) {
+    var pa = query.practicado_al.split('-');
+    if (pa.length === 3) {
+      query.periodo = pa[0];
+      query.mesh = pa[1];
+    }
+  }
+  query.incluir = "NO";
+  query.aux = "NO";
+  query.recalcular_saldos = query.recalcular_saldos || 'N';
+  query.balance_cuentas_puc = query.balance_cuentas_puc || 'NO';
+  query.nivel = (!nivel || nivel === " " || nivel === "0") ? 0 : nivel;
+  isLocal = (query.moneda === 'local');
+  isMixed = (query.moneda === 'ambas');
+
+  setDefaultRange();
+  query.cuentad = (query.cuentad || '').toString().trim();
+  query.cuentah = (query.cuentah || '').toString().trim();
+  if (!query.cuentad) query.cuentad = '1';
+  if (!query.cuentah) query.cuentah = '9';
+
+  if (!query.periodo || !query.empresa || !query.cuentad || !query.cuentah) {
+    alert("No hay datos suficientes para generar el listado");
+    return;
+  }
+
+  $('#table-div').empty();
+  $('#resultado-ejercicio-puc').remove();
+  $loading.show();
+  $empty.hide();
+  clearBackendWarning();
+
+  $.ajax({ method: 'GET', url: api + 'balancegeneral_puc/list/', data: query }).done(function (data) {
+    showBackendWarning(data && data.warning ? data.warning : '');
+    var resultRows = (data && data.data) ? data.data : [];
+    var resultadoEj = (data && data.resultado) ? data.resultado : null;
+    if (resultRows.length > 0) {
+      pucRows = resultRows.slice(0);
+      $('#table-div').empty();
+
+      var table_headers = isPucChecked
+        ? '<thead><tr><th style="width:14%;text-align:left;">Cuenta</th><th style="width:26%;text-align:left;">Descripcion</th><th style="width:14%;text-align:left;">Cuenta PUC</th><th style="width:26%;text-align:left;">Descripcion PUC</th><th style="width:10%;text-align:right;">Guaranies</th><th style="width:10%;text-align:right;">Dolares</th></tr></thead>'
+        : (isMixed
+          ? '<thead><tr><th style="width:20%;">Cuenta</th><th style="width:45%;">Descripcion</th><th style="width:17.5%;">Guaranies</th><th style="width:17.5%;">Dolares</th></tr></thead>'
+          : '<thead><tr><th style="width:25%;">Cuenta</th><th style="width:50%;">Descripcion</th><th style="width:25%;">Saldo</th></tr></thead>');
+
+      var table_string = '<table id ="resultados" class="table table-striped table-bordered nowrap report-results-table" cellspacing="0" width="100%">' +
+        table_headers +
+        '<tbody></tbody><tfoot></tfoot></table>';
+      $('#table-div').append(table_string);
+
+      var body = "";
+      var footer = "";
+      var len = resultRows.length;
+      function gv(obj, keys, fallback) {
+        for (var i = 0; i < keys.length; i++) {
+          var k = keys[i];
+          if (obj && typeof obj[k] !== 'undefined' && obj[k] !== null) return obj[k];
+        }
+        return (typeof fallback === 'undefined') ? '' : fallback;
+      }
+      function num(v) {
+        if (v === null || typeof v === 'undefined') return 0;
+        if (typeof v === 'number') return v;
+        var s = String(v).trim();
+        if (!s) return 0;
+        if (s.indexOf('.') !== -1 && s.indexOf(',') !== -1) {
+          s = s.replace(/\./g, '').replace(/,/g, '.');
+        } else if (s.indexOf(',') !== -1) {
+          s = s.replace(/,/g, '.');
+        }
+        var n = parseFloat(s);
+        return isNaN(n) ? 0 : n;
+      }
+
+      for (var a = 0; a < len; a++) {
+        var row = resultRows[a];
+        var codPlanCta = gv(row, ['CodPlanCta', 'codplancta', 'codplanctauni'], '');
+        var nombre = gv(row, ['Nombre', 'nombre', 'nombreuni'], '');
+        var nivelRow = parseInt(gv(row, ['Nivel', 'nivel'], 0), 10) || 0;
+        var saldo = num(gv(row, ['SALDO', 'saldo', 'Saldo'], 0));
+        var saldoLocal = num(gv(row, ['SALDO_LOCAL', 'saldo_local'], 0));
+        var saldoMe = num(gv(row, ['SALDO_ME', 'saldo_me'], 0));
+        var cuentaPuc = gv(row, ['codplanctauni', 'CodPlanCtaUni', 'codplanctaestrategico'], '');
+        var nombrePuc = gv(row, ['nombreuni', 'NombreUni', 'nombre_puc'], '');
+        if (isPucChecked) {
+          total_saldo_local += Math.round(saldoLocal);
+          total_saldo_me += saldoMe;
+        } else if (!isMixed) {
+          total_saldo += isLocal ? Math.round(saldo) : saldo;
+        } else {
+          total_saldo_local += Math.round(saldoLocal);
+          total_saldo_me += saldoMe;
+        }
+        if (isNaN(total_saldo)) total_saldo = 0;
+        if (isNaN(total_saldo_local)) total_saldo_local = 0;
+        if (isNaN(total_saldo_me)) total_saldo_me = 0;
+
+        if (saldo < 0 || saldoLocal < 0 || saldoMe < 0) {
+          body += '<tr class="danger">';
+        } else {
+          body += '<tr>';
+        }
+
+        body += '<td>' + codPlanCta + '</td>';
+
+        if (nivelRow <= 1) {
+          body += '<td><b>' + nombre + '</b></td>';
+        } else if (nivelRow <= 3) {
+          body += '<td style="padding-left:' + (((nivelRow || 1) - 1) * 16) + 'px;"><b>' + nombre + '</b></td>';
+        } else {
+          body += '<td style="padding-left:' + (((nivelRow || 1) - 1) * 16) + 'px;">' + nombre + '</td>';
+        }
+
+        if (isPucChecked) {
+          body += '<td style="text-align:left;">' + cuentaPuc + '</td>';
+          body += '<td style="text-align:left;">' + nombrePuc + '</td>';
+          body += '<td style="text-align:right;">' + convertir_rever(saldoLocal) + '</td>';
+          body += '<td style="text-align:right;">' + addCommas((Math.round((saldoMe || 0) * 100) / 100).toString()) + '</td>';
+        } else if (isMixed) {
+          body += '<td style="text-align:right;">' + convertir_rever(saldoLocal) + '</td>';
+          body += '<td style="text-align:right;">' + addCommas((Math.round((saldoMe || 0) * 100) / 100).toString()) + '</td>';
+        } else if (isLocal) {
+          body += '<td style="text-align:right;">' + convertir_rever(saldo) + '</td>';
+        } else {
+          body += '<td style="text-align:right;">' + addCommas((Math.round((saldo || 0) * 100) / 100).toString()) + '</td>';
+        }
+        body += '</tr>';
+      }
+
+      if (isPucChecked) {
+        // En modo "Balance cuentas del PUC" no mostrar totales al pie
+      } else if (isMixed) {
+        footer += '<tr><td>&nbsp;</td><td><b>TOTALES</b></td>';
+        footer += '<td style="text-align:right;"><b>' + convertir_rever(total_saldo_local) + '</b></td>';
+        footer += '<td style="text-align:right;"><b>' + addCommas((Math.round(total_saldo_me * 100) / 100).toString()) + '</b></td></tr>';
+      } else {
+        footer += '<tr><td>&nbsp;</td><td><b>TOTALES</b></td>';
+        footer += '<td style="text-align:right;"><b>' + (isLocal ? convertir_rever(total_saldo) : addCommas((Math.round(total_saldo * 100) / 100).toString())) + '</b></td></tr>';
+      }
+
+      $('#resultados tbody').html(body);
+      $('#resultados tfoot').html(footer);
+      $('#resultados').DataTable().destroy();
+      $('#resultados').DataTable({
+        searching: false,
+        language: u.spanish_dt,
+        paging: false,
+        ordering: false,
+        info: false,
+        scrollCollapse: true,
+        scrollY: 460,
+        scrollX: '100%'
+      });
+      renderResultadoEjercicioPuc(total_saldo_local, total_saldo_me, isPucChecked, isMixed, isLocal, resultadoEj);
+    } else {
+      $empty.show();
+      $('#resultado-ejercicio-puc').remove();
+    }
+    $loading.hide();
+  }).fail(function () {
+    $loading.hide();
+    $empty.show();
+    $('#resultado-ejercicio-puc').remove();
+    clearBackendWarning();
+  });
+}
+
+function renderResultadoEjercicioPuc(totalLocal, totalMe, isPucChecked, isMixed, isLocal, resultadoEj) {
+  $('#resultado-ejercicio-puc').remove();
+  if (!(isPucChecked || isMixed)) return;
+
+  var moneda = (query.moneda || '').toLowerCase();
+  var ejLocal = resultadoEj && resultadoEj.local !== undefined ? toNumber(resultadoEj.local) : toNumber(totalLocal);
+  var ejMe = resultadoEj && resultadoEj.extranjera !== undefined ? toNumber(resultadoEj.extranjera) : toNumber(totalMe);
+  var lineas = [];
+  if (moneda === 'local') {
+    lineas.push('<div style="font-weight:700;text-decoration:underline;">RESULTADO DEL EJERCICIO (+) Utilidad (-) Perdida : ' + convertir_rever(ejLocal || 0) + ' GS.</div>');
+  } else if (moneda === 'extranjera') {
+    lineas.push('<div style="font-weight:700;text-decoration:underline;">RESULTADO DEL EJERCICIO (+) Utilidad (-) Perdida : ' + addCommas((Math.round((ejMe || 0) * 100) / 100).toString()) + ' US.</div>');
+  } else {
+    lineas.push('<div style="font-weight:700;text-decoration:underline;margin-bottom:4px;">RESULTADO DEL EJERCICIO (+) Utilidad (-) Perdida : ' + convertir_rever(ejLocal || 0) + ' GS.</div>');
+    lineas.push('<div style="font-weight:700;text-decoration:underline;">RESULTADO DEL EJERCICIO (+) Utilidad (-) Perdida : ' + addCommas((Math.round((ejMe || 0) * 100) / 100).toString()) + ' US.</div>');
+  }
+
+  var html = '' +
+    '<div id="resultado-ejercicio-puc" style="position:sticky;bottom:0;z-index:5;background:#fff;border-top:1px solid #d7dce5;padding:8px 10px;margin-top:4px;">' +
+      lineas.join('') +
+    '</div>';
+  $('#table-div').append(html);
+}
+</script>

@@ -1,0 +1,242 @@
+{% extends 'finanzas/base.html' %}
+{% load static %}
+
+{% block header %}
+  Balance Integral:
+{% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <style>
+    .bi-shell { margin-top: 0; }
+    .bi-meta {
+      border: 1px solid #d8e3f2;
+      border-radius: 6px;
+      background: #fff;
+      box-shadow: 0 2px 10px rgba(26, 55, 99, 0.05);
+      padding: 6px 8px;
+      margin-bottom: 4px;
+    }
+    .bi-title {
+      font-size: 16px;
+      color: #1d3151;
+      font-weight: 700;
+      margin: 0 0 4px;
+      border-bottom: 1px solid #e2e9f5;
+      padding-bottom: 3px;
+    }
+    .bi-meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px 10px;
+      font-size: 12px;
+      color: #253d61;
+    }
+    .bi-meta-grid b { color: #1a2f4d; }
+    .bi-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+    .bi-card {
+      border: 1px solid #d8e3f2;
+      border-radius: 6px;
+      background: #fff;
+      box-shadow: 0 2px 10px rgba(26, 55, 99, 0.05);
+      overflow: hidden;
+    }
+    .bi-card .head {
+      padding: 4px 8px;
+      font-size: 12px;
+      color: #fff;
+      font-weight: 700;
+      background: linear-gradient(135deg, #6f9dd8, #86ace0);
+      line-height: 1.1;
+      text-transform: uppercase;
+      letter-spacing: .2px;
+    }
+    .bi-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    .bi-table td {
+      border-top: 1px solid #e6ecf7;
+      padding: 4px 7px;
+      line-height: 1.1;
+    }
+    .bi-table td:last-child {
+      text-align: right;
+      font-weight: 700;
+      color: #1d3151;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .bi-table th {
+      border-top: 1px solid #e6ecf7;
+      padding: 4px 7px;
+      font-weight: 700;
+      color: #1c3150;
+      background: #f6f9ff;
+      text-align: left;
+      font-size: 11px;
+      line-height: 1.1;
+    }
+    .bi-table th:last-child,
+    .bi-table th.num,
+    .bi-table td.num {
+      text-align: right;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .bi-total td {
+      font-weight: 700;
+      background: #f5f9ff;
+    }
+    #bi-clientes-table th:nth-child(2),
+    #bi-clientes-table th:nth-child(3),
+    #bi-clientes-table td:nth-child(2),
+    #bi-clientes-table td:nth-child(3),
+    #bi-proveedores-table th:nth-child(2),
+    #bi-proveedores-table th:nth-child(3),
+    #bi-proveedores-table td:nth-child(2),
+    #bi-proveedores-table td:nth-child(3) {
+      text-align: right !important;
+      font-variant-numeric: tabular-nums;
+    }
+    #bi-periodos-table th:nth-child(2),
+    #bi-periodos-table th:nth-child(3),
+    #bi-periodos-table td:nth-child(2),
+    #bi-periodos-table td:nth-child(3) {
+      text-align: right !important;
+      font-variant-numeric: tabular-nums;
+    }
+    @media (max-width: 1100px) {
+      .bi-grid-2, .bi-meta-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+{% endblock %}
+
+{% block filters %}
+  <div class="row">
+    {% include 'ventas/_filtro.html' with name="empresa" %}
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="periodo" class="col-md-4 control-label">Periodo:</label>
+        <div class="col-md-6">
+          <div id="periodo" class="input-date"><input type="text" class="form-control" name="periodo"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label class="col-md-4 control-label">Fecha:</label>
+        <div class="col-md-6">
+          <div id="fecha" class="input-daterange input-group input-date">
+            <input type="text" class="input-sm form-control" name="start"/>
+            <span class="input-group-addon">a</span>
+            <input type="text" class="input-sm form-control" name="end"/>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% include 'ventas/_filtro.html' with name="moneda" %}
+  </div>
+{% endblock %}
+
+{% block filter_footer %}
+  <div class="ms-filter-actions__left">
+    <a type="button" class="btn btn-filter-modern" onclick="runGlobalFiltrar()">Filtrar <i class="fa fa-search"></i></a>
+    <a type="button" class="btn btn-cancel-modern" onclick="runGlobalCancelar()">Cancelar <i class="fa fa-stop"></i></a>
+  </div>
+  <div class="ms-filter-actions__right">
+    <a type="button" class="btn btn-export-excel" onclick="runGlobalExcel()">Excel <i class="fa fa-file-excel-o"></i></a>
+    <a type="button" class="btn btn-export-pdf" onclick="runGlobalPdf()">PDF <i class="fa fa-file-pdf-o"></i></a>
+  </div>
+{% endblock %}
+
+{% block inner_content %}
+  <div class="text-center" id="messages">
+    <h3 id="loading" style="display:none;">Cargando...</h3>
+    <h3 id="empty" style="display:none;">No hay datos disponibles</h3>
+  </div>
+
+  <div class="bi-shell" id="bi-shell" style="display:none;">
+    <div class="bi-meta">
+      <h2 class="bi-title">Informe de Balance Integral</h2>
+      <div class="bi-meta-grid">
+        <div><b>Empresa:</b> <span id="bi-empresa">-</span></div>
+        <div><b>Periodo:</b> <span id="bi-periodo">-</span></div>
+        <div><b>Desde:</b> <span id="bi-desde">-</span></div>
+        <div><b>Hasta:</b> <span id="bi-hasta">-</span></div>
+      </div>
+    </div>
+
+    <div class="bi-grid-2">
+      <div class="bi-card">
+        <div class="head">Resumen Ejecutivo</div>
+        <table class="bi-table">
+          <thead>
+            <tr>
+              <th>Concepto</th>
+              <th class="num">Local</th>
+              <th class="num">Extranjera</th>
+            </tr>
+          </thead>
+          <tbody id="bi-resumen"></tbody>
+        </table>
+      </div>
+
+      <div class="bi-card">
+        <div class="head">Totalización General</div>
+        <table class="bi-table">
+          <tbody id="bi-totalizacion"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="bi-grid-2">
+      <div class="bi-card">
+        <div class="head">Saldos de Clientes por Auxiliar</div>
+        <table class="bi-table" id="bi-clientes-table">
+          <thead>
+            <tr><th>Cliente</th><th>Debito</th><th>Credito</th><th>Saldo</th></tr>
+          </thead>
+          <tbody id="bi-clientes"></tbody>
+        </table>
+      </div>
+      <div class="bi-card">
+        <div class="head">Saldos de Proveedores por Auxiliar</div>
+        <table class="bi-table" id="bi-proveedores-table">
+          <thead>
+            <tr><th>Proveedor</th><th>Debito</th><th>Credito</th><th>Saldo</th></tr>
+          </thead>
+          <tbody id="bi-proveedores"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="bi-grid-2">
+      <div class="bi-card">
+        <div class="head">Composicion Patrimonial</div>
+        <table class="bi-table">
+          <tbody id="bi-composicion"></tbody>
+        </table>
+      </div>
+      <div class="bi-card">
+        <div class="head">Resultados por Periodo</div>
+        <table class="bi-table" id="bi-periodos-table">
+          <thead>
+            <tr><th>Periodo</th><th>Ingresos</th><th>Egresos</th><th>Resultado</th></tr>
+          </thead>
+          <tbody id="bi-periodos"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {% include 'finanzas/balance_integral_metodos.html' %}
+{% endblock %}

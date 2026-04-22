@@ -1,4 +1,4 @@
-{% load admin_static bootstrapped_goodies_tags %}{% load url from future %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -27,6 +27,7 @@
 
   <!-- Custom CSS -->
   <link href="{% static "css/sb-admin-2.css" %}" rel="stylesheet">
+  <link href="{% static "css/menu-modern.css" %}" rel="stylesheet">
 
   <!-- Custom Fonts -->
   <link href="{% static "font-awesome/css/font-awesome.min.css" %}" rel="stylesheet" type="text/css">
@@ -38,10 +39,10 @@
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
 
-  <script language="javascript">
+  <script>
     window.onload = function () {
-      $('#page-wrapper').css('margin-left', '0px');
-      $('#my-left-menu').toggle(0);
+      // mantener comportamiento previo: ocultar left menu en vista principal
+      try { $('#page-wrapper').css('margin-left', '0px'); $('#my-left-menu').toggle(0); } catch(e){}
     };
   </script>
 
@@ -98,7 +99,7 @@
         <i class="fa fa-angle-left"></i>
       </a>
 
-      <a class="navbar-brand" href="#">
+      <a id="main-brand" class="navbar-brand" href="#">
         MultiSoft SIG - Sistema de Información Gerencial
       </a>
     </div>
@@ -115,39 +116,26 @@
     </div>
   </div>
 
-  <div class="row">
-    {% for modulo in modulos_usuario %}
-      <div class="col-md-4 col-xs-12">
-      <!--To make the panel linkable-->
-      <a href="/accounts/menu/?q={{ modulo.0 }}">
-        <span class="link-tile"></span>
+  <section class="modules-section">
+    <div class="modules-grid">
+      {% for modulo in modulos_usuario %}
+      <a class="module-card" data-module="{{ modulo.0|slugify }}" href="/accounts/menu/?q={{ modulo.0 }}" title="{{ modulo.0 }}" tabindex="0">
+        <div class="module-icon"><i class="{{ modulo.1 }}"></i></div>
+        <div class="module-body">
+          <h3>{{ modulo.0 }}</h3>
+          <p class="module-action">Acceder <i class="fa fa-arrow-right"></i></p>
+        </div>
       </a>
-      {% if forloop.counter|divisibleby:2 %}
-        <div class="fd-tile detail tile-blue">
-      {% else %}
-        <div class="fd-tile detail tile-orange">
-      {% endif %}
-    <div class="content">
-      <h2 class="text-left">{{ modulo.0 }}</h2>
+      {% endfor %}
+    </div>
+  </section>
 
-      <p>&nbsp</p>
-      <!--To make the panel linkable-->
-      <a href="/accounts/menu/?q={{ modulo.0 }}">
-        <span class="link-tile"></span>
-      </a>
-    </div>
-    <div class="icon"><i class="{{ modulo.1 }}"></i></div>
-    <a href="/accounts/menu/?q={{ modulo.0 }}" class="details">Acceder
-	          				<span>
-	          					<i class="fa fa-arrow-circle-right pull-right"></i>
-	          				</span>
-    </a>
-
-    </div>
-    </div>
-    {% endfor %}
-    </div>
-  </div>
+  <script>
+    // simple keyboard navigation: Enter on focused card
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'Enter'){ var focus = document.activeElement; if(focus && focus.classList.contains('module-card')) focus.click(); }
+    });
+  </script>
 
   <!-- jQuery Version 1.11.0 -->
   <script src="{% static "js/jquery-1.11.0.js" %}"></script>

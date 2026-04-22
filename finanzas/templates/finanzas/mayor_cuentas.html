@@ -1,4 +1,4 @@
-{% extends 'finanzas/base.html' %}
+﻿{% extends 'finanzas/base.html' %}
 
 {% block header %}
   Mayor de Cuentas:
@@ -6,7 +6,7 @@
 
 {% block filters %}
   <div class="row">
-    {% include 'ventas/_filtro.html' with name="empresa" %}
+    {% include 'ventas/_filtro.html' with name="empresa" search_button=1 %}
     <div class="col-sm-6">
       <div class="form-group">
         <label for="periodo" class="col-md-4 control-label">Periodo:</label>
@@ -21,8 +21,8 @@
   </div>
 
   <div class="row">
-    {% include 'ventas/_filtro.html' with name="cuentad" placeholder="Cuenta" title="Cta. desde" %}
-    {% include 'ventas/_filtro.html' with name="cuentah" placeholder="Cuenta" title="Cta. hasta" %}
+    {% include 'ventas/_filtro.html' with name="cuentad" placeholder="Cuenta" title="Cta. desde" search_button=1 %}
+    {% include 'ventas/_filtro.html' with name="cuentah" placeholder="Cuenta" title="Cta. hasta" search_button=1 %}
   </div>
 
   <div class="row">
@@ -52,8 +52,8 @@
   </div>
 
   <div class="row">
-    {% include 'ventas/_filtro.html' with name="tipoAsiento" placeholder="Tipo" title="Tipo Asiento" %}
-    {% include 'ventas/_filtro.html' with name="moneda" %}
+    {% include 'ventas/_filtro.html' with name="tipoAsiento" placeholder="Tipo" title="Tipo Asiento" search_button=1 %}
+    {% include 'ventas/_filtro.html' with name="moneda" search_button=1 %}
   </div>
 
 
@@ -77,6 +77,13 @@
 
 {% endblock %}
 
+{% block filter_footer %}
+  <a type="button" class="btn btn-filter-modern" onclick="getInforme()">Filtrar <i class="fa fa-search"></i></a>
+  <a type="button" class="btn btn-cancel-modern" id="cancelar-consulta-mayor" style="margin-left:8px;">Cancelar <i class="fa fa-stop"></i></a>
+  <a type="button" class="btn btn-export-excel" onclick="exportarMayorExcel()" style="margin-left:8px;">Excel <i class="fa fa-file-excel-o"></i></a>
+  <a type="button" class="btn btn-export-pdf" onclick="exportarMayorPdf()" style="margin-left:8px;">PDF <i class="fa fa-file-pdf-o"></i></a>
+{% endblock %}
+
 {% block inner_content %}
   <div class="text-center" id="messages">
     <h3 id="loading" style="display: none;">Cargando...</h3>
@@ -97,3 +104,4 @@
   <input type="hidden" id="total_haberME">
   {% include 'finanzas/mayor_cuentas_metodos.html' %}
 {% endblock %}
+

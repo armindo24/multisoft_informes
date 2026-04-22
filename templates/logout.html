@@ -1,4 +1,4 @@
-{% load admin_static bootstrapped_goodies_tags %}{% load url from future %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -45,11 +45,11 @@
         </div>
         <div class="panel-body">
           {% block content %}
-            <center>
+            <div class="text-center">
               <h2>Ha salido correctamente!.</h2>
 
-              <p>Click <a href="/accounts/login/">aquí</a> para volver a ingresar.</
-            </center>
+              <p>Click <a href="/accounts/login/">aquí</a> para volver a ingresar.</p>
+            </div>
           {% endblock %}
         </div>
       </div>
@@ -73,3 +73,8 @@
 
 </html>
 					
+
+
+
+
+

@@ -1,5 +1,5 @@
 {% extends 'admin/base_site.html' %}
-{% load staticfiles %}
+{% load static %}
 {% block extrahead %}
   <link rel="stylesheet" href="{% static 'bootstrap-datepicker/dist/css/bootstrap-datepicker3.min.css' %}">
   <link rel="stylesheet" href="{% static 'selectize/dist/css/selectize.bootstrap3.css' %}">
@@ -15,34 +15,178 @@
   <script src="{% static 'datatables.net-scroller/js/dataTables.scroller.js' %}"></script>
   <script src="{% static 'js/utils.js' %}"></script>
   <script src="{% static 'js/puntos-decimales.js' %}"></script>
+  <style>
+    .report-compact .panel.panel-default {
+      border-radius: 10px;
+      border: 1px solid #d8e0ec;
+      box-shadow: 0 2px 8px rgba(20, 46, 82, 0.06);
+      overflow: visible;
+    }
+    .report-compact .panel-heading {
+      background: linear-gradient(135deg, #f7f9fc, #eef3fb);
+      border-bottom: 1px solid #dbe3f0;
+      padding: 8px 12px;
+    }
+    .report-compact .panel-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1f3556;
+    }
+    .report-compact .panel-body {
+      padding: 10px 12px 4px;
+    }
+    .report-compact .form-horizontal .form-group {
+      margin-bottom: 6px;
+    }
+    .report-compact .control-label {
+      font-size: 12px;
+      color: #263a59;
+      padding-top: 5px;
+    }
+    .report-compact .form-control,
+    .report-compact .selectize-input,
+    .report-compact .input-group-addon {
+      height: 30px;
+      min-height: 30px;
+      font-size: 12px;
+      border-radius: 7px;
+    }
+    .report-compact .form-control,
+    .report-compact .selectize-input {
+      border-color: #ced9ea;
+      box-shadow: none;
+    }
+    .report-compact .form-control:focus,
+    .report-compact .selectize-input.focus {
+      border-color: #5a85c5;
+      box-shadow: 0 0 0 2px rgba(90, 133, 197, 0.15);
+    }
+    .report-compact .selectize-dropdown {
+      z-index: 5000 !important;
+    }
+    .report-compact .modal-footer {
+      padding: 8px 12px;
+      border-top: 1px solid #dbe3f0;
+      background: #fafcfe;
+    }
+    .report-compact .btn-filter-modern {
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border: 1px solid #1f5fbf;
+      background: linear-gradient(135deg, #2a75d6, #1f5fbf);
+      color: #fff;
+    }
+    .report-compact .btn-filter-modern:hover,
+    .report-compact .btn-filter-modern:focus {
+      color: #fff;
+      background: linear-gradient(135deg, #256ac2, #194f9b);
+    }
+    .report-compact .btn-cancel-modern {
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border: 1px solid #b93b3b;
+      background: linear-gradient(135deg, #d9534f, #b52f2b);
+      color: #fff;
+    }
+    .report-compact .btn-export-excel {
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border: 1px solid #2f8a45;
+      background: linear-gradient(135deg, #35a853, #2f8a45);
+      color: #fff;
+    }
+    .report-compact .btn-export-pdf {
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border: 1px solid #b93b3b;
+      background: linear-gradient(135deg, #d9534f, #b52f2b);
+      color: #fff;
+    }
+    .report-compact #table-div table thead th {
+      background: linear-gradient(180deg, #f5f8fe, #eaf1fc) !important;
+      color: #1f3556 !important;
+      border-color: #d6e0ef !important;
+      font-weight: 700;
+    }
+    .report-compact #table-div table tbody th,
+    .report-compact #table-div table tbody td {
+      font-weight: 400;
+    }
+    .report-compact #table-div table tfoot th,
+    .report-compact #table-div table tfoot td {
+      font-weight: 700;
+    }
+  </style>
 {% endblock %}
 
 {% block content %}
-  <div class="panel-group" id="accordion">
-    <div class="panel panel-default">
-      <div class="panel-heading" data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
-        <h4 class="panel-title">Filtros</h4>
-      </div>
-      <div id="collapseOne" class="panel-collapse collapse">
-        <div class="panel-body">
-          <div class="panel-group" id="archivo_accordion" style="margin-bottom: 0px;">
-            <div id="filters">
-              <form class="form-horizontal">
-                {% block filters %}
-                {% endblock %}
-              </form>
+  <div class="report-compact">
+    <div class="panel-group" id="accordion">
+      <div class="panel panel-default">
+        <div class="panel-heading" data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
+          <h4 class="panel-title">Filtros</h4>
+        </div>
+        <div id="collapseOne" class="panel-collapse collapse">
+          <div class="panel-body">
+            <div class="panel-group" id="archivo_accordion" style="margin-bottom: 0px;">
+              <div id="filters">
+                <form class="form-horizontal">
+                  {% block filters %}
+                  {% endblock %}
+                </form>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        {% block filter_footer %}
-          <a type="button" class="btn btn-primary" onclick="getInforme()">Filtrar <i class="fa fa-search"></i></a>
-        {% endblock %}
+        <div class="modal-footer">
+          {% block filter_footer %}
+            <a type="button" class="btn btn-filter-modern" onclick="runGlobalFiltrar()">Filtrar <i class="fa fa-search"></i></a>
+            <a type="button" class="btn btn-cancel-modern" style="margin-left:8px;" onclick="runGlobalCancelar()">Cancelar <i class="fa fa-stop"></i></a>
+            <a type="button" class="btn btn-export-excel" style="margin-left:8px;" onclick="runGlobalExcel()">Excel <i class="fa fa-file-excel-o"></i></a>
+            <a type="button" class="btn btn-export-pdf" style="margin-left:8px;" onclick="runGlobalPdf()">PDF <i class="fa fa-file-pdf-o"></i></a>
+          {% endblock %}
+        </div>
       </div>
     </div>
-  </div>
 
-  {% block inner_content %}
-  {% endblock %}
+    {% block inner_content %}
+    {% endblock %}
+  </div>
+  <script type="text/javascript">
+    function callFirstGlobalFn(names) {
+      for (var i = 0; i < names.length; i++) {
+        var fn = window[names[i]];
+        if (typeof fn === 'function') {
+          fn();
+          return true;
+        }
+      }
+      return false;
+    }
+    function runGlobalFiltrar() {
+      callFirstGlobalFn(['getInforme', 'filtrar', 'buscar', 'cargar_informe']);
+    }
+    function runGlobalCancelar() {
+      if (callFirstGlobalFn(['cancelarConsulta', 'cancelar', 'limpiar'])) return;
+      var $form = $('#filters form');
+      if ($form.length && $form[0]) $form[0].reset();
+      $('#filters select').each(function () { if (this.selectize) this.selectize.clear(true); });
+    }
+    function runGlobalExcel() {
+      if (callFirstGlobalFn(['exportExcel', 'exportarExcel'])) return;
+      alert('Este informe no tiene exportación a Excel.');
+    }
+    function runGlobalPdf() {
+      if (callFirstGlobalFn(['exportPdf', 'exportarPdf'])) return;
+      alert('Este informe no tiene exportación a PDF.');
+    }
+  </script>
 {% endblock content %}

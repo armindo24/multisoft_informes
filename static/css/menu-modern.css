@@ -1,0 +1,89 @@
+﻿/* Estilos modernos para la pantalla de módulos (loggedin) */
+
+.modules-section{ padding: 40px 20px; }
+.modules-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); /* tarjetas más grandes */
+  gap: 30px; /* más separación entre tarjetas */
+  max-width: 1380px;
+  margin: 0 auto;
+}
+
+.module-card{
+  display:flex;
+  align-items:center;
+  gap: 22px; /* más espacio entre icono y texto */
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 30px 38px; /* más grande */
+  border-radius: 12px;
+  color: #fff;
+  text-decoration: none;
+  transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  transform: none; /* tamaño natural */
+  min-height: 140px; /* garantiza altura para texto */
+}
+.module-card:focus, .module-card:hover{
+  transform: translateY(-6px);
+  box-shadow: 0 18px 36px rgba(0,0,0,0.45);
+  background: linear-gradient(90deg, rgba(31,162,255,0.06), rgba(18,216,250,0.03));
+}
+
+.module-icon{ flex: 0 0 72px; height:72px; width:72px; border-radius:12px; display:flex; align-items:center; justify-content:center; background: #efe6fb; color:#5b2e6f; font-size:30px; border:1px solid rgba(91,46,111,0.08) }
+
+.module-body h3{ margin:0; font-size:24px; color:#000; font-weight:900; letter-spacing:0.2px }
+.module-body p{ margin:6px 0 0; color:#111; font-size:14px }
+.module-action{ font-weight:600; color:rgba(0,0,0,0.6); font-size:14px }
+
+/* Asegurar que el texto quede bien separado del icono */
+.module-body{ flex:1; margin-left:auto; text-align:right }
+
+.module-action{ display:block; text-align:right }
+
+/* Centrar el título principal del navbar sin afectar al toggle button */
+.navbar{ position:relative }
+#main-brand{ position:absolute; left:50%; transform:translateX(-50%); top:9px; text-align:center; font-weight:700 }
+#toggle-left-menu{ margin-left:4px }
+
+/* Estilos para el menú lateral (left_menu) */
+#my-left-menu .nav > li > a{ color: #000 !important; font-size:16px; font-weight:600; padding:10px 16px; }
+#my-left-menu .nav > li > a:hover{ background: #efe6fb; color:#000 !important; }
+
+/* Adaptación para pantallas pequeñas */
+@media (max-width:600px){
+  .module-card{ padding:14px }
+  .module-icon{ width:60px; height:60px; font-size:26px }
+  .module-body h3{ font-size:20px }
+}
+
+/* Acentos por módulo: mantener violeta base, añadir color sutil como borde/gradiente */
+.module-card[data-module="finanzas"] .module-icon{ background: linear-gradient(180deg,#efe6fb,#e9f9ef); color:#2b6a45 }
+.module-card[data-module="finanzas"]{ border-left: 6px solid rgba(43,106,69,0.12) }
+
+.module-card[data-module="ventas"] .module-icon{ background: linear-gradient(180deg,#efe6fb,#e8f3ff); color:#165e9c }
+.module-card[data-module="ventas"]{ border-left: 6px solid rgba(22,94,156,0.10) }
+
+.module-card[data-module="stock"] .module-icon{ background: linear-gradient(180deg,#efe6fb,#f2f2f4); color:#50565b }
+.module-card[data-module="stock"]{ border-left: 6px solid rgba(80,86,91,0.08) }
+
+.module-card[data-module="rrhh"] .module-icon{ background: linear-gradient(180deg,#efe6fb,#eaf8ff); color:#1b90b8 }
+.module-card[data-module="rrhh"]{ border-left: 6px solid rgba(27,144,184,0.08) }
+
+.module-card[data-module="admin"] .module-icon{ background: linear-gradient(180deg,#efe6fb,#e6e0f0); color:#2b1740 }
+.module-card[data-module="admin"]{ border-left: 6px solid rgba(43,23,64,0.14) }
+
+/* Fallback: si no coincide, mantener violeta base en icono */
+.module-card:not([data-module]) .module-icon, .module-card[data-module] .module-icon{ background:#efe6fb; color:#5b2e6f }
+
+/* Mostrar usuario en navbar superior */
+.navbar-top-links.navbar-right{
+  position:absolute;
+  right:4px;
+  top:2px;
+  margin-right:0;
+}
+.navbar-text.user-info{ color:#000; font-weight:700; margin-right:4px; font-size:15px }
+.navbar-text.user-info small{ display:block; font-weight:400; color:rgba(0,0,0,0.6); font-size:12px }
+
+

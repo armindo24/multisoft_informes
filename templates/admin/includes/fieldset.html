@@ -1,4 +1,3 @@
-{% load bootstrapped_goodies_tags %}
 <fieldset class="_module _aligned" id="fieldset-{% if stacked_prefix %}{{ stacked_prefix }}-{% endif %}{{ forloop.counter }}" style="background:transparent">
     {% if fieldset.name %}
     <legend>
@@ -26,7 +25,7 @@
                         {% if field.is_checkbox %}
                         <div class="controls col-md-9">
                             <div class="checkbox">
-                                {% dab_field_rendering field.field %} {% if field.field.help_text %}<span class="help-block">{{ field.field.help_text|safe }}</span>{% endif %}
+                         {{ field.field }} {% if field.field.help_text %}<span class="help-block">{{ field.field.help_text|safe }}</span>{% endif %}
                             </div>
                         </div>
                         {% else %}
@@ -34,7 +33,7 @@
                             {% if field.is_readonly %}
                                 <p>{{ field.contents }}</p>
                             {% else %}
-                                {% dab_field_rendering field.field %}
+			    {{field.field }}
                             {% endif %}
                             {% if not field.is_readonly and field.errors %}<span class="text-danger">{{ field.errors|striptags }}</span>{% endif %}
                             {% if field.field.help_text %}

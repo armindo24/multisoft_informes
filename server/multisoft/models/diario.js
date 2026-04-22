@@ -2,32 +2,61 @@ var conn = require('../db_integrado');
 
 var Diario = {};
 
-Diario.all = function (params,cb) {
+function dbIsPostgres() {
+    try {
+        if (typeof conn.getStatus === 'function') {
+            var st = conn.getStatus() || {};
+            var eng = String(st.engine || st.configured_engine || '').toLowerCase();
+            if (eng === 'postgres') return true;
+            if (eng === 'sqlanywhere') return false;
+        }
+    } catch (e) {}
+    return String(conn._engine || '').toLowerCase() === 'postgres';
+}
 
-    var string =  "SELECT dba.asientosdet.Cod_Empresa as EMPRESA,dba.asientosdet.NroTransac,dba.asientoscab.TipoAsiento,dba.asientoscab.NroCompr,dba.asientosdet.NroOrden as Linea,dba.asientosdet.CodPlanCta,"+
-                    "dba.asientosdet.CodPlanAux,dba.asientosdet.Concepto,dba.asientosdet.DbCr,dba.asientosdet.Importe,dba.asientosdet.ImporteME,date(dba.asientoscab.Fecha) as Fecha,cast(dba.asientosdet.DEBITO as decimal(20,0)) as DEBITO,"+
-                    "cast(dba.asientosdet.CREDITO as decimal(20,0)) as CREDITO,cast(dba.asientosdet.DEBITOME as decimal(20,2)) as DEBITO_ME,cast(dba.asientosdet.CREDITOME as decimal(20,2)) as CREDITO_ME,DBA.PLANCTA.Nombre as NOMBRECUENTA,DBA.PLANAUXI.Nombre as NOMBRECUENTAAUX,"+
-                    "dba.tipoasiento.Descrip as TIPOASIENTO,DBA.asientoscab.autorizado,DBA.asientoscab.cargadopor,DBA.asientoscab.fechacarga,DBA.asientoscab.autorizadopor,DBA.asientoscab.fechaautoriz,"+
-                    "DBA.asientoscab.nroasiento,upper(dba.asientosdet.Concepto) as BUSCAR_CONCEPTO "+
-                  "FROM (dba.asientosdet LEFT OUTER JOIN DBA.PLANAUXI ON dba.asientosdet.Cod_Empresa = DBA.PLANAUXI.Cod_Empresa "+ 
-                  "AND dba.asientosdet.Periodo = DBA.PLANAUXI.Periodo AND dba.asientosdet.CodPlanCta = DBA.PLANAUXI.CodPlanCta "+ 
-                  "AND dba.asientosdet.CodPlanAux = DBA.PLANAUXI.CodPlanAux),DBA.PLANCTA,dba.asientoscab,dba.tipoasiento "+ 
-                  "WHERE (dba.asientosdet.Periodo = DBA.PLANCTA.Periodo) AND DBA.PLANCTA.Cod_Empresa = DBA.ASIENTOSCAB.Cod_Empresa "+ 
-                  "AND DBA.PLANCTA.Periodo = DBA.ASIENTOSCAB.Periodo AND DBA.PLANCTA.CodPlanCta = DBA.ASIENTOSDET.CodPlanCta "+ 
-                  "AND DBA.ASIENTOSDET.Cod_Empresa = DBA.ASIENTOSCAB.Cod_Empresa AND DBA.ASIENTOSCAB.NroTransac = DBA.ASIENTOSDET.NroTransac "+
-                  "AND dba.ASIENTOSCAB.TipoAsiento = dba.TIPOASIENTO.TipoAsiento " +
-        "AND ( dba.AsientosCAB.cod_empresa = '"+params.empresa+"' ) "
-        if (params.tipoasiento != 'NINGUNO')
-            string+="AND ( dba.asientoscab.TipoAsiento = '"+params.tipoasiento+"') "
-        string+="AND (DBA.asientoscab.fecha BETWEEN '"+params.fechad+"' and '"+params.fechah+"') "
-        if(params.autorizado == 'SI')
-            string+="AND (DBA.asientoscab.autorizado = 'S') "
-        if(params.autorizado == 'NO')
-            string+="AND (DBA.asientoscab.autorizado = 'N') "
-        string+= "ORDER BY DBA.AsientosCAB.Cod_Empresa ASC,DBA.AsientosCAB.Fecha ASC,DBA.AsientosDet.NroTransac ASC,DBA.AsientosDet.Linea ASC"
-    console.log(string)
+Diario.all = function (params,cb) {
+    var periodo = String(params.fechad || '').slice(0, 4);
+    var fechad = params.fechad + " 00:00:00";
+    var fechah = params.fechah + " 00:00:00";
+    var string =
+        "SELECT ad.Cod_Empresa as EMPRESA, ad.NroTransac, ac.TipoAsiento, ac.NroCompr, " +
+        "ad.NroOrden as Linea, ad.CodPlanCta, ad.CodPlanAux, ad.Concepto, " +
+        "date(ac.Fecha) as Fecha, cast(ad.DEBITO as decimal(20,0)) as DEBITO, " +
+        "cast(ad.CREDITO as decimal(20,0)) as CREDITO, cast(ad.DEBITOME as decimal(20,2)) as DEBITO_ME, " +
+        "cast(ad.CREDITOME as decimal(20,2)) as CREDITO_ME, pc.Nombre as NOMBRECUENTA, " +
+        "pa.Nombre as NOMBRECUENTAAUX, ta.Descrip as TIPOASIENTO " +
+        "FROM dba.AsientosCab ac " +
+        "JOIN dba.AsientosDet ad ON ad.Cod_Empresa = ac.Cod_Empresa AND ad.NroTransac = ac.NroTransac " +
+        "JOIN dba.PlanCta pc ON pc.Cod_Empresa = ad.Cod_Empresa AND pc.Periodo = ad.Periodo AND pc.CodPlanCta = ad.CodPlanCta " +
+        "JOIN dba.TipoAsiento ta ON ta.TipoAsiento = ac.TipoAsiento " +
+        "LEFT OUTER JOIN dba.PlanAuxi pa ON pa.Cod_Empresa = ad.Cod_Empresa AND pa.Periodo = ad.Periodo " +
+        "AND pa.CodPlanCta = ad.CodPlanCta AND pa.CodPlanAux = ad.CodPlanAux " +
+        "WHERE ac.Cod_Empresa = '" + params.empresa + "' ";
+
+    if (periodo) {
+        string += "AND ad.Periodo = '" + periodo + "' ";
+        string += "AND ac.Periodo = '" + periodo + "' ";
+    }
+    if (params.tipoasiento != 'NINGUNO') {
+        string += "AND ac.TipoAsiento = '" + params.tipoasiento + "' ";
+    }
+    if (dbIsPostgres()) {
+        string += "AND ac.Fecha >= '" + fechad + "' AND ac.Fecha < ('" + fechah + "'::timestamp + interval '1 day') ";
+    } else {
+        string += "AND ac.Fecha >= '" + fechad + "' AND ac.Fecha < dateadd(dd,1,'" + fechah + "') ";
+    }
+    if(params.autorizado == 'SI')
+        string += "AND ac.autorizado = 'S' ";
+    if(params.autorizado == 'NO')
+        string += "AND ac.autorizado = 'N' ";
+    string += "ORDER BY ac.Fecha ASC, ad.NroTransac ASC, ad.NroOrden ASC";
+
+    console.log(string);
     conn.exec(string, function(err, row){
-        if (err) throw err;
+        if (err) {
+            console.error('[Diario.all] Error ejecutando consulta:', err.message || err);
+            return cb([]);
+        }
         cb(row);
     });
 }

@@ -1,15 +1,115 @@
-{% extends "admin/base_site.html" %}
+﻿{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link href="{% static "css/menu-dashboard.css" %}" rel="stylesheet">
+  <link href="{% static "css/menu-sidebar.css" %}" rel="stylesheet">
+{% endblock %}
+
+{% block left_menu %}{% endblock %}
 
 {% block content %}
-<div class="container">
-	<div class="col-md-6 col-md-offset-2">
-		<div class="panel panel-primary">
-			<div class="panel-heading"> {{titulo}} </div>
-			<div class="panel-body">
-				<p>{{descripcion}}.</p>
-			</div>
-			<div class="panel-footer">SIG</div>
-		</div>
-	</div>
+<div class="menu-page">
+  <aside class="menu-sidebar">
+    <div class="menu-nav">
+      <a class="menu-nav-btn" href="/accounts/loggedin/">
+        <i class="fa fa-home"></i>
+        <span>Inicio</span>
+      </a>
+      <button class="menu-nav-btn" type="button" onclick="window.history.back();">
+        <i class="fa fa-arrow-left"></i>
+        <span>Volver</span>
+      </button>
+    </div>
+    <div class="menu-title">{{ titulo }}</div>
+
+    {% if grupos %}
+      <div class="menu-group-list">
+        {% for grupo in grupos %}
+          <div class="menu-group">
+            <div class="menu-group-title">
+              <span>{{ grupo.titulo }}</span>
+              <span class="menu-chevron">&lsaquo;</span>
+            </div>
+            <div class="menu-group-items">
+              {% for item in grupo.items %}
+                <a class="menu-item" href="{{ item.url }}">{{ item.titulo }}</a>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="menu-group-items">
+        {% for item in items %}
+          <a class="menu-item" href="{{ item.url }}">{{ item.titulo }}</a>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </aside>
+
+  <section class="menu-content">
+    <div id="rrhh-db-banner" class="alert alert-warning" style="display:none;">
+      No está configurada la conexión con la base de datos de Sueldo (RRHH).
+      <button type="button" class="btn btn-default btn-sm" style="margin-left:8px;" data-toggle="modal" data-target="#rrhhDbModal">
+        Ver detalle
+      </button>
+    </div>
+    <div class="menu-content-card">
+      <h4>{{ titulo }}</h4>
+      <p>Seleccione un informe desde el menú.</p>
+    </div>
+  </section>
 </div>
+
+<!-- Modal RRHH DB -->
+<div class="modal fade" id="rrhhDbModal" tabindex="-1" role="dialog" aria-labelledby="rrhhDbModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="rrhhDbModalLabel">Sueldo/RRHH sin conexión</h4>
+      </div>
+      <div class="modal-body" id="rrhhDbModalBody">
+        No está configurada la conexión con la base de datos de Sueldo.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var left = document.getElementById('my-left-menu');
+    if (left) { left.style.display = 'none'; }
+    var wrapper = document.getElementById('page-wrapper');
+    if (wrapper) { wrapper.style.marginLeft = '0px'; }
+    var titulo = '{{ titulo }}';
+    if (titulo === 'RRHH') {
+      var isLocalDev = ['localhost', '127.0.0.1'].indexOf(window.location.hostname) !== -1 || window.location.port === '8000' || window.location.port === '3000';
+      var apiBase = isLocalDev
+        ? 'http://' + window.location.hostname + ':3000/api/v1/'
+        : window.location.protocol + '//' + window.location.host + '/api/v1/';
+      fetch(apiBase + 'sueldo/status')
+        .then(function (r) { return r.json(); })
+        .then(function (st) {
+          if (!st || st.enabled === false) {
+            var reason = st && st.reason ? st.reason : '';
+            var banner = document.getElementById('rrhh-db-banner');
+            var modalBody = document.getElementById('rrhhDbModalBody');
+            if (banner) banner.style.display = 'block';
+            if (modalBody) modalBody.textContent = 'No está configurada la conexión con la base de datos de Sueldo. ' + reason;
+            if (window.jQuery && window.jQuery.fn && window.jQuery.fn.modal) {
+              window.jQuery('#rrhhDbModal').modal('show');
+            }
+          }
+        })
+        .catch(function () {});
+    }
+  })();
+</script>
 {% endblock %}
+

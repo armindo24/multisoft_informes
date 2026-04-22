@@ -1,0 +1,331 @@
+'use client';
+
+import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Bell, ChevronRight, Search } from 'lucide-react';
+
+import { LogoutButton } from '@/components/ui/logout-button';
+import type { SessionUser } from '@/lib/auth';
+import { navigation, type NavigationItem } from '@/lib/navigation';
+
+type NotificationSummary = {
+  activeSessions: number;
+  companyCount: number;
+  hasRecoveryEmail: boolean;
+};
+
+function isActivePath(pathname: string, href: string) {
+  if (href === '/') return pathname === '/';
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function getSectionKey(moduleHref: string, sectionLabel: string) {
+  return `${moduleHref}::${sectionLabel}`;
+}
+
+function normalizeGroupName(value: string) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function canAccessItem(item: NavigationItem, user: SessionUser | null) {
+  if (!user) return false;
+  if (item.href === '/dashboard') return true;
+  if (user.isSuperuser) return true;
+
+  const groups = new Set((user.groups || []).map(normalizeGroupName));
+  const path = item.href.toLowerCase();
+
+  if (path.startsWith('/finanzas')) return groups.has('finanzas');
+  if (path.startsWith('/ventas')) return groups.has('ventas');
+  if (path.startsWith('/compras')) return groups.has('compras');
+  if (path.startsWith('/stock')) return groups.has('stock');
+  if (path.startsWith('/migraciones')) return groups.has('migraciones');
+  if (path.startsWith('/configuracion')) return groups.has('admin') || groups.has('configuracion');
+
+  return true;
+}
+
+function profileSubtitle(user: SessionUser | null) {
+  if (!user) return 'Sin sesión';
+  if (user.isSuperuser) return 'Administrador total';
+  if (user.groups?.length) return user.groups.join(' · ');
+  return 'Perfil básico';
+}
+
+function isStandaloneAllowedPath(pathname: string) {
+  return pathname === '/perfil' || pathname.startsWith('/perfil/') || pathname === '/notificaciones' || pathname.startsWith('/notificaciones/');
+}
+
+export function AppShell({
+  children,
+  user,
+}: {
+  children: React.ReactNode;
+  user: SessionUser | null;
+}) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const [notificationSummary, setNotificationSummary] = useState<NotificationSummary | null>(null);
+
+  const visibleNavigation = useMemo(
+    () => navigation.filter((item) => canAccessItem(item, user)),
+    [user],
+  );
+
+  const notificationCount = useMemo(() => {
+    if (!notificationSummary) return 0;
+
+    let total = 0;
+    if (notificationSummary.activeSessions > 1) total += 1;
+    if (!notificationSummary.hasRecoveryEmail) total += 1;
+    if (notificationSummary.companyCount === 0) total += 1;
+    return total;
+  }, [notificationSummary]);
+
+  const notificationBadgeClass = useMemo(() => {
+    if (!notificationSummary) return 'bg-rose-500 text-white';
+    if (notificationSummary.activeSessions > 1) return 'bg-rose-500 text-white';
+    if (!notificationSummary.hasRecoveryEmail || notificationSummary.companyCount === 0) {
+      return 'bg-amber-400 text-slate-950';
+    }
+    return 'bg-cyan-500 text-white';
+  }, [notificationSummary]);
+
+  const notificationTooltip = useMemo(() => {
+    if (!notificationSummary || notificationCount === 0) {
+      return 'Sin alertas nuevas';
+    }
+
+    if (notificationSummary.activeSessions > 1) {
+      return `${notificationCount} alerta(s): revisa tus sesiones activas`;
+    }
+
+    if (!notificationSummary.hasRecoveryEmail && notificationSummary.companyCount === 0) {
+      return `${notificationCount} alerta(s): falta correo de recuperacion y empresas asignadas`;
+    }
+
+    if (!notificationSummary.hasRecoveryEmail) {
+      return `${notificationCount} alerta(s): falta correo de recuperacion`;
+    }
+
+    if (notificationSummary.companyCount === 0) {
+      return `${notificationCount} alerta(s): sin empresas asignadas`;
+    }
+
+    return `${notificationCount} alerta(s) de cuenta`;
+  }, [notificationCount, notificationSummary]);
+
+  useEffect(() => {
+    const activeItem = visibleNavigation.find((item) => isActivePath(pathname, item.href));
+    if (!activeItem?.sections?.length) return;
+
+    const activeKeys = activeItem.sections.map((section) => getSectionKey(activeItem.href, section.label));
+    const hasOpenSection = activeKeys.some((key) => openSections[key]);
+    if (hasOpenSection) return;
+
+    setOpenSections((current) => ({
+      ...current,
+      [activeKeys[0]]: true,
+    }));
+  }, [pathname, openSections, visibleNavigation]);
+
+  useEffect(() => {
+    if (pathname === '/login' || pathname.startsWith('/password-reset')) return;
+    if (isStandaloneAllowedPath(pathname)) return;
+    if (!visibleNavigation.length) return;
+
+    const allowed = visibleNavigation.some((item) => isActivePath(pathname, item.href));
+    if (!allowed) {
+      router.replace('/dashboard');
+    }
+  }, [pathname, router, visibleNavigation]);
+
+  useEffect(() => {
+    if (!user) return;
+    if (pathname === '/login' || pathname.startsWith('/password-reset')) return;
+
+    let cancelled = false;
+
+    async function loadNotifications() {
+      const response = await fetch('/api/auth/notifications', { cache: 'no-store' });
+      const payload = (await response.json().catch(() => ({}))) as {
+        ok?: boolean;
+        data?: {
+          summary?: NotificationSummary;
+        };
+      };
+
+      if (cancelled || !response.ok || !payload.ok || !payload.data?.summary) {
+        return;
+      }
+
+      setNotificationSummary(payload.data.summary);
+    }
+
+    void loadNotifications();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, user]);
+
+  if (pathname === '/login' || pathname.startsWith('/password-reset')) {
+    return <>{children}</>;
+  }
+
+  return (
+    <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)]">
+      <div className="grid min-h-screen lg:grid-cols-[300px_minmax(0,1fr)]">
+        <aside className="border-r border-slate-800 bg-slate-950 text-slate-100">
+          <div className="sticky top-0 flex h-screen flex-col overflow-y-auto px-3 py-4">
+            <div className="px-2 pb-5">
+              <p className="text-xs uppercase tracking-[0.35em] text-cyan-300/70">Multisoft</p>
+              <h1 className="mt-3 text-[2rem] font-black leading-tight text-white">Informes Gerenciales</h1>
+              <p className="mt-3 max-w-[18rem] text-sm leading-6 text-slate-400">
+                Navegación renovada por módulos con accesos rápidos y secciones listas para migración gradual.
+              </p>
+            </div>
+
+            <nav className="flex-1 space-y-2">
+              {visibleNavigation.map((item) => {
+                const active = isActivePath(pathname, item.href);
+                const Icon = item.icon;
+
+                return (
+                  <div
+                    key={item.href}
+                    className={[
+                      'overflow-hidden rounded-[1.4rem] border transition',
+                      active ? 'border-cyan-500/30 bg-slate-900 shadow-[0_0_0_1px_rgba(34,211,238,0.08)]' : 'border-transparent bg-transparent',
+                    ].join(' ')}
+                  >
+                    <a
+                      href={item.href}
+                      className={[
+                        'group flex items-center gap-3 rounded-[1.2rem] px-4 py-3 text-sm font-semibold transition',
+                        active ? 'bg-cyan-600 text-white' : 'text-slate-300 hover:bg-slate-900 hover:text-white',
+                      ].join(' ')}
+                    >
+                      <span
+                        className={[
+                          'flex h-9 w-9 items-center justify-center rounded-xl border transition',
+                          active ? 'border-white/15 bg-white/10' : 'border-slate-800 bg-slate-900 text-slate-300 group-hover:border-slate-700',
+                        ].join(' ')}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <span className="flex-1">{item.label}</span>
+                      {item.sections?.length ? (
+                        <ChevronRight className={['h-4 w-4 transition', active ? 'rotate-90 text-white' : 'text-slate-500'].join(' ')} />
+                      ) : null}
+                    </a>
+
+                    {active && item.sections?.length ? (
+                      <div className="space-y-3 px-3 pb-3 pt-3">
+                        {item.sections.map((section) => {
+                          const sectionKey = getSectionKey(item.href, section.label);
+                          const isOpen = Boolean(openSections[sectionKey]);
+                          const hasSectionLabel = Boolean(section.label.trim());
+
+                          return (
+                            <div key={section.label} className="rounded-2xl border border-slate-800 bg-slate-900/70">
+                              {hasSectionLabel ? (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setOpenSections((current) => ({
+                                      ...current,
+                                      [sectionKey]: !current[sectionKey],
+                                    }))
+                                  }
+                                  className="flex w-full items-center justify-between px-4 py-3 text-left"
+                                >
+                                  <p className="text-sm font-semibold text-slate-100">{section.label}</p>
+                                  <ChevronRight className={['h-4 w-4 text-cyan-300 transition', isOpen ? 'rotate-90' : 'rotate-0'].join(' ')} />
+                                </button>
+                              ) : null}
+                              {isOpen ? (
+                                <div className={hasSectionLabel ? 'border-t border-slate-800 py-1' : 'py-1'}>
+                                  {section.items.map((subItem) => (
+                                    subItem.disabled ? (
+                                      <div
+                                        key={`${section.label}-${subItem.label}`}
+                                        className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-slate-500"
+                                      >
+                                        <span>{subItem.label}</span>
+                                        <span className="rounded-full border border-slate-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                                          Próximo
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <a
+                                        key={`${section.label}-${subItem.label}`}
+                                        href={subItem.href}
+                                        className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
+                                      >
+                                        <span>{subItem.label}</span>
+                                      </a>
+                                    )
+                                  ))}
+                                </div>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </nav>
+
+            <div className="mt-4 rounded-[1.6rem] border border-slate-800 bg-slate-900/80 p-5 text-sm text-slate-300">
+              <p className="text-sm font-semibold text-white">Acceso actual</p>
+              <p className="mt-2 leading-6">
+                {user?.groups?.length
+                  ? `Módulos habilitados: ${user.groups.join(', ')}`
+                  : 'No hay grupos asignados para este usuario.'}
+              </p>
+            </div>
+          </div>
+        </aside>
+
+        <div className="flex min-h-screen flex-col">
+          <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur-xl">
+            <div className="flex flex-col gap-4 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center gap-3 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500 lg:min-w-[370px]">
+                <Search className="h-4 w-4" />
+                <span>Buscar cliente, artículo, comprobante o proveedor</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/notificaciones"
+                  title={notificationTooltip}
+                  aria-label={notificationTooltip}
+                  className="relative rounded-2xl border border-slate-200 bg-white p-3 text-slate-600 shadow-sm transition hover:border-cyan-200 hover:bg-cyan-50/40"
+                >
+                  <Bell className="h-4 w-4" />
+                  {notificationCount > 0 ? (
+                    <span className={['absolute -right-1.5 -top-1.5 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold shadow-sm', notificationBadgeClass].join(' ')}>
+                      {notificationCount > 9 ? '9+' : notificationCount}
+                    </span>
+                  ) : null}
+                  <span className="sr-only">{notificationTooltip}</span>
+                </Link>
+                <Link href="/perfil" className="block max-w-[320px] rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm shadow-sm transition hover:border-cyan-200 hover:bg-cyan-50/40">
+                  <p className="truncate font-semibold text-slate-900">{user?.displayName || user?.username || 'Usuario'}</p>
+                  <p className="truncate text-slate-500">{profileSubtitle(user)}</p>
+                </Link>
+                <LogoutButton />
+              </div>
+            </div>
+          </header>
+
+          <main className="flex-1 px-6 py-6 lg:px-8">{children}</main>
+        </div>
+      </div>
+    </div>
+  );
+}

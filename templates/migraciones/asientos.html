@@ -1,0 +1,580 @@
+{% extends 'finanzas/base.html' %}
+{% load static %}
+
+{% block header %}
+  Migraciones - Asientos:
+{% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <style>
+    .migration-filters .control-label {
+      width: 22%;
+      text-align: right;
+    }
+
+    .migration-filters .form-group > .col-md-6 {
+      width: 78%;
+    }
+
+    .migration-filters .migration-control,
+    .migration-filters #select-empresa,
+    .migration-filters #periodo,
+    .migration-filters #periodo .form-control {
+      width: 100%;
+    }
+
+    .migration-filters .migration-control,
+    .migration-filters #select-empresa,
+    .migration-filters #periodo .form-control {
+      min-height: 38px;
+      border: 1px solid #ced9ea;
+      border-radius: 8px;
+      color: #22344f;
+      font-size: 13px;
+      padding: 8px 12px;
+    }
+
+    .mig-upload-card {
+      margin-top: 2px;
+      background: #fff;
+      border: 1px solid #d8e3f2;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(26, 55, 99, 0.07);
+      overflow: hidden;
+    }
+
+    .mig-upload-card .head {
+      padding: 8px 10px;
+      border-bottom: 1px solid #e2e9f5;
+      font-size: 15px;
+      font-weight: 700;
+      color: #1f3556;
+      background: linear-gradient(180deg, #f9fbff, #f2f7ff);
+    }
+
+    .mig-upload-card .body {
+      padding: 14px;
+    }
+
+    .mig-help {
+      margin-bottom: 12px;
+      color: #4a5f82;
+      font-size: 12px;
+    }
+
+    .mig-upload-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .mig-upload-row input[type="file"] {
+      flex: 1 1 420px;
+    }
+
+    .mig-alert {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+
+    .mig-alert-error {
+      background: #fff4f4;
+      border: 1px solid #f1c5c5;
+      color: #8d1f1f;
+    }
+
+    .mig-alert-info {
+      background: #f4f8ff;
+      border: 1px solid #cfdcf5;
+      color: #234064;
+    }
+
+    .mig-alert-success {
+      background: #f2fbf4;
+      border: 1px solid #bfe3c6;
+      color: #20613a;
+    }
+
+    .mig-summary {
+      margin-top: 14px;
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .mig-summary-card {
+      background: #f7fbff;
+      border: 1px solid #d8e3f2;
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .mig-summary-card b {
+      display: block;
+      color: #1f3556;
+      font-size: 12px;
+    }
+
+    .mig-summary-card span {
+      font-size: 18px;
+      font-weight: 700;
+      color: #234064;
+    }
+
+    .mig-table-wrap {
+      margin-top: 14px;
+      overflow-x: auto;
+    }
+
+    .mig-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .mig-table th,
+    .mig-table td {
+      border: 1px solid #dde7f4;
+      padding: 6px 8px;
+      vertical-align: top;
+    }
+
+    .mig-table th {
+      background: #f4f8fd;
+      color: #1f3556;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .mig-table .is-error {
+      background: #fff7f7;
+    }
+
+    .mig-errors {
+      margin-top: 14px;
+      padding-left: 18px;
+      color: #8d1f1f;
+      font-size: 12px;
+    }
+
+    .mig-process {
+      margin-top: 12px;
+      padding: 10px 12px 10px 26px;
+      border: 1px solid #d8e3f2;
+      border-radius: 8px;
+      background: #f8fbff;
+      color: #234064;
+      font-size: 12px;
+    }
+
+    .mig-process li + li {
+      margin-top: 4px;
+    }
+
+    .mig-stage {
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .mig-stage__item {
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid #d8e3f2;
+      background: #f7fbff;
+      color: #4a5f82;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .mig-stage__item.is-active {
+      border-color: #1f5fbf;
+      background: #eaf2ff;
+      color: #1f4f96;
+    }
+
+    .mig-stage__item.is-done {
+      border-color: #a7d6b4;
+      background: #eef9f1;
+      color: #20613a;
+    }
+
+    .mig-working {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #cfdcf5;
+      background: #f4f8ff;
+      color: #234064;
+      font-size: 12px;
+      font-weight: 700;
+      display: none;
+    }
+
+    @media (max-width: 900px) {
+      .migration-filters .control-label,
+      .migration-filters .form-group > .col-md-6 {
+        width: 100%;
+        text-align: left;
+      }
+
+      .migration-filters .form-group {
+        margin-bottom: 10px;
+      }
+
+      .mig-summary {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+{% endblock %}
+
+{% block filters %}
+  <div class="row migration-filters">
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="select-empresa" class="col-md-4 control-label">Empresa:</label>
+        <div class="col-md-6">
+          <select id="select-empresa" name="empresa" class="form-control migration-control">
+            <option value="">Seleccione...</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6">
+      <div class="form-group">
+        <label for="periodo" class="col-md-4 control-label">Periodo:</label>
+        <div class="col-md-6">
+          <div id="periodo" class="input-date">
+            <input type="text" class="form-control migration-control" name="periodo">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block filter_footer %}
+  <div class="ms-filter-actions__left">
+    <button type="submit"
+       form="migrate-form"
+       class="btn btn-filter-modern {% if not validation_ok %}is-disabled{% endif %}"
+       {% if not validation_ok %}disabled title="Primero valide el Excel sin errores"{% endif %}>
+      Migrar <i class="fa fa-upload"></i>
+    </button>
+    <a type="button" class="btn btn-cancel-modern" href="/migraciones/asientos/" style="margin-left:8px;">Limpiar pantalla <i class="fa fa-eraser"></i></a>
+  </div>
+  <div class="ms-filter-actions__right"></div>
+{% endblock %}
+
+{% block inner_content %}
+  <div class="text-center" id="messages">
+    <h3 id="loading" style="display:none;">Cargando...</h3>
+    <h3 id="empty" style="display:none;">Seleccione empresa y periodo.</h3>
+  </div>
+
+  <div class="mig-upload-card" id="mig-upload-card" style="display:none;">
+    <div class="head">Carga de Excel</div>
+    <div class="body">
+      <div class="mig-help">
+        Formato esperado: <b>Cod_Empresa, TipoAsiento, NroCompr, NroTransaccion, Linea, CodPlanCta, CodPlanAux, Concepto, DbCr, Importe, ImporteME, Fecha</b>.
+        El Sistema controla el archivo antes de cualquier migracion.
+      </div>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="validar">
+        <input type="hidden" name="empresa" id="upload-empresa" value="{{ selected_empresa|default:'' }}">
+        <input type="hidden" name="periodo" id="upload-periodo" value="{{ selected_periodo|default:'' }}">
+        <div class="mig-upload-row">
+          <input type="file" name="archivo_excel" class="form-control" accept=".xls,.xlsx" required>
+          <button type="submit" class="btn btn-filter-modern">Validar Excel <i class="fa fa-upload"></i></button>
+        </div>
+      </form>
+
+      {% if upload_error %}
+        <div class="mig-alert mig-alert-error">{{ upload_error }}</div>
+      {% endif %}
+
+      {% if migration_message %}
+        <div class="mig-alert {% if migration_ok %}mig-alert-success{% else %}mig-alert-error{% endif %}">
+          {{ migration_message }}
+        </div>
+      {% endif %}
+
+      <div class="mig-working" id="mig-working">
+        Migrando asientos. Por favor espere...
+      </div>
+
+      <div class="mig-stage" id="mig-stage" style="display:none;">
+        <span class="mig-stage__item" data-step="prepare">Preparando</span>
+        <span class="mig-stage__item" data-step="header">Insertando cabecera</span>
+        <span class="mig-stage__item" data-step="detail">Insertando detalle</span>
+        <span class="mig-stage__item" data-step="commit">Confirmando</span>
+      </div>
+
+      {% if migration_process %}
+        <ol class="mig-process">
+          {% for step in migration_process %}
+            <li>{{ step }}</li>
+          {% endfor %}
+        </ol>
+      {% endif %}
+
+      {% if upload_result %}
+        <div class="mig-alert mig-alert-info">
+          Los datos ya fueron controlados para la empresa y periodo seleccionados. Para cambiar esos parametros, primero use <b>Limpiar pantalla</b>.
+        </div>
+        <div class="mig-summary">
+          <div class="mig-summary-card">
+            <b>Total filas</b>
+            <span>{{ upload_result.summary.total_rows }}</span>
+          </div>
+          <div class="mig-summary-card">
+            <b>Filas validas</b>
+            <span>{{ upload_result.summary.valid_rows }}</span>
+          </div>
+          <div class="mig-summary-card">
+            <b>Filas con error</b>
+            <span>{{ upload_result.summary.error_rows }}</span>
+          </div>
+        </div>
+
+        <div class="mig-alert {% if validation_ok %}mig-alert-success{% else %}mig-alert-info{% endif %}">
+          {% if validation_ok %}
+            El archivo quedo listo para una etapa posterior de migracion.
+          {% else %}
+            El archivo todavia no puede migrarse. Primero corrija las observaciones detectadas por el Sistema.
+          {% endif %}
+        </div>
+
+        {% if upload_result.preview_rows %}
+          <div class="mig-table-wrap">
+            <table class="mig-table">
+              <thead>
+                <tr>
+                  <th>Fila</th>
+                  <th>Empresa</th>
+                  <th>TipoAsiento</th>
+                  <th>NroCompr</th>
+                  <th>NroTransaccion</th>
+                  <th>Linea</th>
+                  <th>CodPlanCta</th>
+                  <th>CodPlanAux</th>
+                  <th>Concepto</th>
+                  <th>DbCr</th>
+                  <th>Importe</th>
+                  <th>ImporteME</th>
+                  <th>Fecha</th>
+                  <th>Estado</th>
+                  <th>Detalle</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in upload_result.preview_rows %}
+                  <tr class="{% if row.estado == 'ERROR' %}is-error{% endif %}">
+                    <td>{{ row.fila }}</td>
+                    <td>{{ row.cod_empresa }}</td>
+                    <td>{{ row.tipoasiento }}</td>
+                    <td>{{ row.nrocompr }}</td>
+                    <td>{{ row.nrotransaccion }}</td>
+                    <td>{{ row.linea }}</td>
+                    <td>{{ row.codplancta }}</td>
+                    <td>{{ row.codplanaux }}</td>
+                    <td>{{ row.concepto }}</td>
+                    <td>{{ row.dbcr }}</td>
+                    <td>{{ row.importe }}</td>
+                    <td>{{ row.importeme }}</td>
+                    <td>{{ row.fecha }}</td>
+                    <td>{{ row.estado }}</td>
+                    <td>{{ row.detalle_error }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+
+        {% if upload_result.errors %}
+          <ul class="mig-errors">
+            {% for err in upload_result.errors %}
+              <li>{{ err }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+
+  <form id="migrate-form" method="post" style="display:none;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="migrar">
+    <input type="hidden" name="empresa" id="migrate-empresa" value="{{ selected_empresa|default:'' }}">
+    <input type="hidden" name="periodo" id="migrate-periodo" value="{{ selected_periodo|default:'' }}">
+  </form>
+
+  <script>
+    var query = {};
+    window.msActiveFiltersAllowList = ['empresa', 'periodo'];
+    var today = new Date();
+    var hasControlledData = {% if upload_result %}true{% else %}false{% endif %};
+    var lockedEmpresa = '{{ selected_empresa|default:""|escapejs }}';
+    var lockedPeriodo = '{{ selected_periodo|default:""|escapejs }}';
+
+    function showMigrationStage(step) {
+      var order = ['prepare', 'header', 'detail', 'commit'];
+      var currentIndex = order.indexOf(step);
+      if (currentIndex < 0) currentIndex = 0;
+      $('#mig-stage').show();
+      $('#mig-stage [data-step]').each(function () {
+        var idx = order.indexOf($(this).data('step'));
+        $(this).removeClass('is-active is-done');
+        if (idx < currentIndex) {
+          $(this).addClass('is-done');
+        } else if (idx === currentIndex) {
+          $(this).addClass('is-active');
+        }
+      });
+    }
+
+    function syncPeriodoDefault() {
+      var year = String(today.getFullYear());
+      query.periodo = year;
+      $('#periodo .form-control').datepicker('setDate', today);
+    }
+
+    function getInforme() {
+      $('#loading').hide();
+      if (!query.empresa || !query.periodo) {
+        $('#mig-upload-card').hide();
+        $('#empty').show();
+        return;
+      }
+      $('#empty').hide();
+      $('#upload-empresa').val(query.empresa || '');
+      $('#upload-periodo').val(query.periodo || '');
+      $('#migrate-empresa').val(query.empresa || '');
+      $('#migrate-periodo').val(query.periodo || '');
+      $('#mig-upload-card').show();
+    }
+
+    function limpiar() {
+      window.location.href = '/migraciones/asientos/';
+    }
+
+    $(document).ready(function () {
+      $('#periodo .form-control').datepicker({
+        format: 'yyyy',
+        startView: 2,
+        minViewMode: 2,
+        maxViewMode: 2,
+        language: 'es',
+        autoclose: true
+      });
+
+      $('#periodo .form-control').on('changeDate change input', function (e) {
+        var newPeriodo = (e && e.format) ? e.format('yyyy') : ($(this).val() || '').trim();
+        if (hasControlledData && lockedPeriodo && newPeriodo !== lockedPeriodo) {
+          alert('No puede seleccionar otro periodo cuando los datos ya fueron controlados. Use Limpiar pantalla para volver a insertar.');
+          query.periodo = lockedPeriodo;
+          $('#periodo .form-control').datepicker('update', lockedPeriodo);
+          getInforme();
+          return;
+        }
+        query.periodo = newPeriodo;
+        getInforme();
+      });
+
+      $('#select-empresa').on('change', function () {
+        var newValue = $(this).val() || '';
+        if (hasControlledData && lockedEmpresa && newValue !== lockedEmpresa) {
+          alert('No puede seleccionar otra empresa cuando los datos ya fueron controlados. Use Limpiar pantalla para volver a insertar.');
+          $(this).val(lockedEmpresa);
+          query.empresa = lockedEmpresa;
+          getInforme();
+          return;
+        }
+        query.empresa = newValue;
+        getInforme();
+      });
+
+      try {
+        u.get_empresas({{ user }}, 'Integrado', function (d) {
+          var list = ((d && d.data) ? d.data : []).map(function (r) {
+            return {
+              value: r.Cod_Empresa || r.cod_empresa || '',
+              text: r.Des_Empresa || r.des_empresa || r.Cod_Empresa || r.cod_empresa || ''
+            };
+          }).filter(function (r) {
+            return r.value;
+          });
+
+          var html = '<option value=\"\">Seleccione...</option>';
+          for (var i = 0; i < list.length; i++) {
+            html += '<option value=\"' + list[i].value + '\">' + list[i].text + '</option>';
+          }
+          $('#select-empresa').html(html);
+
+          if (list.length) {
+            var selectedValue = lockedEmpresa || '{{ selected_empresa|default:""|escapejs }}' || list[0].value;
+            $('#select-empresa').val(selectedValue);
+            query.empresa = selectedValue;
+            lockedEmpresa = selectedValue || lockedEmpresa;
+          } else {
+            $('#empty').text('No tiene empresas habilitadas.');
+            $('#empty').show();
+          }
+
+          if ('{{ selected_periodo|default:""|escapejs }}') {
+            query.periodo = '{{ selected_periodo|default:""|escapejs }}';
+            $('#periodo .form-control').datepicker('update', '{{ selected_periodo|default:""|escapejs }}');
+            lockedPeriodo = '{{ selected_periodo|default:""|escapejs }}';
+          } else {
+            syncPeriodoDefault();
+            lockedPeriodo = query.periodo;
+          }
+          getInforme();
+        });
+      } catch (e) {
+        $('#empty').text('No se pudo cargar la lista de empresas.');
+        $('#empty').show();
+      }
+
+      var migrationStepsText = [
+        {% for step in migration_process %}
+          '{{ step|escapejs }}',
+        {% endfor %}
+      ];
+      if (migrationStepsText.length) {
+        var joined = migrationStepsText.join(' ').toLowerCase();
+        if (joined.indexOf('detalle insertado') >= 0) {
+          showMigrationStage('commit');
+          $('#mig-stage [data-step="prepare"], #mig-stage [data-step="header"], #mig-stage [data-step="detail"]').addClass('is-done').removeClass('is-active');
+          $('#mig-stage [data-step="commit"]').addClass('{% if migration_ok %}is-done{% else %}is-active{% endif %}').removeClass('{% if migration_ok %}is-active{% else %}is-done{% endif %}');
+        } else if (joined.indexOf('cabecera insertada') >= 0) {
+          showMigrationStage('detail');
+          $('#mig-stage [data-step="prepare"], #mig-stage [data-step="header"]').addClass('is-done').removeClass('is-active');
+        } else if (joined.indexOf('procesando asiento origen') >= 0 || joined.indexOf('reservando nrotransac destino') >= 0) {
+          showMigrationStage('header');
+          $('#mig-stage [data-step="prepare"]').addClass('is-done').removeClass('is-active');
+        } else {
+          showMigrationStage('prepare');
+        }
+      }
+
+      $('#migrate-form').on('submit', function () {
+        $('#mig-working').show();
+        showMigrationStage('prepare');
+        setTimeout(function () { showMigrationStage('header'); }, 150);
+      });
+
+      {% if migration_process %}
+        $('#mig-working').hide();
+      {% endif %}
+    });
+  </script>
+{% endblock %}

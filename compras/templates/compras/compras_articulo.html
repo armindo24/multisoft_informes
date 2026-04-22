@@ -63,10 +63,47 @@
   </tfoot> -->
 {% endblock %}
 
+{% block inner_content %}{% endblock %}
+
 {% block extra_foot %}
   <style>
     .aling_right {
       text-align: right;
+    }
+    #articulo-picker-table tbody tr {
+      cursor: pointer;
+    }
+    #articulo-picker-table tbody tr:hover {
+      background: #eef5ff;
+    }
+    #articuloPickerPanel {
+      display: none;
+      position: fixed;
+      z-index: 5000;
+      top: 72px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 86%;
+      max-width: 980px;
+      background: #fff;
+      border: 2px solid #5b9bd5;
+      box-shadow: 0 8px 24px rgba(0,0,0,.25);
+    }
+    #articuloPickerPanel .panel-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+    }
+    #articuloPickerPanel .panel-body {
+      padding: 10px 12px;
+    }
+    #articuloPickerBackdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 4990;
+      background: rgba(0,0,0,.25);
     }
   </style>
   <script>
@@ -89,6 +126,7 @@
     var select_articulo, $select_articulo;
     var select_moneda, $select_moneda;
     var xhr;
+    var articuloPickerRows = [];
 
     function addCommas(nStr) {
       nStr += '';
@@ -102,11 +140,93 @@
       return x1 + x2;
     }
 
+    function articuloPickerNumber(value) {
+      if (value === null || value === undefined || value === '') return '0';
+      return convertir_rever(value);
+    }
+
+    function renderArticuloPickerRows(rows) {
+      var html = '';
+      for (var i = 0; i < rows.length; i++) {
+        var item = rows[i];
+        var codigo = item.cod_articulo || '';
+        var nombre = item.des_art || '';
+        html += '<tr data-codigo="' + codigo + '" data-nombre="' + String(nombre).replace(/"/g, '&quot;') + '">' +
+          '<td>' + codigo + '</td>' +
+          '<td>' + nombre + '</td>' +
+          '<td class="text-right">' + articuloPickerNumber(item.cto_prom_gs || item.cto_prom_me) + '</td>' +
+          '<td class="text-right">' + articuloPickerNumber(item.cto_ult_gs || item.cto_ult_me) + '</td>' +
+          '<td class="text-center">' + (item.codmoneda || '') + '</td>' +
+          '<td class="text-center">' + (item.iva || '') + '</td>' +
+          '</tr>';
+      }
+      $('#articulo-picker-table tbody').html(html || '<tr><td colspan="6" class="text-center">Sin datos</td></tr>');
+    }
+
+    function ensureArticuloPicker() {
+      if ($('#articuloPickerPanel').length) return;
+      $('body').append(
+        '<div id="articuloPickerBackdrop"></div>' +
+        '<div id="articuloPickerPanel" class="panel panel-default">' +
+          '<div class="panel-heading">' +
+            '<strong style="font-size:12px;">Buscar articulo</strong>' +
+            '<button type="button" class="btn btn-danger btn-xs" id="articulo-picker-close">Cerrar</button>' +
+          '</div>' +
+          '<div class="panel-body">' +
+            '<input type="text" id="articulo-picker-search" class="form-control input-sm" placeholder="Buscar por codigo o descripcion..." style="margin-bottom:8px;">' +
+            '<div class="table-responsive" style="max-height: 420px; overflow: auto; border: 1px solid #d9e2ef;">' +
+              '<table class="table table-striped table-bordered" id="articulo-picker-table" style="margin-bottom:0; font-size:11px;">' +
+                '<thead><tr>' +
+                  '<th style="position:sticky;top:0;background:#f3f6fb;z-index:2;">Codigo</th>' +
+                  '<th style="position:sticky;top:0;background:#f3f6fb;z-index:2;">Descripcion</th>' +
+                  '<th style="position:sticky;top:0;background:#f3f6fb;z-index:2;">Costo Promedio</th>' +
+                  '<th style="position:sticky;top:0;background:#f3f6fb;z-index:2;">Ultima Compra</th>' +
+                  '<th style="position:sticky;top:0;background:#f3f6fb;z-index:2;">Mon.</th>' +
+                  '<th style="position:sticky;top:0;background:#f3f6fb;z-index:2;">IVA</th>' +
+                '</tr></thead>' +
+                '<tbody></tbody>' +
+              '</table>' +
+            '</div>' +
+          '</div>' +
+        '</div>'
+      );
+    }
+
+    function closeArticuloPicker() {
+      $('#articuloPickerPanel').hide();
+      $('#articuloPickerBackdrop').hide();
+    }
+
+    function openArticuloPicker() {
+      ensureArticuloPicker();
+      var empresa = (select_empresa && typeof select_empresa.getValue === 'function') ? select_empresa.getValue() : '';
+      if (!empresa) {
+        alert('Debe elegir primero la empresa para ver los articulos.');
+        return;
+      }
+      $.ajax({
+        url: api + 'empresas/' + empresa + '/articulos',
+        type: 'GET',
+        dataType: 'json'
+      }).done(function (res) {
+        articuloPickerRows = (res && res.data) ? res.data : [];
+        renderArticuloPickerRows(articuloPickerRows);
+        $('#articulo-picker-search').val('');
+        $('#articuloPickerBackdrop').show();
+        $('#articuloPickerPanel').show();
+      }).fail(function () {
+        alert('No se pudo cargar la lista de articulos.');
+      });
+    }
+
+    window.openArticuloPicker = openArticuloPicker;
+
 
     $(document).ready(function () {
       u.hideNav();
       $results.hide();
       initialize();
+      ensureArticuloPicker();
       select_empresa = $select_empresa[0].selectize;
 
       select_sucursal = $select_sucursal[0].selectize;
@@ -288,6 +408,17 @@
         }
       });
 
+      var $artControl = $('#select-articulo').next('.selectize-control');
+      if ($artControl.length && !$artControl.parent().find('.js-articulo-picker-btn').length) {
+        $artControl.wrap('<div class="js-articulo-picker-wrap" style="position:relative;"></div>');
+        $artControl.after(
+          '<button type="button" class="btn btn-info btn-xs js-articulo-picker-btn" ' +
+          'onclick="window.openArticuloPicker && window.openArticuloPicker(); return false;" ' +
+          'style="position:absolute;right:-36px;top:2px;height:30px;min-width:30px;padding:0 8px;" ' +
+          'title="Buscar articulo"><i class="fa fa-search"></i></button>'
+        );
+      }
+
       $select_tipoco = $('#select-tipoco').selectize({
         valueField: 'cod_tp_comp',
         labelField: 'des_tp_comp',
@@ -337,6 +468,59 @@
 
       $('.input-date .form-control').datepicker('setDate', today);
       $('.input-date .form-control').datepicker('update');
+
+      var originalFocusFilterSearch = window.focusFilterSearch;
+      window.focusFilterSearch = function (name) {
+        if (name === 'articulo') {
+          openArticuloPicker();
+          return;
+        }
+        if (typeof originalFocusFilterSearch === 'function') {
+          originalFocusFilterSearch(name);
+        }
+      };
+
+      $(document).on('click', '.js-articulo-picker-btn', function (e) {
+        e.preventDefault();
+        openArticuloPicker();
+      });
+
+      $(document).on('click', '.js-filter-search[data-filter=\"articulo\"]', function (e) {
+        e.preventDefault();
+        openArticuloPicker();
+      });
+
+      $(document).on('keyup', '#articulo-picker-search', function () {
+        var term = ($(this).val() || '').toLowerCase();
+        if (!term) {
+          renderArticuloPickerRows(articuloPickerRows);
+          return;
+        }
+        renderArticuloPickerRows(articuloPickerRows.filter(function (item) {
+          var codigo = String(item.cod_articulo || '').toLowerCase();
+          var nombre = String(item.des_art || '').toLowerCase();
+          return codigo.indexOf(term) >= 0 || nombre.indexOf(term) >= 0;
+        }));
+      });
+
+      $(document).on('click', '#articulo-picker-table tbody tr', function () {
+        var codigo = $(this).data('codigo');
+        var nombre = $(this).data('nombre');
+        if (!codigo || !select_articulo) return;
+        select_articulo.addOption({ cod_articulo: codigo, des_art: nombre });
+        if ($.isArray(select_articulo.items)) {
+          select_articulo.addItem(codigo);
+        } else {
+          select_articulo.setValue(codigo);
+        }
+        query.articulo = select_articulo.getValue();
+        closeArticuloPicker();
+      });
+
+      $(document).on('click', '#articulo-picker-close, #articuloPickerBackdrop', function (e) {
+        e.preventDefault();
+        closeArticuloPicker();
+      });
     }
 
     function debug() {

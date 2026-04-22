@@ -1,5 +1,5 @@
 {% extends 'ventas/baseWithoutTable.html' %}
-{% load staticfiles %}
+{% load static %}
 
 {% block extrahead %}
   {{ block.super }}
@@ -181,13 +181,14 @@
           {value: 'AR', text: 'Artículo'},
         ],
         onChange: function (value) {
-          query.asentada = value;
+          query.graficode = value;
           debug();
         }
       });
 
       var selectize = $select_graficode[0].selectize;
       selectize.setValue('PR');
+      query.asentada = 'ALL';
 
       $select_articulo = $('#select-articulo').selectize({
         valueField: 'cod_articulo',
@@ -275,8 +276,8 @@
             var aux_colum = ['Proveedores'];
             var aux_name = [];
             for (var a = 0; a < datos.data.length; a++) {
-              aux_colum.push(datos.data[a].TotalCompras);
-              aux_name.push(datos.data[a].RazonSocial);
+              aux_colum.push(datos.data[a].TotalCompras || datos.data[a].totalcompras || 0);
+              aux_name.push(datos.data[a].RazonSocial || datos.data[a].razonsocial || datos.data[a].nombre || '-');
             }
             console.log(aux_colum);
             var chart = c3.generate({
@@ -338,8 +339,8 @@
             var aux_colum = ['Compras'];
             var aux_name = [];
             for (var a = 0; a < datos.data.length; a++) {
-              aux_colum.push(datos.data[a].TotalItem);
-              aux_name.push(datos.data[a].Des_Art);
+              aux_colum.push(datos.data[a].TotalItem || datos.data[a].totalitem || 0);
+              aux_name.push(datos.data[a].Des_Art || datos.data[a].des_art || datos.data[a].nombre || '-');
             }
             console.log(aux_colum);
             var chart = c3.generate({

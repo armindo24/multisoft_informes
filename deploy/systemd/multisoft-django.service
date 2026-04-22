@@ -1,0 +1,15 @@
+[Unit]
+Description=Multisoft Django
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/multisoft/multisoft_informes
+Environment=DJANGO_SETTINGS_MODULE=multisoft_informes.settings.production
+ExecStart=/opt/multisoft/multisoft_informes/.venv/bin/gunicorn multisoft_informes.wsgi:application --bind 0.0.0.0:8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

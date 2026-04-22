@@ -35,3 +35,100 @@ td.multi {
     width: 400px;
     margin-left: -200px;
 }
+
+/* Reporte compacto: filtros y tabla más chicos */
+#filters .form-group {
+    margin-bottom: 8px;
+}
+
+#filters label.control-label {
+    font-size: 12px;
+    padding-top: 6px;
+}
+
+#filters .form-control {
+    height: 28px;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+#filters input[type="checkbox"] {
+    transform: scale(0.9);
+}
+
+.report-compact table#resultados th,
+.report-compact table#resultados td {
+    padding: 3px 5px;
+    font-size: 10px;
+}
+
+.report-compact table#resultados th {
+    white-space: nowrap;
+}
+
+.report-compact h3,
+.report-compact h4 {
+    font-size: 13px;
+    margin-top: 6px;
+    margin-bottom: 6px;
+}
+
+.report-compact .panel-title {
+    font-size: 12px;
+}
+
+/* Ordenes de Pago - Financiero: tabla y titulo compactos */
+.report-financiero {
+    color: #1f2a44;
+}
+
+#report-header.report-financiero {
+    border: 1px solid #d8e0ef;
+    border-radius: 8px;
+    background: #fbfcff;
+    padding: 10px 12px;
+    margin-top: 2px;
+}
+
+.report-financiero #report-filters {
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.report-financiero #report-filters span {
+    display: inline-block;
+    margin-right: 10px;
+    margin-bottom: 2px;
+}
+
+.report-financiero b {
+    font-size: 12px;
+}
+
+#table-div.report-financiero {
+    border: 1px solid #d8e0ef;
+    border-radius: 8px;
+    background: #fff;
+    padding: 0 0 8px;
+}
+
+.report-financiero-table th,
+.report-financiero-table td {
+    padding: 2px 4px;
+    font-size: 9px;
+    white-space: nowrap;
+}
+
+.report-financiero-table th {
+    background-color: #d9edf7;
+}
+
+.report-financiero-table tbody tr:hover td {
+    background-color: #f4f8ff !important;
+}
+
+.report-financiero-resumen {
+    margin-top: 6px;
+    font-size: 10px;
+    padding: 0 10px;
+}

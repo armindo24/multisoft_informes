@@ -1,5 +1,5 @@
 {% extends 'ventas/baseWithoutTable.html' %}
-{% load staticfiles %}
+{% load static %}
 
 {% block extrahead %}
   {{ block.super }}
@@ -8,6 +8,185 @@
   <script src="{% static 'd3/d3.min.js' %}"></script>
   <script src="{% static 'pathseg/pathseg.js' %}"></script>
   <script src="{% static 'c3/c3.min.js' %}"></script>
+  <style>
+    .stats-shell { margin-top: 8px; }
+    .stats-filter-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      border: 1px solid #d8e1ef;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #f7faff 0%, #eef4fd 100%);
+    }
+    .stats-filter-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #2f68c4;
+      margin-right: 6px;
+    }
+    .stats-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid #d6e0ef;
+      color: #314563;
+      font-size: 12px;
+      box-shadow: 0 2px 6px rgba(24, 57, 99, 0.05);
+    }
+    .stats-chip b { color: #566b89; font-weight: 700; }
+    .stats-message {
+      border: 1px dashed #cfd9ea;
+      border-radius: 10px;
+      padding: 18px 14px;
+      background: #fafcff;
+      color: #5a6c86;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .stats-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .stats-card {
+      border: 1px solid #d8e1ef;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+      box-shadow: 0 8px 24px rgba(24, 57, 99, 0.06);
+      padding: 12px 14px;
+    }
+    .stats-card-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #6a7e9d;
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+    .stats-card-value {
+      font-size: 22px;
+      line-height: 1.1;
+      font-weight: 800;
+      color: #183963;
+    }
+    #summary-top {
+      font-size: 14px;
+      line-height: 1.18;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: unset;
+      word-break: break-word;
+    }
+    .stats-card-icon {
+      float: left;
+      font-size: 32px;
+      margin-right: 14px;
+      color: #2f7de1;
+      line-height: 1;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1.6fr .9fr;
+      gap: 14px;
+      align-items: start;
+    }
+    .stats-chart-card {
+      border: 1px solid #d8e1ef;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 8px 24px rgba(24, 57, 99, 0.05);
+      overflow: hidden;
+    }
+    .stats-chart-head {
+      padding: 11px 14px;
+      border-bottom: 1px solid #e3eaf5;
+      background: linear-gradient(180deg, #f8fbff 0%, #eef4fd 100%);
+      color: #1f3556;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .stats-chart-actions { display: flex; gap: 8px; align-items: center; }
+    .stats-chart-actions .btn {
+      border-radius: 8px;
+      padding: 5px 8px;
+      font-size: 11px;
+      border: 1px solid #d6e0ef;
+      background: #fff;
+      color: #29456f;
+    }
+    .stats-chart-body { padding: 10px 12px 6px; }
+    .stats-chart-body.tall { min-height: 390px; }
+    .stats-chart-body.medium { min-height: 300px; }
+    .stats-top-layout {
+      display: grid;
+      grid-template-columns: 1.4fr .9fr;
+      gap: 14px;
+      align-items: start;
+    }
+    .stats-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .stats-table th {
+      background: #eef4fd;
+      color: #1f3556;
+      padding: 8px 10px;
+      border: 1px solid #dbe4f2;
+      font-weight: 700;
+    }
+    .stats-table td {
+      padding: 8px 10px;
+      border: 1px solid #e1e8f3;
+      color: #334866;
+    }
+    .stats-table tr:nth-child(even) td { background: #fafcff; }
+    .stats-table td.right, .stats-table th.right { text-align: right; }
+    #bar, #pie { min-height: 260px; }
+    #chart { min-height: 320px; }
+    .c3 svg { font-family: "Segoe UI", Tahoma, sans-serif; }
+    .c3-axis path, .c3-axis line { stroke: #cbd7ea; }
+    .c3-axis text, .c3-legend-item text { fill: #425672; font-size: 11px; }
+    .c3-tooltip {
+      border-collapse: separate !important;
+      border-spacing: 0;
+      box-shadow: 0 8px 24px rgba(15, 34, 58, 0.16);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .c3-tooltip th {
+      background: #1f5fbf !important;
+      color: #fff !important;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 8px 10px;
+    }
+    .c3-tooltip td {
+      font-size: 12px;
+      padding: 7px 10px;
+      background: #fff;
+      border-left: none;
+    }
+    .c3-chart-arcs-title {
+      font-size: 14px !important;
+      font-weight: 700;
+      fill: #1f3556 !important;
+    }
+    @media (max-width: 991px) {
+      .stats-summary, .stats-grid, .stats-top-layout { grid-template-columns: 1fr; }
+    }
+  </style>
 {% endblock %}
 
 {% block header %}
@@ -55,27 +234,83 @@
 
 
 {% block inner_content %}
-  <div class="text-center" id="messages">
-    <h3 id="loading" style="display: none;">Cargando...</h3>
-
-    <h3 id="empty" style="display: none;">No hay datos disponibles</h3>
-  </div>
-  <div id="charts">
-    <div class="row">
-      <div class="col-lg-6">
-        <div id="bar"></div>
+  <div class="stats-shell">
+    <div class="stats-filter-strip">
+      <span class="stats-filter-title">Filtros</span>
+      <span class="stats-chip"><b>Empresa</b> <span id="chip-empresa">-</span></span>
+      <span class="stats-chip"><b>Graficar</b> <span id="chip-agrupacion">-</span></span>
+      <span class="stats-chip"><b>Moneda</b> <span id="chip-moneda">-</span></span>
+      <span class="stats-chip"><b>Sucursal</b> <span id="chip-sucursal">-</span></span>
+      <span class="stats-chip"><b>Fecha</b> <span id="chip-fecha">-</span></span>
+    </div>
+    <div class="text-center" id="messages">
+      <div id="loading" class="stats-message" style="display: none;">Cargando estadística...</div>
+      <div id="empty" class="stats-message" style="display: none;">No hay datos disponibles</div>
+    </div>
+    <div id="charts">
+      <div class="stats-summary">
+        <div class="stats-card">
+          <span class="stats-card-icon"><i class="fa fa-money"></i></span>
+          <div class="stats-card-label">Total Neto</div>
+          <div class="stats-card-value" id="summary-total">-</div>
+        </div>
+        <div class="stats-card">
+          <span class="stats-card-icon"><i class="fa fa-users"></i></span>
+          <div class="stats-card-label">Cantidad Analizada</div>
+          <div class="stats-card-value" id="summary-count">-</div>
+        </div>
+        <div class="stats-card">
+          <span class="stats-card-icon" style="color:#f0a62a;"><i class="fa fa-trophy"></i></span>
+          <div class="stats-card-label">Principal</div>
+          <div class="stats-card-value" id="summary-top">-</div>
+        </div>
       </div>
-      <div class="col-lg-6">
-        <div id="pie"></div>
+      <div class="stats-grid">
+        <div class="stats-chart-card">
+          <div class="stats-chart-head">
+            <span>Top ranking</span>
+            <div class="stats-chart-actions">
+              <select id="top-limit" class="form-control input-sm" style="width:90px;height:28px;padding:2px 8px;">
+                <option value="10">Top 10</option>
+                <option value="20" selected>Top 20</option>
+                <option value="30">Top 30</option>
+              </select>
+              <select id="chart-type-main" class="form-control input-sm" style="width:140px;height:28px;padding:2px 8px;">
+                <option value="bar">Barras</option>
+                <option value="pie">Torta</option>
+                <option value="donut">Donut</option>
+                <option value="line">Línea</option>
+                <option value="spline">Spline</option>
+                <option value="area">Área</option>
+                <option value="area-spline">Área spline</option>
+              </select>
+            </div>
+          </div>
+          <div class="stats-chart-body tall">
+            <div id="pie"></div>
+          </div>
+        </div>
+        <div class="stats-chart-card">
+          <div class="stats-chart-head">Top detallado</div>
+          <div class="stats-chart-body medium">
+            <div id="top-table"></div>
+          </div>
+        </div>
+        <div class="stats-chart-card" style="grid-column: 1 / -1;">
+          <div class="stats-chart-head">Evolución mensual</div>
+          <div class="stats-chart-body">
+            <div id="chart"></div>
+          </div>
+        </div>
       </div>
     </div>
-    <div id="chart"></div>
   </div>
 {% endblock %}
 
 {% block extra_foot %}
   <script>
     var query = {empresa: ''};
+    var lastStatsData = [];
 
     var $selectEmpresa, selectEmpresa;
     var $selectAgrupacion, selectAgrupacion;
@@ -86,6 +321,7 @@
     var $selectArticulo, selectArticulo;
     var $selectMoneda, selectMoneda;
     var dataTable;
+    var topLimit = 20;
 
     var currentClient;
     var currentClientData;
@@ -94,6 +330,10 @@
     var $donutTitle;
     var $charts;
     var $messages, $loading, $empty;
+    var $summaryTotal, $summaryCount, $summaryTop;
+    var $chipEmpresa, $chipAgrupacion, $chipMoneda, $chipSucursal, $chipFecha;
+    var chartPalette = ['#1f5fbf', '#2c8eff', '#17a2b8', '#35a853', '#8e44ad', '#f39c12', '#e74c3c', '#6c757d', '#16a085', '#34495e'];
+    var bar, pie, lineChart;
 
     var gs = $.fn.dataTable.render.number('.', ',', 0, 'G ').display;
     var us = $.fn.dataTable.render.number('.', ',', 2, '$ ').display;
@@ -109,10 +349,98 @@
       $loading = $messages.find('#loading');
       $empty = $messages.find('#empty');
       $charts = $('#charts');
+      $summaryTotal = $('#summary-total');
+      $summaryCount = $('#summary-count');
+      $summaryTop = $('#summary-top');
+      $chipEmpresa = $('#chip-empresa');
+      $chipAgrupacion = $('#chip-agrupacion');
+      $chipMoneda = $('#chip-moneda');
+      $chipSucursal = $('#chip-sucursal');
+      $chipFecha = $('#chip-fecha');
+      $('#top-limit').on('change', function () {
+        topLimit = parseInt(this.value, 10) || 20;
+        if (lastStatsData && lastStatsData.length) initChart(lastStatsData);
+      });
       initDates();
       initSelects();
       hideSelects();
+      $('#chart-type-main').on('change', function () {
+        if (pie && window.lastTopColumns) {
+          pie.transform(this.value);
+        }
+      });
     });
+
+    function showEmptyMessage(text) {
+      $loading.hide();
+      $charts.hide();
+      $empty.text(text || 'No hay datos disponibles').show();
+    }
+
+    function updateSummary(itemsArray) {
+      var total = _.sumBy(itemsArray, 'total');
+      var top = itemsArray.length ? itemsArray[0] : null;
+      $summaryTotal.text(numFormat(total || 0));
+      $summaryCount.text(itemsArray.length);
+      $summaryTop.text(top ? (top.nombre || '-') : '-');
+    }
+
+    function updateFilterChips() {
+      var empresaText = selectEmpresa && selectEmpresa.getItem(selectEmpresa.getValue()).text() || query.empresa || '-';
+      var sucursalText = selectSucursal && selectSucursal.getItem(selectSucursal.getValue()).text() || query.sucursal || '-';
+      var monedaText = query.moneda === 'US' ? 'Extranjera' : (query.moneda === 'GS' ? 'Local' : (query.moneda || '-'));
+      var agrupacionText = query.agrupacion || '-';
+      $chipEmpresa.text(empresaText);
+      $chipAgrupacion.text(agrupacionText);
+      $chipMoneda.text(monedaText);
+      $chipSucursal.text(sucursalText);
+      $chipFecha.text((query.start || '-') + ' a ' + (query.end || '-'));
+    }
+
+    function renderTopTable(itemsArray) {
+      if (!itemsArray || !itemsArray.length) {
+        $('#top-table').html('');
+        return;
+      }
+      var total = _.sumBy(itemsArray, 'total') || 1;
+      var html = '<table class="stats-table"><thead><tr><th>Cliente</th><th class="right">Monto</th><th class="right">%</th></tr></thead><tbody>';
+      _.each(itemsArray, function (item) {
+        var pct = ((item.total || 0) * 100 / total).toFixed(1);
+        html += '<tr><td>' + _.escape(item.nombre) + '</td><td class="right">' + numFormat(item.total || 0) + '</td><td class="right">' + pct + '%</td></tr>';
+      });
+      html += '</tbody></table>';
+      $('#top-table').html(html);
+    }
+
+    function renderMonthlyChart(clientData) {
+      if (!lineChart) return;
+      if (!clientData || !clientData.datos) {
+        lineChart.load({columns: [['x', '-'], ['Ventas', 0], ['Notas de crédito', 0]]});
+        return;
+      }
+      var points = [];
+      _.forIn(clientData.datos, function (yearData, yearKey) {
+        _.forIn(yearData.datos, function (monthData, monthKey) {
+          points.push({
+            label: [yearKey, _.padStart(String(monthKey), 2, '0')].join('-'),
+            venta: monthData.venta || 0,
+            credito: monthData.credito || 0
+          });
+        });
+      });
+      points = _.sortBy(points, 'label');
+      if (!points.length) {
+        lineChart.load({columns: [['x', '-'], ['Ventas', 0], ['Notas de crédito', 0]]});
+        return;
+      }
+      lineChart.load({
+        columns: [
+          ['x'].concat(_.map(points, 'label')),
+          ['Ventas'].concat(_.map(points, 'venta')),
+          ['Notas de crédito'].concat(_.map(points, 'credito'))
+        ]
+      });
+    }
 
     function hideSelects() {
       $selectCliente.parent().parent().parent().parent().hide();
@@ -307,9 +635,11 @@
     }
 
     function getInforme() {
-      if (!query.agrupacion) return;
+      if (!query.empresa) return showEmptyMessage('Seleccione una empresa para generar la estadística');
+      if (!query.agrupacion) return showEmptyMessage('Seleccione cómo desea graficar la estadística');
+      if (!query.sucursal) return showEmptyMessage('Seleccione una sucursal para generar la estadística');
       $('.collapse').collapse('hide');
-      $empty.hide();
+      $empty.hide().text('No hay datos disponibles');
       $charts.hide();
       $loading.show();
       $.ajax({
@@ -319,22 +649,130 @@
       }).done(function (res) {
         $loading.hide();
         if (res.data.length > 0) {
+          updateFilterChips();
+          lastStatsData = res.data;
           $charts.show();
           initChart(res.data);
         } else {
-          $empty.show();
+          lastStatsData = [];
+          showEmptyMessage('No hay datos disponibles');
         }
       }).fail(function (err) {
-        $loading.hide();
-        $empty.show();
+        lastStatsData = [];
+        showEmptyMessage('No se pudo generar la estadística con los filtros seleccionados');
       });
+    }
+
+    function exportExcel() {
+      if (!lastStatsData || !lastStatsData.length) {
+        alert('No hay datos para exportar.');
+        return;
+      }
+      var totalNeto = $('#summary-total').text() || '-';
+      var cantidad = $('#summary-count').text() || '-';
+      var principal = $('#summary-top').text() || '-';
+      var html = ''
+        + '<html><head><meta charset="utf-8">'
+        + '<style>'
+        + 'body{font-family:Segoe UI,Arial,sans-serif;font-size:11px;color:#1f3556;padding:14px;}'
+        + 'h2{margin:0 0 10px;font-size:18px;color:#183963;}'
+        + '.meta{margin:0 0 14px;font-size:11px;color:#4c607d;}'
+        + '.meta span{margin-right:14px;}'
+        + '.cards{width:100%;border-collapse:separate;border-spacing:8px 0;margin:0 0 16px;}'
+        + '.cards td{border:1px solid #d8e1ef;border-radius:8px;padding:10px 12px;background:#f7faff;}'
+        + '.cards .label{font-size:10px;text-transform:uppercase;color:#6a7e9d;font-weight:700;display:block;margin-bottom:4px;}'
+        + '.cards .value{font-size:16px;font-weight:700;color:#183963;}'
+        + 'table.report{width:100%;border-collapse:collapse;}'
+        + 'table.report th{background:#eef4fd;color:#1f3556;border:1px solid #d6e0ef;padding:6px 8px;font-size:11px;text-align:left;}'
+        + 'table.report td{border:1px solid #d6e0ef;padding:5px 8px;font-size:11px;}'
+        + 'table.report tr:nth-child(even) td{background:#fafcff;}'
+        + '.right{text-align:right;}'
+        + '</style></head><body>';
+      html += '<h2>Estadísticas de Ventas</h2>';
+      html += '<div class="meta">'
+        + '<span><b>Empresa:</b> ' + ($('#select-empresa')[0] && $('#select-empresa')[0].selectize ? ($('#select-empresa')[0].selectize.getItem($('#select-empresa')[0].selectize.getValue()).text() || query.empresa) : query.empresa || '-') + '</span>'
+        + '<span><b>Sucursal:</b> ' + ($('#select-sucursal')[0] && $('#select-sucursal')[0].selectize ? ($('#select-sucursal')[0].selectize.getItem($('#select-sucursal')[0].selectize.getValue()).text() || query.sucursal || '-') : query.sucursal || '-') + '</span>'
+        + '<span><b>Graficar por:</b> ' + (query.agrupacion || '-') + '</span>'
+        + '<span><b>Desde:</b> ' + (query.start || '-') + '</span>'
+        + '<span><b>Hasta:</b> ' + (query.end || '-') + '</span>'
+        + '</div>';
+      html += '<table class="cards"><tr>'
+        + '<td><span class="label">Total Neto</span><span class="value">' + totalNeto + '</span></td>'
+        + '<td><span class="label">Cantidad Analizada</span><span class="value">' + cantidad + '</span></td>'
+        + '<td><span class="label">Principal</span><span class="value">' + principal + '</span></td>'
+        + '</tr></table>';
+      html += '<table class="report"><thead><tr>'
+        + '<th>Nombre</th><th>Año</th><th>Mes</th><th>Tipo</th><th>Moneda</th><th>Total</th>'
+        + '</tr></thead><tbody>';
+      _.each(lastStatsData, function (item) {
+        html += '<tr>'
+          + '<td>' + (item.nombre || '') + '</td>'
+          + '<td>' + (item.anho || '') + '</td>'
+          + '<td>' + (item.mes || '') + '</td>'
+          + '<td>' + (item.tipo || '') + '</td>'
+          + '<td>' + (item.moneda || '') + '</td>'
+          + '<td class="right">' + numFormat(item.total || 0) + '</td>'
+          + '</tr>';
+      });
+      html += '</tbody></table></body></html>';
+
+      var blob = new Blob([html], {type: 'application/vnd.ms-excel;charset=utf-8;'});
+      var link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'estadisticas_ventas_' + new Date().toISOString().slice(0, 10) + '.xls';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function exportPdf() {
+      if (!lastStatsData || !lastStatsData.length) {
+        alert('No hay datos para exportar.');
+        return;
+      }
+      var filtersHtml = $('.stats-filter-strip').prop('outerHTML');
+      var summaryHtml = $('.stats-summary').prop('outerHTML');
+      var topTableHtml = $('#top-table').prop('outerHTML');
+      var pieSvg = $('#pie').html();
+      var chartSvg = $('#chart').html();
+      var w = window.open('', '_blank');
+      w.document.write('<html><head><title>Estadísticas de Ventas</title><meta charset="utf-8">');
+      w.document.write('<style>');
+      w.document.write('body{font-family:Segoe UI,Arial,sans-serif;margin:16px;color:#1f3556;}');
+      w.document.write('h2{margin:0 0 12px;font-size:22px;color:#183963;}');
+      w.document.write('.stats-filter-strip{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;border:1px solid #d8e1ef;border-radius:10px;background:#f7faff;margin-bottom:14px;}');
+      w.document.write('.stats-filter-title{font-size:16px;font-weight:800;color:#2f68c4;margin-right:6px;}');
+      w.document.write('.stats-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#fff;border:1px solid #d6e0ef;font-size:11px;}');
+      w.document.write('.stats-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px;}');
+      w.document.write('.stats-card{border:1px solid #d8e1ef;border-radius:12px;background:#fff;padding:12px 14px;}');
+      w.document.write('.stats-card-label{font-size:10px;text-transform:uppercase;color:#6a7e9d;font-weight:700;}');
+      w.document.write('.stats-card-value{font-size:18px;font-weight:800;color:#183963;}');
+      w.document.write('.stats-two{display:grid;grid-template-columns:1.2fr .9fr;gap:14px;align-items:start;}');
+      w.document.write('.box{border:1px solid #d8e1ef;border-radius:12px;overflow:hidden;background:#fff;}');
+      w.document.write('.box-head{padding:10px 12px;background:#eef4fd;border-bottom:1px solid #d8e1ef;font-weight:700;}');
+      w.document.write('.box-body{padding:10px 12px;}');
+      w.document.write('.stats-table{width:100%;border-collapse:collapse;font-size:11px;}');
+      w.document.write('.stats-table th,.stats-table td{border:1px solid #dde6f2;padding:6px 8px;}');
+      w.document.write('.stats-table th{background:#eef4fd;}');
+      w.document.write('.right{text-align:right;}');
+      w.document.write('svg{max-width:100%;height:auto;}');
+      w.document.write('</style></head><body>');
+      w.document.write('<h2>Estadísticas de Ventas</h2>');
+      w.document.write(filtersHtml);
+      w.document.write(summaryHtml);
+      w.document.write('<div class="stats-two">');
+      w.document.write('<div class="box"><div class="box-head">Top ranking</div><div class="box-body">' + pieSvg + '</div></div>');
+      w.document.write('<div class="box"><div class="box-head">Top detallado</div><div class="box-body">' + topTableHtml + '</div></div>');
+      w.document.write('</div>');
+      w.document.write('<div class="box" style="margin-top:14px;"><div class="box-head">Evolución mensual</div><div class="box-body">' + chartSvg + '</div></div>');
+      w.document.write('</body></html>');
+      w.document.close();
+      w.focus();
+      setTimeout(function () { w.print(); }, 400);
     }
 
     function initChart(data) {
       var indexedData = {};
-      var lineChart;
-      var pie;
-      var bar;
 
       // parsear datos e indexar por item
       _.each(data, function (d) {
@@ -366,9 +804,6 @@
         }
       });
 
-      var itemsArray = _.values(indexedData).slice(0, 10); // Utilizar array para mantener el mismo orden
-      var names = _(itemsArray).values().map('nombre').value(); // Leyendas de los items
-
       // Calcular totales
       _.forIn(indexedData, function (cliente) {
         _.forIn(cliente.datos, function (year) {
@@ -377,33 +812,38 @@
         cliente.total = _(cliente.datos).values().sumBy('total') // total general
       });
 
-      bar = c3.generate({
-        bindto: '#bar',
+      var itemsArray = _.orderBy(_.values(indexedData), ['total'], ['desc']).slice(0, topLimit);
+      updateSummary(itemsArray);
+      renderTopTable(itemsArray);
+
+      window.lastTopColumns = [
+        ['Total'].concat(_.map(itemsArray, 'total'))
+      ];
+
+      pie = c3.generate({
+        bindto: '#pie',
+        color: { pattern: chartPalette },
+        size: { height: 360 },
         data: {
-          x: 'x',
-          columns: [
-            ['x', _.capitalize(query.agrupacion)]].concat(_.map(itemsArray, function (item) {
-                    return [item.nombre, item.total];
-                  })),
-          onclick: function (d, elem) {
-            currentClient = d.id;
+          columns: window.lastTopColumns,
+          onclick: function (d) {
+            currentClient = itemsArray[d.index].nombre;
             currentClientData = indexedData[currentClient];
-            $donutTitle.html(_.truncate(d.id, {length: 25, 'separator': /,? +/}));
-            lineChart.unload();
-            pie.load({
-              unload: true,
-              columns: _(currentClientData.datos).entries().map(function (x) {
-                return [x[0], x[1].total];
-              }).value()
-            });
+            $donutTitle.html(_.truncate(currentClient, {length: 25, 'separator': /,? +/}));
+            renderMonthlyChart(currentClientData);
           },
           type: 'bar'
         },
         axis: {
           x: {
             type: 'category',
-            categories: ['Ventas']
-
+            categories: _.map(itemsArray, function (item) {
+              return _.truncate(item.nombre, {length: 26, separator: /,? +/});
+            }),
+            tick: {
+              multiline: false,
+              rotate: -18
+            }
           },
           y: {
             tick: {
@@ -411,6 +851,9 @@
             }
           }
         },
+        legend: { show: $('#chart-type-main').val() === 'pie' || $('#chart-type-main').val() === 'donut' },
+        grid: { y: { show: true } },
+        bar: { width: { ratio: 0.58 } },
         tooltip: {
           grouped: false,
           format: {
@@ -421,48 +864,25 @@
         }
       });
 
-      pie = c3.generate({
-        bindto: '#pie',
-        data: {
-          columns: [],
-          type: 'donut',
-          onclick: function (d, el) {
-            currentYear = d.id;
-            currentYearData = currentClientData.datos[currentYear];
-            lineChart.load({
-              columns: [
-                ['x'].concat(_(currentYearData.datos).keys().value().map(function (x) {
-                  return [currentYear, x, '01'].join('-');
-                })),
-                ['Total'].concat(_(currentYearData.datos).values().map('total').value()),
-              ]
-            });
-          }
-        },
-        donut: {
-          title: _.capitalize(query.agrupacion)
-        },
-        tooltip: {
-          format: {
-            value: function (value, ratio, id, index) {
-              return numFormat(value);
-            }
-          }
-        }
-      });
+      pie.flush();
+      pie.transform($('#chart-type-main').val());
       $donutTitle = $('.c3-chart-arcs-title');
 
       lineChart = c3.generate({
         bindto: '#chart',
+        color: { pattern: ['#1f5fbf', '#e67e22'] },
+        size: { height: 320 },
         data: {
           x: 'x',
-          columns: []
+          columns: [],
+          type: 'spline'
         },
         axis: {
           x: {
-            type: 'timeseries',
+            type: 'category',
             tick: {
-              format: '%Y-%m'
+              rotate: -20,
+              multiline: false
             }
           },
           y: {
@@ -471,15 +891,25 @@
             }
           }
         },
-        padding: {
-          left: 100,
-          right: 100
-        },
+        point: { r: 3.5 },
+        grid: { y: { show: true } },
+        padding: { left: 18, right: 18 },
         tooltip: {
-          grouped: false,
-          contents: tooltip_contents
+          grouped: true,
+          format: {
+            value: function (value) {
+              return numFormat(value);
+            }
+          }
         }
       });
+
+      if (itemsArray.length) {
+        currentClient = itemsArray[0].nombre;
+        currentClientData = indexedData[currentClient];
+        $donutTitle.html(_.truncate(currentClient, {length: 25, 'separator': /,? +/}));
+        renderMonthlyChart(currentClientData);
+      }
     }
 
     function tooltip_contents(d, defaultTitleFormat, defaultValueFormat, color) {

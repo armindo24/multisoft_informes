@@ -1,0 +1,4 @@
+DJANGO_SECRET_KEY=replace-with-a-secure-secret-key
+DB_USER=replace-with-db-user
+DB_PASSWORD=replace-with-db-password
+REDIS_SOCK=/var/run/redis/redis.sock

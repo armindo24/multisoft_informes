@@ -1,0 +1,508 @@
+<script type="text/javascript">
+var api = u.getApiUrl();
+var query = {};
+var today = new Date();
+var selectEmpresa, selectMoneda;
+var $loading, $empty;
+
+function toNum(v) {
+  var n = parseFloat(v);
+  return isNaN(n) ? 0 : n;
+}
+
+function fmtGs(n) {
+  var v = Math.round(toNum(n));
+  return v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function fmtUs(n) {
+  var v = Math.round(toNum(n) * 100) / 100;
+  var p = v.toFixed(2).split('.');
+  return p[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + p[1];
+}
+
+function fmtByMoneda(n, moneda) {
+  return moneda === 'extranjera' ? fmtUs(n) : fmtGs(n);
+}
+
+function rowVal(r, up, low) {
+  if (!r) return 0;
+  if (typeof r[up] !== 'undefined' && r[up] !== null) return r[up];
+  if (typeof r[low] !== 'undefined' && r[low] !== null) return r[low];
+  return 0;
+}
+
+function findSaldo(rows, regex) {
+  for (var i = 0; i < rows.length; i++) {
+    var n = String(rows[i].Nombre || rows[i].nombre || '').toUpperCase();
+    if (regex.test(n)) return toNum(rowVal(rows[i], 'SALDO', 'saldo'));
+  }
+  return 0;
+}
+
+function sumField(rows, field) {
+  var low = String(field || '').toLowerCase();
+  var s = 0;
+  for (var i = 0; i < rows.length; i++) s += toNum(rowVal(rows[i], field, low));
+  return s;
+}
+
+function toDateSafe(iso) {
+  var d = new Date((iso || '') + 'T00:00:00');
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function monthRange(start, end) {
+  var s = toDateSafe(start), e = toDateSafe(end);
+  if (!s || !e) return [];
+  var out = [];
+  var cur = new Date(s.getFullYear(), s.getMonth(), 1);
+  var fin = new Date(e.getFullYear(), e.getMonth(), 1);
+  while (cur <= fin && out.length < 24) {
+    out.push({ year: cur.getFullYear(), month: cur.getMonth() + 1 });
+    cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+  }
+  return out;
+}
+
+function monthNameEs(n) {
+  var m = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  return m[Math.max(1, Math.min(12, n)) - 1];
+}
+
+function buildReq(moneda, mesd, mesh) {
+  var d1 = toDateSafe(query.start), d2 = toDateSafe(query.end);
+  var mm1 = mesd || String((d1 ? d1.getMonth() : 0) + 1).padStart(2, '0');
+  var mm2 = mesh || String((d2 ? d2.getMonth() : 0) + 1).padStart(2, '0');
+  return {
+    empresa: query.empresa,
+    periodo: query.periodo,
+    mesd: mm1,
+    mesh: mm2,
+    cuentad: '1',
+    cuentah: '9',
+    nivel: 9,
+    aux: 'NO',
+    saldo: 'SI',
+    moneda: moneda
+  };
+}
+
+function pickRowsBase(localRows, extRows) {
+  if (query.moneda === 'extranjera') return extRows;
+  return localRows;
+}
+
+function setMeta() {
+  var emp = '-';
+  try {
+    var it = selectEmpresa.options[query.empresa];
+    emp = it ? (it.Des_Empresa || it.des_empresa || it.Descripcion || '-') : '-';
+  } catch (e) {}
+  $('#bi-empresa').text(emp);
+  $('#bi-periodo').text(query.periodo || '-');
+  $('#bi-desde').text(query.start || '-');
+  $('#bi-hasta').text(query.end || '-');
+}
+
+function renderResumen(localRows, extRows) {
+  var loc = {
+    activos: Math.abs(findSaldo(localRows, /^ACTIVO$/)),
+    pasivos: Math.abs(findSaldo(localRows, /^PASIVO$/)),
+    patrimonio: Math.abs(findSaldo(localRows, /PATRIMONIO/)),
+    ingresos: Math.abs(findSaldo(localRows, /^INGRESOS$/)),
+    egresos: Math.abs(findSaldo(localRows, /^EGRESOS$/))
+  };
+  loc.resultado = loc.ingresos - loc.egresos;
+
+  var ext = {
+    activos: Math.abs(findSaldo(extRows, /^ACTIVO$/)),
+    pasivos: Math.abs(findSaldo(extRows, /^PASIVO$/)),
+    patrimonio: Math.abs(findSaldo(extRows, /PATRIMONIO/)),
+    ingresos: Math.abs(findSaldo(extRows, /^INGRESOS$/)),
+    egresos: Math.abs(findSaldo(extRows, /^EGRESOS$/))
+  };
+  ext.resultado = ext.ingresos - ext.egresos;
+
+  function rowValGs(k) {
+    if (query.moneda === 'extranjera') return '-';
+    return fmtGs(loc[k]);
+  }
+
+  function rowValUs(k) {
+    if (query.moneda === 'local') return '-';
+    return fmtUs(ext[k]);
+  }
+
+  var html = '';
+  html += '<tr><td>Total Activos</td><td class="num">' + rowValGs('activos') + '</td><td class="num">' + rowValUs('activos') + '</td></tr>';
+  html += '<tr><td>Total Pasivos</td><td class="num">' + rowValGs('pasivos') + '</td><td class="num">' + rowValUs('pasivos') + '</td></tr>';
+  html += '<tr><td>Patrimonio Neto</td><td class="num">' + rowValGs('patrimonio') + '</td><td class="num">' + rowValUs('patrimonio') + '</td></tr>';
+  html += '<tr><td>Total Ingresos</td><td class="num">' + rowValGs('ingresos') + '</td><td class="num">' + rowValUs('ingresos') + '</td></tr>';
+  html += '<tr><td>Total Egresos</td><td class="num">' + rowValGs('egresos') + '</td><td class="num">' + rowValUs('egresos') + '</td></tr>';
+  html += '<tr class="bi-total"><td>Resultado del Ejercicio</td><td class="num">' + rowValGs('resultado') + '</td><td class="num">' + rowValUs('resultado') + '</td></tr>';
+  $('#bi-resumen').html(html);
+}
+
+function renderTotalizacion(localRows, extRows) {
+  var debMl = sumField(localRows, 'TOTAL_DEBITO');
+  var creMl = sumField(localRows, 'TOTAL_CREDITO');
+  var salMl = debMl - creMl;
+  var debMe = sumField(extRows, 'TOTAL_DEBITO');
+  var creMe = sumField(extRows, 'TOTAL_CREDITO');
+  var salMe = debMe - creMe;
+
+  var html = '';
+  html += '<tr><td>Debitos ML</td><td>' + fmtGs(debMl) + '</td></tr>';
+  html += '<tr><td>Creditos ML</td><td>' + fmtGs(creMl) + '</td></tr>';
+  html += '<tr class="bi-total"><td>Saldo ML</td><td>' + fmtGs(salMl) + '</td></tr>';
+  html += '<tr><td>Debitos ME</td><td>' + fmtUs(debMe) + '</td></tr>';
+  html += '<tr><td>Creditos ME</td><td>' + fmtUs(creMe) + '</td></tr>';
+  html += '<tr class="bi-total"><td>Saldo ME</td><td>' + fmtUs(salMe) + '</td></tr>';
+  $('#bi-totalizacion').html(html);
+}
+
+function extractTop(rows, sign, limit, keyRegex) {
+  var filtered = (rows || []).filter(function (r) {
+    var imp = String(r.Imputable || r.imputable || '').toUpperCase();
+    if (imp !== 'S') return false;
+    var saldo = toNum(r.SALDO);
+    if (sign === 'pos' && saldo <= 0) return false;
+    if (sign === 'neg' && saldo >= 0) return false;
+    if (!keyRegex) return true;
+    var n = String(r.Nombre || r.nombre || '').toUpperCase();
+    return keyRegex.test(n);
+  });
+
+  if (!filtered.length && keyRegex) return extractTop(rows, sign, limit, null);
+
+  return filtered.sort(function (a, b) {
+    return Math.abs(toNum(b.SALDO)) - Math.abs(toNum(a.SALDO));
+  }).slice(0, limit || 5);
+}
+
+function renderDetalles(localRows, extRows) {
+  var mon = query.moneda === 'extranjera' ? 'extranjera' : 'local';
+  var monedaReq = (query.moneda === 'extranjera') ? 'extranjera' : 'local';
+  var d1 = toDateSafe(query.start), d2 = toDateSafe(query.end);
+  var mesd = String((d1 ? d1.getMonth() : 0) + 1).padStart(2, '0');
+  var mesh = String((d2 ? d2.getMonth() : 0) + 1).padStart(2, '0');
+
+  return $.get(api + 'balanceintegral/auxiliares', {
+    empresa: query.empresa,
+    periodo: query.periodo,
+    cuentad: '1',
+    cuentah: '9',
+    fechad: query.start,
+    fechah: query.end,
+    mesd: mesd,
+    mesh: mesh,
+    moneda: monedaReq,
+    limit: 10
+  }).then(function (res) {
+    var cli = (res && res.clientes) ? res.clientes : [];
+    var prov = (res && res.proveedores) ? res.proveedores : [];
+
+    var htmlCli = '';
+    for (var i = 0; i < cli.length; i++) {
+      htmlCli += '<tr>' +
+        '<td>' + (cli[i].Nombre || '-') + '</td>' +
+        '<td class="num">' + fmtByMoneda(cli[i].Debito, mon) + '</td>' +
+        '<td class="num">' + fmtByMoneda(cli[i].Credito, mon) + '</td>' +
+        '<td class="num">' + fmtByMoneda(cli[i].Saldo, mon) + '</td>' +
+        '</tr>';
+    }
+    if (!htmlCli) htmlCli = '<tr><td colspan="4" class="text-center">Sin datos</td></tr>';
+    $('#bi-clientes').html(htmlCli);
+
+    var htmlProv = '';
+    for (var j = 0; j < prov.length; j++) {
+      htmlProv += '<tr>' +
+        '<td>' + (prov[j].Nombre || '-') + '</td>' +
+        '<td class="num">' + fmtByMoneda(prov[j].Debito, mon) + '</td>' +
+        '<td class="num">' + fmtByMoneda(prov[j].Credito, mon) + '</td>' +
+        '<td class="num">' + fmtByMoneda(prov[j].Saldo, mon) + '</td>' +
+        '</tr>';
+    }
+    if (!htmlProv) htmlProv = '<tr><td colspan="4" class="text-center">Sin datos</td></tr>';
+    $('#bi-proveedores').html(htmlProv);
+  }, function () {
+    $('#bi-clientes').html('<tr><td colspan="4" class="text-center">Sin datos</td></tr>');
+    $('#bi-proveedores').html('<tr><td colspan="4" class="text-center">Sin datos</td></tr>');
+  });
+}
+
+function renderComposicion(localRows, extRows) {
+  var baseRows = pickRowsBase(localRows, extRows);
+  var mon = query.moneda === 'extranjera' ? 'extranjera' : 'local';
+  var activos = Math.abs(findSaldo(baseRows, /^ACTIVO$/));
+  var pasivos = Math.abs(findSaldo(baseRows, /^PASIVO$/));
+  var patrimonio = Math.abs(findSaldo(baseRows, /PATRIMONIO/));
+  var total = activos + pasivos + patrimonio;
+  var html = '';
+  html += '<tr><td>Activos</td><td>' + fmtByMoneda(activos, mon) + '</td></tr>';
+  html += '<tr><td>Pasivos</td><td>' + fmtByMoneda(pasivos, mon) + '</td></tr>';
+  html += '<tr><td>Patrimonio</td><td>' + fmtByMoneda(patrimonio, mon) + '</td></tr>';
+  html += '<tr class="bi-total"><td>Total General</td><td>' + fmtByMoneda(total, mon) + '</td></tr>';
+  $('#bi-composicion').html(html);
+}
+
+function fetchResultadoMes(moneda, mm) {
+  return $.get(api + 'balancegeneral/list/', buildReq(moneda, mm, mm)).then(function (res) {
+    var rows = (res && res.data) ? res.data : [];
+    var ing = Math.abs(findSaldo(rows, /^INGRESOS$/));
+    var egr = Math.abs(findSaldo(rows, /^EGRESOS$/));
+    return { ingresos: ing, egresos: egr, resultado: ing - egr };
+  }, function () {
+    return { ingresos: 0, egresos: 0, resultado: 0 };
+  });
+}
+
+function renderResultadosPeriodo() {
+  var months = monthRange(query.start, query.end);
+  if (!months.length) {
+    $('#bi-periodos').html('<tr><td colspan="4" class="text-center">Sin datos</td></tr>');
+    return $.Deferred().resolve().promise();
+  }
+  var mon = query.moneda === 'extranjera' ? 'extranjera' : 'local';
+  var reqs = months.map(function (m) {
+    var mm = String(m.month).padStart(2, '0');
+    return fetchResultadoMes(mon, mm).then(function (r) {
+      r.periodo = monthNameEs(m.month) + ' ' + String(m.year).slice(-2);
+      return r;
+    });
+  });
+  return $.when.apply($, reqs).then(function () {
+    var out = [];
+    for (var i = 0; i < arguments.length; i++) out.push(arguments[i]);
+    if (reqs.length === 1) out = [arguments[0]];
+    var html = '';
+    for (var j = 0; j < out.length; j++) {
+      html += '<tr>' +
+        '<td>' + out[j].periodo + '</td>' +
+        '<td class="num">' + fmtByMoneda(out[j].ingresos, mon) + '</td>' +
+        '<td class="num">' + fmtByMoneda(out[j].egresos, mon) + '</td>' +
+        '<td class="num">' + fmtByMoneda(out[j].resultado, mon) + '</td>' +
+        '</tr>';
+    }
+    $('#bi-periodos').html(html || '<tr><td colspan="4" class="text-center">Sin datos</td></tr>');
+  });
+}
+
+function syncQueryFromUI() {
+  query.empresa = selectEmpresa ? (selectEmpresa.getValue() || '') : '';
+  query.moneda = selectMoneda ? (selectMoneda.getValue() || 'local') : 'local';
+  query.periodo = ($('#periodo [name=periodo]').val() || '').trim();
+  query.start = ($('#fecha [name=start]').val() || '').trim();
+  query.end = ($('#fecha [name=end]').val() || '').trim();
+}
+
+function applyPeriodoToDateRange() {
+  var periodoTxt = ($('#periodo [name=periodo]').val() || '').trim();
+  var y = parseInt(periodoTxt, 10);
+  if (isNaN(y) || y < 1900) return;
+  $('#fecha [name=start]').datepicker('setDate', new Date(y, 0, 1));
+  $('#fecha [name=end]').datepicker('setDate', new Date(y, 11, 31));
+}
+
+function getInforme() {
+  syncQueryFromUI();
+  if (!query.empresa || !query.periodo || !query.start || !query.end) {
+    $('#bi-shell').hide();
+    $empty.text('Seleccione empresa, periodo y rango de fecha.').show();
+    return;
+  }
+
+  $loading.show();
+  $empty.hide();
+
+  var reqLocal = buildReq('local');
+  var reqExt = buildReq('extranjera');
+
+  $.when(
+    $.get(api + 'balancegeneral/list/', reqLocal),
+    $.get(api + 'balancegeneral/list/', reqExt)
+  ).done(function (a, b) {
+    var localRows = (a[0] && a[0].data) ? a[0].data : [];
+    var extRows = (b[0] && b[0].data) ? b[0].data : [];
+    setMeta();
+    renderResumen(localRows, extRows);
+    renderTotalizacion(localRows, extRows);
+    renderDetalles(localRows, extRows);
+    renderComposicion(localRows, extRows);
+    renderResultadosPeriodo().always(function () {
+      $('#bi-shell').show();
+      $loading.hide();
+      if (!localRows.length && !extRows.length) $empty.text('No hay datos disponibles').show();
+    });
+  }).fail(function () {
+    $('#bi-shell').hide();
+    $loading.hide();
+    $empty.text('No se pudo obtener el Balance Integral.').show();
+  });
+}
+
+function limpiar() {
+  var first = new Date(today.getFullYear(), 0, 1);
+  var last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  if (selectMoneda) selectMoneda.setValue('local', true);
+  $('#periodo [name=periodo]').datepicker('setDate', today);
+  $('#fecha [name=start]').datepicker('setDate', first);
+  $('#fecha [name=end]').datepicker('setDate', last);
+  query = {};
+  $('#bi-shell').hide();
+  $empty.hide();
+}
+
+function tableToCsvLines(table, sectionTitle) {
+  if (!table) return [];
+  var lines = [];
+  if (sectionTitle) lines.push('"' + sectionTitle.replace(/"/g, '""') + '"');
+  var rows = table.querySelectorAll('tr');
+  for (var i = 0; i < rows.length; i++) {
+    var cells = rows[i].querySelectorAll('th,td');
+    if (!cells.length) continue;
+    var values = [];
+    for (var j = 0; j < cells.length; j++) {
+      var text = (cells[j].innerText || '').replace(/\r?\n/g, ' ').trim();
+      values.push('"' + text.replace(/"/g, '""') + '"');
+    }
+    lines.push(values.join(';'));
+  }
+  lines.push('');
+  return lines;
+}
+
+function exportExcel() {
+  var shell = document.getElementById('bi-shell');
+  if (!shell || shell.style.display === 'none') {
+    alert('No hay datos para exportar.');
+    return;
+  }
+  var lines = [];
+  lines.push('"Informe de Balance Integral"');
+  lines.push('"Empresa";"' + ($('#bi-empresa').text() || '-') + '"');
+  lines.push('"Periodo";"' + ($('#bi-periodo').text() || '-') + '"');
+  lines.push('"Desde";"' + ($('#bi-desde').text() || '-') + '"');
+  lines.push('"Hasta";"' + ($('#bi-hasta').text() || '-') + '"');
+  lines.push('');
+  lines = lines
+    .concat(tableToCsvLines(document.querySelector('#bi-resumen').closest('table'), 'Resumen Ejecutivo'))
+    .concat(tableToCsvLines(document.querySelector('#bi-totalizacion').closest('table'), 'Totalizacion General'))
+    .concat(tableToCsvLines(document.getElementById('bi-clientes-table'), 'Saldos de Clientes por Auxiliar'))
+    .concat(tableToCsvLines(document.getElementById('bi-proveedores-table'), 'Saldos de Proveedores por Auxiliar'))
+    .concat(tableToCsvLines(document.querySelector('#bi-composicion').closest('table'), 'Composicion Patrimonial'))
+    .concat(tableToCsvLines(document.getElementById('bi-periodos-table'), 'Resultados por Periodo'));
+
+  var csv = '\uFEFF' + lines.join('\n');
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  var link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'balance_integral.csv';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function exportPdf() {
+  var shell = document.getElementById('bi-shell');
+  if (!shell || shell.style.display === 'none') {
+    alert('No hay datos para imprimir.');
+    return;
+  }
+  var win = window.open('', '_blank');
+  if (!win) return;
+  win.document.open();
+  win.document.write('<html><head><title>Balance Integral</title><meta charset="utf-8">');
+  win.document.write('<style>body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#1d3151;padding:8px;}');
+  win.document.write('h3{margin:0 0 6px 0;}h4{margin:8px 0 4px 0;}');
+  win.document.write('table{width:100%;border-collapse:collapse;margin-bottom:8px;}');
+  win.document.write('th,td{border:1px solid #ccd8ea;padding:4px 6px;}th{background:#eef3fb;}td.num,th.num{text-align:right;}');
+  win.document.write('</style></head><body>');
+  win.document.write('<h3>Informe de Balance Integral</h3>');
+  win.document.write('<div><b>Empresa:</b> ' + ($('#bi-empresa').text() || '-') + '</div>');
+  win.document.write('<div><b>Periodo:</b> ' + ($('#bi-periodo').text() || '-') + '</div>');
+  win.document.write('<div><b>Desde:</b> ' + ($('#bi-desde').text() || '-') + ' &nbsp;&nbsp; <b>Hasta:</b> ' + ($('#bi-hasta').text() || '-') + '</div>');
+
+  function writeSection(title, tableEl) {
+    if (!tableEl) return;
+    win.document.write('<h4>' + title + '</h4>');
+    win.document.write(tableEl.outerHTML);
+  }
+
+  writeSection('Resumen Ejecutivo', document.querySelector('#bi-resumen').closest('table'));
+  writeSection('Totalizacion General', document.querySelector('#bi-totalizacion').closest('table'));
+  writeSection('Saldos de Clientes por Auxiliar', document.getElementById('bi-clientes-table'));
+  writeSection('Saldos de Proveedores por Auxiliar', document.getElementById('bi-proveedores-table'));
+  writeSection('Composicion Patrimonial', document.querySelector('#bi-composicion').closest('table'));
+  writeSection('Resultados por Periodo', document.getElementById('bi-periodos-table'));
+
+  win.document.write('</body></html>');
+  win.document.close();
+  win.focus();
+  win.print();
+}
+
+$(document).ready(function () {
+  // Evita respuestas 304/caché del navegador para que siempre consulte datos frescos.
+  $.ajaxSetup({ cache: false });
+
+  u.hideNav();
+  $loading = $('#loading');
+  $empty = $('#empty');
+
+  $('#periodo .form-control').datepicker({
+    format: "yyyy",
+    startView: 2,
+    minViewMode: 2,
+    maxViewMode: 2,
+    language: 'es',
+    autoclose: true
+  }).on('changeDate', function () {
+    applyPeriodoToDateRange();
+    getInforme();
+  }).on('input change', function () {
+    applyPeriodoToDateRange();
+    getInforme();
+  });
+
+  $('#fecha').datepicker({
+    format: 'yyyy-mm-dd',
+    language: 'es',
+    autoclose: true,
+    todayHighlight: true
+  });
+  $('#fecha [name=start], #fecha [name=end]').on('changeDate change input', getInforme);
+
+  var $empresa = $('#select-empresa').selectize({
+    valueField: 'Cod_Empresa',
+    labelField: 'Des_Empresa',
+    searchField: 'Des_Empresa',
+    preload: true,
+    onChange: getInforme,
+    load: function (q, callback) {
+      u.get_empresas({{ user }}, 'Integrado', function (d) {
+        callback((d && d.data) ? d.data : []);
+      });
+    }
+  });
+  selectEmpresa = $empresa[0].selectize;
+
+  var $mon = $('#select-moneda').selectize({
+    options: [
+      { value: 'local', text: 'Local' },
+      { value: 'extranjera', text: 'Extranjera' },
+      { value: 'ambas', text: 'Ambas' }
+    ],
+    onChange: getInforme
+  });
+  selectMoneda = $mon[0].selectize;
+  selectMoneda.setValue('local', true);
+
+  var first = new Date(today.getFullYear(), 0, 1);
+  var last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  $('#periodo [name=periodo]').datepicker('setDate', today);
+  $('#fecha [name=start]').datepicker('setDate', first);
+  $('#fecha [name=end]').datepicker('setDate', last);
+});
+</script>

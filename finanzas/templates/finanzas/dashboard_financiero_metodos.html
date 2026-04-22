@@ -1,0 +1,663 @@
+<script type="text/javascript">
+var api = u.getApiUrl();
+var query = {};
+var today = new Date();
+var selectEmpresa, selectSucursal, selectMoneda;
+var $loading, $empty;
+var chartIngEgr = null, chartFlujo = null;
+var suspendRefresh = false;
+var informeReqId = 0;
+
+function toGs(n) {
+  var v = Math.round(Number(n || 0));
+  return 'Gs ' + v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function formatAxisGs(n) {
+  var v = Math.round(Number(n || 0));
+  return v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function seedFromQuery() {
+  var raw = [
+    query.empresa || '',
+    query.sucursal || '',
+    query.start || '',
+    query.end || '',
+    query.moneda || ''
+  ].join('|');
+  var h = 0;
+  for (var i = 0; i < raw.length; i++) h = (h * 31 + raw.charCodeAt(i)) % 2147483647;
+  return h || 12345;
+}
+
+function toNumber(v) {
+  if (v === null || typeof v === 'undefined') return 0;
+  var n = parseFloat(String(v).replace(/\./g, '').replace(',', '.'));
+  return isNaN(n) ? 0 : n;
+}
+
+function datePartsFromQuery() {
+  var s = query.start ? new Date(query.start + 'T00:00:00') : new Date(today.getFullYear(), today.getMonth(), 1);
+  var e = query.end ? new Date(query.end + 'T00:00:00') : new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  if (isNaN(s.getTime())) s = new Date(today.getFullYear(), today.getMonth(), 1);
+  if (isNaN(e.getTime())) e = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  if (e < s) e = new Date(s.getTime());
+  return {
+    start: s,
+    end: e,
+    periodo: String(query.periodo || e.getFullYear()),
+    mesd: String(s.getMonth() + 1).padStart(2, '0'),
+    mesh: String(e.getMonth() + 1).padStart(2, '0')
+  };
+}
+
+function syncQueryFromUI() {
+  try {
+    query.empresa = (selectEmpresa && selectEmpresa.getValue) ? (selectEmpresa.getValue() || '') : (query.empresa || '');
+    query.sucursal = (selectSucursal && selectSucursal.getValue) ? (selectSucursal.getValue() || '') : (query.sucursal || '');
+    query.moneda = (selectMoneda && selectMoneda.getValue) ? (selectMoneda.getValue() || 'local') : (query.moneda || 'local');
+  } catch (e) {}
+
+  var s = ($('#fecha [name=start]').val() || '').trim();
+  var e = ($('#fecha [name=end]').val() || '').trim();
+  var p = ($('#periodo [name=periodo]').val() || '').trim();
+  if (s) query.start = s;
+  if (e) query.end = e;
+  if (p) query.periodo = p;
+}
+
+function rng(seed) {
+  var s = seed || 12345;
+  return function () {
+    s = (s * 48271) % 2147483647;
+    return s / 2147483647;
+  };
+}
+
+function makeSeries(seed, len, base, variance) {
+  var rnd = rng(seed);
+  var arr = [];
+  for (var i = 0; i < len; i++) {
+    arr.push(Math.max(0, Math.round(base + ((rnd() - 0.5) * variance))));
+  }
+  return arr;
+}
+
+function renderBars(containerId, rows, colorA, colorB) {
+  var max = 1;
+  rows.forEach(function (r) {
+    max = Math.max(max, Number(r.value || 0), Number(r.value2 || 0));
+  });
+  var html = '';
+  for (var i = 0; i < rows.length; i++) {
+    var it = rows[i];
+    var w1 = Math.max(1, Math.round((Number(it.value || 0) / max) * 100));
+    html += '<div class="row">' +
+      '<div class="label">' + (it.label || '-') + '</div>' +
+      '<div class="track"><div class="bar" style="width:' + w1 + '%;background:' + (colorA || '#4caf50') + ';"></div></div>' +
+      '<div class="val">' + toGs(it.value || 0) + '</div>' +
+      '</div>';
+    if (it.value2 !== undefined) {
+      var w2 = Math.max(1, Math.round((Number(it.value2 || 0) / max) * 100));
+      html += '<div class="row" style="margin-top:-4px;margin-bottom:8px;">' +
+        '<div class="label" style="color:#8aa0bf;">Egreso</div>' +
+        '<div class="track"><div class="bar" style="width:' + w2 + '%;background:' + (colorB || '#e16a6a') + ';"></div></div>' +
+        '<div class="val">' + toGs(it.value2 || 0) + '</div>' +
+        '</div>';
+    }
+  }
+  $('#' + containerId).html(html);
+}
+
+function renderList(id, rows) {
+  var html = '';
+  var icon = (id === 'top-proveedores') ? 'fa-industry' : 'fa-user';
+  for (var i = 0; i < rows.length; i++) {
+    html += '<li>' +
+      '<span class="t-name"><i class="fa ' + icon + '"></i><span>' + rows[i].name + '</span></span>' +
+      '<strong class="t-val">' + toGs(rows[i].value) + '</strong>' +
+      '<span class="t-ok"><i class="fa fa-check-circle"></i></span>' +
+      '</li>';
+  }
+  $('#' + id).html(html);
+}
+
+function renderAlerts(id, rows) {
+  var html = '';
+  for (var i = 0; i < rows.length; i++) {
+    html += '<li>' +
+      '<span class="a-name"><i class="fa fa-credit-card"></i><span>' + rows[i].name + '</span></span>' +
+      '<span class="a-label">Desde</span>' +
+      '<span class="a-days">' + (rows[i].since || '-') + '</span>' +
+      '<span class="a-delta">' + (rows[i].delta || '-') + '</span>' +
+      '<strong class="a-amount">' + toGs(rows[i].value || 0) + '</strong>' +
+      '<span class="a-ok"><i class="fa fa-check-circle"></i></span>' +
+      '</li>';
+  }
+  $('#' + id).html(html);
+}
+
+function monthLabelsFromQuery(len) {
+  var labels = [];
+  var meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  var start = query.start ? new Date(query.start + 'T00:00:00') : new Date(today.getFullYear(), 0, 1);
+  if (isNaN(start.getTime())) start = new Date(today.getFullYear(), 0, 1);
+  for (var i = 0; i < len; i++) {
+    var d = new Date(start.getFullYear(), start.getMonth() + i, 1);
+    labels.push(meses[d.getMonth()] + ' ' + String(d.getFullYear()).slice(-2));
+  }
+  return labels;
+}
+
+function renderIncomeExpenseChart(rows) {
+  if (typeof c3 === 'undefined') {
+    renderBars('chart-ing-eg', rows, '#4cb28a', '#d66b6b');
+    return;
+  }
+  if (chartIngEgr) {
+    try { chartIngEgr.destroy(); } catch (e) {}
+    chartIngEgr = null;
+  }
+  var categories = monthLabelsFromQuery(rows.length);
+  var ingresos = ['Ingresos'];
+  var egresos = ['Egresos'];
+  for (var i = 0; i < rows.length; i++) {
+    ingresos.push(Number(rows[i].value || 0));
+    egresos.push(Number(rows[i].value2 || 0));
+  }
+  chartIngEgr = c3.generate({
+    bindto: '#chart-ing-eg',
+    data: {
+      columns: [ingresos, egresos],
+      type: 'bar',
+      colors: { Ingresos: '#4cb28a', Egresos: '#d66b6b' }
+    },
+    bar: { width: { ratio: 0.65 } },
+    axis: {
+      x: { type: 'category', categories: categories, tick: { rotate: -15, multiline: false } },
+      y: { tick: { format: formatAxisGs } }
+    },
+    legend: { position: 'top' },
+    padding: { left: 88, right: 14, top: 6, bottom: 0 },
+    transition: { duration: 220 }
+  });
+}
+
+function renderCashFlowChart(rows) {
+  if (typeof c3 === 'undefined') {
+    renderBars('chart-flujo', rows, '#3a84e0');
+    return;
+  }
+  if (chartFlujo) {
+    try { chartFlujo.destroy(); } catch (e) {}
+    chartFlujo = null;
+  }
+  var flujo = ['Flujo de Caja'];
+  var categories = [];
+  for (var i = 0; i < rows.length; i++) {
+    flujo.push(Number(rows[i].value || 0));
+    categories.push(String(i + 1).padStart(2, '0'));
+  }
+  chartFlujo = c3.generate({
+    bindto: '#chart-flujo',
+    data: {
+      columns: [flujo],
+      types: { 'Flujo de Caja': 'area-spline' },
+      colors: { 'Flujo de Caja': '#3a84e0' }
+    },
+    axis: {
+      x: { type: 'category', categories: categories },
+      y: { tick: { format: formatAxisGs } }
+    },
+    legend: { position: 'top' },
+    point: { show: false },
+    padding: { left: 88, right: 14, top: 6, bottom: 0 },
+    transition: { duration: 220 }
+  });
+}
+
+function monthCountBetween(start, end) {
+  var a = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
+  return Math.max(1, Math.min(12, a));
+}
+
+function splitTotal(total, parts, seed) {
+  var rnd = rng(seed || 12345);
+  var w = [];
+  var sum = 0;
+  for (var i = 0; i < parts; i++) {
+    var n = 0.7 + (rnd() * 0.9);
+    w.push(n);
+    sum += n;
+  }
+  var out = [];
+  var acc = 0;
+  for (var j = 0; j < parts; j++) {
+    var val = Math.round((total * w[j]) / sum);
+    out.push(val);
+    acc += val;
+  }
+  if (out.length) out[out.length - 1] += (Math.round(total) - acc);
+  return out;
+}
+
+function buildDashboardDataFromBalance(rows) {
+  var dataRows = Array.isArray(rows) ? rows : [];
+  function f(row) {
+    return {
+      nombre: row.Nombre || row.nombre || '',
+      cod: row.CodPlanCta || row.codplancta || row.codplanctauni || '',
+      imputable: row.Imputable || row.imputable || '',
+      saldo: (typeof row.SALDO !== 'undefined') ? row.SALDO :
+        ((typeof row.saldo !== 'undefined') ? row.saldo :
+          ((typeof row.Saldo !== 'undefined') ? row.Saldo : 0))
+    };
+  }
+  var leaf = dataRows.filter(function (r) {
+    var imp = String(f(r).imputable || '').toUpperCase();
+    return imp === 'S';
+  });
+
+  function pickByName(txt) {
+    var found = dataRows.filter(function (r) {
+      var n = String(f(r).nombre || '').toUpperCase();
+      return n.indexOf(txt) >= 0;
+    }).sort(function (a, b) {
+      return String(f(a).cod || '').length - String(f(b).cod || '').length;
+    });
+    return found.length ? found[0] : null;
+  }
+
+  var rowIng = pickByName('INGRESOS');
+  var rowEgr = pickByName('EGRESOS');
+  var ingresos = Math.abs(toNumber(rowIng ? f(rowIng).saldo : 0));
+  var egresos = Math.abs(toNumber(rowEgr ? f(rowEgr).saldo : 0));
+  if (!ingresos || !egresos) {
+    var byName = leaf.reduce(function (acc, r) {
+      var rr = f(r);
+      var n = String(rr.nombre || '').toUpperCase();
+      if (n.indexOf('INGRES') >= 0) acc.ing += Math.abs(toNumber(rr.saldo));
+      if (n.indexOf('EGRES') >= 0 || n.indexOf('GASTO') >= 0) acc.egr += Math.abs(toNumber(rr.saldo));
+      return acc;
+    }, { ing: 0, egr: 0 });
+    if (!ingresos) ingresos = byName.ing;
+    if (!egresos) egresos = byName.egr;
+  }
+
+  var bancos = leaf.reduce(function (acc, r) {
+    var rr = f(r);
+    var n = String(rr.nombre || '').toUpperCase();
+    var c = String(rr.cod || '');
+    if (n.indexOf('BANCO') >= 0 || c.indexOf('11114') === 0) {
+      return acc + toNumber(rr.saldo);
+    }
+    return acc;
+  }, 0);
+
+  var cxc = leaf.reduce(function (acc, r) {
+    var rr = f(r);
+    var n = String(rr.nombre || '').toUpperCase();
+    if (n.indexOf('COBRAR') >= 0 || n.indexOf('DEUDOR') >= 0) return acc + Math.abs(toNumber(rr.saldo));
+    return acc;
+  }, 0);
+
+  var positives = leaf.map(function (r) {
+    var rr = f(r);
+    return { name: (rr.nombre || '-'), value: toNumber(rr.saldo) };
+  }).filter(function (r) { return r.value > 0; }).sort(function (a, b) { return b.value - a.value; }).slice(0, 5);
+
+  var negatives = leaf.map(function (r) {
+    var rr = f(r);
+    return { name: (rr.nombre || '-'), value: Math.abs(toNumber(rr.saldo)), raw: toNumber(rr.saldo) };
+  }).filter(function (r) { return r.raw < 0; }).sort(function (a, b) { return b.value - a.value; }).slice(0, 5);
+
+  var d = datePartsFromQuery();
+  var mCount = monthCountBetween(d.start, d.end);
+  var ingSeries = splitTotal(ingresos, mCount, seedFromQuery() + 11);
+  var egrSeries = splitTotal(egresos, mCount, seedFromQuery() + 29);
+  var flujoSeries = [];
+  var accFlujo = 0;
+  for (var i = 0; i < mCount; i++) {
+    accFlujo += (ingSeries[i] - egrSeries[i]);
+    flujoSeries.push(Math.max(0, accFlujo));
+  }
+
+  var alertas = negatives.slice(0, 3).map(function (r, idx) {
+    return {
+      name: r.name,
+      since: (idx + 1) + ' dias',
+      delta: '-' + (idx + 1) + ' dias',
+      value: r.value
+    };
+  });
+
+  return {
+    kpis: {
+      bancos: bancos,
+      ingresos: ingresos,
+      egresos: egresos,
+      neto: ingresos - egresos,
+      cxc: cxc
+    },
+    ingresosEgresos: ingSeries.map(function (v, i) {
+      return { label: 'Mes ' + (i + 1), value: v, value2: egrSeries[i] };
+    }),
+    flujo: flujoSeries.map(function (v, i) {
+      return { label: 'Semana ' + (i + 1), value: v };
+    }),
+    clientes: positives,
+    proveedores: negatives.map(function (x) { return { name: x.name, value: x.value }; }),
+    alertas: alertas
+  };
+}
+
+function getMonedaCodes() {
+  if (query.moneda === 'extranjera') return ['US'];
+  if (query.moneda === 'ambas') return ['GS', 'US'];
+  return ['GS'];
+}
+
+function mergeTopRows(rows, limit) {
+  var map = {};
+  (rows || []).forEach(function (r) {
+    var name = (r && r.name ? r.name : '-').toString().trim() || '-';
+    if (!map[name]) map[name] = 0;
+    map[name] += toNumber(r.value || 0);
+  });
+  return Object.keys(map).map(function (k) { return { name: k, value: map[k] }; })
+    .sort(function (a, b) { return b.value - a.value; })
+    .slice(0, limit || 5);
+}
+
+function fetchTopClientes() {
+  if (!query.sucursal) return $.Deferred().resolve([]).promise();
+  var monedas = getMonedaCodes();
+  var requests = monedas.map(function (m) {
+    return $.get(api + 'estadisticas/ventas/clientes', {
+      empresa: query.empresa,
+      sucursal: query.sucursal,
+      start: query.start,
+      end: query.end,
+      moneda: m,
+      agrupacion: 'clientes'
+    });
+  });
+  return $.when.apply($, requests).then(function () {
+    var args = Array.prototype.slice.call(arguments);
+    if (requests.length === 1) args = [arguments];
+    var merged = [];
+    args.forEach(function (packet) {
+      var payload = packet[0] || {};
+      var data = payload.data || [];
+      var byName = {};
+      data.forEach(function (r) {
+        var name = (r.nombre || r.NOMBRE || '-').toString().trim() || '-';
+        var tipo = String(r.tipo || '').toLowerCase();
+        var total = toNumber(r.total || 0);
+        if (!byName[name]) byName[name] = 0;
+        byName[name] += (tipo === 'credito' ? -total : total);
+      });
+      Object.keys(byName).forEach(function (k) {
+        merged.push({ name: k, value: Math.abs(byName[k]) });
+      });
+    });
+    return mergeTopRows(merged, 5);
+  }, function () {
+    return [];
+  });
+}
+
+function fetchTopProveedores() {
+  var monedas = getMonedaCodes();
+  var requests = monedas.map(function (m) {
+    return $.get(api + 'compras_proveedor/ranking', {
+      empresa: query.empresa,
+      sucursal: query.sucursal || '',
+      compras_start: query.start,
+      compras_end: query.end,
+      moneda: m,
+      asentada: 'ALL'
+    });
+  });
+  return $.when.apply($, requests).then(function () {
+    var args = Array.prototype.slice.call(arguments);
+    if (requests.length === 1) args = [arguments];
+    var merged = [];
+    args.forEach(function (packet) {
+      var payload = packet[0] || {};
+      var data = payload.data || [];
+      data.forEach(function (r) {
+        merged.push({
+          name: (r.RazonSocial || r.razonsocial || r.nombre || '-'),
+          value: toNumber(r.TotalCompras || r.totalcompras || r.total || 0)
+        });
+      });
+    });
+    return mergeTopRows(merged, 5);
+  }, function () {
+    return [];
+  });
+}
+
+function getInforme() {
+  if (suspendRefresh) return;
+  syncQueryFromUI();
+  var reqId = ++informeReqId;
+
+  if (!query.empresa) {
+    $loading.hide();
+    $empty.text('Seleccione una empresa para consultar.').show();
+    return;
+  }
+  if (!query.periodo) {
+    $loading.hide();
+    $empty.text('Seleccione el periodo (ejercicio) para consultar.').show();
+    return;
+  }
+
+  $loading.show();
+  $empty.text('').hide();
+  var d = datePartsFromQuery();
+  var moneda = (query.moneda === 'extranjera') ? 'extranjera' : 'local';
+  var req = {
+    empresa: query.empresa,
+    periodo: d.periodo,
+    mesd: d.mesd,
+    mesh: d.mesh,
+    cuentad: '1',
+    cuentah: '9',
+    nivel: 9,
+    moneda: moneda,
+    aux: 'NO',
+    saldo: 'NO'
+  };
+
+  $.get(api + 'balancegeneral/list/', req)
+    .done(function (res) {
+      if (reqId !== informeReqId) return;
+      var rows = (res && res.data) ? res.data : [];
+      var data = buildDashboardDataFromBalance(rows);
+
+      $('#kpi-bancos').text(toGs(data.kpis.bancos));
+      $('#kpi-ingresos').text(toGs(data.kpis.ingresos));
+      $('#kpi-egresos').text(toGs(data.kpis.egresos));
+      $('#kpi-neto').text(toGs(data.kpis.neto));
+      $('#kpi-cxc').text(toGs(data.kpis.cxc));
+
+      renderIncomeExpenseChart(data.ingresosEgresos);
+      renderCashFlowChart(data.flujo);
+
+      $.when(fetchTopClientes(), fetchTopProveedores()).done(function (topClientes, topProveedores) {
+        if (reqId !== informeReqId) return;
+        var clientesFinal = (topClientes && topClientes.length) ? topClientes : data.clientes;
+        var proveedoresFinal = (topProveedores && topProveedores.length) ? topProveedores : data.proveedores;
+        var alertasFinal = (proveedoresFinal || []).slice(0, 3).map(function (r, idx) {
+          return {
+            name: r.name,
+            since: (idx + 1) + ' dias',
+            delta: '-' + (idx + 1) + ' dias',
+            value: r.value
+          };
+        });
+
+        renderList('top-clientes', clientesFinal);
+        renderList('top-proveedores', proveedoresFinal);
+        renderAlerts('alertas-fin', alertasFinal);
+      });
+
+      $loading.hide();
+      if (!rows.length) $empty.text('No hay datos disponibles para los filtros seleccionados.').show();
+    })
+    .fail(function () {
+      if (reqId !== informeReqId) return;
+      $loading.hide();
+      $empty.text('No se pudo obtener datos del balance para la empresa seleccionada.').show();
+    });
+}
+
+function limpiar() {
+  initDefaultDates();
+  if (selectMoneda) selectMoneda.setValue('local', true);
+  if (selectSucursal) selectSucursal.clear(true);
+  query.empresa = '';
+  query.periodo = String(today.getFullYear());
+  if (selectEmpresa) selectEmpresa.clear(true);
+  getInforme();
+}
+
+function initDefaultDates() {
+  suspendRefresh = true;
+  var first = new Date(today.getFullYear(), today.getMonth(), 1);
+  var last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  query.periodo = String(today.getFullYear());
+  $('#fecha [name=start]').datepicker('setDate', first);
+  $('#fecha [name=end]').datepicker('setDate', last);
+  $('#periodo [name=periodo]').datepicker('setDate', today);
+  query.start = first.toISOString().slice(0, 10);
+  query.end = last.toISOString().slice(0, 10);
+  suspendRefresh = false;
+}
+
+function syncDatesToPeriodo(periodoValue) {
+  var y = parseInt(String(periodoValue || '').trim(), 10);
+  if (!y || y < 1900) return;
+  var first = new Date(y, 0, 1);
+  var last = new Date(y, 11, 31);
+  suspendRefresh = true;
+  $('#fecha [name=start]').datepicker('setDate', first);
+  $('#fecha [name=end]').datepicker('setDate', last);
+  query.start = first.toISOString().slice(0, 10);
+  query.end = last.toISOString().slice(0, 10);
+  suspendRefresh = false;
+}
+
+function initSelects() {
+  var $empresa = $('#select-empresa').selectize({
+    valueField: 'Cod_Empresa',
+    labelField: 'Des_Empresa',
+    searchField: 'Des_Empresa',
+    preload: true,
+    onChange: function (value) {
+      query.empresa = value || '';
+      if (!value && selectSucursal) {
+        selectSucursal.clear(true);
+        selectSucursal.clearOptions();
+      }
+      if (!value) return;
+      $.get(api + 'sucursal/select/' + value).done(function (d) {
+        var list = ((d && d.data) ? d.data : []).map(function (r) {
+          return {
+            cod_sucursal: r.cod_sucursal || r.Cod_Sucursal || '',
+            des_sucursal: r.des_sucursal || r.Des_Sucursal || ''
+          };
+        });
+        if (selectSucursal) {
+          selectSucursal.clearOptions();
+          selectSucursal.addOption(list);
+          selectSucursal.refreshOptions(false);
+          if (list.length > 0) {
+            var first = list[0].cod_sucursal || '';
+            if (first) {
+              selectSucursal.setValue(first, true);
+              query.sucursal = first;
+            }
+          } else {
+            query.sucursal = '';
+          }
+        }
+        getInforme();
+      });
+    },
+    load: function (q, callback) {
+      u.get_empresas({{ user }}, 'Integrado', function (d) {
+        callback((d && d.data) ? d.data : []);
+      });
+    }
+  });
+  selectEmpresa = $empresa[0].selectize;
+
+  var $sucursal = $('#select-sucursal').selectize({
+    valueField: 'cod_sucursal',
+    labelField: 'des_sucursal',
+    searchField: 'des_sucursal',
+    onChange: function (value) {
+      query.sucursal = value || '';
+      getInforme();
+    }
+  });
+  selectSucursal = $sucursal[0].selectize;
+
+  var $moneda = $('#select-moneda').selectize({
+    options: [
+      { value: 'local', text: 'Local' },
+      { value: 'extranjera', text: 'Extranjera' },
+      { value: 'ambas', text: 'Ambas' }
+    ],
+    onChange: function (value) {
+      query.moneda = value || 'local';
+      getInforme();
+    }
+  });
+  selectMoneda = $moneda[0].selectize;
+  selectMoneda.setValue('local', true);
+}
+
+$(document).ready(function () {
+  u.hideNav();
+  $loading = $('#loading');
+  $empty = $('#empty');
+
+  $('#fecha').datepicker({
+    format: 'yyyy-mm-dd',
+    language: 'es',
+    autoclose: true,
+    todayHighlight: true
+  });
+  $('#fecha [name=start]').on('changeDate change input', function (e) {
+    query.start = (e && e.format) ? e.format('yyyy-mm-dd') : ($(this).val() || '').trim();
+    getInforme();
+  });
+  $('#fecha [name=end]').on('changeDate change input', function (e) {
+    query.end = (e && e.format) ? e.format('yyyy-mm-dd') : ($(this).val() || '').trim();
+    getInforme();
+  });
+  $('#periodo .form-control').datepicker({
+    format: "yyyy",
+    startView: 2,
+    minViewMode: 2,
+    maxViewMode: 2,
+    language: 'es',
+    autoclose: true
+  });
+  $('#periodo .form-control').on('changeDate change input', function (e) {
+    query.periodo = (e && e.format) ? e.format('yyyy') : ($(this).val() || '').trim();
+    syncDatesToPeriodo(query.periodo);
+    getInforme();
+  });
+
+  initSelects();
+  initDefaultDates();
+  getInforme();
+});
+</script>

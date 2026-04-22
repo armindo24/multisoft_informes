@@ -1,12 +1,12 @@
 {
   "sybase": {
     "dbConfig": {
-      "Host": "10.0.0.31:2638",
-      "Server": "integrado",
+      "Host": "10.0.0.22:2638",
+      "Server": "cpabancos",
       "UserID": "dba",
-      "Password": "ownnetmasterkey",
-      "DatabaseName": "integrado"
+      "Password": "ownlomas2011key",
+      "DatabaseName": "cpabancos"
     },
-    "configScript": "/Applications/SQLAnywhere12/System/bin64/sa_config.sh"
+    	"configScript": "C:/Program Files/SQL Anywhere 16/Bin64"
   }
 }

@@ -14,8 +14,11 @@
 
   var api = u.getApiUrl();
   var query = {};
+  var currentRequest = null;
+  var renderSeq = 0;
 
   $(document).ready(function () {
+    $.ajaxSetup({ cache: false });
     $messages = $("#messages");
     $loading = $messages.find("#loading");
     $empty = $messages.find("#empty");
@@ -67,6 +70,10 @@
       searchField: 'Descrip'
     });
     select_tipo_asiento = $select_tipo_asiento[0].selectize;
+    // En backend, "NINGUNO" significa "sin filtro de tipo de asiento".
+    select_tipo_asiento.addOption({TipoAsiento: 'NINGUNO', Descrip: 'Todos'});
+    select_tipo_asiento.setValue('NINGUNO', true);
+    query.tipoAsiento = 'NINGUNO';
     select_tipo_asiento.load(function (cb) {
       $.ajax({
         url: api + 'tipoasiento/select',
@@ -83,6 +90,9 @@
         {value: 'NO', text: 'Si'}
       ]
     });
+    var select_autorizado = document.getElementById('select-autorizado').selectize;
+    select_autorizado.setValue('TO', true);
+    query.autorizado = 'TO';
 
     $('#select-moneda').selectize({
       options: [
@@ -91,165 +101,337 @@
         {value: 'AM', text: 'Ambas'}
       ]
     });
+    var select_moneda = document.getElementById('select-moneda').selectize;
+    select_moneda.setValue('AM', true);
+    query.moneda = 'AM';
   }
 
 
+  function clearDiarioTables() {
+    if ($.fn.DataTable) {
+      $('#table-div table').each(function () {
+        if ($.fn.DataTable.isDataTable(this)) {
+          $(this).DataTable().destroy();
+        }
+      });
+    }
+    $('#table-div').empty();
+  }
+
   function getInforme() {
-    var current_asiento = 0;
-    var nro_transac_list = [];
-    var empresa = query.empresa;
+    var total_general_debe = 0;
+    var total_general_haber = 0;
+    var total_general_debe_me = 0;
+    var total_general_haber_me = 0;
+    var empresa = query.empresa || (select_empresa && typeof select_empresa.getValue === 'function' ? select_empresa.getValue() : '');
     var desde = query.fechad;
     var hasta = query.fechah;
-    var tipoasiento = query.tipoAsiento;
+    var tipoasiento = query.tipoAsiento || (select_tipo_asiento && typeof select_tipo_asiento.getValue === 'function' ? select_tipo_asiento.getValue() : '');
     var autorizado = query.autorizado;
     var moneda = query.moneda;
+    var selectAut = document.getElementById('select-autorizado');
+    var selectMon = document.getElementById('select-moneda');
+    if ((!autorizado || autorizado === 'undefined') && selectAut && selectAut.selectize) {
+      autorizado = selectAut.selectize.getValue();
+    }
+    if ((!moneda || moneda === 'undefined') && selectMon && selectMon.selectize) {
+      moneda = selectMon.selectize.getValue();
+    }
+    if (!tipoasiento || tipoasiento === 'undefined') tipoasiento = 'NINGUNO';
+    if (!autorizado || autorizado === 'undefined') autorizado = 'TO';
+    if (!moneda || moneda === 'undefined') moneda = 'AM';
+    query.tipoAsiento = tipoasiento;
+    query.autorizado = autorizado;
+    query.moneda = moneda;
+    if (!empresa) {
+      alert('Debe seleccionar una empresa.');
+      return;
+    }
+    var requestSeq = ++renderSeq;
     $('.collapse').collapse('hide')
     $loading.show();
     $empty.hide();
-    $('#table-div').empty()
-    $.get(api + "diariocomprobado/list/" + empresa + "/" + tipoasiento + "/" + desde + "/" + hasta + "/" + autorizado,
-            function (data) {
-              if (data.data.length > 0) {
-                var string = ""
-                for (var a = 0; a < data.data.length; a++) {
-                  if (parseInt(data.data[a].NroTransac) != parseInt(current_asiento)) {
-                    string += '<div id="asiento-' + data.data[a].NroTransac + '">' +
-                            '<table class="table table-striped table-bordered nowrap tablaaa" style="width:100%"><thead>' +
-                            '<th>Tipo Cbte.:</th>' +
-                            '<th>Nro. de Cbte.:</th>';
-                    string += '<th>Nro. De Transac.:</th>' +
-                            
-                            '<th>Fecha De Transac.:</th>' +
-                            '</thead><tbody><tr>'+
-                            '<td>' + data.data[a].TIPOASIENTO + '</td>' 
-                            if (data.data[a].NroCompr == null) {
-                              string += '<td>&nbsp;</td>';
-                            } else {
-                              string += '<td>' + data.data[a].NroCompr + '</td>';
-                            }
-                            string += '<td>' + data.data[a].NroTransac + '</td>' +
-                            '<td>' + data.data[a].Fecha + '</td>' +
-                            '</tr></tbody></table>'+
-                            '<table id="tabla_' + data.data[a].NroTransac + '" class="table table-striped table-bordered nowrap" cellspacing="0" style="width:100%">'
-                    if (moneda == 'AM') {
-                      string += '<thead>' +
-                              '<th>Sec.</th>' +
-                              '<th>Cuenta</th>' +
-                              '<th>Nombre</th>' +
-                              '<th>Auxiliar</th>' +
-                              '<th>Nombre</th>' +
-                              '<th>Concepto</th>' +
-                              '<th>Debe M.L.</th>' +
-                              '<th>Haber M.L.</th>' +
-                              '<th>Debe M.E.</th>' +
-                              '<th>Haber M.E.</th>' +
-                              '</tr></thead><tbody></tbody><tfoot></tfoot></table></div>';
-                    } else {
-                      string += '<thead>' +
-                              '<th>Sec.</th>' +
-                              '<th>Cuenta</th>' +
-                              '<th>Nombre</th>' +
-                              '<th>Auxiliar</th>' +
-                              '<th>Nombre</th>' +
-                              '<th>Concepto</th>' +
-                              '<th>Debe</th>' +
-                              '<th>Haber</th>' +
-                              '</tr></thead><tbody></tbody><tfoot></tfoot></table></div>';
-                    }
-                    nro_transac_list.push(data.data[a].NroTransac)
-                    current_asiento = parseInt(data.data[a].NroTransac)
-                    
+    clearDiarioTables();
+    if (currentRequest && currentRequest.readyState !== 4) {
+      currentRequest.abort();
+    }
+
+    currentRequest = $.ajax({
+      method: 'GET',
+      url: api + "diariocomprobado/list/" + encodeURIComponent(empresa) + "/" + encodeURIComponent(tipoasiento) + "/" + encodeURIComponent(desde) + "/" + encodeURIComponent(hasta) + "/" + encodeURIComponent(autorizado),
+      cache: false
+    }).done(function (data) {
+              if (requestSeq !== renderSeq) return;
+              var rowsIn = (data && data.data) ? data.data : [];
+              var rows = rowsIn.map(function (r) {
+                return {
+                  EMPRESA: (typeof r.EMPRESA !== 'undefined') ? r.EMPRESA : r.empresa,
+                  NroTransac: (typeof r.NroTransac !== 'undefined') ? r.NroTransac : r.nrotransac,
+                  TipoAsiento: (typeof r.TipoAsiento !== 'undefined') ? r.TipoAsiento : r.tipoasiento,
+                  NroCompr: (typeof r.NroCompr !== 'undefined') ? r.NroCompr : r.nrocompr,
+                  Linea: (typeof r.Linea !== 'undefined') ? r.Linea : r.linea,
+                  CodPlanCta: (typeof r.CodPlanCta !== 'undefined') ? r.CodPlanCta : r.codplancta,
+                  CodPlanAux: (typeof r.CodPlanAux !== 'undefined') ? r.CodPlanAux : r.codplanaux,
+                  Concepto: (typeof r.Concepto !== 'undefined') ? r.Concepto : r.concepto,
+                  Fecha: (typeof r.Fecha !== 'undefined') ? r.Fecha : r.fecha,
+                  DEBITO: (typeof r.DEBITO !== 'undefined') ? r.DEBITO : r.debito,
+                  CREDITO: (typeof r.CREDITO !== 'undefined') ? r.CREDITO : r.credito,
+                  DEBITO_ME: (typeof r.DEBITO_ME !== 'undefined') ? r.DEBITO_ME : r.debito_me,
+                  CREDITO_ME: (typeof r.CREDITO_ME !== 'undefined') ? r.CREDITO_ME : r.credito_me,
+                  NOMBRECUENTA: (typeof r.NOMBRECUENTA !== 'undefined') ? r.NOMBRECUENTA : r.nombrecuenta,
+                  NOMBRECUENTAAUX: (typeof r.NOMBRECUENTAAUX !== 'undefined') ? r.NOMBRECUENTAAUX : r.nombrecuentaaux,
+                  TIPOASIENTO: (typeof r.TIPOASIENTO !== 'undefined') ? r.TIPOASIENTO : r.tipoasiento
+                };
+              });
+              if (rows.length > 0) {
+                var grouped = {};
+                var orderedTransacs = [];
+                for (var tg = 0; tg < rows.length; tg++) {
+                  var row = rows[tg];
+                  var nro = String(row.NroTransac || '');
+                  total_general_debe += parseInt(row.DEBITO || 0, 10);
+                  total_general_haber += parseInt(row.CREDITO || 0, 10);
+                  total_general_debe_me += parseFloat(row.DEBITO_ME || 0);
+                  total_general_haber_me += parseFloat(row.CREDITO_ME || 0);
+                  if (!grouped[nro]) {
+                    grouped[nro] = { header: row, rows: [] };
+                    orderedTransacs.push(nro);
                   }
+                  grouped[nro].rows.push(row);
                 }
-                
-                console.log(string);
-                
-                $('#table-div').append(string);
-                
-                $('.tablaaa').DataTable({
-                    searching: false,
-                    language: u.spanish_dt,
-                    paging: false,
-                    ordering: false,
-                    info: false,
-                    scrollCollapse: true,
-                    scrollY: 300,
-                    scrollX: '100%',
-                  });
-                
-                for (var a = 0; a < nro_transac_list.length; a++) {
-                  total_debito = 0
-                  total_credito = 0
-                  total_debito_me = 0
-                  total_credito_me = 0
-                  var string2 = ""
-                  var string3 = ""
-                  for (var b = 0; b < data.data.length; b++) {
-                    string2 += '<tr>' +
-                            '<td>' + data.data[b].Linea + '</td>' +
-                            '<td>' + data.data[b].CodPlanCta + '</td>' +
-                            '<td>' + data.data[b].NOMBRECUENTA + '</td>'
-                    if (data.data[b].CodPlanAux != null) {
-                      string2 += '<td>' + data.data[b].CodPlanAux + '</td>' +
-                              '<td>' + data.data[b].NOMBRECUENTAAUX + '</td>'
-                    } else {
-                      string2 += '<td>&nbsp;</td>' +
-                              '<td>&nbsp;</td>'
-                    }
-                    string2 += '<td>' + data.data[b].Concepto + '</td>'
-                    if (moneda == 'AM') {
-                      string2 += '<th style="text-align: right;">' + convertir_rever(data.data[b].DEBITO) + '</th>' +
-                              '<th style="text-align: right;">' + convertir_rever(data.data[b].CREDITO) + '</th>' +
-                              '<th style="text-align: right;">' + addCommas((Math.round(data.data[b].DEBITO_ME * 100) / 100).toString()) + '</th>' +
-                              '<th style="text-align: right;">' + addCommas((Math.round(data.data[b].CREDITO_ME * 100) / 100).toString()) + '</th>'
-                    } else if (moneda == 'LO') {
-                      string2 += '<th style="text-align: right;">' + convertir_rever(data.data[b].DEBITO) + '</th>' +
-                              '<th style="text-align: right;">' + convertir_rever(data.data[b].CREDITO) + '</th>'
-                    } else {
-                      string2 += '<th style="text-align: right;">' + addCommas((Math.round(data.data[b].DEBITO_ME * 100) / 100).toString()) + '</th>' +
-                              '<th style="text-align: right;">' + addCommas((Math.round(data.data[b].CREDITO_ME * 100) / 100).toString()) + '</th>'
-                    }
-                    string2 += '</tr>';
-                    total_debito += parseInt(data.data[b].DEBITO)
-                    total_credito += parseInt(data.data[b].CREDITO)
-                    total_debito_me += parseFloat(data.data[b].DEBITO_ME)
-                    total_credito_me += parseFloat(data.data[b].CREDITO_ME)
-                  }
+
+                var html = '';
+                for (var x = 0; x < orderedTransacs.length; x++) {
+                  var nroTransac = orderedTransacs[x];
+                  var group = grouped[nroTransac];
+                  var head = group.header;
+                  html += '<div id="asiento-' + nroTransac + '">' +
+                    '<table class="table table-striped table-bordered nowrap diario-table-compact" style="width:100%"><thead>' +
+                    '<tr><th>Tipo Cbte.:</th><th>Nro. de Cbte.:</th><th>Nro. De Transac.:</th><th>Fecha De Transac.:</th></tr>' +
+                    '</thead><tbody><tr>' +
+                    '<td>' + (head.TIPOASIENTO || '&nbsp;') + '</td>' +
+                    '<td>' + (head.NroCompr == null ? '&nbsp;' : head.NroCompr) + '</td>' +
+                    '<td>' + (head.NroTransac || '&nbsp;') + '</td>' +
+                    '<td>' + (head.Fecha || '&nbsp;') + '</td>' +
+                    '</tr></tbody></table>' +
+                    '<table id="tabla_' + nroTransac + '" class="table table-striped table-bordered nowrap diario-table-compact" cellspacing="0" style="width:100%">';
                   if (moneda == 'AM') {
-                    string3 += '<tr><td colspan="6" style="text-align: right;"><b>TOTALES</b></td>' +
-                            '<td style="text-align: right;"><b>' + convertir_rever(total_debito) + '</b></td>' +
-                            '<td style="text-align: right;"><b>' + convertir_rever(total_credito) + '</b></td>' +
-                            '<td style="text-align: right;"><b>' + addCommas((Math.round(total_debito_me * 100) / 100).toString()) + '</b></td>' +
-                            '<td style="text-align: right;"><b>' + addCommas((Math.round(total_credito_me * 100) / 100).toString()) + '</b></td></tr>'
-                  } else if (moneda == 'LO') {
-                    string3 += '<tr><td colspan="6" style="text-align: right;"><b>TOTALES</b></td>' +
-                            '<td style="text-align: right;"><b>' + convertir_rever(total_debito) + '</b></td>' +
-                            '<td style="text-align: right;"><b>' + convertir_rever(total_credito) + '</b></td></tr>'
+                    html += '<thead><tr><th>Sec.</th><th>Cuenta</th><th>Nombre</th><th>Auxiliar</th><th>Nombre</th><th>Concepto</th><th>Debe M.L.</th><th>Haber M.L.</th><th>Debe M.E.</th><th>Haber M.E.</th></tr></thead><tbody>';
                   } else {
-                    string3 += '<tr><td colspan="6" style="text-align: right;"><b>TOTALES</td>' +
-                            '<td style="text-align: right;"><b>' + addCommas((Math.round(total_debito_me * 100) / 100).toString()) + '</b></td>' +
-                            '<td style="text-align: right;"><b>' + addCommas((Math.round(total_credito_me * 100) / 100).toString()) + '</b></td></tr>'
+                    html += '<thead><tr><th>Sec.</th><th>Cuenta</th><th>Nombre</th><th>Auxiliar</th><th>Nombre</th><th>Concepto</th><th>Debe</th><th>Haber</th></tr></thead><tbody>';
                   }
-                  $('#tabla_' + nro_transac_list[a] + ' tbody').html(string2)
-                  $('#tabla_' + nro_transac_list[a] + ' tfoot').html(string3)
-                  
-                  $('#tabla_' + nro_transac_list[a]).DataTable({
-                    searching: false,
-                    language: u.spanish_dt,
-                    paging: false,
-                    ordering: false,
-                    info: false,
-                    scrollCollapse: true,
-                    scrollY: 300,
-                    scrollX: '100%',
-                  });
-                  
+
+                  total_debito = 0;
+                  total_credito = 0;
+                  total_debito_me = 0;
+                  total_credito_me = 0;
+
+                  for (var r = 0; r < group.rows.length; r++) {
+                    var rowd = group.rows[r];
+                    html += '<tr>' +
+                      '<td>' + (rowd.Linea || '&nbsp;') + '</td>' +
+                      '<td>' + (rowd.CodPlanCta || '&nbsp;') + '</td>' +
+                      '<td>' + (rowd.NOMBRECUENTA || '&nbsp;') + '</td>' +
+                      '<td>' + (rowd.CodPlanAux == null ? '&nbsp;' : rowd.CodPlanAux) + '</td>' +
+                      '<td>' + (rowd.NOMBRECUENTAAUX == null ? '&nbsp;' : rowd.NOMBRECUENTAAUX) + '</td>' +
+                      '<td>' + (rowd.Concepto || '&nbsp;') + '</td>';
+                    if (moneda == 'AM') {
+                      html += '<td style="text-align:right;">' + convertir_rever(rowd.DEBITO) + '</td>' +
+                        '<td style="text-align:right;">' + convertir_rever(rowd.CREDITO) + '</td>' +
+                        '<td style="text-align:right;">' + addCommas((Math.round((parseFloat(rowd.DEBITO_ME || 0)) * 100) / 100).toString()) + '</td>' +
+                        '<td style="text-align:right;">' + addCommas((Math.round((parseFloat(rowd.CREDITO_ME || 0)) * 100) / 100).toString()) + '</td>';
+                    } else if (moneda == 'LO') {
+                      html += '<td style="text-align:right;">' + convertir_rever(rowd.DEBITO) + '</td>' +
+                        '<td style="text-align:right;">' + convertir_rever(rowd.CREDITO) + '</td>';
+                    } else {
+                      html += '<td style="text-align:right;">' + addCommas((Math.round((parseFloat(rowd.DEBITO_ME || 0)) * 100) / 100).toString()) + '</td>' +
+                        '<td style="text-align:right;">' + addCommas((Math.round((parseFloat(rowd.CREDITO_ME || 0)) * 100) / 100).toString()) + '</td>';
+                    }
+                    html += '</tr>';
+
+                    total_debito += parseInt(rowd.DEBITO || 0, 10);
+                    total_credito += parseInt(rowd.CREDITO || 0, 10);
+                    total_debito_me += parseFloat(rowd.DEBITO_ME || 0);
+                    total_credito_me += parseFloat(rowd.CREDITO_ME || 0);
+                  }
+
+                  if (moneda == 'AM') {
+                    html += '</tbody><tfoot><tr><td colspan="6" style="text-align:right;"><b>TOTALES</b></td>' +
+                      '<td style="text-align:right;"><b>' + convertir_rever(total_debito) + '</b></td>' +
+                      '<td style="text-align:right;"><b>' + convertir_rever(total_credito) + '</b></td>' +
+                      '<td style="text-align:right;"><b>' + addCommas((Math.round(total_debito_me * 100) / 100).toString()) + '</b></td>' +
+                      '<td style="text-align:right;"><b>' + addCommas((Math.round(total_credito_me * 100) / 100).toString()) + '</b></td></tr></tfoot></table></div>';
+                  } else if (moneda == 'LO') {
+                    html += '</tbody><tfoot><tr><td colspan="6" style="text-align:right;"><b>TOTALES</b></td>' +
+                      '<td style="text-align:right;"><b>' + convertir_rever(total_debito) + '</b></td>' +
+                      '<td style="text-align:right;"><b>' + convertir_rever(total_credito) + '</b></td></tr></tfoot></table></div>';
+                  } else {
+                    html += '</tbody><tfoot><tr><td colspan="6" style="text-align:right;"><b>TOTALES</b></td>' +
+                      '<td style="text-align:right;"><b>' + addCommas((Math.round(total_debito_me * 100) / 100).toString()) + '</b></td>' +
+                      '<td style="text-align:right;"><b>' + addCommas((Math.round(total_credito_me * 100) / 100).toString()) + '</b></td></tr></tfoot></table></div>';
+                  }
                 }
+
+                $('#table-div').append(html);
+
+                var diffMl = total_general_debe - total_general_haber;
+                var diffMe = total_general_debe_me - total_general_haber_me;
+                var totalGeneralHtml = '<div style="margin-bottom:10px;border:1px solid #d6e0ef;background:#f8fbff;padding:10px 12px;">' +
+                  '<div style="font-weight:700;font-size:13px;margin-bottom:8px;">Total General</div>' +
+                  '<table class="table" style="margin-bottom:0; font-size:12px;">' +
+                  '<thead><tr>' +
+                  '<th style="padding:4px 6px;border-top:0;">Moneda</th>' +
+                  '<th style="padding:4px 6px;border-top:0;">Debe</th>' +
+                  '<th style="padding:4px 6px;border-top:0;">Haber</th>' +
+                  '<th style="padding:4px 6px;border-top:0;">Diferencia</th>' +
+                  '</tr></thead><tbody>';
+                if (moneda == 'AM' || moneda == 'LO') {
+                  totalGeneralHtml += '<tr>' +
+                    '<td style="padding:4px 6px;font-weight:700;">M.L. (PYG)</td>' +
+                    '<td style="padding:4px 6px;font-weight:700;">' + convertir_rever(total_general_debe) + '</td>' +
+                    '<td style="padding:4px 6px;font-weight:700;">' + convertir_rever(total_general_haber) + '</td>' +
+                    '<td style="padding:4px 6px;font-weight:700;">' + convertir_rever(diffMl) + '</td>' +
+                    '</tr>';
+                }
+                if (moneda == 'AM' || moneda == 'EX') {
+                  totalGeneralHtml += '<tr>' +
+                    '<td style="padding:4px 6px;font-weight:700;">M.E. (USD)</td>' +
+                    '<td style="padding:4px 6px;font-weight:700;">' + addCommas((Math.round(total_general_debe_me * 100) / 100).toString()) + '</td>' +
+                    '<td style="padding:4px 6px;font-weight:700;">' + addCommas((Math.round(total_general_haber_me * 100) / 100).toString()) + '</td>' +
+                    '<td style="padding:4px 6px;font-weight:700;">' + addCommas((Math.round(diffMe * 100) / 100).toString()) + '</td>' +
+                    '</tr>';
+                }
+                totalGeneralHtml += '</tbody></table></div>';
+                $('#table-div').prepend(totalGeneralHtml);
               } else {
-                $('#table-div').empty()
+                clearDiarioTables();
                 $empty.show();
                 }
             $loading.hide();
+            currentRequest = null;
+            }).fail(function (xhr, status) {
+              if (requestSeq !== renderSeq) return;
+              if (status !== 'abort') {
+                clearDiarioTables();
+                $empty.show();
+              }
+              $loading.hide();
+              currentRequest = null;
             });
+  }
+
+  function limpiar() {
+    renderSeq++;
+    if (currentRequest && currentRequest.readyState !== 4) {
+      currentRequest.abort();
+    }
+
+    var empresaActual = select_empresa && typeof select_empresa.getValue === 'function' ? select_empresa.getValue() : '';
+    var tipoAsientoActual = select_tipo_asiento && typeof select_tipo_asiento.getValue === 'function' ? select_tipo_asiento.getValue() : 'NINGUNO';
+
+    clearDiarioTables();
+    $loading.hide();
+    $empty.hide();
+
+    query = {
+      empresa: empresaActual || '',
+      tipoAsiento: tipoAsientoActual || 'NINGUNO',
+      autorizado: 'TO',
+      moneda: 'AM'
+    };
+
+    if (select_empresa) {
+      select_empresa.setValue(empresaActual || '', true);
+    }
+
+    if (select_tipo_asiento) {
+      select_tipo_asiento.setValue(tipoAsientoActual || 'NINGUNO', true);
+    }
+
+    var selectAut = document.getElementById('select-autorizado');
+    if (selectAut && selectAut.selectize) {
+      selectAut.selectize.setValue('TO', true);
+      query.autorizado = 'TO';
+    }
+
+    var selectMon = document.getElementById('select-moneda');
+    if (selectMon && selectMon.selectize) {
+      selectMon.selectize.setValue('AM', true);
+      query.moneda = 'AM';
+    }
+
+    $('.input-date .form-control').datepicker('setDate', new Date());
+    $('.input-date .form-control').each(function () {
+      query[this.name] = this.value;
+    });
+  }
+
+  function exportExcel() {
+    var tables = document.querySelectorAll('#table-div table');
+    if (!tables.length) {
+      alert('No hay datos para exportar.');
+      return;
+    }
+    var lines = [];
+    for (var t = 0; t < tables.length; t++) {
+      var rows = tables[t].querySelectorAll('tr');
+      for (var i = 0; i < rows.length; i++) {
+        var cells = rows[i].querySelectorAll('th,td');
+        if (!cells.length) continue;
+        var values = [];
+        for (var j = 0; j < cells.length; j++) {
+          var text = (cells[j].innerText || '').replace(/\r?\n/g, ' ').trim();
+          values.push('"' + text.replace(/"/g, '""') + '"');
+        }
+        lines.push(values.join(';'));
+      }
+      lines.push('');
+    }
+    var csv = '\uFEFF' + lines.join('\n');
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'diario_comprobado.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function exportPdf() {
+    var tables = document.querySelectorAll('#table-div table');
+    if (!tables.length) {
+      alert('No hay datos para exportar.');
+      return;
+    }
+    var reportHtml = document.getElementById('table-div').innerHTML;
+    var win = window.open('', '_blank');
+    if (!win) {
+      alert('El navegador bloqueó la ventana de impresión.');
+      return;
+    }
+    var html = ''
+      + '<html><head><title>Diario Comprobado</title>'
+      + '<meta charset="utf-8" />'
+      + '<style>'
+      + 'body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#111;margin:10px;}'
+      + 'h3{margin:0 0 8px 0;}'
+      + 'table{width:100%;border-collapse:collapse;margin-bottom:10px;}'
+      + 'th,td{border:1px solid #ccc;padding:4px 6px;text-align:left;vertical-align:top;}'
+      + 'th{background:#eef3fb;}'
+      + '</style>'
+      + '</head><body>'
+      + '<h3>Diario Comprobado</h3>'
+      + reportHtml
+      + '</body></html>';
+
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    win.onload = function () {
+      setTimeout(function () {
+        win.print();
+      }, 250);
+    };
   }
 </script>

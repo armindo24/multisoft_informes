@@ -1,0 +1,225 @@
+/* === MultiSoft SIG - Modern Compact Theme === */
+:root{
+  --ms-bg: #f6f8fb;
+  --ms-card: #ffffff;
+  --ms-border: #e6ecf5;
+  --ms-text: #111827;
+  --ms-muted: #6b7280;
+  --ms-muted-2: #94a3b8;
+  --ms-shadow: 0 8px 24px rgba(17,24,39,.08);
+  --ms-shadow-sm: 0 2px 10px rgba(17,24,39,.06);
+  --ms-radius: 14px;
+}
+
+/* Background */
+body{
+  background: var(--ms-bg) !important;
+  color: var(--ms-text);
+  font-size: 13px;
+}
+
+/* Top navbar: lower + cleaner */
+.navbar.navbar-default.navbar-fixed-top{
+  background: var(--ms-card) !important;
+  border-bottom: 1px solid var(--ms-border) !important;
+  min-height: 44px !important;
+  box-shadow: var(--ms-shadow-sm);
+}
+.navbar.navbar-default .navbar-header{
+  min-height: 44px !important;
+}
+.navbar-brand{
+  padding: 9px 14px !important;
+  height: 44px !important;
+  line-height: 26px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: var(--ms-text) !important;
+}
+@media (min-width: 768px){
+  .navbar-brand{ font-size: 17px !important; }
+}
+
+/* Move user menu to right, keep compact */
+.navbar-top-links.navbar-right{
+  margin-top: 4px !important;
+}
+
+/* Main wrapper: remove huge top gap and use padding */
+#page-wrapper{
+  padding-top: 54px !important;  /* space for fixed navbar */
+}
+.page-header{
+  margin: 0 0 12px 0 !important;
+  padding: 0 !important;
+  border-bottom: 1px solid var(--ms-border) !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+}
+
+/* Secondary titles inside pages */
+h1,h2,h3,h4{
+  letter-spacing: -0.01em;
+}
+
+/* Sidebar: compact spacing */
+.sidebar{
+  background: var(--ms-card) !important;
+  border-right: 1px solid var(--ms-border);
+}
+.sidebar ul li a{
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+}
+.sidebar .nav > li > a{
+  border-radius: 10px;
+  margin: 2px 8px;
+}
+.sidebar .nav > li > a:hover,
+.sidebar .nav > li.active > a{
+  background: #f3f7ff !important;
+}
+.sidebar .nav-header,
+.sidebar .section-title,
+.sidebar .sidebar-search + .nav > li.nav-header{
+  color: var(--ms-muted-2) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.sidebar .nav-second-level li a{
+  padding-left: 28px !important;
+}
+.sidebar .nav-third-level li a{
+  padding-left: 42px !important;
+}
+
+/* Panels/Cards: modern look */
+.panel, .card{
+  background: var(--ms-card) !important;
+  border: 1px solid var(--ms-border) !important;
+  border-radius: var(--ms-radius) !important;
+  box-shadow: var(--ms-shadow-sm);
+}
+.panel-heading, .card-header{
+  padding: 10px 14px !important;
+  border-bottom: 1px solid var(--ms-border) !important;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
+  border-top-left-radius: var(--ms-radius) !important;
+  border-top-right-radius: var(--ms-radius) !important;
+  font-weight: 600 !important;
+}
+.panel-body, .card-body{
+  padding: 12px 14px !important;
+}
+.panel-footer{
+  padding: 10px 14px !important;
+  border-top: 1px solid var(--ms-border) !important;
+  background: #fbfdff !important;
+  border-bottom-left-radius: var(--ms-radius) !important;
+  border-bottom-right-radius: var(--ms-radius) !important;
+}
+
+/* Forms: compact controls */
+label{
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: var(--ms-muted) !important;
+  margin-bottom: 4px !important;
+}
+.form-control, select, input[type="text"], input[type="date"], input[type="number"]{
+  height: 34px !important;
+  padding: 6px 10px !important;
+  font-size: 13px !important;
+  border-radius: 10px !important;
+  border: 1px solid #dbe6f5 !important;
+  box-shadow: none !important;
+}
+.input-group-addon{
+  border-radius: 10px !important;
+}
+
+/* Buttons: modern + aligned */
+.btn{
+  padding: 6px 12px !important;
+  font-size: 13px !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+.btn + .btn{ margin-left: 8px !important; }
+
+/* Small icon buttons (search, etc.) */
+.btn.btn-default, .input-group-btn .btn{
+  border-radius: 10px !important;
+}
+
+/* Action bars: right aligned, wrap nicely */
+.form-actions,
+.actions,
+.action-buttons,
+.filters-actions,
+.panel .btn-toolbar,
+.panel-footer .pull-right,
+.panel-footer .text-right{
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+.form-actions .pull-right,
+.panel-footer .pull-right{
+  float: none !important;
+}
+
+/* Tables: denser + cleaner */
+.table{
+  background: var(--ms-card);
+}
+.table > thead > tr > th{
+  padding: 8px 10px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #374151 !important;
+  background: linear-gradient(180deg, #f7faff 0%, #eef5ff 100%) !important;
+  border-bottom: 1px solid var(--ms-border) !important;
+  white-space: nowrap;
+}
+.table > tbody > tr > td{
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+  border-top: 1px solid #eef2f7 !important;
+}
+.table-hover tbody tr:hover{
+  background: #f6f9ff !important;
+}
+
+/* Sticky table header (works when table is inside a scroll container) */
+.table-responsive{
+  border: 1px solid var(--ms-border);
+  border-radius: var(--ms-radius);
+  box-shadow: var(--ms-shadow-sm);
+}
+.table-responsive thead th{
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+/* Make horizontal scrollbar less intrusive where supported */
+.table-responsive::-webkit-scrollbar{ height: 10px; }
+.table-responsive::-webkit-scrollbar-thumb{ background: #cfd9ea; border-radius: 999px; }
+.table-responsive::-webkit-scrollbar-track{ background: transparent; }
+
+/* DataTables (if used) */
+.dataTables_wrapper .dataTables_paginate .paginate_button{
+  padding: 4px 10px !important;
+  border-radius: 10px !important;
+}
+.dataTables_wrapper .dataTables_filter input{
+  height: 34px !important;
+}
+
+/* Reduce random huge paddings */
+.row{ margin-bottom: 8px; }

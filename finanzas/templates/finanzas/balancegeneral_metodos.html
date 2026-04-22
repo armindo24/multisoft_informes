@@ -13,11 +13,13 @@ var egreso = 0;
 var select_empresa, $select_empresa;
 var select_cuentad, $select_cuentad;
 var select_cuentah, $select_cuentah;
+var select_moneda;
 
 var $messages, $loading, $empty;
 
   $(document).ready(function () {
     u.hideNav();
+    $.ajaxSetup({ cache: false });
     initSelect();
     
     $messages = $("#messages");
@@ -31,6 +33,12 @@ var $messages, $loading, $empty;
 
     select_cuentah = $select_cuentah[0].selectize;
     select_cuentah.disable();
+
+    select_moneda = $('#select-moneda');
+    query.moneda = select_moneda.val() || 'local';
+    select_moneda.on('change', function () {
+      query.moneda = $(this).val() || 'local';
+    });
     
     initDate();
     
@@ -81,6 +89,10 @@ var $messages, $loading, $empty;
       valueField: 'Cod_Empresa',
       labelField: 'Des_Empresa',
       searchField: 'Des_Empresa',
+      onChange: function (value) {
+        query.empresa = value;
+        buscarCuenta();
+      },
       preload: true,
       load: function (q, callback) {
         u.get_empresas({{ user }},'Integrado', function (d) {
@@ -100,6 +112,8 @@ var $messages, $loading, $empty;
       labelField: 'Nombre',
       searchField: 'Nombre'
     });
+
+    // Moneda queda como <select> nativo para evitar superposición del dropdown con botones.
   }
 
   function addCommas(nStr) {
@@ -114,228 +128,244 @@ var $messages, $loading, $empty;
     return x1 + x2;
   }
 
-  function getInforme() {
-    var nivel = $("#nivel").val();
-    var moneda = $("[name=moneda]")[0];
-    var incluir = $("[name=incluir]")[0];
-    var aux = $("[name=auxiliar]")[0];
-
-    if (moneda.checked == true) {
-      query.moneda = "extranjera";
-    } else {
-      query.moneda = "local";
-    }
-    if (incluir.checked == true) {
-      query.incluir = "SI";
-    } else {
-      query.incluir = "NO";
-    }
-    if (aux.checked == true) {
-      query.aux = "SI";
-    } else {
-      query.aux = "NO";
-    }
-    if (nivel == "" || nivel == null || nivel == " " || nivel == '0') {
-      query.nivel = 0;  
-    } else {
-      query.nivel
-    }
-      
-    if (periodo == "" || periodo == null || periodo == " ") {
-      alert("No hay datos suficientes para generar el listado");
-    } else {
-        total_debito = 0;
-        total_credito = 0;
-        total_saldo = 0;
-        $('.collapse').collapse('hide');
-        $('#table-div').empty();
-        $loading.show();
-        $empty.hide();
-        $.ajax({ method: 'GET', url: api + 'balancegeneral/list/', data: query }).done(
-        function (data) {
-            if (data.data.length > 0) {
-                $('#table-div').empty();
-                var table_string = '<table id ="resultados" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">'+
-                                '<thead>'+
-                                    '<tr>'+
-                                        '<th style="width:25%;">Cuenta</th>'+
-                                        '<th style="width:50%;">Descripción</th>'+
-                                        '<th style="width:25%;">Saldo</th>'+
-                                    '</tr>'+
-                                '</thead>'+
-                                '<tbody>'+
-                                '</tbody>'+
-                                '<tfoot>'+
-                                '</tfoot>'+
-                            '</table>';
-                
-                $('#table-div').append(table_string);
-                
-                var string = "";
-                var string1 = "";
-                var len = data.data.length;
-                for (var a = 0; a < len; a++) {
-                if (data.data[a].Nombre == 'INGRESOS') {
-                    if (moneda == 'local') {
-                        var ingreso = parseInt(data.data[a].SALDO);
-                    } else {
-                        var ingreso = parseFloat(data.data[a].SALDO);
-                    }
-                    if (ingreso < 0 ){
-                        ingreso = ingreso*-1;
-                    }
-                }
-                if (data.data[a].Nombre == 'EGRESOS') {
-                    if (moneda == 'local') {
-                        var egreso = parseInt(data.data[a].SALDO);
-                    } else {
-                        var egreso = parseFloat(data.data[a].SALDO);
-                    }
-                }
-                if (moneda == 'local') {
-                    total_debito += parseInt(data.data[a].TOTAL_DEBITO);
-                    total_credito += parseInt(data.data[a].TOTAL_CREDITO);
-                    total_saldo += parseInt(data.data[a].SALDO);
-                } else {
-                    total_debito += parseFloat(data.data[a].TOTAL_DEBITO);
-                    total_credito += parseFloat(data.data[a].TOTAL_CREDITO);
-                    total_saldo += parseFloat(data.data[a].SALDO);
-                }
-                    if (data.data[a].CodPlanCta.length == 1) {
-                        string += '<tr>' +
-                                    '<td></td>' +
-                                    '<td></td>' +
-                                    '<td></td>' +
-                                    '</tr>'
-                                    + '<tr>' +
-                                    '<td></td>' +
-                                    '<td></td>' +
-                                    '<td></td>' +
-                                    '</tr>';
-                        if (data.data[a].SALDO < 0) {
-                            string += '<tr class="danger" >';
-                        } else {
-                            string += '<tr>';
-                        }
-                        string += '<td><b>' + data.data[a].CodPlanCta + '</b></td>' +
-                                    '<td><b>' + data.data[a].Nombre + '</b></td>';
-                        if (moneda == 'local') {
-                            string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO) + '</b></td>';
-                        } else {
-                            string += '<td style="text-align: right;"><b>' + addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString()) + '</b></td>';
-                        }
-                        string += '</tr>';
-                    } else if (data.data[a].CodPlanCta.length == 2) {
-                        if (data.data[a].SALDO < 0) {
-                            string += '<tr class="danger" >';
-                        } else {
-                            string += '<tr>';
-                        }
-                            string += '<td><b><u>' + data.data[a].CodPlanCta + '</u></b></td>' +
-                                        '<td><b>&nbsp;&nbsp;&nbsp;<u>' + data.data[a].Nombre + '</u></b></td>';
-                        if (moneda == 'local') {
-                            string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO) + '</b></td>';
-                        } else {
-                            string += '<td style="text-align: right;"><b>' + addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString()) + '</b></td>';
-                        }
-                        string += '</tr>';
-                    } else if (data.data[a].CodPlanCta.length == 4) {
-                        if (data.data[a].SALDO < 0) {
-                            string += '<tr class="danger" >';
-                        } else {
-                            string += '<tr>';
-                        }
-                        string += '<td><b>' + data.data[a].CodPlanCta + '</b></td>' +
-                                    '<td><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + data.data[a].Nombre + '</b></td>';
-                        if (moneda == 'local') {
-                            string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO) + '</b></td>';
-                        } else {
-                            string += '<td style="text-align: right;"><b>' + addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString()) + '</b></td>';
-                        }
-                        string += '</tr>';
-                    } else if (data.data[a].CodPlanCta.length > 4 && data.data[a].CodPlanCta.length < 10) {
-                        if (data.data[a].SALDO < 0) {
-                            string += '<tr class="danger" >';
-                        } else {
-                            string += '<tr>';
-                        }
-                            string += '<td>' + data.data[a].CodPlanCta + '</td>' +
-                                        '<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + data.data[a].Nombre + '</td>';
-                        if (moneda == 'local') {
-                            string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO) + '</b></td>';
-                        } else {
-                            string += '<td style="text-align: right;"><b>' + addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString()) + '</b></td>';
-                        }
-                            string += '</tr>';
-                    } else {
-                        var new_codigo = data.data[a].CodPlanCta.toString().split('-');
-                        if (data.data[a].SALDO < 0) {
-                            string += '<tr class="danger" >';
-                        } else {
-                            string += '<tr>';
-                        }
-                        string += '<td></td>' +
-                                    '<td style="font-size: 12px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + new_codigo[1] + " - " + data.data[a].Nombre + '</td>';
-                        if (moneda == 'local') {
-                            string += '<td style="text-align: right;"><b>' + convertir_rever(data.data[a].SALDO) + '</b></td>';
-                        } else {
-                            string += '<td style="text-align: right;"><b>' + addCommas((Math.round(data.data[a].SALDO * 100) / 100).toString()) + '</b></td>';
-                        }
-                        string += '</tr>';
-                    }
-                }
-                if (total_saldo < 0) {
-                    string += '<tr class="danger" >';
-                } else {
-                    string += '<tr>';
-                }
-                string += '<td>&nbsp;</td>' +
-                            '<td><b>TOTALES</b></td>';
-                if (moneda == 'local') {
-                    string += '<td style="text-align: right;"><b>' + convertir_rever(total_saldo) + '</b></td>';
-                } else {
-                    string += '<td style="text-align: right;"><b>' + addCommas((Math.round(total_saldo * 100) / 100).toString()) + '</b></td>';
-                }
-                string += '</tr>';
-                if (ingreso - egreso < 0) {
-                    string1 += '<tr class="danger" >';
-                } else {
-                    string1 += '<tr>';
-                }
-                if (moneda == 'local') {
-                    if (ingreso == null && egreso == null) {
-                        string1 += '<td style="text-align: center;" colspan="3"><b>Resultado del Ejercicio: 0</b></td>';
-                    } else {
-                        string1 += '<td style="text-align: center;" colspan="3"><b>Resultado del Ejercicio: ' + convertir_rever(ingreso - egreso) + '</b></td>';
-                    }
-                } else {
-                    string1 += '<td style="text-align: center;" colspan="3"><b>Resultado del Ejercicio: ' + addCommas((Math.round((ingreso - egreso) * 100) / 100).toString()) + '</b></td>';
-                }
-                string1 += '</tr>';
-                $('#resultados tbody').html(string);
-                $('#resultados tfoot').html(string1);
-                ingreso = 0;
-                egreso = 0;
-                $('#resultados').DataTable().destroy();
-                $('#resultados').DataTable({
-                    searching: false,
-                    language: u.spanish_dt,
-                    paging: false,
-                    ordering: false,
-                    info: false,
-                    scrollCollapse: true,
-                    scrollY: 300,
-                    scrollX: '100%',
-                });
-            } else {
-                $empty.show();
-            }
-            $loading.hide();
-        });
-    }
+  function toNum(v) {
+  var n = parseFloat(v);
+  return isNaN(n) ? 0 : n;
 }
 
-  function buscarCuenta() {
+function renderBalanceTable(data, mode) {
+  function rv(row, a, b) {
+    if (!row) return '';
+    if (typeof row[a] !== 'undefined' && row[a] !== null) return row[a];
+    if (typeof row[b] !== 'undefined' && row[b] !== null) return row[b];
+    return '';
+  }
+  var isLocal = (mode === 'local');
+  var isMixed = (mode === 'ambas');
+  var totalSaldo = 0;
+  var totalSaldoLocal = 0;
+  var totalSaldoMe = 0;
+  var ingLocal = 0, egrLocal = 0;
+  var ingMe = 0, egrMe = 0;
+
+  var headers = isMixed
+    ? '<thead><tr><th style="width:20%;">Cuenta</th><th style="width:45%;">Descripcion</th><th style="width:17.5%;">Guaranies</th><th style="width:17.5%;">Dolares</th></tr></thead>'
+    : '<thead><tr><th style="width:25%;">Cuenta</th><th style="width:50%;">Descripcion</th><th style="width:25%;">Saldo</th></tr></thead>';
+
+  var table_string = '<table id ="resultados" class="table table-striped table-bordered nowrap report-results-table" cellspacing="0" width="100%">' +
+      headers + '<tbody></tbody><tfoot></tfoot></table>';
+  $('#table-div').html(table_string);
+
+  var body = '';
+  for (var a = 0; a < data.length; a++) {
+    var row = data[a] || {};
+    var nombreRow = String(rv(row, 'Nombre', 'nombre') || '');
+    var codRow = String(rv(row, 'CodPlanCta', 'codplancta') || '');
+    var saldo = toNum(rv(row, 'SALDO', 'saldo'));
+    var saldoLocal = toNum(rv(row, 'SALDO_LOCAL', 'saldo_local'));
+    var saldoMe = toNum(rv(row, 'SALDO_ME', 'saldo_me'));
+    if (nombreRow === 'INGRESOS') {
+      ingLocal = toNum(saldoLocal || saldo);
+      ingMe = toNum(saldoMe || saldo);
+      if (ingLocal < 0) ingLocal *= -1;
+      if (ingMe < 0) ingMe *= -1;
+    }
+    if (nombreRow === 'EGRESOS') {
+      egrLocal = toNum(saldoLocal || saldo);
+      egrMe = toNum(saldoMe || saldo);
+    }
+
+    if (isMixed) {
+      totalSaldoLocal += saldoLocal;
+      totalSaldoMe += saldoMe;
+    } else {
+      totalSaldo += saldo;
+    }
+
+    var rowSaldo = isMixed ? saldoLocal : saldo;
+    body += (rowSaldo < 0) ? '<tr class="danger">' : '<tr>';
+
+    var cod = codRow.toString();
+    var nombre = nombreRow.toString();
+
+    if (cod.length === 1) {
+      body += '<tr><td></td><td></td>' + (isMixed ? '<td></td><td></td>' : '<td></td>') + '</tr>';
+      body += '<tr><td></td><td></td>' + (isMixed ? '<td></td><td></td>' : '<td></td>') + '</tr>';
+      body += '<td><b>' + cod + '</b></td><td><b>' + nombre + '</b></td>';
+    } else if (cod.length === 2) {
+      body += '<td><b><u>' + cod + '</u></b></td><td><b>&nbsp;&nbsp;&nbsp;<u>' + nombre + '</u></b></td>';
+    } else if (cod.length === 4) {
+      body += '<td><b>' + cod + '</b></td><td><b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + nombre + '</b></td>';
+    } else if (cod.length > 4 && cod.length < 10) {
+      body += '<td style="font-size:12px;font-weight:600;">' + cod + '</td><td style="font-size:12px;font-weight:600;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + nombre + '</td>';
+    } else {
+      var partesCodigo = cod.split('-');
+      var codigoDetalle = (partesCodigo.length > 1) ? partesCodigo[1] : cod;
+      body += '<td style="font-size:10px;font-weight:400;">' + codigoDetalle + '</td><td style="font-size:10px;font-weight:400;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + nombre + '</td>';
+    }
+
+    if (isMixed) {
+      body += '<td style="text-align:right;"><b>' + convertir_rever(saldoLocal || 0) + '</b></td>';
+      body += '<td style="text-align:right;"><b>' + addCommas((Math.round((saldoMe || 0) * 100) / 100).toString()) + '</b></td>';
+    } else if (isLocal) {
+      body += '<td style="text-align:right;"><b>' + convertir_rever(saldo || 0) + '</b></td>';
+    } else {
+      body += '<td style="text-align:right;"><b>' + addCommas((Math.round((saldo || 0) * 100) / 100).toString()) + '</b></td>';
+    }
+    body += '</tr>';
+  }
+
+  var footer = '';
+  if (isMixed) {
+    footer += '<tr><td>&nbsp;</td><td><b>TOTALES</b></td>' +
+      '<td style="text-align:right;"><b>' + convertir_rever(totalSaldoLocal) + '</b></td>' +
+      '<td style="text-align:right;"><b>' + addCommas((Math.round(totalSaldoMe * 100) / 100).toString()) + '</b></td></tr>';
+  } else {
+    footer += '<tr><td>&nbsp;</td><td><b>TOTALES</b></td>' +
+      '<td style="text-align:right;"><b>' + (isLocal ? convertir_rever(totalSaldo) : addCommas((Math.round(totalSaldo * 100) / 100).toString())) + '</b></td></tr>';
+  }
+
+  var resultadoLocal = ingLocal - egrLocal;
+  var resultadoMe = ingMe - egrMe;
+  if (isMixed) {
+    footer += '<tr><td style="text-align:center;" colspan="4"><b><u>RESULTADO DEL EJERCICIO (+) Utilidad (-) P&eacute;rdida : ' +
+      convertir_rever(resultadoLocal) + ' GS.</u></b></td></tr>';
+    footer += '<tr><td style="text-align:center;" colspan="4"><b><u>RESULTADO DEL EJERCICIO (+) Utilidad (-) P&eacute;rdida : ' +
+      addCommas((Math.round(resultadoMe * 100) / 100).toString()) + ' US.</u></b></td></tr>';
+  } else {
+    var resultado = isLocal ? resultadoLocal : resultadoMe;
+    footer += '<tr><td style="text-align:center;" colspan="3"><b><u>RESULTADO DEL EJERCICIO (+) Utilidad (-) P&eacute;rdida : ' +
+      (isLocal ? (convertir_rever(resultado) + ' GS.') : (addCommas((Math.round(resultado * 100) / 100).toString()) + ' US.')) +
+      '</u></b></td></tr>';
+  }
+
+  $('#resultados tbody').html(body);
+  $('#resultados tfoot').html(footer);
+
+  $('#resultados').DataTable().destroy();
+  $('#resultados').DataTable({
+    searching: false,
+    language: u.spanish_dt,
+    paging: false,
+    ordering: false,
+    info: false,
+    scrollCollapse: true,
+    scrollY: 460,
+    scrollX: '100%'
+  });
+}
+
+function mergeAmbas(localRows, meRows) {
+  function rv(row, a, b) {
+    if (!row) return '';
+    if (typeof row[a] !== 'undefined' && row[a] !== null) return row[a];
+    if (typeof row[b] !== 'undefined' && row[b] !== null) return row[b];
+    return '';
+  }
+  var merged = [];
+  var idx = {};
+  for (var i = 0; i < localRows.length; i++) {
+    var l = localRows[i] || {};
+    var lCod = rv(l, 'CodPlanCta', 'codplancta');
+    var lNom = rv(l, 'Nombre', 'nombre');
+    var key = (lCod || '') + '||' + (lNom || '');
+    idx[key] = {
+      CodPlanCta: lCod,
+      Nombre: lNom,
+      TOTAL_DEBITO: rv(l, 'TOTAL_DEBITO', 'total_debito'),
+      TOTAL_CREDITO: rv(l, 'TOTAL_CREDITO', 'total_credito'),
+      SALDO_LOCAL: rv(l, 'SALDO', 'saldo') || 0,
+      SALDO_ME: 0
+    };
+    merged.push(idx[key]);
+  }
+  for (var j = 0; j < meRows.length; j++) {
+    var m = meRows[j] || {};
+    var mCod = rv(m, 'CodPlanCta', 'codplancta');
+    var mNom = rv(m, 'Nombre', 'nombre');
+    var key2 = (mCod || '') + '||' + (mNom || '');
+    if (!idx[key2]) {
+      idx[key2] = {
+        CodPlanCta: mCod,
+        Nombre: mNom,
+        TOTAL_DEBITO: 0,
+        TOTAL_CREDITO: 0,
+        SALDO_LOCAL: 0,
+        SALDO_ME: rv(m, 'SALDO', 'saldo') || 0
+      };
+      merged.push(idx[key2]);
+    } else {
+      idx[key2].SALDO_ME = rv(m, 'SALDO', 'saldo') || 0;
+    }
+  }
+  return merged;
+}
+
+function getInforme() {
+  var nivel = $("#nivel").val();
+  var incluir = $("[name=incluir]")[0];
+  var aux = $("[name=auxiliar]")[0];
+  var monedaSel = (select_moneda ? select_moneda.val() : 'local') || 'local';
+
+  query.moneda = monedaSel;
+  query.cuentad = (select_cuentad && typeof select_cuentad.getValue === 'function') ? (select_cuentad.getValue() || '') : (query.cuentad || '');
+  query.cuentah = (select_cuentah && typeof select_cuentah.getValue === 'function') ? (select_cuentah.getValue() || '') : (query.cuentah || '');
+  if (!query.cuentad && query.cuentah) query.cuentad = query.cuentah;
+  if (!query.cuentah && query.cuentad) query.cuentah = query.cuentad;
+  if (!query.cuentad) query.cuentad = '1';
+  if (!query.cuentah) query.cuentah = '9';
+  query.incluir = incluir.checked ? "SI" : "NO";
+  query.aux = aux.checked ? "SI" : "NO";
+  query.nivel = (!nivel || nivel === " " || nivel === '0') ? 0 : nivel;
+
+  if (!query.periodo || query.periodo === " ") {
+    alert("No hay datos suficientes para generar el listado");
+    return;
+  }
+
+  $('.collapse').collapse('hide');
+  $('#table-div').empty();
+  $loading.show();
+  $empty.hide();
+
+  if (monedaSel === 'ambas') {
+    var qLocal = $.extend({}, query, { moneda: 'local' });
+    var qMe = $.extend({}, query, { moneda: 'extranjera' });
+
+    $.when(
+      $.ajax({ method: 'GET', url: api + 'balancegeneral/list/', data: qLocal }),
+      $.ajax({ method: 'GET', url: api + 'balancegeneral/list/', data: qMe })
+    ).done(function (dl, dm) {
+      var localRows = (dl[0] && dl[0].data) ? dl[0].data : [];
+      var meRows = (dm[0] && dm[0].data) ? dm[0].data : [];
+      var combined = mergeAmbas(localRows, meRows);
+      if (combined.length > 0) {
+        renderBalanceTable(combined, 'ambas');
+      } else {
+        $empty.show();
+      }
+      $loading.hide();
+    }).fail(function () {
+      $loading.hide();
+      $empty.show();
+    });
+    return;
+  }
+
+  $.ajax({ method: 'GET', url: api + 'balancegeneral/list/', data: query }).done(function (data) {
+    if (data.data.length > 0) {
+      renderBalanceTable(data.data, monedaSel);
+    } else {
+      $empty.show();
+    }
+    $loading.hide();
+  }).fail(function () {
+    $loading.hide();
+    $empty.show();
+  });
+}
+
+function buscarCuenta() {
     u.resetSelect(select_cuentad);
     u.resetSelect(select_cuentah);
     if (!query.empresa || !query.empresa.length || !query.periodo || !query.periodo.length) {
@@ -343,15 +373,21 @@ var $messages, $loading, $empty;
     }
 
     //consultar api
-    $.get(api + 'cuenta/select/' + query.empresa + '/' + query.periodo).done(function (d) {
+    $.ajax({ method: 'GET', url: api + 'cuenta/select/' + query.empresa + '/' + query.periodo, cache: false }).done(function (d) {
+      var rows = ((d && d.data) ? d.data : []).map(function (r) {
+        return {
+          CodPlanCta: (typeof r.CodPlanCta !== 'undefined' && r.CodPlanCta !== null) ? r.CodPlanCta : r.codplancta,
+          Nombre: (typeof r.Nombre !== 'undefined' && r.Nombre !== null) ? r.Nombre : r.nombre
+        };
+      });
       //cargar resultados y habilitar options
       select_cuentad.load(function (cb) {
-        cb(d.data);
+        cb(rows);
         select_cuentad.enable();
       });
 
       select_cuentah.load(function (cb) {
-        cb(d.data);
+        cb(rows);
         select_cuentah.enable();
       });
     }).fail(function () {
@@ -362,5 +398,63 @@ var $messages, $loading, $empty;
         cb();
       });
     });
+  }
+
+  function exportExcel() {
+    var table = document.getElementById('resultados');
+    if (!table) {
+      alert('No hay datos para exportar.');
+      return;
+    }
+    var rows = table.querySelectorAll('tr');
+    var lines = [];
+    for (var i = 0; i < rows.length; i++) {
+      var cells = rows[i].querySelectorAll('th,td');
+      if (!cells.length) continue;
+      var values = [];
+      for (var j = 0; j < cells.length; j++) {
+        var text = (cells[j].innerText || '').replace(/\r?\n/g, ' ').trim();
+        values.push('"' + text.replace(/"/g, '""') + '"');
+      }
+      lines.push(values.join(';'));
+    }
+    var csv = '\uFEFF' + lines.join('\n');
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'balance_general.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function exportPdf() {
+    var table = document.getElementById('resultados');
+    if (!table) {
+      alert('No hay datos para exportar.');
+      return;
+    }
+    var resultado = document.getElementById('resultado-ejercicio');
+    var resultadoPuc = document.getElementById('resultado-ejercicio-puc');
+    var win = window.open('', '_blank');
+    if (!win) return;
+    win.document.open();
+    win.document.write('<html><head><title>Balance General</title><meta charset="utf-8">');
+    win.document.write('<style>body{font-family:Arial,Helvetica,sans-serif;font-size:11px;}');
+    win.document.write('table{width:100%;border-collapse:collapse;}');
+    win.document.write('th,td{border:1px solid #ccc;padding:4px 6px;text-align:left;}');
+    win.document.write('th{background:#eef3fb;}</style>');
+    win.document.write('</head><body>');
+    win.document.write('<h3>Balance General</h3>');
+    win.document.write(table.outerHTML);
+    if (resultado) {
+      win.document.write('<div style="margin-top:10px;">' + resultado.innerHTML + '</div>');
+    } else if (resultadoPuc) {
+      win.document.write('<div style="margin-top:10px;">' + resultadoPuc.innerHTML + '</div>');
+    }
+    win.document.write('</body></html>');
+    win.document.close();
+    win.focus();
+    win.print();
   }
 </script>

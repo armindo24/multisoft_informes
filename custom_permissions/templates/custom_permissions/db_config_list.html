@@ -1,0 +1,21 @@
+﻿{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Configuración de Base de Datos{% endblock %}
+
+{% block content %}
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h4 class="panel-title">Configuración de Base de Datos</h4>
+  </div>
+  <div class="panel-body">
+    <div class="list-group">
+      <a class="list-group-item" href="/custom_permissions/db_config/postgres/">Postgres (Django)</a>
+      <a class="list-group-item" href="/custom_permissions/db_config/integrado/">Integrado (SQL Anywhere)</a>
+      <a class="list-group-item" href="/custom_permissions/db_config/sueldo/">Sueldo (SQL Anywhere)</a>
+    </div>
+    <p class="help-block">Nota: cambios se aplican al instante y quedan guardados para el próximo inicio.</p>
+  </div>
+</div>
+{% endblock %}
+

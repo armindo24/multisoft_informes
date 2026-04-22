@@ -1,0 +1,90 @@
+/* Estilos modernos para la pantalla de login */
+body { 
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background: linear-gradient(135deg, #eef2f6 0%, #f2f6fa 60%, #f6f9fc 100%);
+  color: #2b1b3a;
+  height: 100vh;
+}
+
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.login-card {
+  background: rgba(255,255,255,0.9);
+  border-radius: 16px;
+  padding: 24px 24px 22px;
+  width: 100%;
+  max-width: 330px;
+  box-shadow: 0 14px 32px rgba(83, 47, 124, 0.18);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(140, 92, 204, 0.12);
+}
+
+.login-brand {
+  text-align: center;
+  margin-bottom: 18px;
+}
+.login-brand img{
+  display:block;
+  margin: 0 auto 10px;
+  width:72px;
+  height:72px;
+  padding:10px;
+  background: #f6efff;
+  border-radius: 16px;
+  box-shadow: 0 10px 22px rgba(83, 47, 124, 0.22);
+  border: 1px solid rgba(140, 92, 204, 0.2);
+  object-fit: contain;
+  image-rendering: crisp-edges;
+}
+.login-brand h1{
+  display:block;
+  margin:12px 0 4px;
+  font-size:26px;
+  font-weight:800;
+  color:#3b1f56;
+  letter-spacing:0.2px;
+}
+.login-brand .subtitle{
+  margin:0;
+  color:#6b4a8b;
+  font-size:13px;
+}
+
+.input-with-icon{ position:relative; }
+.input-with-icon i{ position:absolute; left:10px; top:50%; transform:translateY(-50%); color:rgba(59,31,86,0.55); font-size:13px; }
+.input-with-icon .form-control{ padding-left:32px; background:rgba(255,255,255,0.9); border:1px solid rgba(120, 80, 170, 0.2); color:#2b1b3a; height:36px; font-size:14px; }
+.input-with-icon .form-control::placeholder{ color:rgba(59,31,86,0.45); }
+
+.btn-primary{
+  background: linear-gradient(90deg,#8b5cf6,#a78bfa);
+  border: none;
+  box-shadow: 0 8px 18px rgba(139, 92, 246, 0.28);
+  border-radius: 10px;
+  font-weight: 700;
+  padding: 8px 14px;
+  font-size: 15px;
+}
+.btn-primary:hover{
+  opacity:0.96;
+  transform: translateY(-1px);
+}
+.btn-primary:active{
+  transform: translateY(0);
+}
+
+.login-footer{ text-align:center; margin-top:14px; }
+.login-footer a{ color:#6b4a8b; text-decoration:underline }
+
+.alert{ color:#4a1a1a; background:#ffe6ef; border-radius:10px; padding:16px }
+.alert .alert-heading{ color:#7a1b1b }
+
+@media (max-width:480px){
+  .login-card{ padding:20px }
+  .login-brand h1{ font-size:20px }
+}

@@ -4,13 +4,33 @@
  * Module dependencies.
  */
 
-var config = require('config');
+var config;
+try {
+    config = require('config');
+} catch (e) {
+    console.warn('config module not found, using fallback config. Install "config" for full functionality.');
+    config = { get: function () { return {}; } };
+}
 var shell = require('shelljs');
 var app = require('../app');
 var debug = require('debug')('multisoft:server');
 var http = require('http');
 var dbIntegrado = require('../db_integrado');
 var dbSueldo = require('../db_sueldo');
+
+function isSchemaError(err) {
+    var code = err && (err.code || err.Code);
+    return code === -141 || code === -143 || code === -149;
+}
+
+function formatSchemaMessage(err) {
+    var msg = String((err && (err.message || err.Msg || err.sqlMessage)) || err || '');
+    var code = (err && (err.code || err.Code));
+    if (isSchemaError(err)) {
+        return '[DB-SCHEMA] Error de estructura (tabla/columna). Code=' + code + ' Msg=' + msg;
+    }
+    return '[UNCAUGHT] ' + msg;
+}
 
 /**
  * Get port from environment and store in Express.
@@ -34,11 +54,32 @@ process.once('SIGUSR2', function () {
     process.kill(process.pid, 'SIGUSR2');
 });
 
+// Evita caída del proceso por errores async no manejados (p.ej. tabla/columna inexistente en SQL).
+process.on('uncaughtException', function (err) {
+    console.error(formatSchemaMessage(err));
+    if (err && err.stack) {
+        console.error(err.stack);
+    }
+    // No hacemos process.exit para mantener el servicio disponible.
+});
+
+process.on('unhandledRejection', function (reason) {
+    console.error('[UNHANDLED_REJECTION]', reason && (reason.stack || reason.message) ? (reason.stack || reason.message) : reason);
+    // No hacemos process.exit para mantener el servicio disponible.
+});
+
 /**
  * Create HTTP server.
  */
 
 var server = http.createServer(app);
+
+// El informe de costo_articulo_full puede tardar varios minutos cuando
+// recalcula materiales + despachos; evitamos que Node cierre la conexion
+// HTTP a los ~120s antes de que termine el procesamiento.
+server.requestTimeout = 10 * 60 * 1000;
+server.headersTimeout = 11 * 60 * 1000;
+server.keepAliveTimeout = 65 * 1000;
 
 /**
  * Listen on provided port, on all network interfaces.

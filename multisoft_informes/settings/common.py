@@ -18,6 +18,7 @@ import environ
 ROOT_DIR = environ.Path(__file__) - 3  # (/a/b/myfile.py - 3 = /)
 
 env = environ.Env()
+os.environ.setdefault('DISABLE_SUELDO_DB', '1')
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -27,7 +28,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 # Application definition
 
 INSTALLED_APPS = (
-    'django_admin_bootstrapped',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -35,7 +35,6 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
-    'dajaxice',
     'custom_permissions',
     'finanzas',
     'ventas',
@@ -44,15 +43,15 @@ INSTALLED_APPS = (
     'rrhh'
 )
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'multisoft_informes.middleware.SessionActivityMiddleware',
 )
 
 ROOT_URLCONF = 'multisoft_informes.urls'
@@ -74,7 +73,7 @@ TEMPLATES = [
         },
     },
 ]
-
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField' #//nuevo
 WSGI_APPLICATION = 'multisoft_informes.wsgi.application'
 
 ADMIN_MEDIA_PREFIX = '/static/admin/'
@@ -95,6 +94,10 @@ USE_TZ = True
 FILE_CHARSET = 'utf-8'
 
 DATE_INPUT_FORMATS = ('%d-%m-%Y', '%Y-%m-%d')
+
+# Session idle timeout (30 minutes)
+SESSION_COOKIE_AGE = 30 * 60
+SESSION_SAVE_EVERY_REQUEST = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/

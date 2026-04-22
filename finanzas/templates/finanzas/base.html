@@ -1,11 +1,12 @@
 {% extends 'admin/base_site.html' %}
-{% load staticfiles %}
+{% load static %}
 {% block extrahead %}
   <link rel="stylesheet" href="{% static 'bootstrap-datepicker/dist/css/bootstrap-datepicker3.min.css' %}">
   <link rel="stylesheet" href="{% static 'selectize/dist/css/selectize.bootstrap3.css' %}">
   <link rel="stylesheet" href="{% static 'datatables.net-bs/css/dataTables.bootstrap.min.css' %}">
   <link rel="stylesheet" href="{% static 'datatables.net-scroller-bs/css/scroller.bootstrap.css' %}">
   <link rel="stylesheet" href="{% static 'styles.css' %}">
+  <link rel="stylesheet" href="{% static 'css/theme-premium.css' %}">
   <script src="{% static 'dajaxice/dajaxice.core.js' %}"></script>
   <script src="{% static 'bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js' %}"></script>
   <script src="{% static 'bootstrap-datepicker/dist/locales/bootstrap-datepicker.es.min.js' %}"></script>
@@ -15,41 +16,980 @@
   <script src="{% static 'datatables.net-scroller/js/dataTables.scroller.js' %}"></script>
   <script src="{% static 'js/utils.js' %}"></script>
   <script src="{% static 'js/puntos-decimales.js' %}"></script>
+  <style>
+    /* Ajuste visual estilo referencia (limpio y equilibrado) */
+    .navbar.navbar-default.navbar-fixed-top {
+      min-height: 56px;
+    }
+    .navbar.navbar-default.navbar-fixed-top .navbar-brand {
+      height: 56px;
+      padding-top: 15px;
+      padding-bottom: 15px;
+    }
+    #page-wrapper .page-header {
+      margin: 14px 0 10px;
+      font-size: 24px;
+      line-height: 1.2;
+    }
+
+    .page-header {
+      font-size: 14px;
+      margin: 0 0 4px;
+    }
+
+    /* Compact + modern filter panel for report screens */
+    .report-compact {
+      margin-top: 0;
+    }
+    .report-compact .panel-group {
+      margin-bottom: 8px;
+    }
+    .report-compact .panel.panel-default {
+      border-radius: 10px;
+      border: 1px solid #d8e0ec;
+      box-shadow: 0 2px 8px rgba(20, 46, 82, 0.06);
+      overflow: visible;
+      margin-bottom: 6px;
+    }
+    .report-compact .panel-heading {
+      background: linear-gradient(135deg, #f7f9fc, #eef3fb);
+      border-bottom: 1px solid #dbe3f0;
+      padding: 8px 12px;
+    }
+    .report-compact .panel-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1f3556;
+    }
+    .report-compact .panel-body {
+      padding: 8px 12px 4px;
+    }
+    .report-compact .form-horizontal .form-group {
+      margin-bottom: 6px;
+    }
+    .report-compact .control-label {
+      font-size: 12px;
+      color: #263a59;
+      padding-top: 4px;
+    }
+    /* Inputs compactos y legibles */
+    .report-compact .form-control,
+    .report-compact .selectize-input,
+    .report-compact .input-group-addon {
+      height: 30px;
+      min-height: 30px;
+      font-size: 12px;
+      border-radius: 7px;
+    }
+    .report-compact .form-control,
+    .report-compact .selectize-input {
+      border-color: #ced9ea;
+      box-shadow: none;
+    }
+    .report-compact .form-control:focus,
+    .report-compact .selectize-input.focus {
+      border-color: #5a85c5;
+      box-shadow: 0 0 0 2px rgba(90, 133, 197, 0.15);
+    }
+    .report-compact .selectize-dropdown {
+      z-index: 5000 !important;
+    }
+    .report-compact .input-group-addon {
+      padding: 4px 8px;
+      background: #f5f8fd;
+      border-color: #ced9ea;
+      color: #4a5f82;
+    }
+    /* Botonera moderna */
+    .report-compact .modal-footer {
+      padding: 8px 12px;
+      border-top: 1px solid #dbe3f0;
+      background: #fafcfe;
+    }
+    .report-compact .btn-filter-modern {
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 11px;
+      border: 1px solid #1f5fbf;
+      background: linear-gradient(135deg, #2a75d6, #1f5fbf);
+      color: #fff;
+    }
+    .report-compact .btn-filter-modern:hover,
+    .report-compact .btn-filter-modern:focus {
+      color: #fff;
+      background: linear-gradient(135deg, #256ac2, #194f9b);
+    }
+    .report-compact .btn-cancel-modern {
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 11px;
+      border: 1px solid #b93b3b;
+      background: linear-gradient(135deg, #d9534f, #b52f2b);
+      color: #fff;
+    }
+    .report-compact .btn-cancel-modern:hover,
+    .report-compact .btn-cancel-modern:focus {
+      color: #fff;
+      background: linear-gradient(135deg, #c64541, #9e2522);
+    }
+    .report-compact .btn-export-excel {
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 11px;
+      border: 1px solid #2f8a45;
+      background: linear-gradient(135deg, #35a853, #2f8a45);
+      color: #fff;
+    }
+    .report-compact .btn-export-excel:hover,
+    .report-compact .btn-export-excel:focus {
+      color: #fff;
+      background: linear-gradient(135deg, #2f994c, #27763b);
+    }
+    .report-compact .btn-export-pdf {
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 11px;
+      border: 1px solid #b93b3b;
+      background: linear-gradient(135deg, #d9534f, #b52f2b);
+      color: #fff;
+    }
+    .report-compact .btn-export-pdf:hover,
+    .report-compact .btn-export-pdf:focus {
+      color: #fff;
+      background: linear-gradient(135deg, #c64541, #9e2522);
+    }
+    .report-compact .btn-cancel-modern.is-disabled {
+      opacity: 0.65;
+      pointer-events: none;
+    }
+
+    /* Modern results area */
+    .report-compact #table-div {
+      margin-top: 2px;
+      border: 1px solid #d8e0ec;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(20, 46, 82, 0.05);
+      overflow: hidden;
+    }
+    .report-compact table.report-results-table {
+      margin-bottom: 0;
+    }
+    /* Tabla densa (sin perder legibilidad) */
+    .report-compact table.report-results-table thead th {
+      background: linear-gradient(180deg, #f7f9fd, #eef3fb);
+      color: #203756;
+      font-size: 12px;
+      font-weight: 700;
+      border-bottom: 1px solid #d7e0ee !important;
+      padding: 6px 8px;
+    }
+    .report-compact table.report-results-table td {
+      font-size: 11px;
+      padding: 4px 7px;
+      border-color: #e7edf6 !important;
+      color: #22344f;
+      font-weight: 400;
+    }
+    .report-compact table.report-results-table tbody th {
+      font-weight: 400;
+    }
+    .report-compact table.report-results-table tbody tr:nth-child(odd) td {
+      background: #fcfdff;
+    }
+    .report-compact table.report-results-table tbody tr:hover td {
+      background: #f1f6ff;
+    }
+    .report-compact table.report-results-table tfoot td {
+      background: #f6f9ff;
+      font-size: 12px;
+      font-weight: 700;
+      color: #17345a;
+      border-top: 2px solid #ccd9ee !important;
+    }
+    .report-compact table.report-results-table tr.danger td {
+      background: #fff6f6 !important;
+      color: #8d1f1f;
+    }
+    .report-compact table.report-mayor-table {
+      margin-bottom: 0;
+    }
+    .report-compact table.report-mayor-table thead th {
+      background: linear-gradient(180deg, #f5f8fe, #eaf1fc);
+      color: #1f3556;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 7px;
+      border-color: #d6e0ef !important;
+      white-space: nowrap;
+    }
+    .report-compact table.report-mayor-table td,
+    .report-compact table.report-mayor-table th {
+      font-size: 11px;
+      padding: 4px 7px;
+      border-color: #e4ebf7 !important;
+      font-weight: 400;
+    }
+    .report-compact table.report-mayor-table tbody tr:nth-child(odd) td {
+      background: #fcfdff;
+    }
+    .report-compact table.report-mayor-table tfoot th,
+    .report-compact table.report-mayor-table tfoot td {
+      font-weight: 700;
+      background: #f5f8ff;
+      border-top: 2px solid #d0dcf1 !important;
+    }
+    .report-compact #table-div table tbody th,
+    .report-compact #table-div table tbody td {
+      font-weight: 400;
+    }
+    .report-compact #table-div table tfoot th,
+    .report-compact #table-div table tfoot td {
+      font-weight: 700;
+    }
+    /* Global header style for report tables rendered dynamically */
+    .report-compact #table-div table thead th {
+      background: linear-gradient(180deg, #f5f8fe, #eaf1fc) !important;
+      color: #1f3556 !important;
+      border-color: #d6e0ef !important;
+      font-weight: 700;
+    }
+
+    /* Sidebar compacto equilibrado */
+    #my-left-menu.ms-sidebar .ms-section {
+      margin: 12px 12px 6px;
+      font-size: 13px;
+    }
+    #my-left-menu.ms-sidebar .ms-item a,
+    #my-left-menu.ms-sidebar .ms-nav-btn {
+      padding-top: 7px;
+      padding-bottom: 7px;
+      font-size: 13px;
+    }
+    #my-left-menu.ms-sidebar .ms-search input {
+      height: 30px;
+      font-size: 12px;
+    }
+  </style>
 {% endblock %}
 
 {% block content %}
-  <div class="panel-group" id="accordion">
-    <div class="panel panel-default">
-      <div class="panel-heading" data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
-        <h4 class="panel-title">Filtros</h4>
-      </div>
-      <div id="collapseOne" class="panel-collapse collapse">
-        <div class="panel-body">
-          <div class="panel-group" id="archivo_accordion" style="margin-bottom: 0px;">
-            <div id="filters">
-              <form class="form-horizontal">
-                {% block filters %}
-                {% endblock %}
-              </form>
+  <div class="report-compact">
+    <div class="panel-group" id="accordion">
+      <div class="panel panel-default ms-filter-card ms-sticky-filter" id="ms-filter-card">
+        <div class="panel-heading" data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
+          <h4 class="panel-title">Filtros</h4>
+        </div>
+        <div id="collapseOne" class="panel-collapse collapse">
+          <div class="panel-body">
+            <div class="panel-group" id="archivo_accordion" style="margin-bottom: 0px;">
+              <div id="filters">
+                <form class="form-horizontal">
+                  {% block filters %}
+                  {% endblock %}
+                </form>
+              </div>
             </div>
           </div>
         </div>
+        <div class="modal-footer ms-filter-actions">
+          {% block filter_footer %}
+            <div class="ms-filter-actions__left">
+              <a type="button" class="btn btn-filter-modern" onclick="runGlobalFiltrar()">Filtrar <i class="fa fa-search"></i></a>
+              <a type="button" class="btn btn-cancel-modern" onclick="runGlobalCancelar()">Cancelar <i class="fa fa-stop"></i></a>
+            </div>
+            <div class="ms-filter-actions__right">
+              <a type="button" class="btn btn-export-excel" onclick="runGlobalExcel()">Excel <i class="fa fa-file-excel-o"></i></a>
+              <a type="button" class="btn btn-export-pdf" onclick="runGlobalPdf()">PDF <i class="fa fa-file-pdf-o"></i></a>
+            </div>
+          {% endblock %}
+        </div>
       </div>
-      <div class="modal-footer">
-        {% block filter_footer %}
-          <a type="button" class="btn btn-primary" onclick="getInforme()">Filtrar <i class="fa fa-search"></i></a>
+    </div>
+
+    <!-- Chips con filtros activos (estilo dashboard) -->
+    <div id="ms-active-filters" class="ms-active-filters" aria-live="polite"></div>
+    
+    <!-- KPI resumen (Debe/Haber/Diferencia) -->
+    <div id="ms-kpis" class="ms-kpis" aria-live="polite"></div>
+
+    <div id="resultado">
+      <table id="results" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
+        {% block table %}
         {% endblock %}
+      </table>
+    </div>
+
+    {% block inner_content %}
+    {% endblock %}
+  </div>
+
+  <div id="plancta-picker" class="panel panel-default" style="display:none; position:fixed; z-index:4000; top:72px; left:50%; transform:translateX(-50%); width:74%; max-width:980px; border:2px solid #5b9bd5; box-shadow:0 8px 24px rgba(0,0,0,.25); background:#fff; font-size:12px;">
+    <div class="panel-heading" style="display:flex;justify-content:space-between;align-items:center; padding:8px 10px;">
+      <strong style="font-size:12px;">Buscar cuenta</strong>
+      <button type="button" class="btn btn-danger btn-xs" id="plancta-picker-close">Cerrar</button>
+    </div>
+    <div class="panel-body" style="padding:8px;">
+      <input type="text" id="plancta-picker-search" class="form-control" placeholder="Buscar por código o nombre..." style="margin-bottom:8px; height:28px; font-size:12px;">
+      <div style="max-height:360px;overflow:auto;">
+        <table class="table table-striped table-bordered" id="plancta-picker-table" style="font-size:11px; margin-bottom:0; table-layout:fixed; width:100%;">
+          <thead>
+            <tr>
+              <th style="width:120px; position:sticky; top:0; z-index:2; background:#f3f6fb;">Codigo</th>
+              <th style="width:52%; position:sticky; top:0; z-index:2; background:#f3f6fb;">Nombre</th>
+              <th style="width:56px; position:sticky; top:0; z-index:2; background:#f3f6fb;">Imp</th>
+              <th style="width:90px; position:sticky; top:0; z-index:2; background:#f3f6fb;">Aux</th>
+              <th style="width:70px; position:sticky; top:0; z-index:2; background:#f3f6fb;">Mon</th>
+              <th style="width:70px; position:sticky; top:0; z-index:2; background:#f3f6fb;">Nivel</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
     </div>
   </div>
 
-  <div id="resultado">
-    <table id="results" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">
-      {% block table %}
-      {% endblock %}
-    </table>
+  <div id="articulo-picker-backdrop" style="display:none;position:fixed;inset:0;z-index:4090;background:rgba(0,0,0,.25);"></div>
+  <div id="articulo-picker" class="panel panel-default" style="display:none; position:fixed; z-index:4100; top:72px; left:50%; transform:translateX(-50%); width:78%; max-width:1100px; border:2px solid #5b9bd5; box-shadow:0 8px 24px rgba(0,0,0,.25); background:#fff; font-size:12px;">
+    <div class="panel-heading" style="display:flex;justify-content:space-between;align-items:center; padding:8px 10px;">
+      <strong style="font-size:12px;">Buscar articulo</strong>
+      <button type="button" class="btn btn-danger btn-xs" id="articulo-picker-close">Cerrar</button>
+    </div>
+    <div class="panel-body" style="padding:8px;">
+      <input type="text" id="articulo-picker-search" class="form-control" placeholder="Buscar por codigo o descripcion..." style="margin-bottom:8px; height:28px; font-size:12px;">
+      <div style="max-height:420px;overflow:auto;">
+        <table class="table table-striped table-bordered" id="articulo-picker-table" style="font-size:11px; margin-bottom:0; table-layout:fixed;">
+          <thead>
+            <tr>
+              <th style="width:110px; position:sticky; top:0; z-index:2; background:#f3f6fb;">Codigo</th>
+              <th style="position:sticky; top:0; z-index:2; background:#f3f6fb;">Descripcion</th>
+              <th style="width:120px; position:sticky; top:0; z-index:2; background:#f3f6fb;">Costo Promedio</th>
+              <th style="width:120px; position:sticky; top:0; z-index:2; background:#f3f6fb;">Ultima Compra</th>
+              <th style="width:60px; position:sticky; top:0; z-index:2; background:#f3f6fb;">Mon</th>
+              <th style="width:60px; position:sticky; top:0; z-index:2; background:#f3f6fb;">IVA</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
-  {% block inner_content %}
-  {% endblock %}
+  <script type="text/javascript">
+    function msGetFieldLabel(el) {
+      try {
+        var $fg = $(el).closest('.form-group');
+        var $lbl = $fg.find('label').first();
+        var t = ($lbl.text() || '').replace(/\s+/g, ' ').trim();
+        return t || (el.name || el.id || 'Filtro');
+      } catch (e) {
+        return (el.name || el.id || 'Filtro');
+      }
+    }
+
+    function msGetFieldValue(el) {
+      // selectize
+      if (el && el.selectize) {
+        var v = el.selectize.getValue();
+        if (!v) return '';
+        var it = el.selectize.options[v];
+        if (it) {
+          var code = it.id || it.cod_articulo || it.Cod_Articulo || it.codplancta || it.CodPlanCta || it.Cod_Empresa || it.cod_empresa || it.value || '';
+          var name = it.text || it.nombre || it.name || it.label || it.Des_Empresa || it.des_empresa || it.Des_Articulo || it.des_art || '';
+          if (code && name && String(name) !== String(code)) {
+            return code + ' - ' + name;
+          }
+          return (name || code || v) + '';
+        }
+        return v + '';
+      }
+
+      var $el = $(el);
+      if ($el.is(':checkbox')) return $el.is(':checked') ? 'Sí' : '';
+      if ($el.is(':radio')) return $el.is(':checked') ? ($el.val() || '') : '';
+      if ($el.is('select')) {
+        var txt = $el.find('option:selected').text();
+        var val = ($el.val() || '').toString().trim();
+        if (!val || val === '0' || val === '-') return '';
+        return (txt || val).trim();
+      }
+      return ($el.val() || '').toString().trim();
+    }
+
+    function msRenderActiveFilters() {
+      var $box = $('#ms-active-filters');
+      if (!$box.length) return;
+      var $form = $('#filters form');
+      if (!$form.length) return;
+
+      var allowList = window.msActiveFiltersAllowList || null;
+      var chips = [];
+      $form.find('input, select, textarea').each(function () {
+        // Ignorar campos ocultos y botones
+        var type = (this.type || '').toLowerCase();
+        if (type === 'hidden' || type === 'submit' || type === 'button') return;
+        // Radios: sólo el checked
+        if (type === 'radio' && !this.checked) return;
+        var fieldName = this.name || this.id || '';
+        if (allowList && allowList.length && allowList.indexOf(fieldName) === -1) return;
+
+        var value = msGetFieldValue(this);
+        if (!value) return;
+
+        var label = msGetFieldLabel(this);
+        chips.push(
+          '<span class="ms-chip" title="' + label.replace(/"/g, '&quot;') + '">' +
+            '<span class="ms-chip__label">' + label + ':</span>' +
+            '<span class="ms-chip__value">' + value + '</span>' +
+          '</span>'
+        );
+      });
+
+      $box.html(chips.join(''));
+      if (!chips.length) $box.html('');
+    }
+
+    function msNumFromText(raw) {
+  if (!raw) return null;
+  var s = (raw + '').trim();
+  // Detect decimal comma by presence of ',' near end
+  // Normalize thousands separators (.) and decimal separator (,)
+  // Examples:
+  // 792.176.659.636  -> 792176659636
+  // 122.908.659,84   -> 122908659.84
+  var hasComma = s.indexOf(',') !== -1;
+  s = s.replace(/\s/g,'');
+  if (hasComma) {
+    s = s.replace(/\./g,'').replace(',', '.');
+  } else {
+    s = s.replace(/\./g,'');
+  }
+  var n = parseFloat(s);
+  return isNaN(n) ? null : n;
+}
+
+function msFormatML(n) {
+  if (n === null || n === undefined) return '-';
+  // Formato PYG: separador de miles con punto, sin decimales
+  try {
+    return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  } catch(e) {
+    return n + '';
+  }
+}
+
+function msFormatME(n) {
+  if (n === null || n === undefined) return '-';
+  // Formato con 2 decimales y miles con punto, decimal con coma
+  try {
+    var fixed = (Math.round(n * 100) / 100).toFixed(2);
+    var parts = fixed.split('.');
+    var intp = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return intp + ',' + parts[1];
+  } catch(e) {
+    return n + '';
+  }
+}
+
+function msFindTotalsText() {
+  // 1) Elementos dedicados
+  var $candidates = $('.total-general, #total-general, .ms-total, #ms-total');
+  for (var i=0;i<$candidates.length;i++){
+    var t = ($candidates.eq(i).text()||'').trim();
+    if (t.indexOf('Debe') !== -1 && t.indexOf('Haber') !== -1) return t;
+  }
+  // 2) Buscar en el resultado (incluye footers o textos agregados por AJAX)
+  var blob = ($('#resultado').text() || $('body').text() || '').replace(/\s+/g,' ').trim();
+  // Intentar capturar el bloque que contiene las cuatro métricas
+  var re = /Debe\s*M\.L\.?\s*:\s*([0-9\.\,]+)\s*\|\s*Haber\s*M\.L\.?\s*:\s*([0-9\.\,]+)\s*\|\s*Debe\s*M\.E\.?\s*:\s*([0-9\.\,]+)\s*\|\s*Haber\s*M\.E\.?\s*:\s*([0-9\.\,]+)/i;
+  var m = blob.match(re);
+  if (m) return m[0];
+  // Fallback: si hay Debe/Haber de ML al menos
+  var re2 = /Debe\s*M\.L\.?\s*:\s*([0-9\.\,]+)\s*\|\s*Haber\s*M\.L\.?\s*:\s*([0-9\.\,]+)/i;
+  var m2 = blob.match(re2);
+  if (m2) return m2[0];
+  return '';
+}
+
+function msParseTotals(t) {
+  var r = { debe_ml:null, haber_ml:null, debe_me:null, haber_me:null };
+  if (!t) return r;
+  function pick(rx, key){
+    var m = t.match(rx);
+    if (m && m[1]) r[key] = msNumFromText(m[1]);
+  }
+  pick(/Debe\s*M\.L\.?\s*:\s*([0-9\.\,]+)/i, 'debe_ml');
+  pick(/Haber\s*M\.L\.?\s*:\s*([0-9\.\,]+)/i, 'haber_ml');
+  pick(/Debe\s*M\.E\.?\s*:\s*([0-9\.\,]+)/i, 'debe_me');
+  pick(/Haber\s*M\.E\.?\s*:\s*([0-9\.\,]+)/i, 'haber_me');
+  return r;
+}
+
+function msRenderKPIs(data) {
+  var $box = $('#ms-kpis');
+  if (!$box.length) return;
+
+  var hasAny = (data.debe_ml!==null || data.haber_ml!==null || data.debe_me!==null || data.haber_me!==null);
+  if (!hasAny) { $box.html(''); return; }
+
+  var diff_ml = (data.debe_ml!==null && data.haber_ml!==null) ? (data.debe_ml - data.haber_ml) : null;
+  var diff_me = (data.debe_me!==null && data.haber_me!==null) ? (data.debe_me - data.haber_me) : null;
+
+  var ok_ml = (diff_ml !== null) ? (Math.round(diff_ml) === 0) : null;
+  var ok_me = (diff_me !== null) ? (Math.abs(diff_me) < 0.005) : null;
+
+  function kpi(title, value, sub, cls){
+    return (
+      '<div class="ms-kpi '+(cls||'')+'">' +
+        '<div class="ms-kpi__title">'+title+'</div>' +
+        '<div class="ms-kpi__value">'+value+'</div>' +
+        (sub ? '<div class="ms-kpi__sub">'+sub+'</div>' : '') +
+      '</div>'
+    );
+  }
+
+  var html = '<div class="ms-kpi-grid">';
+  html += kpi('Debe M.L.', msFormatML(data.debe_ml), 'PYG', 'ms-kpi--ml');
+  html += kpi('Haber M.L.', msFormatML(data.haber_ml), 'PYG', 'ms-kpi--ml');
+  html += kpi('Dif. M.L.', diff_ml===null?'-':msFormatML(diff_ml), (ok_ml===null?'':(ok_ml?'Balanceado':'Descuadre')), ok_ml===null?'':(ok_ml?'ms-kpi--ok':'ms-kpi--bad'));
+  html += kpi('Debe M.E.', msFormatME(data.debe_me), 'M.E.', 'ms-kpi--me');
+  html += kpi('Haber M.E.', msFormatME(data.haber_me), 'M.E.', 'ms-kpi--me');
+  html += kpi('Dif. M.E.', diff_me===null?'-':msFormatME(diff_me), (ok_me===null?'':(ok_me?'Balanceado':'Descuadre')), ok_me===null?'':(ok_me?'ms-kpi--ok':'ms-kpi--bad'));
+  html += '</div>';
+
+  $box.html(html);
+}
+
+function msUpdateKPIs() {
+  try{
+    var t = msFindTotalsText();
+    var data = msParseTotals(t);
+    msRenderKPIs(data);
+
+    // Ajustar el sticky top del header de tabla en base a lo que realmente está visible
+    var top = 0;
+    var $nav = $('.navbar.navbar-fixed-top:visible');
+    if ($nav.length) top += $nav.outerHeight() || 0;
+    top += 8; // gap
+    var $sticky = $('.ms-sticky-filter:visible');
+    if ($sticky.length) top += $sticky.outerHeight() || 0;
+    var $chips = $('#ms-active-filters:visible');
+    if ($chips.length) top += $chips.outerHeight() || 0;
+    var $kpis = $('#ms-kpis:visible');
+    if ($kpis.length) top += $kpis.outerHeight() || 0;
+    document.documentElement.style.setProperty('--ms-table-sticky-top', top + 'px');
+  }catch(e){}
+}
+
+function callFirstGlobalFn(names) {
+      for (var i = 0; i < names.length; i++) {
+        var fn = window[names[i]];
+        if (typeof fn === 'function') {
+          fn();
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function runGlobalFiltrar() {
+      msRenderActiveFilters();
+      msUpdateKPIs();
+      callFirstGlobalFn(['getInforme', 'filtrar', 'buscar', 'cargar_informe']);
+    }
+
+    function runGlobalCancelar() {
+      if (callFirstGlobalFn(['cancelarConsultaMayor', 'cancelarConsulta', 'cancelar', 'limpiar'])) return;
+
+      if (window.currentRequest && typeof window.currentRequest.abort === 'function') {
+        try { window.currentRequest.abort(); } catch (e) {}
+        window.currentRequest = null;
+      }
+
+      $('#loading').hide();
+      $('#empty').hide();
+
+      $('#table-div table, #report').each(function () {
+        if ($.fn.DataTable && $.fn.DataTable.isDataTable(this)) {
+          try { $(this).DataTable().destroy(); } catch (e) {}
+        }
+      });
+
+      $('#table-div').empty();
+      $('#report').empty();
+      $('#resultados').empty();
+      $('.dataTables_wrapper').remove();
+
+      if (window.query && typeof window.query === 'object') {
+        var preserved = {};
+        ['empresa', 'periodo'].forEach(function (k) {
+          if (window.query[k] !== undefined) preserved[k] = window.query[k];
+        });
+        window.query = preserved;
+      }
+
+      msRenderActiveFilters();
+      msUpdateKPIs();
+    }
+
+    function runGlobalExcel() {
+      if (callFirstGlobalFn(['exportarMayorExcel', 'exportExcel', 'exportExcelFin', 'exportarExcel'])) return;
+      alert('Este informe no tiene exportación a Excel.');
+    }
+
+    function runGlobalPdf() {
+      if (callFirstGlobalFn(['exportarMayorPdf', 'exportPdf', 'exportPdfFin', 'exportarPdf'])) return;
+      alert('Este informe no tiene exportación a PDF.');
+    }
+
+    // Actualiza chips al cambiar filtros
+    $(function () {
+      msRenderActiveFilters();
+      msUpdateKPIs();
+      $('#filters').on('change input', 'input, select, textarea', function () {
+        // evita que input rapidísimo cause lag
+        clearTimeout(window.__msChipT);
+        window.__msChipT = setTimeout(function(){ msRenderActiveFilters(); msUpdateKPIs(); }, 150);
+      });
+      // selectize dispara eventos propios
+      $('#filters select').each(function () {
+        if (this.selectize) {
+          this.selectize.on('change', function () {
+            clearTimeout(window.__msChipT);
+            window.__msChipT = setTimeout(function(){ msRenderActiveFilters(); msUpdateKPIs(); }, 50);
+          });
+        }
+      });
+    });
+
+    (function () {
+      var accountFilters = { cuentad: true, cuentah: true };
+      var articleFilters = { articulo: true };
+      var auxFilters = { 'cuenta-aux-d': true, 'cuenta-aux-h': true };
+      var targetFilter = null;
+      var pickerMode = 'plancta';
+      var rowsCache = [];
+      var articuloRowsCache = [];
+      var articuloSearchTimer = null;
+
+      function apiBase() {
+        var api = (window.u && typeof u.getApiUrl === 'function') ? u.getApiUrl() : '';
+        if (!api) api = 'http://' + window.location.hostname + ':3000/api/v1/';
+        if (api.slice(-1) !== '/') api += '/';
+        return api;
+      }
+
+      function currentPlanPickerVariant() {
+        return window.msPlanCuentaPickerVariant || 'default';
+      }
+
+      function setPickerColumnWidths(mode) {
+        var $ths = $('#plancta-picker-table thead th');
+        if (!$ths.length) return;
+        if (mode === 'aux') {
+          $ths.eq(0).css('width', '110px');
+          $ths.eq(1).css('width', '56%');
+          $ths.eq(2).css('width', '56px');
+          $ths.eq(3).css('width', '62px');
+          $ths.eq(4).css('width', '64px');
+          $ths.eq(5).css('width', '64px');
+        } else if (currentPlanPickerVariant() === 'puc') {
+          $ths.eq(0).css('width', '140px');
+          $ths.eq(1).css('width', '48%');
+          $ths.eq(2).css('width', '54px');
+          $ths.eq(3).css('width', '160px');
+          $ths.eq(4).css('width', '56px');
+          $ths.eq(5).css('width', '78px');
+        } else {
+          $ths.eq(0).css('width', '120px');
+          $ths.eq(1).css('width', '52%');
+          $ths.eq(2).css('width', '56px');
+          $ths.eq(3).css('width', '90px');
+          $ths.eq(4).css('width', '70px');
+          $ths.eq(5).css('width', '70px');
+        }
+      }
+
+      function setPickerHeaders(mode) {
+        var $ths = $('#plancta-picker-table thead th');
+        if (mode === 'aux') {
+          $ths.eq(0).text('Cod. Aux');
+          $ths.eq(1).text('Nombre');
+          $ths.eq(2).text('Imp');
+          $ths.eq(3).text('Tipo');
+          $ths.eq(4).text('Mon');
+          $ths.eq(5).text('Nivel');
+        } else if (currentPlanPickerVariant() === 'puc') {
+          $ths.eq(0).text('Codigo');
+          $ths.eq(1).text('Nombre');
+          $ths.eq(2).text('N');
+          $ths.eq(3).text('Cuenta Padre');
+          $ths.eq(4).text('Imp');
+          $ths.eq(5).text('Moneda');
+        } else {
+          $ths.eq(0).text('Codigo');
+          $ths.eq(1).text('Nombre');
+          $ths.eq(2).text('Imp');
+          $ths.eq(3).text('Aux');
+          $ths.eq(4).text('Mon');
+          $ths.eq(5).text('Nivel');
+        }
+        setPickerColumnWidths(mode);
+      }
+
+      function renderRows(rows) {
+        var html = '';
+        for (var i = 0; i < rows.length; i++) {
+          var x = rows[i];
+          var cod = (pickerMode === 'aux') ? (x.CodPlanAux || x.codplanaux || '') : (x.CodPlanCta || x.codplancta || '');
+          var nom = x.Nombre || x.nombre || '';
+          var imp = x.Imputable || x.imputable || '';
+          var mon = x.CodMoneda || x.codmoneda || '';
+          var niv = x.Nivel || x.nivel || '';
+          var aux = (pickerMode === 'aux') ? (x.TpCta || x.tpcta || '') : (x.Auxiliar || x.auxiliar || '');
+          var padre = x.CuentaPadre || x.cuentapadre || x.codplanctaestrategicopad || x.CodPlanCtaPad || x.codplanctapad || '';
+          html += '<tr data-cod="' + cod + '" data-nom="' + String(nom).replace(/"/g, '&quot;') + '">';
+          html += '<td style="padding:4px 8px; white-space:nowrap;">' + cod + '</td>';
+          html += '<td style="padding:4px 8px; word-break:break-word;">' + nom + '</td>';
+          if (pickerMode === 'aux') {
+            html += '<td style="padding:4px 8px; text-align:center; white-space:nowrap;">' + imp + '</td><td style="padding:4px 8px; white-space:nowrap;">' + aux + '</td><td style="padding:4px 8px; white-space:nowrap;">' + mon + '</td><td style="padding:4px 8px; text-align:center; white-space:nowrap;">' + niv + '</td>';
+          } else if (currentPlanPickerVariant() === 'puc') {
+            html += '<td style="padding:4px 8px; text-align:center; white-space:nowrap;">' + niv + '</td><td style="padding:4px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + padre + '</td><td style="padding:4px 8px; text-align:center; white-space:nowrap;">' + imp + '</td><td style="padding:4px 8px; white-space:nowrap;">' + mon + '</td>';
+          } else {
+            html += '<td style="padding:4px 8px; text-align:center; white-space:nowrap;">' + imp + '</td><td style="padding:4px 8px; white-space:nowrap;">' + aux + '</td><td style="padding:4px 8px; white-space:nowrap;">' + mon + '</td><td style="padding:4px 8px; text-align:center; white-space:nowrap;">' + niv + '</td>';
+          }
+          html += '</tr>';
+        }
+        $('#plancta-picker-table tbody').html(html || '<tr><td colspan="6" class="text-center">Sin datos</td></tr>');
+      }
+
+      function showMessage(msg) {
+        $('#plancta-picker-table tbody').html('<tr><td colspan="6" class="text-center"><strong>' + msg + '</strong></td></tr>');
+      }
+
+      function renderArticuloRows(rows) {
+        var html = '';
+        for (var i = 0; i < rows.length; i++) {
+          var x = rows[i];
+          var cod = x.cod_articulo || x.Cod_Articulo || x.id || '';
+          var nom = x.des_art || x.Des_Art || x.name || '';
+          var ctoProm = x.cto_prom_gs || x.Cto_Prom_Gs || x.cto_prom_me || x.Cto_Prom_Me || 0;
+          var ctoUlt = x.cto_ult_gs || x.Cto_Ult_Gs || x.cto_ult_me || x.Cto_Ult_Me || 0;
+          var mon = x.codmoneda || x.CodMoneda || '';
+          var iva = x.iva || x.IVA || '';
+          html += '<tr data-cod="' + cod + '" data-nom="' + String(nom).replace(/"/g, '&quot;') + '">' +
+            '<td style="padding:4px 8px;">' + cod + '</td>' +
+            '<td style="padding:4px 8px;">' + nom + '</td>' +
+            '<td style="padding:4px 8px;text-align:right;">' + (window.convertir_rever ? convertir_rever(ctoProm) : ctoProm) + '</td>' +
+            '<td style="padding:4px 8px;text-align:right;">' + (window.convertir_rever ? convertir_rever(ctoUlt) : ctoUlt) + '</td>' +
+            '<td style="padding:4px 8px;">' + mon + '</td>' +
+            '<td style="padding:4px 8px;">' + iva + '</td>' +
+          '</tr>';
+        }
+        $('#articulo-picker-table tbody').html(html || '<tr><td colspan="6" class="text-center">Sin datos</td></tr>');
+      }
+
+      function closeArticuloPicker() {
+        $('#articulo-picker, #articulo-picker-backdrop').hide();
+      }
+
+      function openArticuloPicker(filterName) {
+        targetFilter = filterName;
+        var empresa = (window.select_empresa && typeof select_empresa.getValue === 'function') ? select_empresa.getValue() : '';
+        if (!empresa && window.query) empresa = window.query.empresa || '';
+        $('#articulo-picker, #articulo-picker-backdrop').show();
+        $('#articulo-picker').attr('data-empresa', empresa || '');
+        if (!empresa) {
+          $('#articulo-picker-table tbody').html('<tr><td colspan="6" class="text-center"><strong>Debe elegir primero la Empresa para ver los articulos.</strong></td></tr>');
+          return;
+        }
+        $('#articulo-picker-table tbody').html('<tr><td colspan="6" class="text-center"><strong>Cargando articulos...</strong></td></tr>');
+        $.get(apiBase() + 'empresas/' + empresa + '/articulos', { limit: 200 }).done(function (res) {
+          articuloRowsCache = (res && res.data) ? res.data : [];
+          renderArticuloRows(articuloRowsCache);
+          $('#articulo-picker-search').val('');
+        }).fail(function () {
+          $('#articulo-picker-table tbody').html('<tr><td colspan="6" class="text-center"><strong>No se pudo cargar la lista de articulos.</strong></td></tr>');
+        });
+      }
+
+      function openPicker(filterName) {
+        targetFilter = filterName;
+        pickerMode = auxFilters[filterName] ? 'aux' : 'plancta';
+        setPickerHeaders(pickerMode);
+        $('#plancta-picker').show();
+
+        var empresa = (window.select_empresa && typeof select_empresa.getValue === 'function') ? select_empresa.getValue() : '';
+        if (!empresa && window.query) empresa = window.query.empresa || '';
+        var periodoInput = document.querySelector('#periodo input[name="periodo"]');
+        var periodo = (periodoInput && periodoInput.value) ? periodoInput.value : '';
+        if (!periodo && window.query) periodo = window.query.periodo || '';
+
+        if (!empresa) {
+          showMessage('Debe elegir primero la Empresa para ver las Cuentas Contables.');
+          alert('Debe elegir primero la Empresa para ver las Cuentas Contables.');
+          return;
+        }
+        if (!periodo) {
+          showMessage('Debe elegir el Período para ver las Cuentas Contables.');
+          alert('Debe elegir el Período para ver las Cuentas Contables.');
+          return;
+        }
+
+        if (pickerMode === 'aux') {
+          var ctaDesde = (window.select_cuentad && typeof select_cuentad.getValue === 'function') ? select_cuentad.getValue() : '';
+          if (!ctaDesde && window.query) ctaDesde = window.query.cuentad || '';
+          if (!ctaDesde) {
+            showMessage('Debe elegir primero la Cuenta Contable (Cta. desde) para ver auxiliares.');
+            alert('Debe elegir primero la Cuenta Contable (Cta. desde) para ver auxiliares.');
+            return;
+          }
+          $.get(apiBase() + 'empresas/' + empresa + '/auxiliares', {
+            periodo: periodo,
+            cuentad: ctaDesde,
+            cuentah: ctaDesde
+          }).done(function (resAux) {
+            rowsCache = (resAux && resAux.data) ? resAux.data : [];
+            renderRows(rowsCache);
+            $('#plancta-picker-search').val('');
+          }).fail(function () {
+            showMessage('No se pudo cargar la lista de cuentas auxiliares.');
+          });
+        } else {
+          var planCuentaPath = window.msPlanCuentaPickerPath || 'cuenta/plancta/';
+          $.get(apiBase() + planCuentaPath + empresa + '/' + periodo).done(function (res) {
+            rowsCache = (res && res.data) ? res.data : [];
+            renderRows(rowsCache);
+            $('#plancta-picker-search').val('');
+          }).fail(function () {
+            showMessage('No se pudo cargar el plan de cuentas.');
+          });
+        }
+      }
+
+      function closePicker() {
+        $('#plancta-picker').hide();
+      }
+
+      window.focusFilterSearch = function (name) {
+        if (articleFilters[name]) {
+          openArticuloPicker(name);
+          return;
+        }
+        if (accountFilters[name] || auxFilters[name]) {
+          openPicker(name);
+          return;
+        }
+        var el = document.getElementById('select-' + name);
+        if (!el || !el.selectize) return;
+        el.selectize.focus();
+        el.selectize.open();
+      };
+
+      $(document).on('click', '.js-filter-search', function (e) {
+        e.preventDefault();
+        var name = $(this).data('filter');
+        if (name) window.focusFilterSearch(name);
+      });
+
+      $(document).on('click', '#plancta-picker-close', function (e) {
+        e.preventDefault();
+        closePicker();
+      });
+
+      $(document).on('click', '#articulo-picker-close, #articulo-picker-backdrop', function (e) {
+        e.preventDefault();
+        closeArticuloPicker();
+      });
+
+      $(document).on('keyup', '#articulo-picker-search', function () {
+        var q = ($(this).val() || '').toLowerCase();
+        var empresa = $('#articulo-picker').attr('data-empresa') || '';
+        if (!q) {
+          renderArticuloRows(articuloRowsCache);
+          return;
+        }
+        if (articuloSearchTimer) {
+          clearTimeout(articuloSearchTimer);
+        }
+        articuloSearchTimer = setTimeout(function () {
+          if (!empresa) {
+            renderArticuloRows(articuloRowsCache.filter(function (x) {
+              var cod = String(x.cod_articulo || x.Cod_Articulo || x.id || '').toLowerCase();
+              var nom = String(x.des_art || x.Des_Art || x.name || '').toLowerCase();
+              return cod.indexOf(q) >= 0 || nom.indexOf(q) >= 0;
+            }));
+            return;
+          }
+          $('#articulo-picker-table tbody').html('<tr><td colspan="6" class="text-center"><strong>Buscando articulos...</strong></td></tr>');
+          $.get(apiBase() + 'empresas/' + empresa + '/articulos', {
+            articulo: $('#articulo-picker-search').val() || '',
+            limit: 200
+          }).done(function (res) {
+            articuloRowsCache = (res && res.data) ? res.data : [];
+            renderArticuloRows(articuloRowsCache);
+          }).fail(function () {
+            $('#articulo-picker-table tbody').html('<tr><td colspan="6" class="text-center"><strong>No se pudo filtrar la lista de articulos.</strong></td></tr>');
+          });
+        }, 250);
+      });
+
+      $(document).on('click', '#articulo-picker-table tbody tr', function () {
+        if (!targetFilter) return;
+        var el = document.getElementById('select-' + targetFilter);
+        if (!el || !el.selectize) return;
+        var s = el.selectize;
+        var cod = $(this).data('cod');
+        var nom = $(this).data('nom');
+        if (!cod) return;
+        s.addOption({ id: cod, name: nom, cod_articulo: cod, des_art: nom });
+        s.refreshOptions(false);
+        if ($.isArray(s.items)) {
+          s.addItem(cod);
+        } else {
+          s.setValue(cod);
+        }
+        closeArticuloPicker();
+      });
+
+      $(document).on('keyup', '#plancta-picker-search', function () {
+        var q = ($(this).val() || '').toLowerCase();
+        if (!q) {
+          renderRows(rowsCache);
+          return;
+        }
+        renderRows(rowsCache.filter(function (x) {
+          var cod = String(
+            pickerMode === 'aux'
+              ? (x.CodPlanAux || x.codplanaux || '')
+              : (x.CodPlanCta || x.codplancta || '')
+          ).toLowerCase();
+          var nom = String(x.Nombre || x.nombre || '').toLowerCase();
+          return cod.indexOf(q) >= 0 || nom.indexOf(q) >= 0;
+        }));
+      });
+
+      $(document).on('click', '#plancta-picker-table tbody tr', function () {
+        if (!targetFilter) return;
+        var el = document.getElementById('select-' + targetFilter);
+        if (!el || !el.selectize) return;
+        var s = el.selectize;
+        var cod = $(this).data('cod');
+        var nom = $(this).data('nom');
+        if (!cod) return;
+        if (pickerMode === 'aux') {
+          s.addOption({ CodPlanAux: cod, Nombre: nom });
+        } else {
+          s.addOption({ CodPlanCta: cod, Nombre: nom });
+        }
+        s.refreshOptions(false);
+        s.setValue(cod);
+        closePicker();
+      });
+    })();
+  </script>
 {% endblock content %}

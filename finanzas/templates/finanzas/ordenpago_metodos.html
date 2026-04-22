@@ -1,6 +1,6 @@
 <script type="text/javascript">
   var numFormat = $.fn.dataTable.render.number('.', ',', 0).display;
-  var query = {};
+  var query = { moneda: 'LO' };
   var api = u.getApiUrl();
   
   var addCommas = u.addCommas;
@@ -62,23 +62,46 @@
   }
 
   function initSelects() {
+    function toSelectOptions(list, valueKeys, labelKeys) {
+      return (list || []).map(function (r) {
+        var v = '';
+        var t = '';
+        for (var i = 0; i < valueKeys.length; i++) {
+          if (typeof r[valueKeys[i]] !== 'undefined' && r[valueKeys[i]] !== null && String(r[valueKeys[i]]).trim() !== '') {
+            v = String(r[valueKeys[i]]).trim();
+            break;
+          }
+        }
+        for (var j = 0; j < labelKeys.length; j++) {
+          if (typeof r[labelKeys[j]] !== 'undefined' && r[labelKeys[j]] !== null && String(r[labelKeys[j]]).trim() !== '') {
+            t = String(r[labelKeys[j]]).trim();
+            break;
+          }
+        }
+        return { value: v, text: t || v };
+      }).filter(function (x) { return x.value !== ''; });
+    }
+
     $.extend(true, $.fn.selectize.defaults, {
       onChange: function (value) {
         query[this.$input.attr('name')] = value;
       }
     });
     
-    $('#select-moneda').selectize({
-      options: [
-        {value: 'LO', text: 'Local'},
-        {value: 'EX', text: 'Extranjera'}
-      ],
-      onChange: function (value) {
-        query.moneda = value;
-        }
-    });
+      $('#select-moneda').selectize({
+        options: [
+          {value: 'LO', text: 'Local'},
+          {value: 'EX', text: 'Extranjera'},
+          {value: 'ALL', text: 'Ambas'}
+        ],
+        onChange: function (value) {
+          query.moneda = value;
+          }
+      });
+      var monedaSelect = $('#select-moneda')[0].selectize;
+      monedaSelect.setValue('LO', true);
 
-    $select_empresa = $('#select-empresa').selectize({
+      $select_empresa = $('#select-empresa').selectize({
       valueField: 'Cod_Empresa',
       labelField: 'Des_Empresa',
       searchField: 'Des_Empresa',
@@ -97,31 +120,35 @@
         select_sucursal.load(function (cb) {
           $.get(api + '/sucursal/select/' + query.empresa).done(function (res) {
             select_sucursal.enable();
-            cb(res.data);
+            cb(toSelectOptions(res.data, ['Cod_Sucursal', 'cod_sucursal'], ['Des_Sucursal', 'des_sucursal']));
           }).fail(function () {
             cb();
           });
         });
         select_sucursal.enable();
         
-        select_tipoop.clearOptions();
-        if (!value.length) return;
-        select_tipoop.load(function (cb) {
-          $.get(api + '/op/' + query.empresa + '/comprobantes/tipos').done(function (res) {
-            select_tipoop.enable();
-            cb(res.data);
-          }).fail(function () {
-            cb();
+          select_tipoop.clearOptions();
+          if (!value.length) return;
+          select_tipoop.load(function (cb) {
+            $.get(api + '/op/' + query.empresa + '/comprobantes/tipos').done(function (res) {
+              select_tipoop.enable();
+              cb(toSelectOptions(res.data, ['Cod_Tp_Comp', 'cod_tp_comp'], ['des_tp_comp', 'Des_Tp_Comp', 'descrip']));
+              if ($('#solo-anticipo').prop('checked')) {
+                select_tipoop.setValue('AN');
+                select_tipoop.disable();
+              }
+            }).fail(function () {
+              cb();
+            });
           });
-        });
-        select_tipoop.enable();
-      }
-    });
+          select_tipoop.enable();
+        }
+      });
     select_empresa = $select_empresa[0].selectize;
     $select_sucursal = $('#select-sucursal').selectize({
-      valueField: 'Cod_Sucursal',
-      labelField: 'Des_Sucursal',
-      searchField: 'Des_Sucursal',
+      valueField: 'value',
+      labelField: 'text',
+      searchField: 'text',
       onChange: function (value) {
           query.sucursal = value;
           //debug();
@@ -166,16 +193,28 @@
 //     select_proveedor = $select_proveedor[0].selectize;
 //     select_proveedor.disable();
 //     select_empresa = $select_empresa[0].selectize;
-    $select_tipoop = $('#select-tipoop').selectize({
-      valueField: 'Cod_Tp_Comp',
-      labelField: 'des_tp_comp',
-      searchField: 'des_tp_comp',
-      onChange: function (value) {
+      $select_tipoop = $('#select-tipoop').selectize({
+        valueField: 'value',
+        labelField: 'text',
+        searchField: 'text',
+        onChange: function (value) {
           query.tipoop = value;
           //debug();
+          }
+      });
+
+      $('#solo-anticipo').on('change', function () {
+        if (this.checked) {
+          select_tipoop.setValue('AN');
+          select_tipoop.disable();
+          query.tipoop = 'AN';
+        } else {
+          select_tipoop.enable();
+          select_tipoop.clear();
+          query.tipoop = undefined;
         }
-    });
-  }
+      });
+    }
 
   function getInforme() {
     var desde = query.desde;
@@ -186,10 +225,10 @@
 //     var tipoproveedor = query.tipoproveedor;
 //     var proveedor = query.proveedor;
 
-//     if (sucursal == "" || sucursal == null)
-//       sucursal = " ";
-//     if (tipoop == "" || tipoop == null)
-//       tipoop = " ";
+    if (sucursal == "" || sucursal == null)
+      sucursal = "NINGUNA";
+    if (tipoop == "" || tipoop == null)
+      tipoop = "NINGUNO";
 //     if (tipoproveedor == "" || tipoproveedor == null)
 //       tipoproveedor = " ";
 //     if (proveedor == "" || proveedor == null)
@@ -203,42 +242,136 @@
       $empty.hide();
 //       $.get(api + "ordenpago/list/" + empresa + "/" + sucursal + "/" + tipoop + "/" + tipoproveedor + "/" + proveedor + "/" + desde + "/" + hasta,
       $.get(api + "ordenpago/list/" + empresa + "/" + sucursal + "/" + tipoop + "/" + query.moneda + "/" + desde + "/" + hasta,
-              function (data) {
-                if (data.data.length > 0) {
+                function (data) {
+                  if (data.data.length > 0) {
+                    function gv(obj, keys, fallback) {
+                      for (var k = 0; k < keys.length; k++) {
+                        var key = keys[k];
+                        if (obj && typeof obj[key] !== 'undefined' && obj[key] !== null) return obj[key];
+                      }
+                      return (typeof fallback === 'undefined') ? '' : fallback;
+                    }
                   
-                  var table_string = '<table id="resultados" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">'+
-                                          '<thead>'+
-                                          '<tr>'+
-                                            '<th style="width:30%;">Proveedor</th>'+
-                                            '<th style="width:15%;">Sucursal</th>'+
-                                            '<th style="width:20%;">OP_Nro</th>'+
-                                            '<th style="width:15%;">Fecha</th>'+
-                                            '<th style="width:20%;" class="price-label">Total</th>'+
-                                          '</tr>'+
-                                          '</thead>'+
-                                          '<tbody>'+
-                                          '</tbody>'+
-                                        '</table>';
-                    $('#table-div').append(table_string);
+                    var table_string = '<table id="resultados" class="table table-striped table-bordered nowrap" cellspacing="0" width="100%">'+
+                                            '<thead>'+
+                                            '<tr>'+
+                                              '<th style="width:30%;">Proveedor</th>'+
+                                              '<th style="width:15%;">Sucursal</th>'+
+                                              '<th style="width:12%;">Nro OP</th>'+
+                                              '<th style="width:18%;">Tipo OP</th>'+
+                                              '<th style="width:15%;">Nro Cheque</th>'+
+                                              '<th style="width:15%;">Fecha / Hora</th>'+
+                                              '<th style="width:20%;" class="price-label">Total</th>'+
+                                            '</tr>'+
+                                            '</thead>'+
+                                            '<tbody>'+
+                                            '</tbody>'+
+                                            '<tfoot>'+
+                                            '</tfoot>'+
+                                          '</table>';
+                      $('#table-div').append(table_string);
                   
                   
-                  var string = ""
-                  for (var i = 0; i < data.data.length; i++) {
-                    string += '<tr>' +
-                            '<td>' + data.data[i].RazonSocial + '</td>' +
-                            '<td>' + data.data[i].Des_Sucursal + '</td>' +
-                            '<td>' + data.data[i].NroOP + '/' + data.data[i].des_tp_comp + '</td>' +
-                            '<td>' + data.data[i].Fecha + '</td>';
-                            if (query.moneda == 'LO') {
-                                string += '<td style="text-align: right;">' + convertir_rever(data.data[i].TotalImporte) + '</td>';
-                            } else {
-                                string += '<td style="text-align: right;">' + addCommas(data.data[i].TotalImporte).toString() + '</td>';
-                                
-                            }
-                            string += '</tr>';
-                  }
-                  $('#resultados tbody').html(string)
-                  $('#resultados').DataTable({
+                    function parseAmount(val) {
+                      if (val === null || typeof val === 'undefined') return 0;
+                      if (typeof val === 'number') return val;
+                      var s = String(val).trim();
+                      if (!s.length) return 0;
+                      // Normalize thousands/decimal separators
+                      if (s.indexOf('.') !== -1 && s.indexOf(',') !== -1) {
+                        s = s.replace(/\./g, '').replace(/,/g, '.');
+                      } else if (s.indexOf(',') !== -1) {
+                        s = s.replace(/,/g, '.');
+                      }
+                      s = s.replace(/[^0-9.\-]/g, '');
+                      var n = parseFloat(s);
+                      return isNaN(n) ? 0 : n;
+                    }
+                    function formatFechaHora(val) {
+                      if (val === null || typeof val === 'undefined') return '';
+                      var s = String(val).trim();
+                      if (!s.length) return '';
+                      var t = s.replace('T', ' ');
+                      var m = t.match(/^(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?/);
+                      if (!m) return s;
+                      var d = m[3] + '/' + m[2] + '/' + m[1];
+                      if (!m[4]) return d;
+                      return d + ' ' + m[4] + ':' + m[5];
+                    }
+
+                    var string = ""
+                    var total_gs = 0;
+                    var total_us = 0;
+                    var total_unknown = 0;
+                    for (var i = 0; i < data.data.length; i++) {
+                      var row = data.data[i] || {};
+                      var moneda = String(gv(row, ['CodMoneda', 'codmoneda'], '') || '');
+                      var importeRaw = gv(row, ['TotalImporte', 'totalimporte', 'total']);
+                      var importe = parseAmount(importeRaw);
+                      var razonSocial = gv(row, ['RazonSocial', 'razonsocial'], '');
+                      var desSucursal = gv(row, ['Des_Sucursal', 'des_sucursal'], '');
+                      var nroOp = gv(row, ['NroOP', 'nroop'], '');
+                      var desTpComp = gv(row, ['des_tp_comp', 'Des_Tp_Comp', 'descrip'], '');
+                      var nroCheque = gv(row, ['NroCheque', 'nrocheque'], '');
+                      var fecha = formatFechaHora(gv(row, ['Fecha', 'fecha'], ''));
+                      if (moneda === 'GS') {
+                        total_gs += importe;
+                      } else if (moneda === 'US') {
+                        total_us += importe;
+                      } else {
+                        if (query.moneda === 'LO') total_gs += importe;
+                        else if (query.moneda === 'EX') total_us += importe;
+                        else total_unknown += importe;
+                      }
+                      string += '<tr>' +
+                              '<td>' + razonSocial + '</td>' +
+                              '<td>' + desSucursal + '</td>' +
+                              '<td>' + nroOp + '</td>' +
+                              '<td>' + desTpComp + '</td>' +
+                              '<td>' + (nroCheque || '') + '</td>' +
+                              '<td>' + fecha + '</td>';
+                              if (query.moneda == 'LO') {
+                                  string += '<td style="text-align: right;">' + addCommas(Math.round(importe)) + '</td>';
+                              } else {
+                                  string += '<td style="text-align: right;">' + addCommas(importe.toFixed(2)) + '</td>';
+                              }
+                              string += '</tr>';
+                    }
+                    $('#resultados tbody').html(string)
+                    $('#resultados tbody tr td:nth-child(6)').each(function () {
+                      var txt = ($(this).text() || '').trim();
+                      if (!txt) return;
+                      $(this).text(formatFechaHora(txt));
+                    });
+                    var tfoot = '';
+                    if (query.moneda === 'ALL') {
+                      tfoot += '<tr>' +
+                        '<td colspan="6" style="text-align: right;"><b>Total GS</b></td>' +
+                        '<td style="text-align: right;"><b>' + addCommas(total_gs.toFixed(0)) + '</b></td>' +
+                        '</tr>';
+                      tfoot += '<tr>' +
+                        '<td colspan="6" style="text-align: right;"><b>Total US</b></td>' +
+                        '<td style="text-align: right;"><b>' + addCommas(total_us.toFixed(2)) + '</b></td>' +
+                        '</tr>';
+                      if (total_unknown > 0) {
+                        tfoot += '<tr>' +
+                          '<td colspan="6" style="text-align: right;"><b>Total Sin Moneda</b></td>' +
+                          '<td style="text-align: right;"><b>' + addCommas(total_unknown.toFixed(2)) + '</b></td>' +
+                          '</tr>';
+                      }
+                    } else if (query.moneda === 'LO') {
+                      tfoot += '<tr>' +
+                        '<td colspan="6" style="text-align: right;"><b>Total</b></td>' +
+                        '<td style="text-align: right;"><b>' + addCommas(total_gs.toFixed(0)) + '</b></td>' +
+                        '</tr>';
+                    } else if (query.moneda === 'EX') {
+                      tfoot += '<tr>' +
+                        '<td colspan="6" style="text-align: right;"><b>Total</b></td>' +
+                        '<td style="text-align: right;"><b>' + addCommas(total_us.toFixed(2)) + '</b></td>' +
+                        '</tr>';
+                    }
+                    $('#resultados tfoot').html(tfoot)
+                    $('#resultados').DataTable({
                     searching: false,
                     language: u.spanish_dt,
                     paging: false,
@@ -246,14 +379,29 @@
                     info: false,
                     scrollCollapse: true,
                     scrollY: 300,
-                    scrollX: '100%',
+                      scrollX: '100%',
+                  });
+                  var totalsHtml = '';
+                  if (query.moneda === 'ALL') {
+                    totalsHtml = '<div><b>Total GS:</b> ' + addCommas(total_gs.toFixed(0)) +
+                      ' &nbsp; <b>Total US:</b> ' + addCommas(total_us.toFixed(2)) + '</div>';
+                  } else if (query.moneda === 'LO') {
+                    totalsHtml = '<div><b>Total GS:</b> ' + addCommas(total_gs.toFixed(0)) + '</div>';
+                  } else if (query.moneda === 'EX') {
+                    totalsHtml = '<div><b>Total US:</b> ' + addCommas(total_us.toFixed(2)) + '</div>';
+                  }
+                  if (totalsHtml) {
+                    $('#totals').html(totalsHtml).show();
+                  } else {
+                    $('#totals').hide();
+                  }
+                  } else {
+                    $('#table-div').empty()
+                    $empty.show();
+                    $('#totals').hide();
+                  }
+                  $loading.hide();
                 });
-                } else {
-                  $('#table-div').empty()
-                  $empty.show();
-                }
-                $loading.hide();
-              });
 //     }
   }
 </script>
