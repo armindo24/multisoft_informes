@@ -1016,9 +1016,9 @@ async function ensureDefaultGroups() {
     await pool.query(
       `
         INSERT INTO auth_group (name)
-        SELECT $1
+        SELECT $1::varchar(150)
         WHERE NOT EXISTS (
-          SELECT 1 FROM auth_group WHERE LOWER(name) = LOWER($1)
+          SELECT 1 FROM auth_group WHERE LOWER(name) = LOWER($1::varchar(150))
         )
       `,
       [name],
@@ -1076,9 +1076,20 @@ async function ensureDefaultDbConfigs() {
       `
         INSERT INTO custom_permissions_dbconfig
           (db_type, db_engine, host, port, server, database, username, password, disabled, engine_settings, updated_at)
-        SELECT $1, $2, $3, $4, $5, $6, $7, $8, FALSE, $9, NOW()
+        SELECT
+          $1::varchar(20),
+          $2::varchar(20),
+          $3::varchar(120),
+          $4::integer,
+          $5::varchar(120),
+          $6::varchar(120),
+          $7::varchar(120),
+          $8::varchar(200),
+          FALSE,
+          $9::jsonb,
+          NOW()
         WHERE NOT EXISTS (
-          SELECT 1 FROM custom_permissions_dbconfig WHERE db_type = $1
+          SELECT 1 FROM custom_permissions_dbconfig WHERE db_type = $1::varchar(20)
         )
       `,
       [
@@ -1106,7 +1117,7 @@ export async function saveAdminGroup(input: { id?: number; name: string }) {
     `
       SELECT id
       FROM auth_group
-      WHERE LOWER(name) = LOWER($1)
+      WHERE LOWER(name) = LOWER($1::varchar(150))
         AND ($2::int IS NULL OR id <> $2::int)
       LIMIT 1
     `,
@@ -1132,7 +1143,7 @@ export async function saveAdminGroup(input: { id?: number; name: string }) {
     const created = await pool.query<{ id: number }>(
       `
         INSERT INTO auth_group (name)
-        VALUES ($1)
+        VALUES ($1::varchar(150))
         RETURNING id
       `,
       [name],
