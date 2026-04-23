@@ -58,6 +58,16 @@ export type EmailConfigRecord = {
   updatedAt: string | null;
 };
 
+export type BrandingConfigRecord = {
+  empresa: string;
+  scope: 'global' | 'empresa';
+  clientName: string;
+  tagline: string;
+  logoUrl: string;
+  faviconUrl: string;
+  updatedAt: string | null;
+};
+
 export type AdminUserRecord = {
   id: number;
   username: string;
@@ -182,6 +192,19 @@ async function ensureNextSessionTable() {
       created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
       last_activity TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
       expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+    )
+  `);
+}
+
+async function ensureBrandingConfigTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS custom_permissions_brandconfig (
+      empresa VARCHAR(32) PRIMARY KEY,
+      client_name VARCHAR(200) NOT NULL DEFAULT '',
+      tagline VARCHAR(200) NOT NULL DEFAULT '',
+      logo_url TEXT NOT NULL DEFAULT '',
+      favicon_url TEXT NOT NULL DEFAULT '',
+      updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
     )
   `);
 }
@@ -471,6 +494,87 @@ export async function loadEmailConfig(): Promise<EmailConfigRecord> {
     password: String(row.password || ''),
     updatedAt: row.updated_at ? String(row.updated_at) : null,
   };
+}
+
+function normalizeBrandingRow(row: Record<string, unknown>): BrandingConfigRecord {
+  const empresa = String(row.empresa || 'GLOBAL').trim().toUpperCase() || 'GLOBAL';
+  return {
+    empresa,
+    scope: empresa === 'GLOBAL' ? 'global' : 'empresa',
+    clientName: String(row.client_name || ''),
+    tagline: String(row.tagline || ''),
+    logoUrl: String(row.logo_url || ''),
+    faviconUrl: String(row.favicon_url || ''),
+    updatedAt: row.updated_at ? String(row.updated_at) : null,
+  };
+}
+
+export async function loadBrandingConfigs(): Promise<BrandingConfigRecord[]> {
+  await ensureBrandingConfigTable();
+
+  const result = await pool.query<Record<string, unknown>>(
+    `
+      SELECT empresa, client_name, tagline, logo_url, favicon_url, updated_at
+      FROM custom_permissions_brandconfig
+      ORDER BY CASE WHEN empresa = 'GLOBAL' THEN 0 ELSE 1 END, empresa
+    `,
+  );
+
+  return result.rows.map(normalizeBrandingRow);
+}
+
+export async function loadBrandingConfig(empresa?: string | null): Promise<BrandingConfigRecord | null> {
+  await ensureBrandingConfigTable();
+
+  const normalizedEmpresa = String(empresa || '').trim().toUpperCase();
+  const result = await pool.query<Record<string, unknown>>(
+    `
+      SELECT empresa, client_name, tagline, logo_url, favicon_url, updated_at
+      FROM custom_permissions_brandconfig
+      WHERE empresa = ANY($1::varchar[])
+      ORDER BY CASE WHEN empresa = $2::varchar THEN 0 WHEN empresa = 'GLOBAL' THEN 1 ELSE 2 END
+      LIMIT 1
+    `,
+    [[...(normalizedEmpresa ? [normalizedEmpresa] : []), 'GLOBAL'], normalizedEmpresa || 'GLOBAL'],
+  );
+
+  const row = result.rows[0];
+  return row ? normalizeBrandingRow(row) : null;
+}
+
+export async function saveBrandingConfig(input: {
+  empresa: string;
+  clientName: string;
+  tagline: string;
+  logoUrl: string;
+  faviconUrl: string;
+}) {
+  await ensureBrandingConfigTable();
+
+  const empresa = String(input.empresa || 'GLOBAL').trim().toUpperCase() || 'GLOBAL';
+  await pool.query(
+    `
+      INSERT INTO custom_permissions_brandconfig
+        (empresa, client_name, tagline, logo_url, favicon_url, updated_at)
+      VALUES
+        ($1, $2, $3, $4, $5, NOW())
+      ON CONFLICT (empresa) DO UPDATE
+      SET client_name = EXCLUDED.client_name,
+          tagline = EXCLUDED.tagline,
+          logo_url = EXCLUDED.logo_url,
+          favicon_url = EXCLUDED.favicon_url,
+          updated_at = NOW()
+    `,
+    [
+      empresa,
+      String(input.clientName || '').trim(),
+      String(input.tagline || '').trim(),
+      String(input.logoUrl || '').trim(),
+      String(input.faviconUrl || '').trim(),
+    ],
+  );
+
+  return loadBrandingConfig(empresa);
 }
 
 export async function saveEmailConfig(

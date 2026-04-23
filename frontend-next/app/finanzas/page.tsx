@@ -14,6 +14,7 @@ import { PayablesKpiAsync, PayablesTableAsync } from '@/components/finanzas/paya
 import { getBalanceComprobado, getBalanceGeneral, getBalanceGeneralPuc, getBalanceIntegralAuxiliares, getCuentaAuxSelect, getCuentaPlancta, getDiarioComprobado, getEmpresaMeta, getMayorCuentaAuxCab, getMayorCuentaCab, getTipoAsientoOptions } from '@/lib/api';
 import { getScopedEmpresas } from '@/lib/empresas-server';
 import { getSessionUser } from '@/lib/auth-server';
+import { loadBrandingConfig } from '@/lib/admin-config';
 import { AccountPlanOption, AuxiliarOption, BalanceAuxRow, BalanceRow, DiarioRow, SelectOption } from '@/types/finanzas';
 
 function currentYear() {
@@ -523,6 +524,15 @@ export default async function FinanzasPage({
     : null;
   const empresaMeta = (empresaMetaResponse?.data || {}) as Record<string, string>;
   const empresaCodigoEntidad = codigoEntidad || getEmpresaCodigoEntidad(empresaMeta);
+  const brandingConfig = empresa ? await loadBrandingConfig(empresa) : null;
+  const exportBranding = brandingConfig
+    ? {
+        clientName: brandingConfig.clientName || undefined,
+        tagline: brandingConfig.tagline || undefined,
+        logoUrl: brandingConfig.logoUrl || undefined,
+        faviconUrl: brandingConfig.faviconUrl || undefined,
+      }
+    : undefined;
 
   const current = { empresa, periodo, mesd, mesh, moneda, cuentad, cuentah, nivel, aux, saldo, section };
   const currentWithSection = {
@@ -861,7 +871,7 @@ export default async function FinanzasPage({
 
       {!isFocusedSection || section === 'balance-general' ? (
         <div id="balance-general" className="scroll-mt-28">
-          <BalanceTable rows={balanceRows} result={resultado} resultME={resultadoME} moneda={moneda} exportMeta={reportMeta} />
+          <BalanceTable rows={balanceRows} result={resultado} resultME={resultadoME} moneda={moneda} exportMeta={reportMeta} exportBranding={exportBranding} />
         </div>
       ) : null}
 
@@ -879,6 +889,7 @@ export default async function FinanzasPage({
             description="Vista basada en el informe PUC anterior. Cuando la base no soporta la estructura completa, se usa el balance clasico como respaldo."
             showPucMapping={balanceCuentasPuc === 'SI'}
             exportMeta={reportMeta}
+            exportBranding={exportBranding}
             pucExport={{
               codigoEntidad: empresaCodigoEntidad,
               periodo,

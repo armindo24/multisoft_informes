@@ -1,5 +1,6 @@
 'use client';
 
+import type { BrandingConfig } from '@/lib/branding';
 import { getBranding } from '@/lib/branding';
 
 export function escapeHtml(value: unknown) {
@@ -25,6 +26,16 @@ export type ExportMetaItem = {
   label: string;
   value: unknown;
 };
+
+export type ExportBrandingOverride = Partial<BrandingConfig>;
+
+function resolveBranding(override?: ExportBrandingOverride) {
+  const base = getBranding();
+  return {
+    ...base,
+    ...(override || {}),
+  };
+}
 
 function nowLabel() {
   return new Date().toLocaleString('es-PY');
@@ -81,8 +92,8 @@ function buildCorporateStyles() {
   `;
 }
 
-function buildBrandBlock(title: string, subtitle?: string) {
-  const branding = getBranding();
+function buildBrandBlock(title: string, subtitle?: string, override?: ExportBrandingOverride) {
+  const branding = resolveBranding(override);
   const initials = String(branding.clientName || 'MS')
     .split(/\s+/)
     .filter(Boolean)
@@ -97,8 +108,8 @@ function buildBrandBlock(title: string, subtitle?: string) {
   return `<div class="brand"><div class="brand-header">${logo}<div><div class="brand-kicker">${escapeHtml(branding.clientName)}</div><h1>${escapeHtml(title)}</h1>${subtitle ? `<div class="subtitle">${escapeHtml(subtitle)}</div>` : ''}</div></div></div>`;
 }
 
-function buildPdfCover(title: string, subtitle?: string, meta?: ExportMetaItem[]) {
-  const branding = getBranding();
+function buildPdfCover(title: string, subtitle?: string, meta?: ExportMetaItem[], override?: ExportBrandingOverride) {
+  const branding = resolveBranding(override);
   const initials = String(branding.clientName || 'MS')
     .split(/\s+/)
     .filter(Boolean)
@@ -153,6 +164,7 @@ export function exportRowsToExcel(params: {
   headers: string[];
   rows: Array<Array<unknown>>;
   meta?: ExportMetaItem[];
+  branding?: ExportBrandingOverride;
 }) {
   const header = params.headers.map((item) => `<th>${escapeHtml(item)}</th>`).join('');
   const body = params.rows
@@ -163,10 +175,10 @@ export function exportRowsToExcel(params: {
     '<html><head><meta charset="utf-8"><title>Multisoft Reporte</title>' +
     buildCorporateStyles() +
     '</head><body>' +
-    buildBrandBlock(params.title, params.subtitle) +
+    buildBrandBlock(params.title, params.subtitle, params.branding) +
     `<table class="meta"><tbody>${buildMetaRows(params.meta)}</tbody></table>` +
     `<table class="report"><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table>` +
-    `<div class="footer">Reporte generado por ${escapeHtml(getBranding().appName)}.</div>` +
+    `<div class="footer">Reporte generado por ${escapeHtml(resolveBranding(params.branding).appName)}.</div>` +
     '</body></html>';
 
   downloadBlob(`${params.filename}.xls`, html, 'application/vnd.ms-excel;charset=utf-8;');
@@ -178,6 +190,7 @@ export function exportRowsToPdf(params: {
   headers: string[];
   rows: Array<Array<unknown>>;
   meta?: ExportMetaItem[];
+  branding?: ExportBrandingOverride;
 }) {
   const header = params.headers.map((item) => `<th>${escapeHtml(item)}</th>`).join('');
   const body = params.rows
@@ -190,7 +203,7 @@ export function exportRowsToPdf(params: {
   popup.document.write(
     '<html><head><meta charset="utf-8"><title>Multisoft Reporte</title>' +
       buildCorporateStyles() +
-      `</head><body>${buildPdfCover(params.title, params.subtitle, params.meta)}<div class="page-break">${buildBrandBlock(params.title, params.subtitle)}<table class="meta"><tbody>${buildMetaRows(params.meta)}</tbody></table><table class="report"><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table><div class="footer">Reporte generado por ${escapeHtml(getBranding().appName)}.</div></div></body></html>`,
+      `</head><body>${buildPdfCover(params.title, params.subtitle, params.meta, params.branding)}<div class="page-break">${buildBrandBlock(params.title, params.subtitle, params.branding)}<table class="meta"><tbody>${buildMetaRows(params.meta)}</tbody></table><table class="report"><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table><div class="footer">Reporte generado por ${escapeHtml(resolveBranding(params.branding).appName)}.</div></div></body></html>`,
   );
   popup.document.close();
   popup.focus();

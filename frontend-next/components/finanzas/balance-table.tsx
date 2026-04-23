@@ -3,7 +3,7 @@
 import { FileDown, FileSpreadsheet } from 'lucide-react';
 import { useMemo } from 'react';
 import { downloadBlob, exportRowsToExcel, exportRowsToPdf } from '@/components/ui/export-utils';
-import type { ExportMetaItem } from '@/components/ui/export-utils';
+import type { ExportBrandingOverride, ExportMetaItem } from '@/components/ui/export-utils';
 import { BalanceRow } from '@/types/finanzas';
 
 function num(value: unknown) {
@@ -55,6 +55,7 @@ export function BalanceTable({
   pucExport,
   showPucMapping = false,
   exportMeta,
+  exportBranding,
 }: {
   rows: BalanceRow[];
   result?: number;
@@ -71,6 +72,7 @@ export function BalanceTable({
   };
   showPucMapping?: boolean;
   exportMeta?: ExportMetaItem[];
+  exportBranding?: ExportBrandingOverride;
 }) {
   const isBoth = moneda === 'ambas';
 
@@ -131,6 +133,7 @@ export function BalanceTable({
       headers: data.headers,
       rows: data.rows,
       meta: exportMeta,
+      branding: exportBranding,
     });
   }
 
@@ -142,6 +145,7 @@ export function BalanceTable({
       headers: data.headers,
       rows: data.rows,
       meta: exportMeta,
+      branding: exportBranding,
     });
   }
 

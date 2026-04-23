@@ -1,9 +1,10 @@
 'use client';
 
-import { ExternalLink, ShieldCheck, Users, UserSquare2, Database, Mail } from 'lucide-react';
+import { ExternalLink, ShieldCheck, Users, UserSquare2, Database, Mail, ImageIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { DbConfigPanel } from '@/components/configuracion/db-config-panel';
 import { EmailConfigPanel } from '@/components/configuracion/email-config-panel';
+import { BrandingConfigPanel } from '@/components/configuracion/branding-config-panel';
 import { UserCompanyPanel } from '@/components/configuracion/user-company-panel';
 import { ActiveSessionsPanel } from '@/components/configuracion/active-sessions-panel';
 import { UsersPanel } from '@/components/configuracion/users-panel';
@@ -73,6 +74,15 @@ const adminItems: AdminItem[] = [
     migrated: true,
   },
   {
+    id: 'marca-corporativa',
+    title: 'Marca Corporativa',
+    description: 'Logo, nombre comercial y favicon por empresa para que el cliente pueda gestionar su propia identidad visual.',
+    legacyHref: `${LEGACY_BASE_URL}/custom_permissions/db_config/`,
+    legacyLabel: 'Abrir marca corporativa',
+    icon: ImageIcon,
+    migrated: true,
+  },
+  {
     id: 'configuracion-email',
     title: 'Configuracion de Email',
     description: 'Seccion reservada para SMTP, remitentes y pruebas de notificaciones del sistema.',
@@ -102,7 +112,7 @@ type ConfigAdminWorkspaceProps = {
 export function ConfigAdminWorkspace({ currentUser }: ConfigAdminWorkspaceProps) {
   const visibleItems = currentUser?.isSuperuser
     ? adminItems
-    : adminItems.filter((item) => item.id !== 'grupos' && item.id !== 'usuarios-conectados');
+    : adminItems.filter((item) => item.id !== 'grupos' && item.id !== 'usuarios-conectados' && item.id !== 'marca-corporativa');
 
   const [activeId, setActiveId] = useState(visibleItems[0]?.id || adminItems[0].id);
 
@@ -161,6 +171,12 @@ export function ConfigAdminWorkspace({ currentUser }: ConfigAdminWorkspaceProps)
           {activeItem.id === 'configuracion-email' ? (
             <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
               <EmailConfigPanel />
+            </div>
+          ) : null}
+
+          {activeItem.id === 'marca-corporativa' ? (
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
+              <BrandingConfigPanel />
             </div>
           ) : null}
 

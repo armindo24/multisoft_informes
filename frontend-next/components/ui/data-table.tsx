@@ -4,7 +4,7 @@ import { ArrowDownAZ, ArrowUpAZ, FileDown, FileSpreadsheet, Search } from 'lucid
 import { useMemo, useState } from 'react';
 
 import { exportRowsToExcel, exportRowsToPdf } from '@/components/ui/export-utils';
-import type { ExportMetaItem } from '@/components/ui/export-utils';
+import type { ExportBrandingOverride, ExportMetaItem } from '@/components/ui/export-utils';
 
 export type DataColumn<T extends Record<string, unknown>> = {
   key: keyof T | string;
@@ -54,6 +54,7 @@ export function DataTable<T extends Record<string, unknown>>({
   pageSizeOptions = [10, 25, 50],
   initialPageSize = 10,
   exportMeta,
+  exportBranding,
 }: {
   title: string;
   subtitle?: string;
@@ -64,6 +65,7 @@ export function DataTable<T extends Record<string, unknown>>({
   pageSizeOptions?: number[];
   initialPageSize?: number;
   exportMeta?: ExportMetaItem[];
+  exportBranding?: ExportBrandingOverride;
 }) {
   const [query, setQuery] = useState('');
   const [sortKey, setSortKey] = useState<string>(String(columns.find((column) => column.sortable)?.key || columns[0]?.key || ''));
@@ -126,6 +128,7 @@ export function DataTable<T extends Record<string, unknown>>({
       headers,
       rows: exportRows.map((row) => headers.map((header) => row[header])),
       meta: exportMeta,
+      branding: exportBranding,
     });
   }
 
@@ -137,6 +140,7 @@ export function DataTable<T extends Record<string, unknown>>({
       headers,
       rows: exportRows.map((row) => headers.map((header) => row[header])),
       meta: exportMeta,
+      branding: exportBranding,
     });
   }
 
