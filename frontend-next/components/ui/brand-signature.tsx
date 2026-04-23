@@ -1,16 +1,79 @@
-import { brandShortName, getBranding } from '@/lib/branding';
+'use client';
+
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import { brandShortName, getBranding, type BrandingConfig } from '@/lib/branding';
+
+type BrandingApiRecord = {
+  empresa: string;
+  clientName: string;
+  tagline: string;
+  logoUrl: string;
+  faviconUrl: string;
+};
 
 export function BrandSignature({
   compact = false,
   light = false,
+  empresa,
 }: {
   compact?: boolean;
   light?: boolean;
+  empresa?: string;
 }) {
-  const branding = getBranding();
+  const searchParams = useSearchParams();
+  const globalBranding = useMemo(() => getBranding(), []);
+  const [branding, setBranding] = useState<BrandingConfig>(globalBranding);
+  const empresaParam = String(empresa || searchParams.get('empresa') || '').trim().toUpperCase();
+
+  useEffect(() => {
+    if (!empresaParam) {
+      setBranding(globalBranding);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadBranding() {
+      const response = await fetch(`/api/config/branding?empresa=${encodeURIComponent(empresaParam)}`, {
+        cache: 'no-store',
+      }).catch(() => null);
+
+      if (!response || cancelled) {
+        setBranding(globalBranding);
+        return;
+      }
+
+      const payload = (await response.json().catch(() => ({}))) as {
+        ok?: boolean;
+        data?: BrandingApiRecord | null;
+      };
+
+      if (cancelled) return;
+
+      if (!payload.ok || !payload.data) {
+        setBranding(globalBranding);
+        return;
+      }
+
+      setBranding({
+        appName: globalBranding.appName,
+        clientName: payload.data.clientName || globalBranding.clientName,
+        tagline: payload.data.tagline || globalBranding.tagline,
+        logoUrl: payload.data.logoUrl || globalBranding.logoUrl,
+        faviconUrl: payload.data.faviconUrl || globalBranding.faviconUrl,
+      });
+    }
+
+    void loadBranding();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [empresaParam, globalBranding]);
+
   const hasLogo = Boolean(branding.logoUrl);
   const shortName = brandShortName(branding.clientName);
-  const textTone = light ? 'text-white' : 'text-slate-950';
   const subTone = light ? 'text-slate-300' : 'text-slate-500';
 
   return (

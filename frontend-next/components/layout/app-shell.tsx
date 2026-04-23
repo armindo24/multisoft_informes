@@ -322,6 +322,9 @@ export function AppShell({
               </div>
 
               <div className="flex items-center gap-3 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500 lg:min-w-[370px]">
+                <div className="hidden shrink-0 lg:block">
+                  <BrandSignature compact />
+                </div>
                 <Search className="h-4 w-4 shrink-0" />
                 <span className="truncate">Buscar cliente, articulo, comprobante o proveedor</span>
               </div>
