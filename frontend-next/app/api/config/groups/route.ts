@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { loadGroupsDetailed, saveAdminGroup } from '@/lib/admin-config';
+import { deleteAdminGroup, loadGroupsDetailed, saveAdminGroup } from '@/lib/admin-config';
 
 export const runtime = 'nodejs';
 
@@ -27,6 +27,20 @@ export async function POST(request: Request) {
     console.error('Groups config save error:', error);
     return NextResponse.json(
       { ok: false, message: error instanceof Error ? error.message : 'No se pudo guardar el grupo.' },
+      { status: 400 },
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    const groups = await deleteAdminGroup(Number(body.id || 0));
+    return NextResponse.json({ ok: true, data: { groups } });
+  } catch (error) {
+    console.error('Groups config delete error:', error);
+    return NextResponse.json(
+      { ok: false, message: error instanceof Error ? error.message : 'No se pudo eliminar el grupo.' },
       { status: 400 },
     );
   }

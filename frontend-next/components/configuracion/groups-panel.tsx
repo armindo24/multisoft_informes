@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Save, ShieldCheck, Users } from 'lucide-react';
+import { Plus, RefreshCw, Save, ShieldCheck, Trash2, Users } from 'lucide-react';
 
 type AdminGroupDetail = {
   id: number;
@@ -25,6 +25,7 @@ export function GroupsPanel() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   function prepareNewGroup() {
@@ -48,10 +49,14 @@ export function GroupsPanel() {
       return;
     }
 
-    setGroups(payload.data.groups);
-    if (payload.data.groups[0]) {
-      setSelectedGroupId(payload.data.groups[0].id);
-      setForm({ name: payload.data.groups[0].name });
+    const loadedGroups = payload.data.groups || [];
+    setGroups(loadedGroups);
+    if (loadedGroups[0]) {
+      setSelectedGroupId(loadedGroups[0].id);
+      setForm({ name: loadedGroups[0].name });
+    } else {
+      setSelectedGroupId('new');
+      setForm(emptyForm);
     }
     setLoading(false);
   }
@@ -97,6 +102,41 @@ export function GroupsPanel() {
     setSaving(false);
   }
 
+  async function deleteSelectedGroup() {
+    if (!selectedGroup || deleting) return;
+
+    const confirmed = window.confirm(`Eliminar el grupo "${selectedGroup.name}"? Esta accion no se puede deshacer.`);
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setMessage(null);
+
+    const response = await fetch('/api/config/groups', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: selectedGroup.id }),
+    });
+
+    const payload = (await response.json().catch(() => ({}))) as { ok?: boolean; data?: { groups?: AdminGroupDetail[] }; message?: string };
+
+    if (!response.ok || !payload.ok || !payload.data?.groups) {
+      setMessage({ type: 'error', text: payload.message || 'No se pudo eliminar el grupo.' });
+      setDeleting(false);
+      return;
+    }
+
+    const nextGroups = payload.data.groups;
+    setGroups(nextGroups);
+    if (nextGroups[0]) {
+      setSelectedGroupId(nextGroups[0].id);
+      setForm({ name: nextGroups[0].name });
+    } else {
+      prepareNewGroup();
+    }
+    setMessage({ type: 'success', text: 'Grupo eliminado correctamente.' });
+    setDeleting(false);
+  }
+
   return (
     <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
       <div className="space-y-4">
@@ -111,6 +151,16 @@ export function GroupsPanel() {
             Agregar grupo
           </button>
         </div>
+
+        <button
+          type="button"
+          onClick={() => void loadGroups()}
+          disabled={loading}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+        >
+          <RefreshCw className={['h-4 w-4', loading ? 'animate-spin' : ''].join(' ')} />
+          Recargar grupos
+        </button>
 
         <label className="block text-sm text-slate-700">
           <span className="mb-2 block font-medium">Buscar grupo</span>
@@ -154,6 +204,13 @@ export function GroupsPanel() {
                 </button>
               );
             })}
+            {filteredGroups.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+                {groups.length === 0
+                  ? 'No se recibieron grupos desde PostgreSQL. Usa Recargar grupos o revisa el servicio Next si acabas de actualizar.'
+                  : 'No hay grupos que coincidan con la busqueda.'}
+              </div>
+            ) : null}
           </div>
         )}
       </div>
@@ -194,6 +251,19 @@ export function GroupsPanel() {
             <Save className="h-4 w-4" />
             {saving ? 'Guardando...' : selectedGroup ? 'Guardar cambios' : 'Crear grupo'}
           </button>
+
+          {selectedGroup ? (
+            <button
+              type="button"
+              onClick={() => void deleteSelectedGroup()}
+              disabled={deleting || saving || selectedGroup.userCount > 0}
+              title={selectedGroup.userCount > 0 ? 'Quita primero los usuarios asignados a este grupo.' : 'Eliminar grupo'}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-800 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" />
+              {deleting ? 'Eliminando...' : 'Eliminar grupo'}
+            </button>
+          ) : null}
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
@@ -239,6 +309,17 @@ export function GroupsPanel() {
           >
             {saving ? 'Guardando...' : selectedGroup ? 'Guardar cambios' : 'Crear grupo'}
           </button>
+          {selectedGroup ? (
+            <button
+              type="button"
+              onClick={() => void deleteSelectedGroup()}
+              disabled={deleting || saving || selectedGroup.userCount > 0}
+              title={selectedGroup.userCount > 0 ? 'Quita primero los usuarios asignados a este grupo.' : 'Eliminar grupo'}
+              className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {deleting ? 'Eliminando...' : 'Eliminar grupo'}
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

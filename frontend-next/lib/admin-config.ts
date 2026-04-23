@@ -1144,6 +1144,43 @@ export async function saveAdminGroup(input: { id?: number; name: string }) {
   return groups.find((group) => group.id === groupId) || null;
 }
 
+export async function deleteAdminGroup(groupId: number) {
+  const normalizedGroupId = Number(groupId || 0);
+  if (!normalizedGroupId) {
+    throw new Error('Grupo invalido.');
+  }
+
+  const groupResult = await pool.query<{ id: number; name: string; user_count: string }>(
+    `
+      SELECT
+        g.id,
+        g.name,
+        COUNT(ug.user_id) AS user_count
+      FROM auth_group g
+      LEFT JOIN auth_user_groups ug ON ug.group_id = g.id
+      WHERE g.id = $1
+      GROUP BY g.id
+      LIMIT 1
+    `,
+    [normalizedGroupId],
+  );
+
+  const group = groupResult.rows[0];
+  if (!group) {
+    throw new Error('No se encontro el grupo a eliminar.');
+  }
+
+  if (Number(group.user_count || 0) > 0) {
+    throw new Error('No puedes eliminar un grupo con usuarios asignados. Quita primero los usuarios del grupo.');
+  }
+
+  await pool.query('DELETE FROM auth_group_permissions WHERE group_id = $1', [normalizedGroupId]);
+  await pool.query('DELETE FROM auth_user_groups WHERE group_id = $1', [normalizedGroupId]);
+  await pool.query('DELETE FROM auth_group WHERE id = $1', [normalizedGroupId]);
+
+  return loadGroupsDetailed();
+}
+
 export async function deleteAdminUser(input: { actorUserId: number; userId: number }) {
   const actorUserId = Number(input.actorUserId || 0);
   const userId = Number(input.userId || 0);
