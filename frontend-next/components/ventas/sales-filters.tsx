@@ -63,7 +63,7 @@ export function SalesFilters({
   return (
     <>
       <form
-        className={`card grid gap-3 ${showStatsFields || showReceivablesFields ? 'p-4 lg:grid-cols-5 xl:grid-cols-8' : 'p-5 lg:grid-cols-4 xl:grid-cols-8'}`}
+        className={`card grid gap-3 ${showStatsFields || showReceivablesFields ? 'p-4 lg:grid-cols-5 xl:grid-cols-8' : 'p-4 lg:grid-cols-4 xl:grid-cols-8'}`}
         onSubmit={(event) => {
           event.preventDefault();
           setProgressValue(18);
@@ -282,14 +282,14 @@ export function SalesFilters({
 
           <div className="pointer-events-none fixed inset-x-0 bottom-0 top-[88px] z-30 overflow-hidden px-7 pb-8">
             <div className="h-full overflow-hidden rounded-[28px] bg-slate-50/94 backdrop-blur-[2px]">
-              <div className="space-y-6 p-2">
+              <div className="space-y-5 p-2">
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
                   <div className="h-4 w-24 animate-pulse rounded bg-slate-200" />
                   <div className="mt-3 h-10 w-56 animate-pulse rounded bg-slate-200" />
                   <div className="mt-3 h-4 w-full max-w-3xl animate-pulse rounded bg-slate-200" />
                 </div>
 
-                <div className="card grid gap-4 p-5 lg:grid-cols-4 xl:grid-cols-8">
+                <div className="card grid gap-3 p-4 lg:grid-cols-4 xl:grid-cols-8">
                   {Array.from({ length: 10 }).map((_, index) => (
                     <div key={index}>
                       <div className="mb-2 h-4 w-20 animate-pulse rounded bg-slate-200" />

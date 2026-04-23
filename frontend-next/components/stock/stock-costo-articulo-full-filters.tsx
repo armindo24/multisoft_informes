@@ -43,7 +43,7 @@ export function StockCostoArticuloFullFilters({
     <>
       <form
         id="costo-articulo-full"
-        className="card grid gap-4 p-5 xl:grid-cols-8"
+        className="card grid gap-3 p-4 xl:grid-cols-8"
         onSubmit={(event) => {
           event.preventDefault();
           setProgressValue(18);
