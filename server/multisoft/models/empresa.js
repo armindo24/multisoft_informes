@@ -32,6 +32,73 @@ function normalizeEmpresaRows(rows) {
     });
 }
 
+function pickCaseInsensitive(row, keys) {
+    if (!row || typeof row !== 'object') return '';
+    var map = {};
+    Object.keys(row).forEach(function (key) {
+        map[String(key).toLowerCase()] = row[key];
+    });
+
+    for (var i = 0; i < keys.length; i += 1) {
+        var value = map[String(keys[i]).toLowerCase()];
+        if (typeof value !== 'undefined' && value !== null && String(value).trim() !== '') {
+            return value;
+        }
+    }
+
+    return '';
+}
+
+function normalizeEmpresaMeta(rows) {
+    if (!Array.isArray(rows)) return [];
+
+    return rows.map(function (row) {
+        if (!row || typeof row !== 'object') return row;
+
+        var codigoEntidad = pickCaseInsensitive(row, [
+            'codigo_entidad',
+            'codigoidentidad',
+            'codigo_identidad',
+            'codidentidad',
+            'cod_identidad',
+            'cod_ident',
+            'codigo_unico',
+            'cod_unico',
+            'codigo_bcp',
+            'cod_bcp'
+        ]);
+
+        if (!codigoEntidad) {
+            Object.keys(row).some(function (key) {
+                var normalized = String(key || '').toLowerCase();
+                if (
+                    normalized.indexOf('cod') >= 0 &&
+                    (normalized.indexOf('ident') >= 0 || normalized.indexOf('entidad') >= 0 || normalized.indexOf('bcp') >= 0)
+                ) {
+                    var value = row[key];
+                    if (typeof value !== 'undefined' && value !== null && String(value).trim() !== '') {
+                        codigoEntidad = value;
+                        return true;
+                    }
+                }
+                return false;
+            });
+        }
+
+        var ruc = String(pickCaseInsensitive(row, ['ruc', 'RUC']) || '').trim();
+        var rucBase = ruc.indexOf('-') >= 0 ? ruc.split('-')[0].trim() : ruc;
+        var esCasaDeBolsa = pickCaseInsensitive(row, ['es_casa_de_bolsa', 'escasadebolsa', 'casa_de_bolsa']);
+
+        row.codigo_entidad = String(codigoEntidad || '').trim();
+        row.Codigo_Entidad = row.codigo_entidad;
+        row.ruc = ruc;
+        row.ruc_base = rucBase;
+        row.es_casa_de_bolsa = String(esCasaDeBolsa || 'N').trim() || 'N';
+
+        return row;
+    });
+}
+
 function isInvalidObjectError(err) {
     if (!err) return false;
     var code = (typeof err.code !== 'undefined') ? String(err.code) : String(err.Code || '');
@@ -114,14 +181,10 @@ Empresa.list = function (list) {
 };
 
 Empresa.meta = function (empresa) {
-    var rucBaseExpr = dbIsPostgres()
-        ? "trim(split_part(coalesce(ruc,''), '-', 1))"
-        : "trim(left(coalesce(ruc,''), charindex('-', coalesce(ruc,'')) - 1))";
-    var sql =
-        "select codigo_entidad, coalesce(es_casa_de_bolsa, 'N') as es_casa_de_bolsa, " +
-        "ruc, " + rucBaseExpr + " as ruc_base " +
-        "from dba.empresa where upper(trim(cod_empresa)) = upper(trim('" + esc(empresa) + "'))";
-    return conn.execAsync(sql);
+    var where = " where upper(trim(cod_empresa)) = upper(trim('" + esc(empresa) + "'))";
+    var sqlDba = "select * from dba.empresa" + where;
+    var sqlNoDba = "select * from empresa" + where;
+    return execWithEmpresaFallback(sqlDba, sqlNoDba).then(normalizeEmpresaMeta);
 };
 
 Empresa.importarVentas = function (empresa, cb) {

@@ -816,7 +816,17 @@ export default async function FinanzasPage({
             description="Vista basada en el informe PUC anterior. Cuando la base no soporta la estructura completa, se usa el balance clasico como respaldo."
             showPucMapping={balanceCuentasPuc === 'SI'}
             pucExport={{
-              codigoEntidad: codigoEntidad || String(empresaMeta.codigo_entidad || empresaMeta.Codigo_Entidad || '').trim(),
+              codigoEntidad: codigoEntidad || String(
+                empresaMeta.codigo_entidad ||
+                empresaMeta.Codigo_Entidad ||
+                empresaMeta.codigo_identidad ||
+                empresaMeta.Codigo_Identidad ||
+                empresaMeta.cod_identidad ||
+                empresaMeta.Cod_Identidad ||
+                empresaMeta.cod_ident ||
+                empresaMeta.Cod_Ident ||
+                '',
+              ).trim(),
               periodo,
               mesh,
               esCasaDeBolsa: String(empresaMeta.es_casa_de_bolsa || '').trim().toUpperCase() === 'S',

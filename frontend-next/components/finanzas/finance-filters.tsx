@@ -180,7 +180,17 @@ export function FinanceFilters({
       if (!showPucAdvanced || !selectedEmpresa) return;
       const response = await getEmpresaMeta(selectedEmpresa);
       if (ignore) return;
-      const codigo = String(response?.data?.codigo_entidad || response?.data?.Codigo_Entidad || '').trim();
+      const codigo = String(
+        response?.data?.codigo_entidad ||
+        response?.data?.Codigo_Entidad ||
+        response?.data?.codigo_identidad ||
+        response?.data?.Codigo_Identidad ||
+        response?.data?.cod_identidad ||
+        response?.data?.Cod_Identidad ||
+        response?.data?.cod_ident ||
+        response?.data?.Cod_Ident ||
+        '',
+      ).trim();
       setCodigoEntidadValue(codigo);
     }
 
