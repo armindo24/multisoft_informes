@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 
 import { AppShell } from '@/components/layout/app-shell';
+import { RuntimeBrandingSync } from '@/components/ui/runtime-branding-sync';
 import { getSessionUser } from '@/lib/auth-server';
 import { getBranding } from '@/lib/branding';
 
@@ -22,6 +23,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="es">
       <body>
+        <RuntimeBrandingSync />
         <AppShell user={sessionUser}>{children}</AppShell>
       </body>
     </html>
