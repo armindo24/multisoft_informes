@@ -185,6 +185,14 @@ http://IP_DEL_SERVIDOR/assets/logo-cliente.png
 http://IP_DEL_SERVIDOR/assets/favicon-cliente.ico
 ```
 
+La subida desde `Configuracion > Marca Corporativa` usa esta misma carpeta automaticamente si existe `/opt/multisoft/assets`.
+Si quieres forzar otra ruta o base publica, puedes definir en el servicio de Next:
+
+```ini
+Environment=BRANDING_UPLOAD_DIR=/opt/multisoft/assets
+Environment=NEXT_PUBLIC_BRANDING_ASSET_BASE_URL=/assets
+```
+
 Validar:
 
 ```bash

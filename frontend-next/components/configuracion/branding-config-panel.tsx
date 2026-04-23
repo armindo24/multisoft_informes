@@ -35,6 +35,9 @@ export function BrandingConfigPanel() {
   const [form, setForm] = useState<BrandingConfigRecord>(emptyRecord);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState<'logo' | 'favicon' | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [faviconFile, setFaviconFile] = useState<File | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
@@ -130,6 +133,50 @@ export function BrandingConfigPanel() {
     setSaving(false);
   }
 
+  async function upload(kind: 'logo' | 'favicon') {
+    const file = kind === 'logo' ? logoFile : faviconFile;
+    if (!file) {
+      setMessage({ type: 'error', text: `Seleccione un archivo de ${kind === 'logo' ? 'logo' : 'favicon'}.` });
+      return;
+    }
+
+    setUploading(kind);
+    setMessage(null);
+
+    const payload = new FormData();
+    payload.append('empresa', selectedEmpresa);
+    payload.append('kind', kind);
+    payload.append('file', file);
+
+    const response = await fetch('/api/config/branding/upload', {
+      method: 'POST',
+      body: payload,
+    });
+
+    const result = (await response.json().catch(() => ({}))) as {
+      ok?: boolean;
+      data?: { url?: string };
+      message?: string;
+    };
+
+    if (!response.ok || !result.ok || !result.data?.url) {
+      setMessage({ type: 'error', text: result.message || 'No se pudo subir el archivo.' });
+      setUploading(null);
+      return;
+    }
+
+    if (kind === 'logo') {
+      updateField('logoUrl', result.data.url);
+      setLogoFile(null);
+    } else {
+      updateField('faviconUrl', result.data.url);
+      setFaviconFile(null);
+    }
+
+    setMessage({ type: 'success', text: `${kind === 'logo' ? 'Logo' : 'Favicon'} subido correctamente.` });
+    setUploading(null);
+  }
+
   return (
     <div className="space-y-4">
       {message ? (
@@ -175,10 +222,32 @@ export function BrandingConfigPanel() {
               <span className="mb-2 flex items-center gap-2 font-medium"><ImageIcon className="h-4 w-4 text-cyan-700" />URL de logo</span>
               <input value={form.logoUrl} onChange={(event) => updateField('logoUrl', event.target.value)} placeholder="https://dominio/logo.png" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2" />
             </label>
+            <div className="md:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-end">
+                <label className="block flex-1 text-sm text-slate-700">
+                  <span className="mb-2 block font-medium">Subir logo</span>
+                  <input type="file" accept=".png,.jpg,.jpeg,.webp,.svg,.ico" onChange={(event) => setLogoFile(event.target.files?.[0] || null)} className="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" />
+                </label>
+                <button type="button" onClick={() => void upload('logo')} disabled={uploading !== null} className="rounded-xl border border-cyan-200 bg-white px-4 py-2.5 text-sm font-medium text-cyan-900 disabled:opacity-60">
+                  {uploading === 'logo' ? 'Subiendo...' : 'Subir logo'}
+                </button>
+              </div>
+            </div>
             <label className="text-sm text-slate-700 md:col-span-2">
               <span className="mb-2 flex items-center gap-2 font-medium"><ImageIcon className="h-4 w-4 text-cyan-700" />URL de favicon</span>
               <input value={form.faviconUrl} onChange={(event) => updateField('faviconUrl', event.target.value)} placeholder="https://dominio/favicon.ico" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2" />
             </label>
+            <div className="md:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-end">
+                <label className="block flex-1 text-sm text-slate-700">
+                  <span className="mb-2 block font-medium">Subir favicon</span>
+                  <input type="file" accept=".png,.jpg,.jpeg,.webp,.svg,.ico" onChange={(event) => setFaviconFile(event.target.files?.[0] || null)} className="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" />
+                </label>
+                <button type="button" onClick={() => void upload('favicon')} disabled={uploading !== null} className="rounded-xl border border-cyan-200 bg-white px-4 py-2.5 text-sm font-medium text-cyan-900 disabled:opacity-60">
+                  {uploading === 'favicon' ? 'Subiendo...' : 'Subir favicon'}
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
