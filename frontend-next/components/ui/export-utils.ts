@@ -84,9 +84,8 @@ function buildCorporateStyles() {
       .cover-meta-card{border:1px solid #dbeafe;border-radius:14px;padding:14px 16px;background:linear-gradient(180deg,#f8fcff 0%,#ffffff 100%);}
       .cover-meta-label{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#0891b2;font-weight:700;margin-bottom:8px;}
       .cover-meta-value{font-size:15px;color:#0f172a;font-weight:700;line-height:1.35;}
-      .cover-footer{display:flex;justify-content:space-between;gap:16px;border-top:1px solid #cbd5e1;padding-top:14px;color:#64748b;font-size:11px;}
+      .cover-footer{display:flex;justify-content:flex-end;gap:16px;border-top:1px solid #cbd5e1;padding-top:14px;color:#64748b;font-size:11px;}
       .page-break{break-before:page;page-break-before:always;}
-      .footer{margin-top:18px;border-top:1px solid #e2e8f0;padding-top:8px;font-size:10px;color:#64748b;}
       @page{size:auto;margin:14mm;}
     </style>
   `;
@@ -150,7 +149,6 @@ function buildPdfCover(title: string, subtitle?: string, meta?: ExportMetaItem[]
         <div class="cover-meta-grid">${metaCards}</div>
       </div>
       <div class="cover-footer">
-        <div>Documento corporativo generado por ${escapeHtml(branding.appName)}.</div>
         <div>${escapeHtml(branding.clientName)}</div>
       </div>
     </section>
@@ -178,7 +176,6 @@ export function exportRowsToExcel(params: {
     buildBrandBlock(params.title, params.subtitle, params.branding) +
     `<table class="meta"><tbody>${buildMetaRows(params.meta)}</tbody></table>` +
     `<table class="report"><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table>` +
-    `<div class="footer">Reporte generado por ${escapeHtml(resolveBranding(params.branding).appName)}.</div>` +
     '</body></html>';
 
   downloadBlob(`${params.filename}.xls`, html, 'application/vnd.ms-excel;charset=utf-8;');
@@ -203,7 +200,7 @@ export function exportRowsToPdf(params: {
   popup.document.write(
     '<html><head><meta charset="utf-8"><title>Multisoft Reporte</title>' +
       buildCorporateStyles() +
-      `</head><body>${buildPdfCover(params.title, params.subtitle, params.meta, params.branding)}<div class="page-break">${buildBrandBlock(params.title, params.subtitle, params.branding)}<table class="meta"><tbody>${buildMetaRows(params.meta)}</tbody></table><table class="report"><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table><div class="footer">Reporte generado por ${escapeHtml(resolveBranding(params.branding).appName)}.</div></div></body></html>`,
+      `</head><body>${buildPdfCover(params.title, params.subtitle, params.meta, params.branding)}<div class="page-break">${buildBrandBlock(params.title, params.subtitle, params.branding)}<table class="meta"><tbody>${buildMetaRows(params.meta)}</tbody></table><table class="report"><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table></div></body></html>`,
   );
   popup.document.close();
   popup.focus();

@@ -1,7 +1,6 @@
 import { KpiCard } from '@/components/ui/kpi-card';
 import { PageHeader } from '@/components/ui/page-header';
 import { ReportContextCard } from '@/components/ui/report-context-card';
-import { FilterSummaryCard } from '@/components/ui/filter-summary-card';
 import { BalanceComprobadoTable } from '@/components/finanzas/balance-comprobado-table';
 import { DiarioComprobadoPanel } from '@/components/finanzas/diario-comprobado-panel';
 import { BalanceIntegralPanel } from '@/components/finanzas/balance-integral-panel';
@@ -779,20 +778,6 @@ export default async function FinanzasPage({
             rango={mesLabel}
             moneda={monedaLabel}
             usuario={sessionUser?.displayName || sessionUser?.username || 'Usuario'}
-          />
-          <FilterSummaryCard
-            items={[
-              { label: 'Empresa', value: empresaLabel },
-              { label: 'Periodo', value: periodo },
-              { label: 'Desde', value: mesd },
-              { label: 'Hasta', value: mesh },
-              { label: 'Moneda', value: monedaLabel },
-              { label: 'Cuenta desde', value: cuentad },
-              { label: 'Cuenta hasta', value: cuentah },
-              { label: 'Nivel', value: nivel },
-              { label: 'Auxiliar', value: aux },
-              { label: 'Solo saldo', value: saldo },
-            ]}
           />
         </>
       ) : null}
