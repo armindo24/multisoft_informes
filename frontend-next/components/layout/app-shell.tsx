@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Bell, ChevronRight, Search } from 'lucide-react';
 
 import { LogoutButton } from '@/components/ui/logout-button';
+import { BrandSignature } from '@/components/ui/brand-signature';
 import type { SessionUser } from '@/lib/auth';
 import { navigation, type NavigationItem } from '@/lib/navigation';
 
@@ -181,8 +182,8 @@ export function AppShell({
         <aside className="hidden border-r border-slate-800 bg-slate-950 text-slate-100 lg:block">
           <div className="sticky top-0 flex h-screen flex-col overflow-y-auto px-3 py-4">
             <div className="px-2 pb-5">
-              <p className="text-xs uppercase tracking-[0.35em] text-cyan-300/70">Multisoft</p>
-              <h1 className="mt-3 text-[2rem] font-black leading-tight text-white">Informes Gerenciales</h1>
+              <BrandSignature light />
+              <h1 className="mt-3 text-[2rem] font-black leading-tight text-white">Panel ejecutivo</h1>
               <p className="mt-3 max-w-[18rem] text-sm leading-6 text-slate-400">
                 Acceso ejecutivo a informes, indicadores y consultas operativas.
               </p>
@@ -296,10 +297,7 @@ export function AppShell({
           <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur-xl">
             <div className="flex flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center justify-between gap-3 lg:hidden">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-700">Multisoft</p>
-                  <p className="text-lg font-black text-slate-950">Informes Gerenciales</p>
-                </div>
+                <BrandSignature compact />
                 <LogoutButton />
               </div>
 

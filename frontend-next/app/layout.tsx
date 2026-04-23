@@ -3,10 +3,12 @@ import type { Metadata } from 'next';
 
 import { AppShell } from '@/components/layout/app-shell';
 import { getSessionUser } from '@/lib/auth-server';
+import { getBranding } from '@/lib/branding';
 
+const branding = getBranding();
 export const metadata: Metadata = {
-  title: 'Multisoft Informes | Frontend Next.js',
-  description: 'Base frontend moderna para el sistema de informes gerenciales.',
+  title: `${branding.appName} | ${branding.tagline}`,
+  description: `Plataforma corporativa de reportes para ${branding.clientName}.`,
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
