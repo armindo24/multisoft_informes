@@ -4,6 +4,7 @@ import { FileDown, FileSpreadsheet, Search, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { getVentaDetalle } from '@/lib/api';
 import { exportRowsToExcel, exportRowsToPdf } from '@/components/ui/export-utils';
+import type { ExportBrandingOverride } from '@/components/ui/export-utils';
 import { VentaDetalle, VentaResumen } from '@/types/ventas';
 
 function num(value: unknown) {
@@ -40,9 +41,11 @@ function detailSummary(items: VentaDetalle[]) {
 export function SalesTable({
   rows,
   groupBy,
+  exportBranding,
 }: {
   rows: VentaResumen[];
   groupBy: string;
+  exportBranding?: ExportBrandingOverride;
 }) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -117,6 +120,7 @@ export function SalesTable({
           money(num(row.to_gravado) + num(row.total_iva)),
         ]),
       ),
+      branding: exportBranding,
     });
   }
 
@@ -138,6 +142,7 @@ export function SalesTable({
           money(num(row.to_gravado) + num(row.total_iva)),
         ]),
       ),
+      branding: exportBranding,
     });
   }
 
@@ -158,6 +163,7 @@ export function SalesTable({
         money(item.descuento),
         money(item.total_neto),
       ]),
+      branding: exportBranding,
     });
   }
 
@@ -177,6 +183,7 @@ export function SalesTable({
         money(item.descuento),
         money(item.total_neto),
       ]),
+      branding: exportBranding,
     });
   }
 

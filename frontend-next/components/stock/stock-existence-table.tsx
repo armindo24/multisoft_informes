@@ -1,4 +1,5 @@
 import { DataTable } from '@/components/ui/data-table';
+import type { ExportBrandingOverride } from '@/components/ui/export-utils';
 import { StockDepositoRow } from '@/types/stock';
 
 function toNumber(value: unknown) {
@@ -6,7 +7,13 @@ function toNumber(value: unknown) {
   return Number.isFinite(n) ? n : 0;
 }
 
-export function StockExistenceTable({ rows }: { rows: StockDepositoRow[] }) {
+export function StockExistenceTable({
+  rows,
+  exportBranding,
+}: {
+  rows: StockDepositoRow[];
+  exportBranding?: ExportBrandingOverride;
+}) {
   const normalizedRows = rows.map((row) => {
     const existencia = toNumber(row.existencia);
     const puntoPedido = toNumber(row.pto_pedido);
@@ -28,6 +35,7 @@ export function StockExistenceTable({ rows }: { rows: StockDepositoRow[] }) {
       subtitle="Vista operativa para detectar faltantes, sobrestock y artículos cercanos al punto de pedido."
       exportName="stock-existencia"
       rows={normalizedRows}
+      exportBranding={exportBranding}
       emptyMessage="No hay datos de existencia para el filtro seleccionado."
       columns={[
         { key: 'articulo', header: 'Artículo', sortable: true },

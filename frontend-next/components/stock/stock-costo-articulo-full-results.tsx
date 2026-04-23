@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import type { ExportBrandingOverride } from '@/components/ui/export-utils';
 import {
   getStockCostoArticuloFull,
   getStockCostoArticuloFullAsyncResult,
@@ -20,6 +21,7 @@ type Props = {
   calcular_empresa: string;
   ecuacion_mat: string;
   submitted: boolean;
+  exportBranding?: ExportBrandingOverride;
 };
 
 export function StockCostoArticuloFullResults(props: Props) {
@@ -191,6 +193,7 @@ export function StockCostoArticuloFullResults(props: Props) {
         fechad={props.fechad}
         fechah={props.fechah}
         ecuacionMat={props.ecuacion_mat === 'S'}
+        exportBranding={props.exportBranding}
       />
 
       {loading ? (

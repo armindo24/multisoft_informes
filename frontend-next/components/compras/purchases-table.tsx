@@ -1,4 +1,5 @@
 import { DataTable } from '@/components/ui/data-table';
+import type { ExportBrandingOverride } from '@/components/ui/export-utils';
 import { CompraRow } from '@/types/compras';
 
 function num(value: unknown) {
@@ -6,7 +7,13 @@ function num(value: unknown) {
   return Number.isFinite(n) ? n : 0;
 }
 
-export function PurchasesTable({ rows }: { rows: CompraRow[] }) {
+export function PurchasesTable({
+  rows,
+  exportBranding,
+}: {
+  rows: CompraRow[];
+  exportBranding?: ExportBrandingOverride;
+}) {
   const normalizedRows = rows.map((row) => ({
     fecha: String(row.FechaFact || row.fecha_fact || '').slice(0, 10),
     comprobante: `${row.Cod_Tp_Comp || row.cod_tp_comp || ''} - ${row.NroFact || row.nrofact || ''}`,
@@ -24,6 +31,7 @@ export function PurchasesTable({ rows }: { rows: CompraRow[] }) {
       subtitle="Facturas de compra filtradas por empresa, sucursal, proveedor y fechas."
       exportName="compras-periodo"
       rows={normalizedRows}
+      exportBranding={exportBranding}
       columns={[
         { key: 'fecha', header: 'Fecha', sortable: true, type: 'date' },
         { key: 'comprobante', header: 'Comprobante', sortable: true },

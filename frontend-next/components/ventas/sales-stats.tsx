@@ -16,6 +16,7 @@ import {
   YAxis,
 } from 'recharts';
 import { exportRowsToExcel, exportRowsToPdf } from '@/components/ui/export-utils';
+import type { ExportBrandingOverride } from '@/components/ui/export-utils';
 
 const palette = ['#155eef', '#0ea5e9', '#14b8a6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#64748b', '#06b6d4', '#2563eb'];
 
@@ -42,10 +43,12 @@ export function SalesStats({
   rows,
   agrupacion,
   moneda,
+  exportBranding,
 }: {
   rows: Array<Record<string, unknown>>;
   agrupacion: string;
   moneda: string;
+  exportBranding?: ExportBrandingOverride;
 }) {
   const groupedMap = new Map<string, { label: string; total: number; venta: number; credito: number }>();
   const monthMap = new Map<string, { month: string; venta: number; credito: number }>();
@@ -90,6 +93,7 @@ export function SalesStats({
           `${pct.toFixed(1)}%`,
         ];
       }),
+      branding: exportBranding,
     });
   }
 
@@ -108,6 +112,7 @@ export function SalesStats({
           `${pct.toFixed(1)}%`,
         ];
       }),
+      branding: exportBranding,
     });
   }
 

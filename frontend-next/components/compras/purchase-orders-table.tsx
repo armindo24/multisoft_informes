@@ -1,4 +1,5 @@
 import { DataTable } from '@/components/ui/data-table';
+import type { ExportBrandingOverride } from '@/components/ui/export-utils';
 import { OrdenCompraRow } from '@/types/compras';
 
 function num(value: unknown) {
@@ -6,7 +7,13 @@ function num(value: unknown) {
   return Number.isFinite(n) ? n : 0;
 }
 
-export function PurchaseOrdersTable({ rows }: { rows: OrdenCompraRow[] }) {
+export function PurchaseOrdersTable({
+  rows,
+  exportBranding,
+}: {
+  rows: OrdenCompraRow[];
+  exportBranding?: ExportBrandingOverride;
+}) {
   const normalizedRows = rows.map((row) => ({
     ordenCompra: String(row.nroordcomp || 'oc'),
     fecha: String(row.fechaorden || '').slice(0, 10),
@@ -24,6 +31,7 @@ export function PurchaseOrdersTable({ rows }: { rows: OrdenCompraRow[] }) {
       subtitle="Seguimiento de órdenes abiertas, responsables y avance de cumplimiento."
       exportName="ordenes-compra"
       rows={normalizedRows}
+      exportBranding={exportBranding}
       columns={[
         { key: 'ordenCompra', header: 'N° OC', sortable: true },
         { key: 'fecha', header: 'Fecha', sortable: true, type: 'date' },

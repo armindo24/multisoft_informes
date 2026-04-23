@@ -1,4 +1,5 @@
 import { DataTable } from '@/components/ui/data-table';
+import type { ExportBrandingOverride } from '@/components/ui/export-utils';
 import { StockValorizadoRow } from '@/types/stock';
 
 function toNumber(value: unknown) {
@@ -6,7 +7,14 @@ function toNumber(value: unknown) {
   return Number.isFinite(n) ? n : 0;
 }
 
-export function StockValuationTable({ rows }: { rows: StockValorizadoRow[]; currencyLabel: string }) {
+export function StockValuationTable({
+  rows,
+  exportBranding,
+}: {
+  rows: StockValorizadoRow[];
+  currencyLabel: string;
+  exportBranding?: ExportBrandingOverride;
+}) {
   const normalizedRows = rows.map((row) => {
     const costo = toNumber(row.costo);
     const existencia = toNumber(row.total_existencia);
@@ -27,6 +35,7 @@ export function StockValuationTable({ rows }: { rows: StockValorizadoRow[]; curr
       subtitle="Resumen financiero del inventario usando el costeo elegido por el backend actual."
       exportName="stock-valorizado"
       rows={normalizedRows}
+      exportBranding={exportBranding}
       emptyMessage="No hay datos valorizados para el filtro seleccionado."
       columns={[
         { key: 'articulo', header: 'Artículo', sortable: true },

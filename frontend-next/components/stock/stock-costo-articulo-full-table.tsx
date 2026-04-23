@@ -1,6 +1,8 @@
 'use client';
 
 import { FileDown, FileSpreadsheet } from 'lucide-react';
+import { exportRowsToExcel, exportRowsToPdf } from '@/components/ui/export-utils';
+import type { ExportBrandingOverride, ExportMetaItem } from '@/components/ui/export-utils';
 import { StockCostoArticuloFullRow } from '@/types/stock';
 
 function formatNumber(value: unknown, decimals = 0) {
@@ -108,65 +110,49 @@ export function StockCostoArticuloFullTable({
   fechad,
   fechah,
   ecuacionMat,
+  exportBranding,
 }: {
   rows: StockCostoArticuloFullRow[];
   empresa: string;
   fechad: string;
   fechah: string;
   ecuacionMat?: boolean;
+  exportBranding?: ExportBrandingOverride;
 }) {
   const columns = buildColumns(ecuacionMat);
+  const exportMeta: ExportMetaItem[] = [
+    { label: 'Empresa', value: empresa || '-' },
+    { label: 'Desde', value: fechad || '-' },
+    { label: 'Hasta', value: fechah || '-' },
+  ];
 
   function exportExcel() {
     if (!rows.length) return;
-
-    const header = columns.map((column) => `<th>${column.label}</th>`).join('');
-    const body = rows
-      .map((row) => {
-        return `<tr>${columns
-          .map((column) => `<td>${escapeHtml(renderCellValue(row, column))}</td>`)
-          .join('')}</tr>`;
-      })
-      .join('');
-
-    const html =
-      '<html><head><meta charset="utf-8"><title>Costo Articulo Full</title></head><body>' +
-      `<h1>Costo Articulo Full</h1><div>Empresa: ${escapeHtml(empresa)} - Fecha: ${escapeHtml(fechad)} hasta ${escapeHtml(fechah)}</div>` +
-      `<table border="1"><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table>` +
-      '</body></html>';
-
-    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'costo_articulo_full.xls';
-    link.click();
-    URL.revokeObjectURL(url);
+    exportRowsToExcel({
+      title: 'Costo Articulo Full',
+      subtitle: ecuacionMat
+        ? 'Vista Ecuacion BC materiales, con columnas alineadas al formato historico.'
+        : 'Vista basada en el endpoint actual del backend, alineada al informe historico.',
+      filename: 'costo_articulo_full',
+      headers: columns.map((column) => column.label),
+      rows: rows.map((row) => columns.map((column) => renderCellValue(row, column))),
+      meta: exportMeta,
+      branding: exportBranding,
+    });
   }
 
   function exportPdf() {
     if (!rows.length) return;
-
-    const header = columns.map((column) => `<th>${column.label}</th>`).join('');
-    const body = rows
-      .map((row) => {
-        return `<tr>${columns
-          .map((column) => `<td>${escapeHtml(renderCellValue(row, column))}</td>`)
-          .join('')}</tr>`;
-      })
-      .join('');
-
-    const popup = window.open('', '_blank', 'width=1200,height=800');
-    if (!popup) return;
-
-    popup.document.write(
-      '<html><head><meta charset="utf-8"><title>Costo Articulo Full</title>' +
-        '<style>body{font-family:Arial,sans-serif;padding:24px;}table{border-collapse:collapse;width:100%;font-size:12px;}th,td{border:1px solid #cbd5e1;padding:6px 8px;}th{background:#e2e8f0;text-align:left;}h1{font-size:22px;}.meta{margin-bottom:16px;color:#475569;}</style>' +
-      `</head><body><h1>Costo Articulo Full</h1><div class="meta">Empresa: ${escapeHtml(empresa)} - Fecha: ${escapeHtml(fechad)} hasta ${escapeHtml(fechah)}</div><table><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table></body></html>`,
-    );
-    popup.document.close();
-    popup.focus();
-    popup.print();
+    exportRowsToPdf({
+      title: 'Costo Articulo Full',
+      subtitle: ecuacionMat
+        ? 'Vista Ecuacion BC materiales, con columnas alineadas al formato historico.'
+        : 'Vista basada en el endpoint actual del backend, alineada al informe historico.',
+      headers: columns.map((column) => column.label),
+      rows: rows.map((row) => columns.map((column) => renderCellValue(row, column))),
+      meta: exportMeta,
+      branding: exportBranding,
+    });
   }
 
   return (

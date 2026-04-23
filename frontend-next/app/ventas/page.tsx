@@ -19,6 +19,7 @@ import {
   getVentasVendedoresStats,
   getVentasZonas,
 } from '@/lib/api';
+import { loadBrandingConfig } from '@/lib/admin-config';
 import { getScopedEmpresas } from '@/lib/empresas-server';
 import { CuentaCobrar, SelectOption, VentaResumen } from '@/types/ventas';
 
@@ -124,6 +125,15 @@ export default async function VentasPage({
   const empresasResponse = await getScopedEmpresas();
   const empresas = sanitizeOptions((empresasResponse?.data || []) as Array<Record<string, string>>);
   const empresa = String(params.empresa || empresas[0]?.value || '');
+  const brandingConfig = empresa ? await loadBrandingConfig(empresa) : await loadBrandingConfig();
+  const exportBranding = brandingConfig
+    ? {
+        clientName: brandingConfig.clientName || undefined,
+        tagline: brandingConfig.tagline || undefined,
+        logoUrl: brandingConfig.logoUrl || undefined,
+        faviconUrl: brandingConfig.faviconUrl || undefined,
+      }
+    : undefined;
   const sucursalesResponse = empresa ? await getSucursales(empresa) : null;
   const sucursales = sanitizeOptions((sucursalesResponse?.data || []) as Array<Record<string, string>>);
   const sucursal = typeof params.sucursal === 'string' ? params.sucursal : '';
@@ -226,10 +236,10 @@ export default async function VentasPage({
       ) : null}
 
       {isStatsMode ? (
-        <SalesStats rows={estadisticasRows} agrupacion={agrupacion} moneda={moneda} />
+        <SalesStats rows={estadisticasRows} agrupacion={agrupacion} moneda={moneda} exportBranding={exportBranding} />
       ) : isReceivablesMode ? (
         <div id="cuentas-cobrar" className="scroll-mt-28">
-          <ReceivablesTable rows={cuentasCobrar} />
+          <ReceivablesTable rows={cuentasCobrar} exportBranding={exportBranding} />
         </div>
       ) : (
         <>
@@ -241,7 +251,7 @@ export default async function VentasPage({
           </section>
 
           <div id="ventas-resumen" className="scroll-mt-28">
-            <SalesTable rows={ventas} groupBy={order} />
+            <SalesTable rows={ventas} groupBy={order} exportBranding={exportBranding} />
           </div>
         </>
       )}

@@ -11,6 +11,7 @@ import {
   getSucursales,
   getTipoOrdenCompra,
 } from '@/lib/api';
+import { loadBrandingConfig } from '@/lib/admin-config';
 import { getScopedEmpresas } from '@/lib/empresas-server';
 import { CompraRow, OrdenCompraRow, SelectOption } from '@/types/compras';
 
@@ -98,6 +99,15 @@ export default async function ComprasPage({
   const empresasResponse = await getScopedEmpresas();
   const empresas = sanitizeOptions((empresasResponse?.data || []) as Array<Record<string, string>>);
   const empresa = String(params.empresa || empresas[0]?.value || '');
+  const brandingConfig = empresa ? await loadBrandingConfig(empresa) : await loadBrandingConfig();
+  const exportBranding = brandingConfig
+    ? {
+        clientName: brandingConfig.clientName || undefined,
+        tagline: brandingConfig.tagline || undefined,
+        logoUrl: brandingConfig.logoUrl || undefined,
+        faviconUrl: brandingConfig.faviconUrl || undefined,
+      }
+    : undefined;
 
   const sucursalesResponse = empresa ? await getSucursales(empresa) : null;
   const sucursales = sanitizeOptions((sucursalesResponse?.data || []) as Array<Record<string, string>>);
@@ -229,8 +239,8 @@ export default async function ComprasPage({
             <KpiCard item={{ title: 'Monto ordenado', value: totalOrdenado.toLocaleString('es-PY'), change: 'Ordenes de compra', trend: 'up' }} />
           </section>
 
-          <PurchasesTable rows={compras} />
-          <PurchaseOrdersTable rows={ordenes} />
+          <PurchasesTable rows={compras} exportBranding={exportBranding} />
+          <PurchaseOrdersTable rows={ordenes} exportBranding={exportBranding} />
         </>
       ) : (
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

@@ -1,4 +1,5 @@
 import { DataTable } from '@/components/ui/data-table';
+import type { ExportBrandingOverride } from '@/components/ui/export-utils';
 import { CuentaCobrar } from '@/types/ventas';
 
 function num(value: unknown) {
@@ -6,7 +7,13 @@ function num(value: unknown) {
   return Number.isFinite(n) ? n : 0;
 }
 
-export function ReceivablesTable({ rows }: { rows: CuentaCobrar[] }) {
+export function ReceivablesTable({
+  rows,
+  exportBranding,
+}: {
+  rows: CuentaCobrar[];
+  exportBranding?: ExportBrandingOverride;
+}) {
   let saldoAcumulado = 0;
   let totalImporte = 0;
   let totalSaldo = 0;
@@ -51,8 +58,9 @@ export function ReceivablesTable({ rows }: { rows: CuentaCobrar[] }) {
         title="Cuentas por cobrar"
         subtitle="Documentos pendientes con estructura mas cercana al informe historico."
         exportName="cuentas-por-cobrar"
-        rows={normalizedRows}
-        columns={[
+      rows={normalizedRows}
+      exportBranding={exportBranding}
+      columns={[
           { key: 'tipo', header: 'Tipo Comprobante', sortable: true },
           { key: 'comprobante', header: '# Comprobante', sortable: true },
           { key: 'cuota', header: 'Cuota', sortable: true },

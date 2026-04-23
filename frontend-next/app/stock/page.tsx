@@ -15,6 +15,7 @@ import {
   getStockTiposArticulos,
   getStockValorizado,
 } from '@/lib/api';
+import { loadBrandingConfig } from '@/lib/admin-config';
 import { getScopedEmpresas } from '@/lib/empresas-server';
 import { SelectOption, StockDepositoRow, StockValorizadoRow } from '@/types/stock';
 
@@ -104,6 +105,15 @@ export default async function StockPage({
   const empresasResponse = await getScopedEmpresas();
   const empresas = sanitizeOptions((empresasResponse?.data || []) as Array<Record<string, string>>);
   const empresa = String(params.empresa || empresas[0]?.value || '');
+  const brandingConfig = empresa ? await loadBrandingConfig(empresa) : await loadBrandingConfig();
+  const exportBranding = brandingConfig
+    ? {
+        clientName: brandingConfig.clientName || undefined,
+        tagline: brandingConfig.tagline || undefined,
+        logoUrl: brandingConfig.logoUrl || undefined,
+        faviconUrl: brandingConfig.faviconUrl || undefined,
+      }
+    : undefined;
 
   const sucursalesResponse = empresa ? await getSucursales(empresa) : null;
   const sucursales = sanitizeOptions((sucursalesResponse?.data || []) as Array<Record<string, string>>);
@@ -215,6 +225,7 @@ export default async function StockPage({
           calcular_empresa={calcular_empresa}
           ecuacion_mat={ecuacion_mat}
           submitted={hasSubmittedCostoArticuloFull}
+          exportBranding={exportBranding}
         />
       ) : (
         <>
@@ -226,11 +237,11 @@ export default async function StockPage({
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-        <StockValuationTable rows={valorizadoRows} currencyLabel={currencyLabel} />
+        <StockValuationTable rows={valorizadoRows} currencyLabel={currencyLabel} exportBranding={exportBranding} />
         <StockAlerts rows={existenciaRows} />
       </section>
 
-      <StockExistenceTable rows={existenciaRows} />
+      <StockExistenceTable rows={existenciaRows} exportBranding={exportBranding} />
         </>
       )}
     </div>
