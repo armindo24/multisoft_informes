@@ -163,6 +163,28 @@ Copiar config:
 sudo cp deploy/nginx/centos9/multisoft.conf /etc/nginx/conf.d/multisoft.conf
 ```
 
+Crear carpeta publica para logos y favicons del cliente:
+
+```bash
+sudo mkdir -p /opt/multisoft/assets
+sudo chown -R multisoft:multisoft /opt/multisoft/assets
+sudo chmod 755 /opt/multisoft/assets
+```
+
+Copiar archivos, por ejemplo:
+
+```bash
+cp logo-cliente.png /opt/multisoft/assets/
+cp favicon-cliente.ico /opt/multisoft/assets/
+```
+
+Las URLs quedaran asi:
+
+```text
+http://IP_DEL_SERVIDOR/assets/logo-cliente.png
+http://IP_DEL_SERVIDOR/assets/favicon-cliente.ico
+```
+
 Validar:
 
 ```bash
@@ -174,6 +196,16 @@ Iniciar y habilitar:
 ```bash
 sudo systemctl enable nginx
 sudo systemctl restart nginx
+```
+
+Luego en `Configuracion > Marca Corporativa` puedes pegar:
+
+```text
+URL de logo
+http://IP_DEL_SERVIDOR/assets/logo-cliente.png
+
+URL de favicon
+http://IP_DEL_SERVIDOR/assets/favicon-cliente.ico
 ```
 
 ## 10. Firewall
