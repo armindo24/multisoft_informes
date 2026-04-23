@@ -72,6 +72,20 @@ function sanitizeOptions(items: Array<Record<string, string>> | undefined | null
   return result;
 }
 
+function getEmpresaCodigoEntidad(meta: Record<string, string>) {
+  return String(
+    meta.codigo_entidad ||
+    meta.Codigo_Entidad ||
+    meta.codigo_identidad ||
+    meta.Codigo_Identidad ||
+    meta.cod_identidad ||
+    meta.Cod_Identidad ||
+    meta.cod_ident ||
+    meta.Cod_Ident ||
+    '',
+  ).trim();
+}
+
 function getCode(row: BalanceRow) {
   return String(row.CodPlanCta || row.codplancta || '');
 }
@@ -352,6 +366,10 @@ export default async function FinanzasPage({
         periodo,
       })
     : Promise.resolve(null);
+  const requestedEmpresaMetaResponse = shouldLoadBalancePuc && requestedEmpresa
+    ? await getEmpresaMeta(requestedEmpresa)
+    : null;
+  const requestedEmpresaCodigoEntidad = codigoEntidad || getEmpresaCodigoEntidad((requestedEmpresaMetaResponse?.data || {}) as Record<string, string>);
   const initialBalancePromise = requestedEmpresa && hasSubmittedFilters && shouldLoadBalance
     ? (shouldUseFullBalance ? getBalanceGeneralPuc({
         empresa: requestedEmpresa,
@@ -366,7 +384,7 @@ export default async function FinanzasPage({
         saldo,
         practicado_al: practicadoAl,
         recalcular_saldos: recalcularSaldos,
-        codigo_entidad: codigoEntidad,
+        codigo_entidad: requestedEmpresaCodigoEntidad,
         balance_cuentas_puc: balanceCuentasPuc,
       }) : getBalanceGeneral({
         empresa: requestedEmpresa,
@@ -418,7 +436,7 @@ export default async function FinanzasPage({
             saldo,
             practicado_al: practicadoAl,
             recalcular_saldos: recalcularSaldos,
-            codigo_entidad: codigoEntidad,
+            codigo_entidad: requestedEmpresaCodigoEntidad,
             balance_cuentas_puc: balanceCuentasPuc,
           })
         : getBalanceGeneral({ empresa, periodo, mesd, mesh, moneda, cuentad, cuentah, nivel, aux, saldo }))
@@ -484,6 +502,15 @@ export default async function FinanzasPage({
         .filter((row) => getCode(row).startsWith('4') || getCode(row).startsWith('5') || getName(row).includes('resultado'))
         .reduce((acc, row) => acc + getSaldoME(row), 0);
 
+  const empresaLabel = empresas.find((item) => item.value === empresa)?.label || empresa;
+  const empresaMetaResponse = shouldLoadBalancePuc && empresa
+    ? requestedEmpresa && empresa === requestedEmpresa
+      ? requestedEmpresaMetaResponse
+      : await getEmpresaMeta(empresa)
+    : null;
+  const empresaMeta = (empresaMetaResponse?.data || {}) as Record<string, string>;
+  const empresaCodigoEntidad = codigoEntidad || getEmpresaCodigoEntidad(empresaMeta);
+
   const current = { empresa, periodo, mesd, mesh, moneda, cuentad, cuentah, nivel, aux, saldo, section };
   const currentWithSection = {
     empresa,
@@ -499,7 +526,7 @@ export default async function FinanzasPage({
     section,
     practicado_al: practicadoAl,
     recalcular_saldos: recalcularSaldos,
-    codigo_entidad: codigoEntidad,
+    codigo_entidad: empresaCodigoEntidad,
     balance_cuentas_puc: balanceCuentasPuc,
     incluir,
     tipoAsiento,
@@ -575,9 +602,6 @@ export default async function FinanzasPage({
   const integralClientes = ((integralAuxResponse?.clientes || []) as BalanceAuxRow[]);
   const integralProveedores = ((integralAuxResponse?.proveedores || []) as BalanceAuxRow[]);
   const integralWarning = integralAuxResponse?.warning || '';
-  const empresaLabel = empresas.find((item) => item.value === empresa)?.label || empresa;
-  const empresaMetaResponse = shouldLoadBalancePuc && empresa ? await getEmpresaMeta(empresa) : null;
-  const empresaMeta = (empresaMetaResponse?.data || {}) as Record<string, string>;
   const pucPrimaryResponse = shouldLoadBalancePuc && empresa
     ? await getBalanceGeneralPuc({
         empresa,
@@ -592,7 +616,7 @@ export default async function FinanzasPage({
         saldo,
         practicado_al: practicadoAl,
         recalcular_saldos: recalcularSaldos,
-        codigo_entidad: codigoEntidad,
+        codigo_entidad: empresaCodigoEntidad,
         balance_cuentas_puc: balanceCuentasPuc,
       })
     : null;
@@ -816,17 +840,7 @@ export default async function FinanzasPage({
             description="Vista basada en el informe PUC anterior. Cuando la base no soporta la estructura completa, se usa el balance clasico como respaldo."
             showPucMapping={balanceCuentasPuc === 'SI'}
             pucExport={{
-              codigoEntidad: codigoEntidad || String(
-                empresaMeta.codigo_entidad ||
-                empresaMeta.Codigo_Entidad ||
-                empresaMeta.codigo_identidad ||
-                empresaMeta.Codigo_Identidad ||
-                empresaMeta.cod_identidad ||
-                empresaMeta.Cod_Identidad ||
-                empresaMeta.cod_ident ||
-                empresaMeta.Cod_Ident ||
-                '',
-              ).trim(),
+              codigoEntidad: empresaCodigoEntidad,
               periodo,
               mesh,
               esCasaDeBolsa: String(empresaMeta.es_casa_de_bolsa || '').trim().toUpperCase() === 'S',

@@ -6,7 +6,8 @@ const API_BASE = process.env.NEXT_PUBLIC_NODE_API_URL || 'http://localhost:3000/
 
 async function safeFetch<T>(path: string, init?: RequestInit): Promise<T | null> {
   try {
-    const response = await fetch(`${API_BASE}${path}`, {
+    const baseUrl = typeof window === 'undefined' ? API_BASE : '/proxy';
+    const response = await fetch(`${baseUrl}${path}`, {
       ...init,
       headers: {
         'Content-Type': 'application/json',
