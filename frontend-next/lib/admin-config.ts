@@ -12,6 +12,7 @@ const pool = new Pool({
 });
 
 const NODE_API_BASE = process.env.NEXT_PUBLIC_NODE_API_URL || 'http://localhost:3000/api/v1';
+const DEFAULT_GROUPS = ['Admin', 'Finanzas', 'Ventas', 'Compras', 'Stock', 'Migraciones', 'Configuracion'];
 
 export type DbType = 'postgres' | 'integrado' | 'sueldo';
 export type DbEngine = 'postgres' | 'sqlanywhere';
@@ -146,14 +147,18 @@ function normalizeProfile(value: unknown, engine: DbEngine): EngineProfile {
 }
 
 async function fetchNodeJson(path: string, init?: RequestInit) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+
   const response = await fetch(`${NODE_API_BASE}${path}`, {
     ...init,
+    signal: init?.signal || controller.signal,
     headers: {
       'Content-Type': 'application/json',
       ...(init?.headers || {}),
     },
     cache: 'no-store',
-  });
+  }).finally(() => clearTimeout(timeout));
 
   const data = (await response.json().catch(() => ({}))) as Record<string, unknown>;
   return { ok: response.ok, status: response.status, data };
@@ -191,6 +196,8 @@ function normalizeDbRow(row: Record<string, unknown>): DbConfigRecord {
 }
 
 export async function loadDbConfigs(): Promise<DbConfigRecord[]> {
+  await ensureDefaultDbConfigs();
+
   const result = await pool.query<Record<string, unknown>>(
     `
       SELECT db_type, db_engine, host, port, server, database, username, password, disabled, updated_at, engine_settings
@@ -719,6 +726,8 @@ function encodePbkdf2Sha256(rawPassword: string) {
 }
 
 export async function loadGroupsForAdmin(): Promise<AdminGroupRecord[]> {
+  await ensureDefaultGroups();
+
   const result = await pool.query<Record<string, unknown>>(
     `
       SELECT id, name
@@ -734,6 +743,8 @@ export async function loadGroupsForAdmin(): Promise<AdminGroupRecord[]> {
 }
 
 export async function loadGroupsDetailed(): Promise<AdminGroupDetail[]> {
+  await ensureDefaultGroups();
+
   const result = await pool.query<Record<string, unknown>>(
     `
       SELECT
@@ -1000,6 +1011,91 @@ export async function saveOwnAdminProfile(
   return loadUserDetailedById(actorUserId);
 }
 
+async function ensureDefaultGroups() {
+  for (const name of DEFAULT_GROUPS) {
+    await pool.query(
+      `
+        INSERT INTO auth_group (name)
+        SELECT $1
+        WHERE NOT EXISTS (
+          SELECT 1 FROM auth_group WHERE LOWER(name) = LOWER($1)
+        )
+      `,
+      [name],
+    );
+  }
+}
+
+async function ensureDefaultDbConfigs() {
+  const defaults: Array<{ dbType: DbType; dbEngine: DbEngine; profile: EngineProfile }> = [
+    {
+      dbType: 'postgres',
+      dbEngine: 'postgres',
+      profile: {
+        host: process.env.AUTH_DB_HOST || 'localhost',
+        port: Number(process.env.AUTH_DB_PORT || 5432),
+        server: '',
+        database: process.env.AUTH_DB_NAME || 'multisoft_informes',
+        username: process.env.AUTH_DB_USER || 'multisoft_user',
+        password: process.env.AUTH_DB_PASSWORD || '',
+      },
+    },
+    {
+      dbType: 'integrado',
+      dbEngine: 'sqlanywhere',
+      profile: {
+        host: '',
+        port: 2638,
+        server: '',
+        database: '',
+        username: 'dba',
+        password: '',
+      },
+    },
+    {
+      dbType: 'sueldo',
+      dbEngine: 'sqlanywhere',
+      profile: {
+        host: '',
+        port: 2638,
+        server: '',
+        database: '',
+        username: 'dba',
+        password: '',
+      },
+    },
+  ];
+
+  for (const item of defaults) {
+    const engineSettings = {
+      postgres: item.dbEngine === 'postgres' ? item.profile : emptyProfile('postgres'),
+      sqlanywhere: item.dbEngine === 'sqlanywhere' ? item.profile : emptyProfile('sqlanywhere'),
+    };
+
+    await pool.query(
+      `
+        INSERT INTO custom_permissions_dbconfig
+          (db_type, db_engine, host, port, server, database, username, password, disabled, engine_settings, updated_at)
+        SELECT $1, $2, $3, $4, $5, $6, $7, $8, FALSE, $9, NOW()
+        WHERE NOT EXISTS (
+          SELECT 1 FROM custom_permissions_dbconfig WHERE db_type = $1
+        )
+      `,
+      [
+        item.dbType,
+        item.dbEngine,
+        item.profile.host,
+        item.profile.port,
+        item.profile.server,
+        item.profile.database,
+        item.profile.username,
+        item.profile.password,
+        JSON.stringify(engineSettings),
+      ],
+    );
+  }
+}
+
 export async function saveAdminGroup(input: { id?: number; name: string }) {
   const name = String(input.name || '').trim();
   if (!name) {
@@ -1046,4 +1142,56 @@ export async function saveAdminGroup(input: { id?: number; name: string }) {
 
   const groups = await loadGroupsDetailed();
   return groups.find((group) => group.id === groupId) || null;
+}
+
+export async function deleteAdminUser(input: { actorUserId: number; userId: number }) {
+  const actorUserId = Number(input.actorUserId || 0);
+  const userId = Number(input.userId || 0);
+
+  if (!actorUserId || !userId) {
+    throw new Error('Usuario invalido.');
+  }
+
+  if (actorUserId === userId) {
+    throw new Error('No puedes eliminar tu propio usuario conectado.');
+  }
+
+  const targetResult = await pool.query<{ id: number; username: string; is_superuser: boolean }>(
+    `
+      SELECT id, username, is_superuser
+      FROM auth_user
+      WHERE id = $1
+      LIMIT 1
+    `,
+    [userId],
+  );
+
+  const target = targetResult.rows[0];
+  if (!target) {
+    throw new Error('No se encontro el usuario a eliminar.');
+  }
+
+  if (target.is_superuser) {
+    const superusers = await pool.query<{ count: string }>(
+      `
+        SELECT COUNT(*) AS count
+        FROM auth_user
+        WHERE is_superuser = TRUE
+          AND is_active = TRUE
+          AND id <> $1
+      `,
+      [userId],
+    );
+
+    if (Number(superusers.rows[0]?.count || 0) === 0) {
+      throw new Error('No puedes eliminar el ultimo administrador activo.');
+    }
+  }
+
+  await pool.query('DELETE FROM custom_permissions_usuarioempresa WHERE user_id = $1', [userId]);
+  await pool.query('DELETE FROM auth_user_groups WHERE user_id = $1', [userId]);
+  await pool.query('DELETE FROM auth_user_user_permissions WHERE user_id = $1', [userId]);
+  await pool.query('DELETE FROM auth_user WHERE id = $1', [userId]);
+
+  return loadUsersDetailed();
 }

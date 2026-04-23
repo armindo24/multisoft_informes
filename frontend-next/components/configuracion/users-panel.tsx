@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus, Save, UserPlus } from 'lucide-react';
+import { Plus, Save, Trash2, UserPlus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { SessionUser } from '@/lib/auth';
 
@@ -68,6 +68,7 @@ export function UsersPanel({ currentUser }: UsersPanelProps) {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [permissions, setPermissions] = useState({
     canManageAllUsers: false,
@@ -208,6 +209,64 @@ export function UsersPanel({ currentUser }: UsersPanelProps) {
     setSaving(false);
   }
 
+  async function deleteSelectedUser() {
+    if (!selectedUser || !permissions.canManageAllUsers) return;
+    if (selectedUser.id === permissions.currentUserId) {
+      setMessage({ type: 'error', text: 'No puedes eliminar tu propio usuario conectado.' });
+      return;
+    }
+
+    const confirmed = window.confirm(`Eliminar el usuario "${selectedUser.username}"? Esta accion no se puede deshacer.`);
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setMessage(null);
+
+    const response = await fetch('/api/config/users', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: selectedUser.id }),
+    });
+
+    const payload = (await response.json().catch(() => ({}))) as {
+      ok?: boolean;
+      data?: {
+        users?: AdminUserDetail[];
+        groups?: AdminGroupRecord[];
+        permissions?: Payload['permissions'];
+      };
+      message?: string;
+    };
+
+    if (!response.ok || !payload.ok || !payload.data?.users || !payload.data?.groups) {
+      setMessage({ type: 'error', text: payload.message || 'No se pudo eliminar el usuario.' });
+      setDeleting(false);
+      return;
+    }
+
+    setUsers(payload.data.users);
+    setGroups(payload.data.groups);
+    if (payload.data.permissions) {
+      setPermissions({
+        canManageAllUsers: Boolean(payload.data.permissions.canManageAllUsers),
+        canCreateUsers: Boolean(payload.data.permissions.canCreateUsers),
+        canEditPermissions: Boolean(payload.data.permissions.canEditPermissions),
+        currentUserId: payload.data.permissions.currentUserId || currentUser?.id,
+      });
+    }
+
+    if (payload.data.users[0]) {
+      setSelectedUserId(payload.data.users[0].id);
+      selectUser(payload.data.users[0], payload.data.groups);
+    } else {
+      setSelectedUserId('new');
+      setForm(emptyForm);
+    }
+
+    setMessage({ type: 'success', text: 'Usuario eliminado correctamente.' });
+    setDeleting(false);
+  }
+
   return (
     <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
       <div className="space-y-4">
@@ -316,6 +375,18 @@ export function UsersPanel({ currentUser }: UsersPanelProps) {
             <Save className="h-4 w-4" />
             {saving ? 'Guardando...' : selectedUser ? 'Guardar cambios' : 'Crear usuario'}
           </button>
+
+          {selectedUser && permissions.canManageAllUsers && selectedUser.id !== permissions.currentUserId ? (
+            <button
+              type="button"
+              onClick={() => void deleteSelectedUser()}
+              disabled={deleting || saving}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-800 transition hover:bg-rose-100 disabled:opacity-60"
+            >
+              <Trash2 className="h-4 w-4" />
+              {deleting ? 'Eliminando...' : 'Eliminar usuario'}
+            </button>
+          ) : null}
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -381,6 +452,16 @@ export function UsersPanel({ currentUser }: UsersPanelProps) {
           <button type="button" onClick={() => void save()} disabled={saving} className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60">
             {saving ? 'Guardando...' : selectedUser ? 'Guardar cambios' : 'Crear usuario'}
           </button>
+          {selectedUser ? (
+            <button
+              type="button"
+              onClick={() => void deleteSelectedUser()}
+              disabled={deleting || saving || !permissions.canManageAllUsers || selectedUser.id === permissions.currentUserId}
+              className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {deleting ? 'Eliminando...' : 'Eliminar usuario'}
+            </button>
+          ) : null}
           {selectedUser ? (
             <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-600">
               Alta: {selectedUser.dateJoined ? new Date(selectedUser.dateJoined).toLocaleString('es-PY') : '-'}
