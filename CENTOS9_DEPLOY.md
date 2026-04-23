@@ -224,6 +224,23 @@ npm run build
 sudo systemctl restart multisoft-next
 ```
 
+El servicio de Next necesita variables `AUTH_DB_*` para validar el login contra PostgreSQL. Revisa `/etc/systemd/system/multisoft-next.service` y confirma:
+
+```ini
+Environment=AUTH_DB_HOST=localhost
+Environment=AUTH_DB_PORT=5432
+Environment=AUTH_DB_NAME=multisoft_informes
+Environment=AUTH_DB_USER=multisoft_user
+Environment=AUTH_DB_PASSWORD=Socio123!
+```
+
+Si cambias estos valores:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart multisoft-next
+```
+
 ## 14. Update del sistema
 
 Si actualizas codigo:

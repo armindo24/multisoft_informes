@@ -1,4 +1,7 @@
 DJANGO_SECRET_KEY=replace-with-a-secure-secret-key
+DB_NAME=multisoft_informes
 DB_USER=replace-with-db-user
 DB_PASSWORD=replace-with-db-password
+DB_HOST=localhost
+DB_PORT=5432
 REDIS_SOCK=/var/run/redis/redis.sock
