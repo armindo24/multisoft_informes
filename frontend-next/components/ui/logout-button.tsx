@@ -2,12 +2,12 @@
 
 import { LogOut } from 'lucide-react';
 
-const LOGIN_URL = 'http://10.0.0.22:3001/login';
+const LOGIN_PATH = '/login';
 
 export function LogoutButton() {
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
-    window.location.assign(LOGIN_URL);
+    window.location.assign(LOGIN_PATH);
   }
 
   return (
