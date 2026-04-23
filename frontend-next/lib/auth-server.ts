@@ -7,6 +7,7 @@ import { AUTH_COOKIE, SessionUser } from '@/lib/auth';
 type StoredSessionUser = SessionUser & {
   isSuperuser?: boolean;
   groups?: string[];
+  sessionKey?: string;
 };
 
 export async function getSessionUser(): Promise<StoredSessionUser | null> {
@@ -34,6 +35,7 @@ export async function getSessionUser(): Promise<StoredSessionUser | null> {
       groups: Array.isArray(parsed.groups)
         ? parsed.groups.map((item) => String(item || '').trim()).filter(Boolean)
         : [],
+      sessionKey: String(parsed.sessionKey || '').trim() || undefined,
     };
   } catch {
     return null;

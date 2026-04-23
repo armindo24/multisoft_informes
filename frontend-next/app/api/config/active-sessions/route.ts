@@ -1,10 +1,16 @@
 import { NextResponse } from 'next/server';
 import { closeUserSessions, loadActiveSessions } from '@/lib/admin-config';
+import { getSessionUser } from '@/lib/auth-server';
 
 export const runtime = 'nodejs';
 
 export async function GET() {
   try {
+    const sessionUser = await getSessionUser();
+    if (!sessionUser?.isSuperuser) {
+      return NextResponse.json({ ok: false, message: 'No tienes permiso para ver usuarios conectados.' }, { status: 403 });
+    }
+
     const data = await loadActiveSessions();
     return NextResponse.json({ ok: true, data });
   } catch (error) {
@@ -15,6 +21,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const sessionUser = await getSessionUser();
+    if (!sessionUser?.isSuperuser) {
+      return NextResponse.json({ ok: false, message: 'No tienes permiso para cerrar sesiones.' }, { status: 403 });
+    }
+
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
     const userId = Number(body.userId || 0);
     if (!userId) {

@@ -5,23 +5,59 @@ import {
   loadUsersForAdmin,
   saveUserCompanyAssignments,
 } from '@/lib/admin-config';
+import { getSessionUser } from '@/lib/auth-server';
 
 export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
   try {
+    const sessionUser = await getSessionUser();
+    if (!sessionUser?.id) {
+      return NextResponse.json({ ok: false, message: 'Sesion expirada. Vuelve a ingresar.' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const requestedUserId = Number(searchParams.get('userId') || 0);
 
-    const [users, options] = await Promise.all([
-      loadUsersForAdmin(),
-      loadCompanyAccessOptions(),
-    ]);
+    const [allUsers, allOptions] = await Promise.all([loadUsersForAdmin(), loadCompanyAccessOptions()]);
 
+    if (!sessionUser.isSuperuser) {
+      const ownUser = allUsers.filter((user) => user.id === sessionUser.id);
+      const assignments = await loadUserCompanyAssignments(sessionUser.id);
+      const assignedKeys = new Set(assignments.map((item) => `${item.empresa}-${item.db}`));
+      const options = allOptions.filter((item) => assignedKeys.has(item.key));
+
+      return NextResponse.json({
+        ok: true,
+        data: {
+          users: ownUser,
+          options,
+          assignments,
+          permissions: {
+            canManageAssignments: false,
+            currentUserId: sessionUser.id,
+          },
+        },
+      });
+    }
+
+    const users = allUsers;
+    const options = allOptions;
     const resolvedUserId = requestedUserId || users[0]?.id || 0;
     const assignments = resolvedUserId ? await loadUserCompanyAssignments(resolvedUserId) : [];
 
-    return NextResponse.json({ ok: true, data: { users, options, assignments } });
+    return NextResponse.json({
+      ok: true,
+      data: {
+        users,
+        options,
+        assignments,
+        permissions: {
+          canManageAssignments: true,
+          currentUserId: sessionUser.id,
+        },
+      },
+    });
   } catch (error) {
     console.error('User company load error:', error);
     return NextResponse.json({ ok: false, message: 'No se pudo cargar la asignacion de empresas.' }, { status: 500 });
@@ -30,6 +66,15 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const sessionUser = await getSessionUser();
+    if (!sessionUser?.id) {
+      return NextResponse.json({ ok: false, message: 'Sesion expirada. Vuelve a ingresar.' }, { status: 401 });
+    }
+
+    if (!sessionUser.isSuperuser) {
+      return NextResponse.json({ ok: false, message: 'No tienes permiso para asignar empresas a usuarios.' }, { status: 403 });
+    }
+
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
     const userId = Number(body.userId || 0);
     if (!userId) {

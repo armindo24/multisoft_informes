@@ -26,6 +26,10 @@ type LoadPayload = {
   users: AdminUserRecord[];
   options: CompanyAccessOption[];
   assignments: UserCompanyAssignment[];
+  permissions?: {
+    canManageAssignments: boolean;
+    currentUserId: number;
+  };
 };
 
 function assignmentKey(item: UserCompanyAssignment) {
@@ -44,6 +48,7 @@ export function UserCompanyPanel() {
   const [saving, setSaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [canManageAssignments, setCanManageAssignments] = useState(false);
 
   const selectedUser = users.find((user) => user.id === selectedUserId) || null;
 
@@ -67,6 +72,7 @@ export function UserCompanyPanel() {
 
       setUsers(payload.data.users);
       setOptions(payload.data.options);
+      setCanManageAssignments(Boolean(payload.data.permissions?.canManageAssignments));
 
       const firstUserId = payload.data.users[0]?.id || 0;
       setSelectedUserId(firstUserId);
@@ -99,6 +105,7 @@ export function UserCompanyPanel() {
     }
 
     const nextAssignments = payload.data.assignments.map(assignmentKey);
+    setCanManageAssignments(Boolean(payload.data.permissions?.canManageAssignments));
     setSelectedValues(nextAssignments);
     setAssignmentCache((current) => ({ ...current, [userId]: nextAssignments }));
     setLoadingAssignments(false);
@@ -131,6 +138,8 @@ export function UserCompanyPanel() {
   ), [options, selectedValues]);
 
   function toggleValue(value: string) {
+    if (!canManageAssignments) return;
+
     setSelectedValues((current) => (
       current.includes(value)
         ? current.filter((item) => item !== value)
@@ -141,6 +150,11 @@ export function UserCompanyPanel() {
   async function handleSave() {
     if (!selectedUserId) {
       setMessage({ type: 'error', text: 'Seleccione un usuario.' });
+      return;
+    }
+
+    if (!canManageAssignments) {
+      setMessage({ type: 'error', text: 'No tienes permiso para modificar asignaciones de empresas.' });
       return;
     }
 
@@ -200,7 +214,9 @@ export function UserCompanyPanel() {
                 {selectedUser ? `Empresas para ${selectedUser.username}` : 'Asignacion de empresas'}
               </h3>
               <p className="mt-1 text-sm text-slate-600">
-                Selecciona un usuario y arma una nueva combinacion de empresas habilitadas por sistema.
+                {canManageAssignments
+                  ? 'Selecciona un usuario y arma una nueva combinacion de empresas habilitadas por sistema.'
+                  : 'Estas viendo solo tus empresas habilitadas. La asignacion la administra un usuario con permiso total.'}
               </p>
             </div>
 
@@ -208,6 +224,7 @@ export function UserCompanyPanel() {
               <button
                 type="button"
                 onClick={resetAssignmentSelection}
+                disabled={!canManageAssignments}
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-white px-4 py-2.5 text-sm font-medium text-cyan-800 transition hover:bg-cyan-50"
               >
                 <RefreshCcw className="h-4 w-4" />
@@ -216,7 +233,7 @@ export function UserCompanyPanel() {
               <button
                 type="button"
                 onClick={() => void handleSave()}
-                disabled={saving}
+                disabled={saving || !canManageAssignments}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-cyan-700 disabled:opacity-60"
               >
                 <Save className="h-4 w-4" />
@@ -250,6 +267,7 @@ export function UserCompanyPanel() {
                   void loadAssignments(userId);
                 }
               }}
+              disabled={!canManageAssignments}
               className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2"
             >
               {users.map((user) => (
@@ -277,7 +295,7 @@ export function UserCompanyPanel() {
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
               >
                 <Building2 className="h-4 w-4" />
-                Elegir empresas
+                {canManageAssignments ? 'Elegir empresas' : 'Ver empresas'}
               </button>
             </div>
 
@@ -295,10 +313,10 @@ export function UserCompanyPanel() {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={() => setSelectedValues([])} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700">
+            <button type="button" onClick={() => setSelectedValues([])} disabled={!canManageAssignments} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 disabled:opacity-60">
               Limpiar seleccion
             </button>
-            <button type="button" onClick={() => void handleSave()} disabled={saving} className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60">
+            <button type="button" onClick={() => void handleSave()} disabled={saving || !canManageAssignments} className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60">
               {saving ? 'Guardando...' : 'Guardar asignacion'}
             </button>
           </div>
@@ -355,7 +373,7 @@ export function UserCompanyPanel() {
 
                           return (
                             <label key={option.key} className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700">
-                              <input type="checkbox" checked={checked} onChange={() => toggleValue(option.key)} className="mt-1" />
+                              <input type="checkbox" checked={checked} onChange={() => toggleValue(option.key)} disabled={!canManageAssignments} className="mt-1" />
                               <span>{option.label}</span>
                             </label>
                           );
@@ -380,7 +398,7 @@ export function UserCompanyPanel() {
                 onClick={() => setPickerOpen(false)}
                 className="rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-cyan-700"
               >
-                Confirmar seleccion
+                {canManageAssignments ? 'Confirmar seleccion' : 'Cerrar vista'}
               </button>
             </div>
           </div>

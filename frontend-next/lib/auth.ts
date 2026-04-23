@@ -7,6 +7,7 @@ export type SessionUser = {
   displayName: string;
   isSuperuser?: boolean;
   groups?: string[];
+  sessionKey?: string;
 };
 
 export function getDefaultUser(): SessionUser {

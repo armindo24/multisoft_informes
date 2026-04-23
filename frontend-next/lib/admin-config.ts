@@ -114,6 +114,14 @@ export type AdminUserDetail = {
   groups: number[];
 };
 
+export type NextSessionInput = {
+  sessionKey: string;
+  userId: number;
+  ipAddress?: string;
+  userAgent?: string;
+  expiresAt?: Date;
+};
+
 function defaultPort(engine: DbEngine) {
   return engine === 'postgres' ? 5432 : 2638;
 }
@@ -162,6 +170,64 @@ async function fetchNodeJson(path: string, init?: RequestInit) {
 
   const data = (await response.json().catch(() => ({}))) as Record<string, unknown>;
   return { ok: response.ok, status: response.status, data };
+}
+
+async function ensureNextSessionTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS custom_permissions_nextsession (
+      session_key VARCHAR(128) PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES auth_user(id) ON DELETE CASCADE,
+      ip_address VARCHAR(64) NOT NULL DEFAULT '',
+      user_agent TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+      last_activity TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+      expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+    )
+  `);
+}
+
+export function createNextSessionKey() {
+  return randomBytes(32).toString('hex');
+}
+
+export async function registerNextSession(input: NextSessionInput) {
+  await ensureNextSessionTable();
+
+  await pool.query(
+    `
+      INSERT INTO custom_permissions_nextsession (session_key, user_id, ip_address, user_agent, expires_at)
+      VALUES ($1, $2, $3, $4, $5)
+      ON CONFLICT (session_key) DO UPDATE
+      SET user_id = EXCLUDED.user_id,
+          ip_address = EXCLUDED.ip_address,
+          user_agent = EXCLUDED.user_agent,
+          last_activity = NOW(),
+          expires_at = EXCLUDED.expires_at
+    `,
+    [
+      input.sessionKey,
+      input.userId,
+      String(input.ipAddress || '').slice(0, 64),
+      String(input.userAgent || '').slice(0, 500),
+      input.expiresAt || new Date(Date.now() + 12 * 60 * 60 * 1000),
+    ],
+  );
+}
+
+export async function touchNextSession(sessionKey?: string) {
+  const key = String(sessionKey || '').trim();
+  if (!key) return;
+
+  await ensureNextSessionTable();
+  await pool.query('UPDATE custom_permissions_nextsession SET last_activity = NOW() WHERE session_key = $1', [key]);
+}
+
+export async function closeNextSession(sessionKey?: string) {
+  const key = String(sessionKey || '').trim();
+  if (!key) return;
+
+  await ensureNextSessionTable();
+  await pool.query('DELETE FROM custom_permissions_nextsession WHERE session_key = $1', [key]);
 }
 
 function normalizeDbRow(row: Record<string, unknown>): DbConfigRecord {
@@ -615,46 +681,86 @@ function decodeDjangoSession(value: string): Record<string, unknown> {
 }
 
 export async function loadActiveSessions(): Promise<{ rows: ActiveSessionRecord[]; totalUsers: number; totalSessions: number }> {
-  const result = await pool.query<Record<string, unknown>>(
+  await ensureNextSessionTable();
+
+  const aggregated = new Map<number, ActiveSessionRecord>();
+  let totalSessions = 0;
+
+  const addSession = (input: {
+    userId: number;
+    expires?: unknown;
+    lastActivity?: unknown;
+    ipAddress?: unknown;
+    userAgent?: unknown;
+  }) => {
+    const userId = Number(input.userId || 0);
+    if (!userId) return;
+
+    totalSessions += 1;
+    const current = aggregated.get(userId) || {
+      id: userId,
+      username: '',
+      fullName: '',
+      email: '',
+      sessions: 0,
+      expires: null,
+      lastActivity: '',
+      ipAddress: '',
+      userAgent: '',
+    };
+
+    current.sessions += 1;
+    current.expires = input.expires ? String(input.expires) : current.expires;
+    current.lastActivity = input.lastActivity ? String(input.lastActivity) : current.lastActivity;
+    current.ipAddress = input.ipAddress ? String(input.ipAddress) : current.ipAddress;
+    current.userAgent = input.userAgent ? String(input.userAgent) : current.userAgent;
+    aggregated.set(userId, current);
+  };
+
+  const djangoResult = await pool.query<Record<string, unknown>>(
     `
       SELECT session_key, session_data, expire_date
       FROM django_session
       WHERE expire_date > NOW()
       ORDER BY expire_date DESC
     `,
-  );
+  ).catch(() => ({ rows: [] as Record<string, unknown>[] }));
 
-  const aggregated = new Map<number, ActiveSessionRecord>();
-  let totalSessions = 0;
-
-  for (const row of result.rows) {
+  for (const row of djangoResult.rows) {
     try {
       const decoded = decodeDjangoSession(String(row.session_data || ''));
       const userId = Number(decoded._auth_user_id || 0);
-      if (!userId) continue;
-
-      totalSessions += 1;
-      const current = aggregated.get(userId) || {
-        id: userId,
-        username: '',
-        fullName: '',
-        email: '',
-        sessions: 0,
-        expires: null,
-        lastActivity: '',
-        ipAddress: '',
-        userAgent: '',
-      };
-
-      current.sessions += 1;
-      current.expires = row.expire_date ? String(row.expire_date) : current.expires;
-      current.lastActivity = String(decoded.last_activity || current.lastActivity || '');
-      current.ipAddress = String(decoded.ip_address || current.ipAddress || '');
-      current.userAgent = String(decoded.user_agent || current.userAgent || '');
-      aggregated.set(userId, current);
+      addSession({
+        userId,
+        expires: row.expire_date,
+        lastActivity: decoded.last_activity,
+        ipAddress: decoded.ip_address,
+        userAgent: decoded.user_agent,
+      });
     } catch {
       continue;
     }
+  }
+
+  await pool.query('DELETE FROM custom_permissions_nextsession WHERE expires_at <= NOW()');
+
+  const nextResult = await pool.query<Record<string, unknown>>(
+    `
+      SELECT session_key, user_id, ip_address, user_agent, last_activity, expires_at
+      FROM custom_permissions_nextsession
+      WHERE expires_at > NOW()
+      ORDER BY last_activity DESC
+    `,
+  );
+
+  for (const row of nextResult.rows) {
+    addSession({
+      userId: Number(row.user_id || 0),
+      expires: row.expires_at,
+      lastActivity: row.last_activity,
+      ipAddress: row.ip_address,
+      userAgent: row.user_agent,
+    });
   }
 
   const userIds = Array.from(aggregated.keys());
@@ -690,6 +796,8 @@ export async function loadActiveSessions(): Promise<{ rows: ActiveSessionRecord[
 }
 
 export async function closeUserSessions(userId: number) {
+  await ensureNextSessionTable();
+
   const result = await pool.query<Record<string, unknown>>(
     `
       SELECT session_key, session_data
@@ -714,6 +822,8 @@ export async function closeUserSessions(userId: number) {
   if (keysToDelete.length > 0) {
     await pool.query('DELETE FROM django_session WHERE session_key = ANY($1::text[])', [keysToDelete]);
   }
+
+  await pool.query('DELETE FROM custom_permissions_nextsession WHERE user_id = $1', [userId]);
 
   return loadActiveSessions();
 }
