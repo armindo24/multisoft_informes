@@ -3,6 +3,7 @@
 import { FileDown, FileSpreadsheet } from 'lucide-react';
 import { useMemo } from 'react';
 import { downloadBlob, exportRowsToExcel, exportRowsToPdf } from '@/components/ui/export-utils';
+import type { ExportMetaItem } from '@/components/ui/export-utils';
 import { BalanceRow } from '@/types/finanzas';
 
 function num(value: unknown) {
@@ -53,6 +54,7 @@ export function BalanceTable({
   description = 'Vista completa con jerarquia de cuentas y saldos, mas cercana al informe historico.',
   pucExport,
   showPucMapping = false,
+  exportMeta,
 }: {
   rows: BalanceRow[];
   result?: number;
@@ -68,6 +70,7 @@ export function BalanceTable({
     ruc?: string;
   };
   showPucMapping?: boolean;
+  exportMeta?: ExportMetaItem[];
 }) {
   const isBoth = moneda === 'ambas';
 
@@ -127,6 +130,7 @@ export function BalanceTable({
       filename: 'balance-general',
       headers: data.headers,
       rows: data.rows,
+      meta: exportMeta,
     });
   }
 
@@ -137,6 +141,7 @@ export function BalanceTable({
       subtitle: description,
       headers: data.headers,
       rows: data.rows,
+      meta: exportMeta,
     });
   }
 

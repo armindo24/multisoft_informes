@@ -1,5 +1,6 @@
 import { KpiCard } from '@/components/ui/kpi-card';
 import { PageHeader } from '@/components/ui/page-header';
+import { ReportContextCard } from '@/components/ui/report-context-card';
 import { BalanceComprobadoTable } from '@/components/finanzas/balance-comprobado-table';
 import { DiarioComprobadoPanel } from '@/components/finanzas/diario-comprobado-panel';
 import { BalanceIntegralPanel } from '@/components/finanzas/balance-integral-panel';
@@ -11,6 +12,7 @@ import { FinanceFilters } from '@/components/finanzas/finance-filters';
 import { PayablesKpiAsync, PayablesTableAsync } from '@/components/finanzas/payables-async';
 import { getBalanceComprobado, getBalanceGeneral, getBalanceGeneralPuc, getBalanceIntegralAuxiliares, getCuentaAuxSelect, getCuentaPlancta, getDiarioComprobado, getEmpresaMeta, getMayorCuentaAuxCab, getMayorCuentaCab, getTipoAsientoOptions } from '@/lib/api';
 import { getScopedEmpresas } from '@/lib/empresas-server';
+import { getSessionUser } from '@/lib/auth-server';
 import { AccountPlanOption, AuxiliarOption, BalanceAuxRow, BalanceRow, DiarioRow, SelectOption } from '@/types/finanzas';
 
 function currentYear() {
@@ -312,6 +314,7 @@ export default async function FinanzasPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = (await searchParams) || {};
+  const sessionUser = await getSessionUser();
   const requestedEmpresa = String(params.empresa || '').trim();
   const section = String(params.section || '');
   const hasSubmittedFilters = ['empresa', 'periodo', 'mesd', 'mesh', 'moneda'].some((key) => {
@@ -503,6 +506,15 @@ export default async function FinanzasPage({
         .reduce((acc, row) => acc + getSaldoME(row), 0);
 
   const empresaLabel = empresas.find((item) => item.value === empresa)?.label || empresa;
+  const mesLabel = `${mesd}/${periodo} - ${mesh}/${periodo}`;
+  const monedaLabel = moneda === 'ambas' ? 'Ambas' : moneda === 'extranjera' ? 'Extranjera' : 'Local';
+  const reportMeta = [
+    { label: 'Empresa', value: empresaLabel },
+    { label: 'Periodo', value: periodo },
+    { label: 'Rango', value: mesLabel },
+    { label: 'Moneda', value: monedaLabel },
+    { label: 'Usuario', value: sessionUser?.displayName || sessionUser?.username || 'Usuario' },
+  ];
   const empresaMetaResponse = shouldLoadBalancePuc && empresa
     ? requestedEmpresa && empresa === requestedEmpresa
       ? requestedEmpresaMetaResponse
@@ -748,6 +760,16 @@ export default async function FinanzasPage({
 
       <FinanceFilters empresas={empresas} current={currentWithSection} tipoAsientos={tipoAsientos} accountOptions={cuentaOptions} auxOptions={auxiliarOptions} />
 
+      {empresa ? (
+        <ReportContextCard
+          empresa={empresaLabel}
+          periodo={periodo}
+          rango={mesLabel}
+          moneda={monedaLabel}
+          usuario={sessionUser?.displayName || sessionUser?.username || 'Usuario'}
+        />
+      ) : null}
+
       {!hasSubmittedFilters && empresa ? (
         <div className="rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
           Selecciona los filtros y presiona Aplicar para consultar datos de finanzas. Asi la entrada al modulo es mas rapida.
@@ -822,7 +844,7 @@ export default async function FinanzasPage({
 
       {!isFocusedSection || section === 'balance-general' ? (
         <div id="balance-general" className="scroll-mt-28">
-          <BalanceTable rows={balanceRows} result={resultado} resultME={resultadoME} moneda={moneda} />
+          <BalanceTable rows={balanceRows} result={resultado} resultME={resultadoME} moneda={moneda} exportMeta={reportMeta} />
         </div>
       ) : null}
 
@@ -839,6 +861,7 @@ export default async function FinanzasPage({
             title="Balance general PUC"
             description="Vista basada en el informe PUC anterior. Cuando la base no soporta la estructura completa, se usa el balance clasico como respaldo."
             showPucMapping={balanceCuentasPuc === 'SI'}
+            exportMeta={reportMeta}
             pucExport={{
               codigoEntidad: empresaCodigoEntidad,
               periodo,
