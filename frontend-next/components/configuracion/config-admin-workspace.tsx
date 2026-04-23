@@ -1,6 +1,6 @@
 'use client';
 
-import { ExternalLink, Rocket, Settings2, ShieldCheck, Users, UserSquare2, Database, Mail } from 'lucide-react';
+import { ExternalLink, ShieldCheck, Users, UserSquare2, Database, Mail } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { DbConfigPanel } from '@/components/configuracion/db-config-panel';
 import { EmailConfigPanel } from '@/components/configuracion/email-config-panel';
@@ -141,12 +141,7 @@ export function ConfigAdminWorkspace({ currentUser }: ConfigAdminWorkspaceProps)
               </div>
             </div>
 
-            {activeItem.migrated ? (
-              <div className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-800">
-                <Rocket className="h-4 w-4" />
-                Modulo migrado en Next
-              </div>
-            ) : (
+            {!activeItem.migrated ? (
               <a
                 href={activeItem.legacyHref}
                 className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
@@ -154,19 +149,7 @@ export function ConfigAdminWorkspace({ currentUser }: ConfigAdminWorkspaceProps)
                 <ExternalLink className="h-4 w-4" />
                 {activeItem.legacyLabel}
               </a>
-            )}
-          </div>
-
-          <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-            <div className="flex items-center gap-2 text-slate-800">
-              <Settings2 className="h-4 w-4" />
-              <span className="font-medium">{activeItem.migrated ? 'Panel activo en Next.js' : 'Acceso preparado'}</span>
-            </div>
-            <p className="mt-2 leading-6">
-              {activeItem.migrated
-                ? 'Esta opcion ya funciona dentro del frontend nuevo. El enlace heredado pasa a ser opcional y ya no ocupa el foco principal de la pantalla.'
-                : 'Esta opcion ya responde al hash de la URL y te deja abrir el modulo real heredado mientras seguimos migrando la funcionalidad al frontend nuevo.'}
-            </p>
+            ) : null}
           </div>
 
           {activeItem.id === 'configuracion-base-datos' ? (

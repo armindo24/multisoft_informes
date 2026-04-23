@@ -161,18 +161,18 @@ export default async function StockPage({
   const connectionWarning = !empresa
     ? 'No se encontraron empresas configuradas en el API.'
     : !isCostoArticuloFullMode && !existenciaResponse && !valorizadoResponse
-      ? 'No se pudo consultar el API de stock. Verifica que Node y la base integrada esten levantados.'
+      ? 'No se pudo obtener informacion de stock para este filtro. Intenta nuevamente.'
       : '';
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Modulo migrado"
+        eyebrow="Inventario"
         title={isCostoArticuloFullMode ? 'Costo Articulo Full' : 'Stock'}
         description={
           isCostoArticuloFullMode
-            ? 'Seccion integrada dentro de Stock usando el endpoint real del informe historico para costo articulo full, sin duplicar navegacion dentro de la pantalla.'
-            : 'Esta migracion ya consume endpoints reales del backend actual para existencia por deposito, stock valorizado y catalogos auxiliares. Con esto ya puedes reemplazar la vista antigua por una pantalla mas ejecutiva y mantenible.'
+            ? 'Consulta costos de articulos, materiales y componentes asociados con una vista compacta para analisis operativo.'
+            : 'Consulta existencias, valorizacion y catalogos auxiliares con filtros por empresa, sucursal, deposito y familia.'
         }
       />
 

@@ -23,9 +23,9 @@ export default async function Page() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Modulo operativo"
+        eyebrow="Procesos operativos"
         title="Migraciones"
-        description="El menu de migraciones ahora tambien entra por el frontend de Next.js. Desde aqui puedes elegir Asientos, Ventas o Compras y abrir el proceso heredado correspondiente."
+        description="Ejecuta procesos de validacion y migracion con parametros controlados por empresa, periodo y archivo."
       />
 
       <MigrationsWorkspace

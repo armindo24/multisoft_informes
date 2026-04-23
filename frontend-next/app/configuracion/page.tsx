@@ -8,9 +8,9 @@ export default async function Page() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Modulo administrativo"
+        eyebrow="Administracion"
         title="Configuracion"
-        description="La navegacion ya recupera la estructura historica del menu Admin. Cada opcion responde al hash de la URL y te deja abrir el modulo real heredado mientras seguimos migrando la funcionalidad al frontend nuevo."
+        description="Administra usuarios, grupos, empresas habilitadas, conexiones y parametros de notificacion del sistema."
       />
 
       <ConfigAdminWorkspace currentUser={sessionUser} />

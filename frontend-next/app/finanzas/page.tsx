@@ -539,7 +539,7 @@ export default async function FinanzasPage({
   const connectionWarning = !empresa
     ? 'No se encontraron empresas configuradas en el API.'
     : hasSubmittedFilters && shouldLoadBalance && !effectiveBalanceResponse
-      ? 'No se pudo consultar el API de finanzas. Verifica que Node y la base integrada esten levantados.'
+      ? 'No se pudo obtener informacion financiera para este filtro. Revisa la conexion o intenta nuevamente.'
       : '';
   const fallbackWarning = shouldFallbackToLegacyBalance && shouldMergeClassicBoth && mergedClassicRows.length
       ? 'Se combinaron los balances clasicos en local y extranjera para reconstruir la vista de ambas monedas.'
@@ -741,9 +741,9 @@ export default async function FinanzasPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Modulo migrado"
+        eyebrow="Informes gerenciales"
         title="Finanzas"
-        description="Esta primera version ya conecta balance general, flujo de caja mensual y cuentas por pagar con endpoints reales del backend actual. La pantalla queda lista para seguir creciendo hacia dashboard financiero, extractos y mayor contable."
+        description="Consulta balances, flujo financiero, libros contables y saldos de proveedores con filtros ejecutivos y exportacion de resultados."
       />
 
       <FinanceFilters empresas={empresas} current={currentWithSection} tipoAsientos={tipoAsientos} accountOptions={cuentaOptions} auxOptions={auxiliarOptions} />

@@ -174,9 +174,9 @@ export function DataTable<T extends Record<string, unknown>>({
         <div className="px-5 py-10 text-sm text-slate-500">{emptyMessage}</div>
       ) : (
         <>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
-              <thead className="bg-slate-50 text-left text-slate-600">
+          <div className="max-h-[72vh] overflow-auto">
+            <table className="min-w-[920px] divide-y divide-slate-200 text-sm">
+              <thead className="sticky top-0 z-[1] bg-slate-50 text-left text-slate-600 shadow-[0_1px_0_#e2e8f0]">
                 <tr>
                   {normalizedColumns.map((column) => (
                     <th
@@ -216,7 +216,7 @@ export function DataTable<T extends Record<string, unknown>>({
                       return (
                         <td
                           key={String(column.key)}
-                          className={`px-4 py-3 align-top text-slate-700 ${column.align === 'right' ? 'text-right' : column.align === 'center' ? 'text-center' : 'text-left'} ${column.className || ''}`}
+                          className={`px-4 py-2.5 align-top text-slate-700 ${column.align === 'right' ? 'text-right tabular-nums' : column.align === 'center' ? 'text-center' : 'text-left'} ${column.className || ''}`}
                         >
                           {content}
                         </td>

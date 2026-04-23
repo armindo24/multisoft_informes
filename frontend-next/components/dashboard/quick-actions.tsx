@@ -13,7 +13,7 @@ export function QuickActions() {
   return (
     <section className="card p-5">
       <h2 className="text-lg font-semibold text-slate-900">Acciones rapidas</h2>
-      <p className="mt-1 text-sm text-slate-500">Accesos directos a los modulos ya migrados a Next.js.</p>
+      <p className="mt-1 text-sm text-slate-500">Accesos directos a las consultas principales del sistema.</p>
       <div className="mt-4 grid gap-3 md:grid-cols-2">
         {actions.map((action) => {
           const Icon = action.icon;

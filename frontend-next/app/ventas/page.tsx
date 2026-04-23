@@ -195,22 +195,22 @@ export default async function VentasPage({
     ? 'No se encontraron empresas configuradas en el API.'
     : isStatsMode
       ? hasSubmittedFilters && !statsLoaded
-        ? 'No se pudo consultar el API de estadisticas de ventas. Verifica que Node y la base integrada esten levantados.'
+        ? 'No se pudieron obtener las estadisticas de ventas para este filtro. Intenta nuevamente.'
         : ''
       : isReceivablesMode
         ? hasSubmittedFilters && !cobrarResponse
-          ? 'No se pudo consultar el API de cuentas por cobrar. Verifica que Node y la base integrada esten levantados.'
+          ? 'No se pudieron obtener las cuentas por cobrar para este filtro. Intenta nuevamente.'
           : ''
       : hasSubmittedFilters && !ventasResponse && !cobrarResponse
-      ? 'No se pudo consultar el API de ventas. Verifica que Node y la base integrada esten levantados.'
+      ? 'No se pudieron obtener las ventas para este filtro. Intenta nuevamente.'
       : '';
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Modulo migrado"
+        eyebrow="Gestion comercial"
         title="Ventas"
-        description="Esta primera migracion ya consume endpoints reales del proyecto actual: ventas resumidas, estadisticas y cuentas por cobrar. La idea es reemplazar gradualmente los templates antiguos por vistas mas rapidas y mantenibles."
+        description="Analiza ventas, estadisticas comerciales y cuentas por cobrar con filtros por periodo, cliente, vendedor y sucursal."
       />
 
       <SalesFilters empresas={empresas} sucursales={sucursales} tiposCliente={tiposCliente} vendedores={vendedores} calificaciones={calificaciones} condicionesVenta={condicionesVenta} cobradores={cobradores} zonas={zonas} movimientosCobrar={movimientosCobrar} current={current} showStatsFields={isStatsMode} showReceivablesFields={isReceivablesMode} />

@@ -135,7 +135,7 @@ export function CashflowSummaryAsync({
     return (
       <div className="card p-5">
         <h2 className="text-lg font-semibold text-slate-900">Flujo de caja mensual</h2>
-        <p className="mt-1 text-sm text-slate-500">Cargando resumen financiero en segundo plano para acelerar la navegacion.</p>
+        <p className="mt-1 text-sm text-slate-500">Preparando resumen financiero del periodo seleccionado.</p>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           {Array.from({ length: 4 }).map((_, index) => (
             <div key={index} className="rounded-xl border border-slate-200 p-4">

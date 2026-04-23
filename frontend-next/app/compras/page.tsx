@@ -139,43 +139,43 @@ export default async function ComprasPage({
   const connectionWarning = !empresa
     ? 'No se encontraron empresas configuradas en el API.'
     : isComprasResumenSection && hasSubmittedFilters && !comprasResponse && !ordenesResponse
-      ? 'No se pudo consultar el API de compras. Verifica que Node y la base integrada esten levantados.'
+      ? 'No se pudo obtener informacion de compras para este filtro. Intenta nuevamente.'
       : '';
 
   const sectionMeta: Record<string, { title: string; description: string; eyebrow?: string }> = {
     'compras-resumen': {
       title: 'Compras',
-      description: 'Esta primera migracion ya conecta compras del periodo, ordenes de compra y rankings de proveedores/articulos con endpoints reales del backend actual. La pantalla queda lista para seguir creciendo con presupuesto, gastos y detalle por comprobante.',
-      eyebrow: 'Modulo migrado',
+      description: 'Consulta compras del periodo, ordenes, proveedores y articulos con filtros claros y salidas para analisis.',
+      eyebrow: 'Abastecimiento',
     },
     'orden-compra': {
       title: 'Orden de Compra',
-      description: 'Seccion preparada para migrar el flujo historico de ordenes de compra con una experiencia mas clara y rapida dentro del frontend nuevo.',
+      description: 'Gestion y consulta de ordenes de compra con filtros operativos.',
       eyebrow: 'Modulo abastecimiento',
     },
     'compras-articulo': {
       title: 'Compras por Articulos',
-      description: 'Vista preparada para migrar el informe historico de compras por articulo, manteniendo el mismo acceso desde el menu lateral.',
+      description: 'Analisis de compras por articulo, proveedor y periodo.',
       eyebrow: 'Modulo abastecimiento',
     },
     'cuentas-pagar': {
       title: 'Cuentas por Pagar',
-      description: 'Seccion reservada para la migracion del informe de saldos de proveedores y cuentas por pagar del sistema anterior.',
+      description: 'Consulta de saldos pendientes de proveedores y documentos por pagar.',
       eyebrow: 'Modulo abastecimiento',
     },
     'fondo-fijo': {
       title: 'Fondo Fijo',
-      description: 'Seccion preparada para la migracion del flujo historico de fondo fijo y sus filtros operativos.',
+      description: 'Seguimiento de fondo fijo y rendiciones operativas.',
       eyebrow: 'Caja chica',
     },
     'gastos-rendir': {
       title: 'Gastos por Rendir',
-      description: 'Seccion preparada para migrar el informe de gastos por rendir con una interfaz mas ordenada y mantenible.',
+      description: 'Control de gastos pendientes de rendicion.',
       eyebrow: 'Caja chica',
     },
     'estadisticas-compras': {
       title: 'Estadisticas de Compras',
-      description: 'Seccion lista para migrar los analisis historicos de compras por proveedor y articulo dentro del frontend nuevo.',
+      description: 'Indicadores y rankings para evaluar el comportamiento de compras.',
       eyebrow: 'Analitica',
     },
   };
@@ -184,7 +184,7 @@ export default async function ComprasPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow={currentSectionMeta.eyebrow || 'Modulo migrado'}
+        eyebrow={currentSectionMeta.eyebrow || 'Abastecimiento'}
         title={currentSectionMeta.title}
         description={currentSectionMeta.description}
       />

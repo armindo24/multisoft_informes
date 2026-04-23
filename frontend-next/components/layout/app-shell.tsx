@@ -47,10 +47,10 @@ function canAccessItem(item: NavigationItem, user: SessionUser | null) {
 }
 
 function profileSubtitle(user: SessionUser | null) {
-  if (!user) return 'Sin sesión';
+  if (!user) return 'Sin sesion';
   if (user.isSuperuser) return 'Administrador total';
   if (user.groups?.length) return user.groups.join(' · ');
-  return 'Perfil básico';
+  return 'Perfil basico';
 }
 
 function isStandaloneAllowedPath(pathname: string) {
@@ -178,13 +178,13 @@ export function AppShell({
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)]">
       <div className="grid min-h-screen lg:grid-cols-[300px_minmax(0,1fr)]">
-        <aside className="border-r border-slate-800 bg-slate-950 text-slate-100">
+        <aside className="hidden border-r border-slate-800 bg-slate-950 text-slate-100 lg:block">
           <div className="sticky top-0 flex h-screen flex-col overflow-y-auto px-3 py-4">
             <div className="px-2 pb-5">
               <p className="text-xs uppercase tracking-[0.35em] text-cyan-300/70">Multisoft</p>
               <h1 className="mt-3 text-[2rem] font-black leading-tight text-white">Informes Gerenciales</h1>
               <p className="mt-3 max-w-[18rem] text-sm leading-6 text-slate-400">
-                Navegación renovada por módulos con accesos rápidos y secciones listas para migración gradual.
+                Acceso ejecutivo a informes, indicadores y consultas operativas.
               </p>
             </div>
 
@@ -256,7 +256,7 @@ export function AppShell({
                                       >
                                         <span>{subItem.label}</span>
                                         <span className="rounded-full border border-slate-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-                                          Próximo
+                                          Proximo
                                         </span>
                                       </div>
                                     ) : (
@@ -285,7 +285,7 @@ export function AppShell({
               <p className="text-sm font-semibold text-white">Acceso actual</p>
               <p className="mt-2 leading-6">
                 {user?.groups?.length
-                  ? `Módulos habilitados: ${user.groups.join(', ')}`
+                  ? `Modulos habilitados: ${user.groups.join(', ')}`
                   : 'No hay grupos asignados para este usuario.'}
               </p>
             </div>
@@ -294,12 +294,40 @@ export function AppShell({
 
         <div className="flex min-h-screen flex-col">
           <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur-xl">
-            <div className="flex flex-col gap-4 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center gap-3 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500 lg:min-w-[370px]">
-                <Search className="h-4 w-4" />
-                <span>Buscar cliente, artículo, comprobante o proveedor</span>
+            <div className="flex flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center justify-between gap-3 lg:hidden">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-700">Multisoft</p>
+                  <p className="text-lg font-black text-slate-950">Informes Gerenciales</p>
+                </div>
+                <LogoutButton />
               </div>
-              <div className="flex items-center gap-3">
+
+              <div className="flex gap-2 overflow-x-auto pb-1 lg:hidden">
+                {visibleNavigation.map((item) => {
+                  const active = isActivePath(pathname, item.href);
+                  const Icon = item.icon;
+                  return (
+                    <a
+                      key={item.href}
+                      href={item.href}
+                      className={[
+                        'inline-flex shrink-0 items-center gap-2 rounded-2xl border px-3 py-2 text-sm font-semibold transition',
+                        active ? 'border-cyan-200 bg-cyan-600 text-white' : 'border-slate-200 bg-white text-slate-700',
+                      ].join(' ')}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                    </a>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center gap-3 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500 lg:min-w-[370px]">
+                <Search className="h-4 w-4 shrink-0" />
+                <span className="truncate">Buscar cliente, articulo, comprobante o proveedor</span>
+              </div>
+              <div className="hidden items-center gap-3 lg:flex">
                 <Link
                   href="/notificaciones"
                   title={notificationTooltip}
@@ -323,7 +351,7 @@ export function AppShell({
             </div>
           </header>
 
-          <main className="flex-1 px-6 py-6 lg:px-8">{children}</main>
+          <main className="flex-1 px-4 py-5 sm:px-6 lg:px-8">{children}</main>
         </div>
       </div>
     </div>

@@ -149,7 +149,7 @@ export function StockCostoArticuloFullResults(props: Props) {
 
       if (!cancelled) {
         if (!response) {
-          setWarning('No se pudo consultar el API de costo articulo full. Verifica que Node y la base integrada esten levantados.');
+          setWarning('No se pudo generar el informe de costo articulo full con el filtro actual. Intenta nuevamente.');
           setRows([]);
         } else {
           setRows(((response.data || []) as StockCostoArticuloFullRow[]) ?? []);
