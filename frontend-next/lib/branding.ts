@@ -3,6 +3,7 @@ export type BrandingConfig = {
   clientName: string;
   tagline: string;
   logoUrl: string;
+  faviconUrl: string;
 };
 
 export function getBranding(): BrandingConfig {
@@ -11,6 +12,7 @@ export function getBranding(): BrandingConfig {
     clientName: process.env.NEXT_PUBLIC_CLIENT_NAME || 'Multisoft',
     tagline: process.env.NEXT_PUBLIC_CLIENT_TAGLINE || 'Informes Gerenciales',
     logoUrl: process.env.NEXT_PUBLIC_CLIENT_LOGO_URL || '',
+    faviconUrl: process.env.NEXT_PUBLIC_CLIENT_FAVICON_URL || process.env.NEXT_PUBLIC_CLIENT_LOGO_URL || '',
   };
 }
 

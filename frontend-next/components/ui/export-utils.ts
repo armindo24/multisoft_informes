@@ -6,7 +6,9 @@ export function escapeHtml(value: unknown) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 export function downloadBlob(filename: string, content: string, mimeType: string) {
@@ -57,6 +59,22 @@ function buildCorporateStyles() {
       table.report th,table.report td{border:1px solid #cbd5e1;padding:6px 8px;vertical-align:top;}
       table.report th{background:#eaf2f8;color:#0f172a;text-align:left;font-weight:700;}
       table.report tr:nth-child(even) td{background:#f8fafc;}
+      .pdf-cover{min-height:88vh;display:flex;flex-direction:column;justify-content:space-between;padding:24px 0 8px 0;}
+      .pdf-cover-main{display:flex;flex-direction:column;gap:24px;}
+      .cover-header{display:flex;align-items:center;gap:18px;}
+      .cover-logo{height:72px;width:72px;object-fit:contain;border-radius:18px;background:#fff;padding:8px;border:1px solid #dbeafe;}
+      .cover-mark{height:72px;width:72px;border-radius:18px;background:#0891b2;color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;letter-spacing:0.2em;font-size:24px;}
+      .cover-kicker{font-size:12px;letter-spacing:5px;text-transform:uppercase;color:#0e7490;font-weight:700;}
+      .cover-client{font-size:15px;color:#334155;font-weight:700;margin-top:6px;}
+      .cover-tagline{font-size:13px;color:#64748b;margin-top:4px;}
+      .cover-title{font-size:30px;line-height:1.08;margin:0;color:#020617;}
+      .cover-subtitle{font-size:14px;line-height:1.6;color:#475569;max-width:760px;}
+      .cover-meta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:8px;}
+      .cover-meta-card{border:1px solid #dbeafe;border-radius:14px;padding:14px 16px;background:linear-gradient(180deg,#f8fcff 0%,#ffffff 100%);}
+      .cover-meta-label{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#0891b2;font-weight:700;margin-bottom:8px;}
+      .cover-meta-value{font-size:15px;color:#0f172a;font-weight:700;line-height:1.35;}
+      .cover-footer{display:flex;justify-content:space-between;gap:16px;border-top:1px solid #cbd5e1;padding-top:14px;color:#64748b;font-size:11px;}
+      .page-break{break-before:page;page-break-before:always;}
       .footer{margin-top:18px;border-top:1px solid #e2e8f0;padding-top:8px;font-size:10px;color:#64748b;}
       @page{size:auto;margin:14mm;}
     </style>
@@ -77,6 +95,55 @@ function buildBrandBlock(title: string, subtitle?: string) {
     : `<div class="brand-mark">${escapeHtml(initials || 'MS')}</div>`;
 
   return `<div class="brand"><div class="brand-header">${logo}<div><div class="brand-kicker">${escapeHtml(branding.clientName)}</div><h1>${escapeHtml(title)}</h1>${subtitle ? `<div class="subtitle">${escapeHtml(subtitle)}</div>` : ''}</div></div></div>`;
+}
+
+function buildPdfCover(title: string, subtitle?: string, meta?: ExportMetaItem[]) {
+  const branding = getBranding();
+  const initials = String(branding.clientName || 'MS')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((item) => item[0]?.toUpperCase() || '')
+    .join('');
+
+  const logo = branding.logoUrl
+    ? `<img class="cover-logo" src="${escapeHtml(branding.logoUrl)}" alt="${escapeHtml(branding.clientName)}" />`
+    : `<div class="cover-mark">${escapeHtml(initials || 'MS')}</div>`;
+
+  const metaCards = [
+    ...(meta || []),
+    { label: 'Generado', value: nowLabel() },
+  ]
+    .filter((item) => String(item.value ?? '').trim())
+    .map(
+      (item) =>
+        `<div class="cover-meta-card"><div class="cover-meta-label">${escapeHtml(item.label)}</div><div class="cover-meta-value">${escapeHtml(item.value)}</div></div>`,
+    )
+    .join('');
+
+  return `
+    <section class="pdf-cover">
+      <div class="pdf-cover-main">
+        <div class="cover-header">
+          ${logo}
+          <div>
+            <div class="cover-kicker">${escapeHtml(branding.appName)}</div>
+            <div class="cover-client">${escapeHtml(branding.clientName)}</div>
+            <div class="cover-tagline">${escapeHtml(branding.tagline)}</div>
+          </div>
+        </div>
+        <div>
+          <h1 class="cover-title">${escapeHtml(title)}</h1>
+          ${subtitle ? `<div class="cover-subtitle">${escapeHtml(subtitle)}</div>` : ''}
+        </div>
+        <div class="cover-meta-grid">${metaCards}</div>
+      </div>
+      <div class="cover-footer">
+        <div>Documento corporativo generado por ${escapeHtml(branding.appName)}.</div>
+        <div>${escapeHtml(branding.clientName)}</div>
+      </div>
+    </section>
+  `;
 }
 
 export function exportRowsToExcel(params: {
@@ -123,7 +190,7 @@ export function exportRowsToPdf(params: {
   popup.document.write(
     '<html><head><meta charset="utf-8"><title>Multisoft Reporte</title>' +
       buildCorporateStyles() +
-      `</head><body>${buildBrandBlock(params.title, params.subtitle)}<table class="meta"><tbody>${buildMetaRows(params.meta)}</tbody></table><table class="report"><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table><div class="footer">Reporte generado por ${escapeHtml(getBranding().appName)}.</div></body></html>`,
+      `</head><body>${buildPdfCover(params.title, params.subtitle, params.meta)}<div class="page-break">${buildBrandBlock(params.title, params.subtitle)}<table class="meta"><tbody>${buildMetaRows(params.meta)}</tbody></table><table class="report"><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table><div class="footer">Reporte generado por ${escapeHtml(getBranding().appName)}.</div></div></body></html>`,
   );
   popup.document.close();
   popup.focus();
