@@ -767,7 +767,7 @@ export default async function FinanzasPage({
       ) : null}
 
       {!isFocusedSection || section === 'resumen-financiero' ? (
-        <section id="resumen-financiero" className="scroll-mt-28 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <section id="resumen-financiero" className="scroll-mt-28 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
           <KpiCard item={{ title: 'Activo visible', value: formatKpiAmount(totalActivo), change: periodo, trend: 'up' }} />
           <KpiCard item={{ title: 'Pasivo visible', value: formatKpiAmount(totalPasivo), change: 'Balance actual', trend: totalPasivo > 0 ? 'neutral' : 'up' }} />
           <KpiCard item={{ title: 'Patrimonio', value: formatKpiAmount(patrimonio), change: moneda, trend: 'up' }} />

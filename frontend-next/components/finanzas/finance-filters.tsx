@@ -231,7 +231,7 @@ export function FinanceFilters({
   return (
     <>
       <form
-        className="card grid gap-4 p-5 xl:grid-cols-6"
+        className="card grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6"
         onSubmit={(event) => {
           event.preventDefault();
           setProgressValue(18);
@@ -636,7 +636,7 @@ export function FinanceFilters({
                 <div className="mt-3 h-4 w-full max-w-3xl animate-pulse rounded bg-slate-200" />
               </div>
 
-              <div className="card grid gap-4 p-5 xl:grid-cols-6">
+              <div className="card grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
                 {Array.from({ length: 6 }).map((_, index) => (
                   <div key={index}>
                     <div className="mb-2 h-4 w-20 animate-pulse rounded bg-slate-200" />
@@ -645,7 +645,7 @@ export function FinanceFilters({
                 ))}
               </div>
 
-              <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+              <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
                 {Array.from({ length: 5 }).map((_, index) => (
                   <div key={index} className="card p-5">
                     <div className="h-4 w-24 animate-pulse rounded bg-slate-200" />
