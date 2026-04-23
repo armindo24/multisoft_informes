@@ -216,7 +216,7 @@ export default async function VentasPage({
       : '';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         eyebrow="Gestion comercial"
         title="Ventas"

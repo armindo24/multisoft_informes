@@ -192,7 +192,7 @@ export default async function ComprasPage({
   const currentSectionMeta = sectionMeta[section] || sectionMeta['compras-resumen'];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         eyebrow={currentSectionMeta.eyebrow || 'Abastecimiento'}
         title={currentSectionMeta.title}

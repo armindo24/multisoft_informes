@@ -6,7 +6,7 @@ export default async function Page() {
   const sessionUser = await getSessionUser();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         eyebrow="Administracion"
         title="Configuracion"

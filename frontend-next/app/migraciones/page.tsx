@@ -21,7 +21,7 @@ export default async function Page() {
   const defaultPeriodo = String(new Date().getFullYear());
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         eyebrow="Procesos operativos"
         title="Migraciones"

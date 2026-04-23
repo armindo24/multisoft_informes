@@ -175,7 +175,7 @@ export default async function StockPage({
       : '';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         eyebrow="Inventario"
         title={isCostoArticuloFullMode ? 'Costo Articulo Full' : 'Stock'}

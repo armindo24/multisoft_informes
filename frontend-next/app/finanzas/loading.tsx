@@ -1,6 +1,6 @@
 export default function LoadingFinanzas() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
         <div className="h-4 w-32 animate-pulse rounded bg-slate-200" />
         <div className="mt-3 h-10 w-56 animate-pulse rounded bg-slate-200" />

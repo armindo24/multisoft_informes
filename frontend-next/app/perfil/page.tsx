@@ -26,7 +26,7 @@ export default async function PerfilPage() {
     .map((group) => group.name);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         eyebrow="Cuenta personal"
         title="Mi perfil"

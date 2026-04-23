@@ -761,7 +761,7 @@ export default async function FinanzasPage({
   }).filter((group) => group.auxiliares.length > 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         eyebrow="Informes gerenciales"
         title="Finanzas"

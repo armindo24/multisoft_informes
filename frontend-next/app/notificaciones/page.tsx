@@ -70,7 +70,7 @@ export default async function NotificacionesPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         eyebrow="Centro personal"
         title="Mis notificaciones"
