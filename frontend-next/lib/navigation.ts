@@ -142,6 +142,7 @@ export const navigation: NavigationItem[] = [
           { label: 'Asignacion de Empresas', href: '/configuracion#asignacion-empresas' },
           { label: 'Usuarios Conectados', href: '/configuracion#usuarios-conectados' },
           { label: 'Configuracion de Base de Datos', href: '/configuracion#configuracion-base-datos' },
+          { label: 'Marca Corporativa', href: '/configuracion#marca-corporativa' },
           { label: 'Configuracion de Email', href: '/configuracion#configuracion-email' },
         ],
       },
