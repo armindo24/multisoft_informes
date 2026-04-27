@@ -5,6 +5,8 @@ import { useMemo, useState } from 'react';
 import { getVentaDetalle } from '@/lib/api';
 import { exportRowsToExcel, exportRowsToPdf } from '@/components/ui/export-utils';
 import type { ExportBrandingOverride } from '@/components/ui/export-utils';
+import { ReportNoticeButton } from '@/components/ui/report-notice-button';
+import { ReportTaskButton } from '@/components/ui/report-task-button';
 import { VentaDetalle, VentaResumen } from '@/types/ventas';
 
 function num(value: unknown) {
@@ -217,6 +219,15 @@ export function SalesTable({
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <ReportNoticeButton
+                reportTitle="Ventas resumido y detallado"
+                detailHint={`Agrupado por ${groupLabel(groupBy).toLowerCase()}.`}
+              />
+              <ReportTaskButton
+                reportTitle="Ventas resumido y detallado"
+                taskModule="Ventas"
+                detailHint={`Agrupado por ${groupLabel(groupBy).toLowerCase()}.`}
+              />
               <button type="button" onClick={exportResumenExcel} disabled={!rows.length} className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 disabled:cursor-not-allowed disabled:opacity-50">
                 <FileSpreadsheet className="size-4" />
                 Excel
@@ -331,6 +342,15 @@ export function SalesTable({
 
             <div className="max-h-[52vh] overflow-auto px-6 py-5">
               <div className="mb-4 flex justify-end gap-2">
+                <ReportNoticeButton
+                  reportTitle={`Detalle de venta ${selectedRow?.comp_numero || ''}`.trim() || 'Detalle de venta'}
+                  detailHint={String(selectedRow?.razon_social || selectedRow?.cliente || '')}
+                />
+                <ReportTaskButton
+                  reportTitle={`Detalle de venta ${selectedRow?.comp_numero || ''}`.trim() || 'Detalle de venta'}
+                  taskModule="Ventas"
+                  detailHint={String(selectedRow?.razon_social || selectedRow?.cliente || '')}
+                />
                 <button type="button" onClick={exportDetalleExcel} disabled={!detailRows.length} className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 disabled:cursor-not-allowed disabled:opacity-50">
                   <FileSpreadsheet className="size-4" />
                   Excel

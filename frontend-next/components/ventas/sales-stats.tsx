@@ -17,6 +17,8 @@ import {
 } from 'recharts';
 import { exportRowsToExcel, exportRowsToPdf } from '@/components/ui/export-utils';
 import type { ExportBrandingOverride } from '@/components/ui/export-utils';
+import { ReportNoticeButton } from '@/components/ui/report-notice-button';
+import { ReportTaskButton } from '@/components/ui/report-task-button';
 
 const palette = ['#155eef', '#0ea5e9', '#14b8a6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#64748b', '#06b6d4', '#2563eb'];
 
@@ -127,6 +129,15 @@ export function SalesStats({
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <ReportNoticeButton
+              reportTitle="Estadisticas de ventas"
+              detailHint={`Vista por ${groupTitle(agrupacion)}.`}
+            />
+            <ReportTaskButton
+              reportTitle="Estadisticas de ventas"
+              taskModule="Ventas"
+              detailHint={`Vista por ${groupTitle(agrupacion)}.`}
+            />
             <button type="button" onClick={exportStatsExcel} disabled={!rows.length} className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 disabled:cursor-not-allowed disabled:opacity-50">
               <FileSpreadsheet className="size-4" />
               Excel

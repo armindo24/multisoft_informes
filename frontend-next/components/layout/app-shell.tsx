@@ -14,6 +14,10 @@ type NotificationSummary = {
   activeSessions: number;
   companyCount: number;
   hasRecoveryEmail: boolean;
+  pendingTasks: number;
+  unreadNotifications: number;
+  overdueTasks: number;
+  dueTodayTasks: number;
 };
 
 function isActivePath(pathname: string, href: string) {
@@ -79,15 +83,20 @@ export function AppShell({
     if (!notificationSummary) return 0;
 
     let total = 0;
+    total += notificationSummary.unreadNotifications || 0;
+    total += notificationSummary.overdueTasks || 0;
     if (notificationSummary.activeSessions > 1) total += 1;
     if (!notificationSummary.hasRecoveryEmail) total += 1;
     if (notificationSummary.companyCount === 0) total += 1;
+    if ((notificationSummary.dueTodayTasks || 0) > 0) total += 1;
     return total;
   }, [notificationSummary]);
 
   const notificationBadgeClass = useMemo(() => {
     if (!notificationSummary) return 'bg-rose-500 text-white';
+    if ((notificationSummary.overdueTasks || 0) > 0) return 'bg-rose-500 text-white';
     if (notificationSummary.activeSessions > 1) return 'bg-rose-500 text-white';
+    if ((notificationSummary.dueTodayTasks || 0) > 0) return 'bg-amber-400 text-slate-950';
     if (!notificationSummary.hasRecoveryEmail || notificationSummary.companyCount === 0) {
       return 'bg-amber-400 text-slate-950';
     }
@@ -97,6 +106,15 @@ export function AppShell({
   const notificationTooltip = useMemo(() => {
     if (!notificationSummary || notificationCount === 0) {
       return 'Sin alertas nuevas';
+    }
+    if ((notificationSummary.overdueTasks || 0) > 0) {
+      return `${notificationCount} alerta(s): ${notificationSummary.overdueTasks} tarea(s) vencida(s)`;
+    }
+    if ((notificationSummary.dueTodayTasks || 0) > 0) {
+      return `${notificationCount} alerta(s): ${notificationSummary.dueTodayTasks} tarea(s) vencen hoy`;
+    }
+    if ((notificationSummary.unreadNotifications || 0) > 0) {
+      return `${notificationCount} alerta(s): ${notificationSummary.unreadNotifications} notificacion(es) sin leer`;
     }
 
     if (notificationSummary.activeSessions > 1) {

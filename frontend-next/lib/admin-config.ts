@@ -99,6 +99,54 @@ export type ActiveSessionRecord = {
   userAgent: string;
 };
 
+export type TaskStatus = 'pendiente' | 'en_proceso' | 'resuelta';
+export type TaskPriority = 'baja' | 'media' | 'alta';
+
+export type UserTaskRecord = {
+  id: number;
+  title: string;
+  description: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  module: string;
+  targetUrl: string;
+  dueDate: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  completedAt: string | null;
+  assignedToId: number;
+  assignedToName: string;
+  assignedToUsername: string;
+  createdById: number;
+  createdByName: string;
+  createdByUsername: string;
+  isAssignedToMe: boolean;
+  isCreatedByMe: boolean;
+};
+
+export type UserNotificationRecord = {
+  id: number;
+  type: string;
+  title: string;
+  message: string;
+  href: string;
+  isRead: boolean;
+  createdAt: string | null;
+  readAt: string | null;
+  actorName: string;
+  actorUsername: string;
+};
+
+export type TaskCommentRecord = {
+  id: number;
+  taskId: number;
+  message: string;
+  createdAt: string | null;
+  authorId: number;
+  authorName: string;
+  authorUsername: string;
+};
+
 export type AdminGroupRecord = {
   id: number;
   name: string;
@@ -205,6 +253,51 @@ async function ensureBrandingConfigTable() {
       logo_url TEXT NOT NULL DEFAULT '',
       favicon_url TEXT NOT NULL DEFAULT '',
       updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    )
+  `);
+}
+
+async function ensureTaskTables() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS custom_permissions_task (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(180) NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      status VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+      priority VARCHAR(20) NOT NULL DEFAULT 'media',
+      module VARCHAR(80) NOT NULL DEFAULT '',
+      target_url TEXT NOT NULL DEFAULT '',
+      due_date DATE NULL,
+      created_by INTEGER NOT NULL REFERENCES auth_user(id) ON DELETE CASCADE,
+      assigned_to INTEGER NOT NULL REFERENCES auth_user(id) ON DELETE CASCADE,
+      created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+      completed_at TIMESTAMP WITH TIME ZONE NULL
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS custom_permissions_taskcomment (
+      id SERIAL PRIMARY KEY,
+      task_id INTEGER NOT NULL REFERENCES custom_permissions_task(id) ON DELETE CASCADE,
+      author_user_id INTEGER NOT NULL REFERENCES auth_user(id) ON DELETE CASCADE,
+      message TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS custom_permissions_usernotification (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES auth_user(id) ON DELETE CASCADE,
+      actor_user_id INTEGER NULL REFERENCES auth_user(id) ON DELETE SET NULL,
+      type VARCHAR(40) NOT NULL DEFAULT 'info',
+      title VARCHAR(180) NOT NULL,
+      message TEXT NOT NULL DEFAULT '',
+      href TEXT NOT NULL DEFAULT '',
+      is_read BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+      read_at TIMESTAMP WITH TIME ZONE NULL
     )
   `);
 }
@@ -930,6 +1023,646 @@ export async function closeUserSessions(userId: number) {
   await pool.query('DELETE FROM custom_permissions_nextsession WHERE user_id = $1', [userId]);
 
   return loadActiveSessions();
+}
+
+function normalizeTaskStatus(value: unknown): TaskStatus {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (normalized === 'resuelta') return 'resuelta';
+  if (normalized === 'en_proceso') return 'en_proceso';
+  return 'pendiente';
+}
+
+function normalizeTaskPriority(value: unknown): TaskPriority {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (normalized === 'alta') return 'alta';
+  if (normalized === 'baja') return 'baja';
+  return 'media';
+}
+
+function displayFullName(row: Record<string, unknown>, firstKey: string, lastKey: string, usernameKey: string) {
+  const fullName = [row[firstKey], row[lastKey]]
+    .map((item) => String(item || '').trim())
+    .filter(Boolean)
+    .join(' ');
+
+  return fullName || String(row[usernameKey] || '').trim() || 'Usuario';
+}
+
+function normalizeTaskRow(row: Record<string, unknown>, userId: number): UserTaskRecord {
+  const assignedToId = Number(row.assigned_to || 0);
+  const createdById = Number(row.created_by || 0);
+
+  return {
+    id: Number(row.id || 0),
+    title: String(row.title || ''),
+    description: String(row.description || ''),
+    status: normalizeTaskStatus(row.status),
+    priority: normalizeTaskPriority(row.priority),
+    module: String(row.module || ''),
+    targetUrl: String(row.target_url || ''),
+    dueDate: row.due_date ? String(row.due_date) : null,
+    createdAt: row.created_at ? String(row.created_at) : null,
+    updatedAt: row.updated_at ? String(row.updated_at) : null,
+    completedAt: row.completed_at ? String(row.completed_at) : null,
+    assignedToId,
+    assignedToName: displayFullName(row, 'assigned_first_name', 'assigned_last_name', 'assigned_username'),
+    assignedToUsername: String(row.assigned_username || ''),
+    createdById,
+    createdByName: displayFullName(row, 'creator_first_name', 'creator_last_name', 'creator_username'),
+    createdByUsername: String(row.creator_username || ''),
+    isAssignedToMe: assignedToId === userId,
+    isCreatedByMe: createdById === userId,
+  };
+}
+
+function normalizeNotificationRow(row: Record<string, unknown>): UserNotificationRecord {
+  return {
+    id: Number(row.id || 0),
+    type: String(row.type || 'info'),
+    title: String(row.title || ''),
+    message: String(row.message || ''),
+    href: String(row.href || ''),
+    isRead: Boolean(row.is_read),
+    createdAt: row.created_at ? String(row.created_at) : null,
+    readAt: row.read_at ? String(row.read_at) : null,
+    actorName: displayFullName(row, 'actor_first_name', 'actor_last_name', 'actor_username'),
+    actorUsername: String(row.actor_username || ''),
+  };
+}
+
+function normalizeTaskCommentRow(row: Record<string, unknown>): TaskCommentRecord {
+  return {
+    id: Number(row.id || 0),
+    taskId: Number(row.task_id || 0),
+    message: String(row.message || ''),
+    createdAt: row.created_at ? String(row.created_at) : null,
+    authorId: Number(row.author_user_id || 0),
+    authorName: displayFullName(row, 'author_first_name', 'author_last_name', 'author_username'),
+    authorUsername: String(row.author_username || ''),
+  };
+}
+
+async function createUserNotification(input: {
+  userId: number;
+  actorUserId?: number | null;
+  type: string;
+  title: string;
+  message: string;
+  href?: string;
+}) {
+  await ensureTaskTables();
+  await pool.query(
+    `
+      INSERT INTO custom_permissions_usernotification
+        (user_id, actor_user_id, type, title, message, href)
+      VALUES
+        ($1, $2, $3::varchar(40), $4::varchar(180), $5::text, $6::text)
+    `,
+    [
+      input.userId,
+      input.actorUserId || null,
+      String(input.type || 'info'),
+      String(input.title || '').trim(),
+      String(input.message || '').trim(),
+      String(input.href || '').trim(),
+    ],
+  );
+}
+
+function isEmailReady(config: EmailConfigRecord) {
+  return Boolean(config.enabled && config.host && (config.fromEmail || config.username));
+}
+
+async function sendTransactionalEmail(input: {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+}) {
+  const emailConfig = await loadEmailConfig();
+  if (!isEmailReady(emailConfig)) {
+    throw new Error('La configuracion de email no esta lista para enviar avisos.');
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: emailConfig.host,
+    port: Number(emailConfig.port || 25),
+    secure: Boolean(emailConfig.useSsl),
+    requireTLS: Boolean(emailConfig.useTls),
+    auth: emailConfig.useAuth
+      ? {
+          user: emailConfig.username,
+          pass: emailConfig.password,
+        }
+      : undefined,
+  });
+
+  const fromEmail = emailConfig.fromEmail || emailConfig.username;
+  const fromName = String(emailConfig.fromName || 'MultiSoft').trim() || 'MultiSoft';
+  const replyToEmail = String(emailConfig.replyToEmail || '').trim();
+  const replyToName = String(emailConfig.replyToName || '').trim();
+
+  await transporter.sendMail({
+    from: `"${fromName}" <${fromEmail}>`,
+    to: input.to,
+    subject: input.subject,
+    text: input.text,
+    html: input.html,
+    replyTo: replyToEmail ? (replyToName ? `"${replyToName}" <${replyToEmail}>` : replyToEmail) : undefined,
+    envelope: emailConfig.envelopeFrom
+      ? {
+          from: emailConfig.envelopeFrom,
+          to: input.to,
+        }
+      : undefined,
+  });
+}
+
+export async function sendDirectUserNotification(input: {
+  actorUserId: number;
+  targetUserId: number;
+  title: string;
+  message: string;
+  href?: string;
+  sendEmail?: boolean;
+}) {
+  await ensureTaskTables();
+
+  const actorUserId = Number(input.actorUserId || 0);
+  const targetUserId = Number(input.targetUserId || 0);
+  const title = String(input.title || '').trim();
+  const message = String(input.message || '').trim();
+
+  if (!actorUserId) {
+    throw new Error('El usuario actual no es valido.');
+  }
+  if (!targetUserId) {
+    throw new Error('Debes seleccionar un usuario.');
+  }
+  if (!title) {
+    throw new Error('El titulo del aviso es obligatorio.');
+  }
+  if (!message) {
+    throw new Error('El mensaje del aviso es obligatorio.');
+  }
+
+  const userValidation = await pool.query<Record<string, unknown>>(
+    `
+      SELECT id, username, first_name, last_name, email
+      FROM auth_user
+      WHERE id = ANY($1::int[])
+        AND is_active = TRUE
+    `,
+    [[actorUserId, targetUserId]],
+  );
+
+  const usersById = new Map(userValidation.rows.map((row) => [Number(row.id || 0), row]));
+  if (!usersById.has(actorUserId)) {
+    throw new Error('El usuario actual no es valido.');
+  }
+  if (!usersById.has(targetUserId)) {
+    throw new Error('El usuario destinatario no esta disponible.');
+  }
+
+  await createUserNotification({
+    userId: targetUserId,
+    actorUserId,
+    type: 'user_notice',
+    title,
+    message,
+    href: String(input.href || '').trim(),
+  });
+
+  let emailSent = false;
+  let emailWarning: string | null = null;
+
+  if (input.sendEmail) {
+    const actor = usersById.get(actorUserId) || {};
+    const target = usersById.get(targetUserId) || {};
+    const targetEmail = String(target.email || '').trim();
+
+    if (!targetEmail) {
+      emailWarning = 'El usuario destinatario no tiene un correo configurado.';
+    } else {
+      const actorName = displayFullName(actor, 'first_name', 'last_name', 'username');
+      const targetName = displayFullName(target, 'first_name', 'last_name', 'username');
+      const href = String(input.href || '').trim();
+
+      const text =
+        `Hola ${targetName},\n\n` +
+        `${actorName} te envio un aviso desde MultiSoft.\n\n` +
+        `Titulo: ${title}\n` +
+        `Mensaje: ${message}\n` +
+        (href ? `Enlace relacionado: ${href}\n` : '') +
+        '\nTambien puedes ver este aviso dentro de la bandeja de notificaciones del sistema.\n';
+
+      const html =
+        '<!DOCTYPE html>' +
+        '<html lang="es">' +
+        '<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>' +
+        '<body style="margin:0;padding:0;background:#eef2f7;font-family:Segoe UI,Arial,sans-serif;color:#0f172a;">' +
+        '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eef2f7;padding:32px 16px;">' +
+        '<tr><td align="center">' +
+        '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 18px 45px rgba(15,23,42,0.12);">' +
+        '<tr><td style="padding:24px 32px;background:linear-gradient(135deg,#071122 0%,#0c1730 48%,#0b1430 100%);">' +
+        '<div style="display:inline-block;padding:8px 16px;border-radius:999px;border:1px solid rgba(34,211,238,0.28);background:rgba(34,211,238,0.08);font-size:11px;font-weight:700;letter-spacing:0.35em;text-transform:uppercase;color:#67e8f9;">MULTISOFT</div>' +
+        '<h1 style="margin:18px 0 8px 0;font-size:30px;line-height:1.1;color:#ffffff;">Aviso interno</h1>' +
+        `<p style="margin:0;font-size:15px;line-height:1.8;color:#cbd5e1;">${actorName} te envio una notificacion desde la plataforma.</p>` +
+        '</td></tr>' +
+        '<tr><td style="padding:32px;">' +
+        `<p style="margin:0 0 16px 0;font-size:16px;line-height:1.8;">Hola <strong>${targetName}</strong>,</p>` +
+        `<div style="margin:0 0 18px 0;padding:16px 18px;border-radius:16px;background:#f8fafc;border:1px solid #e2e8f0;"><div style="font-size:12px;text-transform:uppercase;letter-spacing:0.18em;color:#0891b2;font-weight:700;margin-bottom:6px;">Titulo</div><div style="font-size:18px;font-weight:700;color:#0f172a;">${title}</div></div>` +
+        `<p style="margin:0 0 16px 0;font-size:15px;line-height:1.8;color:#334155;">${message}</p>` +
+        (href
+          ? `<div style="margin:24px 0 24px 0;"><a href="${href}" style="display:inline-block;padding:14px 22px;background:#050b23;color:#ffffff;text-decoration:none;border-radius:14px;font-size:15px;font-weight:700;">Abrir enlace relacionado</a></div>`
+          : '') +
+        '<p style="margin:0;font-size:14px;line-height:1.8;color:#64748b;">Tambien puedes ver este aviso dentro de la bandeja de notificaciones del sistema.</p>' +
+        '</td></tr>' +
+        '</table>' +
+        '</td></tr>' +
+        '</table>' +
+        '</body></html>';
+
+      try {
+        await sendTransactionalEmail({
+          to: targetEmail,
+          subject: `${title} - MultiSoft`,
+          text,
+          html,
+        });
+        emailSent = true;
+      } catch (error) {
+        emailWarning = error instanceof Error ? error.message : 'No se pudo enviar el correo adicional.';
+      }
+    }
+  }
+
+  return {
+    notifications: await loadNotificationsForUser(targetUserId),
+    emailSent,
+    emailWarning,
+  };
+}
+
+export async function loadActiveUserOptions(actorUserId?: number) {
+  const result = await pool.query<Record<string, unknown>>(
+    `
+      SELECT id, username, first_name, last_name
+      FROM auth_user
+      WHERE is_active = TRUE
+      ORDER BY username
+    `,
+  );
+
+  return result.rows
+    .map((row) => ({
+      id: Number(row.id || 0),
+      username: String(row.username || ''),
+      label: displayFullName(row, 'first_name', 'last_name', 'username'),
+      isCurrentUser: Number(row.id || 0) === Number(actorUserId || 0),
+    }))
+    .filter((row) => row.id > 0);
+}
+
+export async function loadTasksForUser(userId: number) {
+  await ensureTaskTables();
+
+  const result = await pool.query<Record<string, unknown>>(
+    `
+      SELECT
+        t.id,
+        t.title,
+        t.description,
+        t.status,
+        t.priority,
+        t.module,
+        t.target_url,
+        t.due_date,
+        t.created_by,
+        t.assigned_to,
+        t.created_at,
+        t.updated_at,
+        t.completed_at,
+        assigned.username AS assigned_username,
+        assigned.first_name AS assigned_first_name,
+        assigned.last_name AS assigned_last_name,
+        creator.username AS creator_username,
+        creator.first_name AS creator_first_name,
+        creator.last_name AS creator_last_name
+      FROM custom_permissions_task t
+      INNER JOIN auth_user assigned ON assigned.id = t.assigned_to
+      INNER JOIN auth_user creator ON creator.id = t.created_by
+      WHERE t.assigned_to = $1::int OR t.created_by = $1::int
+      ORDER BY
+        CASE t.status
+          WHEN 'pendiente' THEN 0
+          WHEN 'en_proceso' THEN 1
+          ELSE 2
+        END,
+        t.updated_at DESC,
+        t.id DESC
+    `,
+    [userId],
+  );
+
+  const tasks = result.rows.map((row) => normalizeTaskRow(row, userId));
+  return {
+    assigned: tasks.filter((task) => task.isAssignedToMe),
+    created: tasks.filter((task) => task.isCreatedByMe),
+    all: tasks,
+  };
+}
+
+export async function loadNotificationsForUser(userId: number, limit = 20) {
+  await ensureTaskTables();
+
+  const result = await pool.query<Record<string, unknown>>(
+    `
+      SELECT
+        n.id,
+        n.type,
+        n.title,
+        n.message,
+        n.href,
+        n.is_read,
+        n.created_at,
+        n.read_at,
+        actor.username AS actor_username,
+        actor.first_name AS actor_first_name,
+        actor.last_name AS actor_last_name
+      FROM custom_permissions_usernotification n
+      LEFT JOIN auth_user actor ON actor.id = n.actor_user_id
+      WHERE n.user_id = $1::int
+      ORDER BY n.created_at DESC, n.id DESC
+      LIMIT $2::int
+    `,
+    [userId, limit],
+  );
+
+  return result.rows.map(normalizeNotificationRow);
+}
+
+export async function markAllNotificationsRead(userId: number) {
+  await ensureTaskTables();
+  await pool.query(
+    `
+      UPDATE custom_permissions_usernotification
+      SET is_read = TRUE,
+          read_at = NOW()
+      WHERE user_id = $1::int
+        AND is_read = FALSE
+    `,
+    [userId],
+  );
+
+  return loadNotificationsForUser(userId);
+}
+
+export async function loadTaskCommentsForUser(userId: number) {
+  await ensureTaskTables();
+
+  const result = await pool.query<Record<string, unknown>>(
+    `
+      SELECT
+        c.id,
+        c.task_id,
+        c.message,
+        c.created_at,
+        c.author_user_id,
+        author.username AS author_username,
+        author.first_name AS author_first_name,
+        author.last_name AS author_last_name
+      FROM custom_permissions_taskcomment c
+      INNER JOIN custom_permissions_task t ON t.id = c.task_id
+      INNER JOIN auth_user author ON author.id = c.author_user_id
+      WHERE t.assigned_to = $1::int OR t.created_by = $1::int
+      ORDER BY c.created_at ASC, c.id ASC
+    `,
+    [userId],
+  );
+
+  return result.rows.map(normalizeTaskCommentRow);
+}
+
+export async function createUserTask(input: {
+  actorUserId: number;
+  assignedTo: number;
+  title: string;
+  description?: string;
+  priority?: TaskPriority;
+  module?: string;
+  targetUrl?: string;
+  dueDate?: string | null;
+}) {
+  await ensureTaskTables();
+
+  const title = String(input.title || '').trim();
+  if (!title) {
+    throw new Error('El titulo de la tarea es obligatorio.');
+  }
+
+  const assignedTo = Number(input.assignedTo || 0);
+  if (!assignedTo) {
+    throw new Error('Debes seleccionar un usuario.');
+  }
+
+  const userValidation = await pool.query<{ id: number }>(
+    `
+      SELECT id
+      FROM auth_user
+      WHERE id = ANY($1::int[])
+        AND is_active = TRUE
+    `,
+    [[Number(input.actorUserId || 0), assignedTo]],
+  );
+
+  const validIds = new Set(userValidation.rows.map((row) => Number(row.id)));
+  if (!validIds.has(Number(input.actorUserId || 0))) {
+    throw new Error('El usuario actual no es valido.');
+  }
+  if (!validIds.has(assignedTo)) {
+    throw new Error('El usuario asignado no esta disponible.');
+  }
+
+  const created = await pool.query<{ id: number }>(
+    `
+      INSERT INTO custom_permissions_task
+        (title, description, status, priority, module, target_url, due_date, created_by, assigned_to)
+      VALUES
+        ($1::varchar(180), $2::text, 'pendiente', $3::varchar(20), $4::varchar(80), $5::text, $6::date, $7::int, $8::int)
+      RETURNING id
+    `,
+    [
+      title,
+      String(input.description || '').trim(),
+      normalizeTaskPriority(input.priority),
+      String(input.module || '').trim(),
+      String(input.targetUrl || '').trim(),
+      input.dueDate ? String(input.dueDate) : null,
+      input.actorUserId,
+      assignedTo,
+    ],
+  );
+
+  const taskId = Number(created.rows[0]?.id || 0);
+
+  await createUserNotification({
+    userId: assignedTo,
+    actorUserId: input.actorUserId,
+    type: 'task_assigned',
+    title: 'Nueva tarea asignada',
+    message: title,
+    href: `/notificaciones?task=${taskId}`,
+  });
+
+  const tasks = await loadTasksForUser(input.actorUserId);
+  return tasks.all.find((task) => task.id === taskId) || null;
+}
+
+export async function updateUserTaskStatus(input: {
+  taskId: number;
+  actorUserId: number;
+  actorIsSuperuser?: boolean;
+  status: TaskStatus;
+}) {
+  await ensureTaskTables();
+
+  const taskId = Number(input.taskId || 0);
+  if (!taskId) {
+    throw new Error('Tarea invalida.');
+  }
+
+  const targetStatus = normalizeTaskStatus(input.status);
+  const currentTaskResult = await pool.query<Record<string, unknown>>(
+    `
+      SELECT id, title, created_by, assigned_to, status
+      FROM custom_permissions_task
+      WHERE id = $1::int
+      LIMIT 1
+    `,
+    [taskId],
+  );
+
+  const task = currentTaskResult.rows[0];
+  if (!task) {
+    throw new Error('No se encontro la tarea.');
+  }
+
+  const createdBy = Number(task.created_by || 0);
+  const assignedTo = Number(task.assigned_to || 0);
+  const actorUserId = Number(input.actorUserId || 0);
+  const canEdit = Boolean(input.actorIsSuperuser) || actorUserId === createdBy || actorUserId === assignedTo;
+  if (!canEdit) {
+    throw new Error('No tienes permiso para actualizar esta tarea.');
+  }
+
+  await pool.query(
+    `
+      UPDATE custom_permissions_task
+      SET status = $2::varchar(20),
+          updated_at = NOW(),
+          completed_at = CASE WHEN $2::varchar(20) = 'resuelta' THEN NOW() ELSE NULL END
+      WHERE id = $1::int
+    `,
+    [taskId, targetStatus],
+  );
+
+  if (createdBy && createdBy !== actorUserId) {
+    await createUserNotification({
+      userId: createdBy,
+      actorUserId,
+      type: 'task_update',
+      title: 'Tarea actualizada',
+      message: `${String(task.title || '').trim()} · ${targetStatus.replace('_', ' ')}`,
+      href: `/notificaciones?task=${taskId}`,
+    });
+  }
+
+  if (assignedTo && assignedTo !== actorUserId && targetStatus === 'resuelta') {
+    await createUserNotification({
+      userId: assignedTo,
+      actorUserId,
+      type: 'task_resolved',
+      title: 'Tarea marcada como resuelta',
+      message: String(task.title || '').trim(),
+      href: `/notificaciones?task=${taskId}`,
+    });
+  }
+
+  const tasks = await loadTasksForUser(actorUserId);
+  return tasks.all.find((item) => item.id === taskId) || null;
+}
+
+export async function createTaskComment(input: {
+  taskId: number;
+  actorUserId: number;
+  actorIsSuperuser?: boolean;
+  message: string;
+}) {
+  await ensureTaskTables();
+
+  const taskId = Number(input.taskId || 0);
+  const actorUserId = Number(input.actorUserId || 0);
+  const message = String(input.message || '').trim();
+
+  if (!taskId) {
+    throw new Error('Tarea invalida.');
+  }
+  if (!message) {
+    throw new Error('El comentario es obligatorio.');
+  }
+
+  const taskResult = await pool.query<Record<string, unknown>>(
+    `
+      SELECT id, title, created_by, assigned_to
+      FROM custom_permissions_task
+      WHERE id = $1::int
+      LIMIT 1
+    `,
+    [taskId],
+  );
+
+  const task = taskResult.rows[0];
+  if (!task) {
+    throw new Error('No se encontro la tarea.');
+  }
+
+  const createdBy = Number(task.created_by || 0);
+  const assignedTo = Number(task.assigned_to || 0);
+  const canComment = Boolean(input.actorIsSuperuser) || actorUserId === createdBy || actorUserId === assignedTo;
+  if (!canComment) {
+    throw new Error('No tienes permiso para comentar esta tarea.');
+  }
+
+  await pool.query(
+    `
+      INSERT INTO custom_permissions_taskcomment
+        (task_id, author_user_id, message)
+      VALUES
+        ($1::int, $2::int, $3::text)
+    `,
+    [taskId, actorUserId, message],
+  );
+
+  const notifyUsers = new Set<number>();
+  if (createdBy && createdBy !== actorUserId) notifyUsers.add(createdBy);
+  if (assignedTo && assignedTo !== actorUserId) notifyUsers.add(assignedTo);
+
+  await Promise.all(
+    [...notifyUsers].map((userId) =>
+      createUserNotification({
+        userId,
+        actorUserId,
+        type: 'task_comment',
+        title: 'Nuevo comentario en tarea',
+        message: String(task.title || '').trim(),
+        href: `/notificaciones?task=${taskId}`,
+      }),
+    ),
+  );
+
+  const comments = await loadTaskCommentsForUser(actorUserId);
+  return comments.filter((comment) => comment.taskId === taskId);
 }
 
 function encodePbkdf2Sha256(rawPassword: string) {
