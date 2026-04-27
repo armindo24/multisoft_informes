@@ -223,7 +223,7 @@ export function AppShell({
                     <a
                       href={item.href}
                       className={[
-                        'group flex items-center gap-3 rounded-[1.2rem] px-4 py-3 text-sm font-semibold transition',
+                        'group flex items-center gap-3 rounded-[1.2rem] px-4 py-2.5 text-sm font-semibold transition',
                         active ? 'bg-cyan-600 text-white' : 'text-slate-300 hover:bg-slate-900 hover:text-white',
                       ].join(' ')}
                     >
@@ -259,7 +259,7 @@ export function AppShell({
                                       [sectionKey]: !current[sectionKey],
                                     }))
                                   }
-                                  className="flex w-full items-center justify-between px-4 py-3 text-left"
+                                  className="flex w-full items-center justify-between px-4 py-2.5 text-left"
                                 >
                                   <p className="text-sm font-semibold text-slate-100">{section.label}</p>
                                   <ChevronRight className={['h-4 w-4 text-cyan-300 transition', isOpen ? 'rotate-90' : 'rotate-0'].join(' ')} />
@@ -271,7 +271,7 @@ export function AppShell({
                                     subItem.disabled ? (
                                       <div
                                         key={`${section.label}-${subItem.label}`}
-                                        className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-slate-500"
+                                        className="flex items-center justify-between gap-3 px-4 py-2 text-sm text-slate-500"
                                       >
                                         <span>{subItem.label}</span>
                                         <span className="rounded-full border border-slate-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
@@ -282,7 +282,7 @@ export function AppShell({
                                       <a
                                         key={`${section.label}-${subItem.label}`}
                                         href={subItem.href}
-                                        className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
+                                        className="flex items-center justify-between gap-3 px-4 py-2 text-sm text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
                                       >
                                         <span>{subItem.label}</span>
                                       </a>
@@ -300,9 +300,9 @@ export function AppShell({
               })}
             </nav>
 
-            <div className="mt-4 rounded-[1.6rem] border border-slate-800 bg-slate-900/80 p-5 text-sm text-slate-300">
+            <div className="mt-3 rounded-[1.5rem] border border-slate-800 bg-slate-900/80 p-4 text-sm text-slate-300">
               <p className="text-sm font-semibold text-white">Acceso actual</p>
-              <p className="mt-2 leading-6">
+              <p className="mt-1.5 leading-5">
                 {user?.groups?.length
                   ? `Modulos habilitados: ${user.groups.join(', ')}`
                   : 'No hay grupos asignados para este usuario.'}
