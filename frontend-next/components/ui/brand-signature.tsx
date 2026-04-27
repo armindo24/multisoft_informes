@@ -92,8 +92,8 @@ export function BrandSignature({
         : 'h-10 max-w-[140px] px-2'
       : isSidebarMode
         ? isWideLogo
-          ? 'h-11 max-w-[132px] px-2'
-          : 'h-10 max-w-[96px] px-2'
+          ? 'h-10 max-w-[118px] px-2'
+          : 'h-9 max-w-[84px] px-2'
         : isWideLogo
           ? 'h-14 max-w-[260px] px-3'
           : 'h-12 max-w-[180px] px-3'
@@ -131,9 +131,7 @@ export function BrandSignature({
         <p
           className={[
             isSidebarMode
-              ? isSidebarWideLogo
-                ? 'line-clamp-2 text-[0.8rem] leading-4 tracking-[0.12em]'
-                : 'line-clamp-2 text-[0.88rem] leading-4 tracking-[0.14em]'
+              ? 'truncate text-[0.82rem] leading-4 tracking-[0.1em]'
               : 'truncate text-sm tracking-[0.24em]',
             'font-semibold uppercase',
             light ? 'text-cyan-300' : 'text-cyan-700',
@@ -147,8 +145,8 @@ export function BrandSignature({
             compact ? 'hidden sm:block' : 'block',
             isSidebarMode
               ? isSidebarWideLogo
-                ? 'line-clamp-2 text-[0.84rem] leading-4'
-                : 'line-clamp-2 text-[0.9rem] leading-5'
+                ? 'line-clamp-2 text-[0.78rem] leading-4'
+                : 'line-clamp-2 text-[0.82rem] leading-4'
               : 'truncate text-sm',
             subTone,
           ].join(' ')}
