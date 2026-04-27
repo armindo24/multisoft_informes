@@ -199,10 +199,10 @@ export function AppShell({
       <div className="grid min-h-screen lg:grid-cols-[300px_minmax(0,1fr)]">
         <aside className="hidden border-r border-slate-800 bg-slate-950 text-slate-100 lg:block">
           <div className="sticky top-0 flex h-screen flex-col overflow-y-auto px-3 py-4">
-            <div className="px-2 pb-5">
+            <div className="px-2 pb-4">
               <BrandSignature light />
-              <h1 className="mt-3 text-[2rem] font-black leading-tight text-white">Panel ejecutivo</h1>
-              <p className="mt-3 max-w-[18rem] text-sm leading-6 text-slate-400">
+              <h1 className="mt-2.5 text-[1.7rem] font-black leading-tight text-white">Panel ejecutivo</h1>
+              <p className="mt-2 max-w-[17rem] text-[0.92rem] leading-5 text-slate-400">
                 Acceso ejecutivo a informes, indicadores y consultas operativas.
               </p>
             </div>
