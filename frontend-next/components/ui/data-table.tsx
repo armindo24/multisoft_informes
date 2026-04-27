@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react';
 import { exportRowsToExcel, exportRowsToPdf } from '@/components/ui/export-utils';
 import type { ExportBrandingOverride, ExportMetaItem } from '@/components/ui/export-utils';
 import { ReportNoticeButton } from '@/components/ui/report-notice-button';
+import { ReportScheduleButton } from '@/components/ui/report-schedule-button';
 import { ReportTaskButton } from '@/components/ui/report-task-button';
 
 export type DataColumn<T extends Record<string, unknown>> = {
@@ -58,6 +59,7 @@ export function DataTable<T extends Record<string, unknown>>({
   exportMeta,
   exportBranding,
   taskModule,
+  scheduleConfig,
 }: {
   title: string;
   subtitle?: string;
@@ -70,6 +72,11 @@ export function DataTable<T extends Record<string, unknown>>({
   exportMeta?: ExportMetaItem[];
   exportBranding?: ExportBrandingOverride;
   taskModule?: string;
+  scheduleConfig?: {
+    reportKey: string;
+    reportModule: string;
+    reportParams?: Record<string, string>;
+  };
 }) {
   const [query, setQuery] = useState('');
   const [sortKey, setSortKey] = useState<string>(String(columns.find((column) => column.sortable)?.key || columns[0]?.key || ''));
@@ -174,6 +181,15 @@ export function DataTable<T extends Record<string, unknown>>({
             <div className="flex items-center gap-2">
               <ReportNoticeButton reportTitle={title} detailHint={subtitle} />
               <ReportTaskButton reportTitle={title} taskModule={taskModule} detailHint={subtitle} />
+              {scheduleConfig ? (
+                <ReportScheduleButton
+                  reportKey={scheduleConfig.reportKey}
+                  reportTitle={title}
+                  reportModule={scheduleConfig.reportModule}
+                  detailHint={subtitle}
+                  reportParams={scheduleConfig.reportParams}
+                />
+              ) : null}
               <button type="button" onClick={exportExcel} className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-100">
                 <FileSpreadsheet className="size-4" /> Excel
               </button>

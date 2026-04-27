@@ -10,9 +10,15 @@ function num(value: unknown) {
 export function ReceivablesTable({
   rows,
   exportBranding,
+  scheduleConfig,
 }: {
   rows: CuentaCobrar[];
   exportBranding?: ExportBrandingOverride;
+  scheduleConfig?: {
+    reportKey: string;
+    reportModule: string;
+    reportParams?: Record<string, string>;
+  };
 }) {
   let saldoAcumulado = 0;
   let totalImporte = 0;
@@ -58,9 +64,11 @@ export function ReceivablesTable({
         title="Cuentas por cobrar"
         subtitle="Documentos pendientes con estructura mas cercana al informe historico."
         exportName="cuentas-por-cobrar"
-      rows={normalizedRows}
-      exportBranding={exportBranding}
-      columns={[
+        rows={normalizedRows}
+        exportBranding={exportBranding}
+        taskModule="Ventas"
+        scheduleConfig={scheduleConfig}
+        columns={[
           { key: 'tipo', header: 'Tipo Comprobante', sortable: true },
           { key: 'comprobante', header: '# Comprobante', sortable: true },
           { key: 'cuota', header: 'Cuota', sortable: true },

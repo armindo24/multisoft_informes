@@ -3,7 +3,16 @@ import nodemailer from 'nodemailer';
 import PDFDocument from 'pdfkit';
 import { inflateSync } from 'node:zlib';
 import { pbkdf2Sync, randomBytes } from 'node:crypto';
-import { getBalanceGeneral, getBalanceGeneralPuc } from '@/lib/api';
+import {
+  getBalanceGeneral,
+  getBalanceGeneralPuc,
+  getComprasList,
+  getCuentasCobrar,
+  getOrdenCompraList,
+  getStockExistenciaDeposito,
+  getStockValorizado,
+  getVentasResumido,
+} from '@/lib/api';
 import type { BalanceRow } from '@/types/finanzas';
 
 const pool = new Pool({
@@ -1509,6 +1518,40 @@ function padPdfCell(value: string, width: number) {
   return raw.length > width ? `${raw.slice(0, Math.max(0, width - 1))}…` : raw;
 }
 
+function scheduleNum(value: unknown) {
+  const n = Number(value ?? 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function formatScheduledCurrency(value: unknown, decimals = 0) {
+  return new Intl.NumberFormat('es-PY', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(scheduleNum(value));
+}
+
+function formatScheduledDate(value: unknown) {
+  return String(value || '').slice(0, 10) || '-';
+}
+
+function salesGroupLabel(groupBy: string) {
+  if (groupBy === 'cod_tp_comp') return 'Comprobante';
+  if (groupBy === 'cod_vendedor') return 'Vendedor';
+  return 'Cliente';
+}
+
+function salesGroupValue(row: Record<string, unknown>, groupBy: string) {
+  if (groupBy === 'cod_tp_comp') return String(row.des_tp_comp || row.cod_tp_comp || 'Sin comprobante');
+  if (groupBy === 'cod_vendedor') return String(row.des_vendedor || 'Sin vendedor');
+  return String(row.razon_social || row.cliente || 'Sin cliente');
+}
+
+type ScheduledAttachmentTable = {
+  headers: string[];
+  dataRows: string[][];
+  warning?: string;
+};
+
 async function loadScheduledBalanceReportData(schedule: ReportScheduleRecord) {
   const empresa = String(schedule.reportParams.empresa || '').trim();
   const periodo = String(schedule.reportParams.periodo || '').trim();
@@ -1588,6 +1631,199 @@ function buildScheduledBalanceTable(rows: BalanceRow[], moneda: string) {
   );
 
   return { headers, dataRows };
+}
+
+async function loadScheduledTabularReportData(schedule: ReportScheduleRecord): Promise<ScheduledAttachmentTable> {
+  const empresa = String(schedule.reportParams.empresa || '').trim();
+
+  if (schedule.reportKey === 'ventas.ventas_resumen') {
+    const order = String(schedule.reportParams.order || 'cod_cliente').trim() || 'cod_cliente';
+    const response = await getVentasResumido({
+      empresa,
+      sucursal: String(schedule.reportParams.sucursal || '').trim(),
+      moneda: String(schedule.reportParams.moneda || 'GS').trim() || 'GS',
+      desde: String(schedule.reportParams.desde || '').trim(),
+      hasta: String(schedule.reportParams.hasta || '').trim(),
+      order,
+      tipo_cliente: String(schedule.reportParams.tipo_cliente || '').trim(),
+      cliente: String(schedule.reportParams.cliente || '').trim(),
+      tipo_comprobante: String(schedule.reportParams.tipo_comprobante || '').trim(),
+    });
+    const rows = ((response?.data || []) as Array<Record<string, unknown>>);
+    return {
+      headers: ['Grupo', 'Comprobante', 'Cliente', 'RUC', 'Fecha', 'IVA', 'Gravado', 'Descuento', 'Total'],
+      dataRows: rows.map((row) => [
+        salesGroupValue(row, order),
+        `${String(row.cod_tp_comp || '')} - ${String(row.comp_numero || '')}`.trim(),
+        String(row.razon_social || row.cliente || '-'),
+        String(row.ruc || '-'),
+        formatScheduledDate(row.fecha),
+        formatScheduledCurrency(row.total_iva),
+        formatScheduledCurrency(row.to_gravado),
+        formatScheduledCurrency(row.totaldescuento),
+        formatScheduledCurrency(scheduleNum(row.to_gravado) + scheduleNum(row.total_iva)),
+      ]),
+      warning: `Agrupado por ${salesGroupLabel(order).toLowerCase()}.`,
+    };
+  }
+
+  if (schedule.reportKey === 'ventas.cuentas_cobrar') {
+    const response = await getCuentasCobrar({
+      empresa,
+      sucursal: String(schedule.reportParams.sucursal || '').trim(),
+      start: String(schedule.reportParams.desde || '').trim(),
+      end: String(schedule.reportParams.hasta || '').trim(),
+      vencimiento: String(schedule.reportParams.vencimiento || '').trim() === 'true',
+      cliente: String(schedule.reportParams.cliente || '').trim(),
+      calificacion: String(schedule.reportParams.calificacion || '').trim(),
+      movimiento: String(schedule.reportParams.movimiento || '').trim(),
+      condicion: String(schedule.reportParams.condicion || '').trim(),
+      cobrador: String(schedule.reportParams.cobrador || '').trim(),
+      vendedor: String(schedule.reportParams.vendedor || '').trim(),
+      zona: String(schedule.reportParams.zona || '').trim(),
+      tipoCliente: String(schedule.reportParams.tipoCliente || '').trim(),
+    });
+    const rows = ((response?.data || []) as Array<Record<string, unknown>>);
+    let saldoAcumulado = 0;
+    return {
+      headers: ['Tipo Comprobante', 'Comprobante', 'Cuota', 'Cliente', 'Emision', 'Vencimiento', 'Importe', 'Saldo', 'Saldo acumulado'],
+      dataRows: rows.map((row) => {
+        const saldo = scheduleNum(row.saldo);
+        saldoAcumulado += saldo;
+        return [
+          row.des_tp_comp ? `${String(row.cod_tp_comp || '')} - ${String(row.des_tp_comp || '')}` : String(row.cod_tp_comp || '-'),
+          String(row.comp_numero || '-'),
+          String(row.cuota_numero || '-'),
+          String(row.razon_social || row.cod_cliente || '-'),
+          formatScheduledDate(row.fecha_emi),
+          formatScheduledDate(row.fecha_ven),
+          formatScheduledCurrency(row.importe),
+          formatScheduledCurrency(saldo),
+          formatScheduledCurrency(saldoAcumulado),
+        ];
+      }),
+    };
+  }
+
+  if (schedule.reportKey === 'compras.compras_periodo') {
+    const response = await getComprasList({
+      empresa,
+      sucursal: String(schedule.reportParams.sucursal || '').trim(),
+      moneda: String(schedule.reportParams.moneda || 'GS').trim() || 'GS',
+      compras_start: String(schedule.reportParams.compras_start || '').trim(),
+      compras_end: String(schedule.reportParams.compras_end || '').trim(),
+      departamento: String(schedule.reportParams.departamento || '').trim(),
+      proveedor: String(schedule.reportParams.proveedor || '').trim(),
+      tipooc: String(schedule.reportParams.tipooc || '').trim(),
+      agrupar: String(schedule.reportParams.agrupar || '').trim(),
+    });
+    const rows = ((response?.data || []) as Array<Record<string, unknown>>);
+    return {
+      headers: ['Fecha', 'Comprobante', 'Proveedor', 'Sucursal', 'Gravada', 'IVA', 'Total', 'Estado'],
+      dataRows: rows.map((row) => [
+        formatScheduledDate(row.FechaFact || row.fecha_fact),
+        `${String(row.Cod_Tp_Comp || row.cod_tp_comp || '')} - ${String(row.NroFact || row.nrofact || '')}`.trim(),
+        String(row.RazonSocial || row.razon_social || '-'),
+        String(row.des_sucursal || '-'),
+        formatScheduledCurrency(row.gravada),
+        formatScheduledCurrency(row.IVA || row.iva),
+        formatScheduledCurrency(row.total),
+        String(row.estado || row.Asentado || '-'),
+      ]),
+    };
+  }
+
+  if (schedule.reportKey === 'compras.ordenes_compra') {
+    const response = await getOrdenCompraList({
+      empresa,
+      sucursal: String(schedule.reportParams.sucursal || '').trim(),
+      compras_start: String(schedule.reportParams.compras_start || '').trim(),
+      compras_end: String(schedule.reportParams.compras_end || '').trim(),
+      departamento: String(schedule.reportParams.departamento || '').trim(),
+      proveedor: String(schedule.reportParams.proveedor || '').trim(),
+      tipooc: String(schedule.reportParams.tipooc || '').trim(),
+      estado: String(schedule.reportParams.estado || '').trim(),
+    });
+    const rows = ((response?.data || []) as Array<Record<string, unknown>>);
+    return {
+      headers: ['N° OC', 'Fecha', 'Proveedor', 'Responsable', 'Departamento', 'Cumplido %', 'Estado', 'Total'],
+      dataRows: rows.map((row) => [
+        String(row.nroordcomp || 'oc'),
+        formatScheduledDate(row.fechaorden),
+        String(row.razonsocial || '-'),
+        String(row.responsable || '-'),
+        String(row.descrip || '-'),
+        formatScheduledCurrency(row.porccumplido, 2),
+        String(row.estado || '-'),
+        formatScheduledCurrency(row.total),
+      ]),
+    };
+  }
+
+  if (schedule.reportKey === 'stock.stock_valorizado') {
+    const response = await getStockValorizado({
+      empresa,
+      sucursal: String(schedule.reportParams.sucursal || '').trim(),
+      deposito: String(schedule.reportParams.deposito || '').trim(),
+      estado: String(schedule.reportParams.estado || '').trim(),
+      tipo: String(schedule.reportParams.tipo || '').trim(),
+      familia: String(schedule.reportParams.familia || '').trim(),
+      grupo: String(schedule.reportParams.grupo || '').trim(),
+      existencia: String(schedule.reportParams.existencia || '').trim(),
+      moneda: String(schedule.reportParams.moneda || 'L').trim() || 'L',
+      costeo: String(schedule.reportParams.costeo || 'P').trim() || 'P',
+    });
+    const rows = ((response?.data || []) as Array<Record<string, unknown>>);
+    return {
+      headers: ['Articulo', 'Descripcion', 'Sucursal', 'Deposito', 'Existencia', 'Costo', 'Valor total'],
+      dataRows: rows.map((row) => {
+        const costo = scheduleNum(row.costo);
+        const existencia = scheduleNum(row.total_existencia);
+        return [
+          String(row.cod_articulo || row.cod_original || '-'),
+          String(row.des_art || '-'),
+          String(row.des_sucursal || row.cod_sucursal || '-'),
+          String(row.des_deposito || row.cod_deposito || '-'),
+          formatScheduledCurrency(existencia, 2),
+          formatScheduledCurrency(costo),
+          formatScheduledCurrency(costo * existencia),
+        ];
+      }),
+    };
+  }
+
+  if (schedule.reportKey === 'stock.stock_existencia') {
+    const response = await getStockExistenciaDeposito({
+      empresa,
+      sucursal: String(schedule.reportParams.sucursal || '').trim(),
+      deposito: String(schedule.reportParams.deposito || '').trim(),
+      estado: String(schedule.reportParams.estado || '').trim(),
+      tipo: String(schedule.reportParams.tipo || '').trim(),
+      familia: String(schedule.reportParams.familia || '').trim(),
+      grupo: String(schedule.reportParams.grupo || '').trim(),
+      existencia: String(schedule.reportParams.existencia || '').trim(),
+    });
+    const rows = ((response?.data || []) as Array<Record<string, unknown>>);
+    return {
+      headers: ['Articulo', 'Descripcion', 'Familia', 'Deposito', 'Existencia', 'Pto. pedido', 'Estado'],
+      dataRows: rows.map((row) => {
+        const existencia = scheduleNum(row.existencia);
+        const puntoPedido = scheduleNum(row.pto_pedido);
+        const estado = existencia <= 0 ? 'Sin stock' : existencia <= puntoPedido && puntoPedido > 0 ? 'Bajo minimo' : 'OK';
+        return [
+          String(row.cod_articulo || row.cod_original || '-'),
+          String(row.des_art || row.referencia || '-'),
+          String(row.des_familia || row.cod_familia || '-'),
+          String(row.cod_deposito || '-'),
+          formatScheduledCurrency(existencia, 2),
+          formatScheduledCurrency(puntoPedido, 2),
+          estado,
+        ];
+      }),
+    };
+  }
+
+  throw new Error('El informe programado todavia no soporta adjuntos automáticos.');
 }
 
 function buildBalanceExcelAttachment(schedule: ReportScheduleRecord, rows: BalanceRow[], moneda: string) {
@@ -1685,6 +1921,113 @@ function buildBalancePdfAttachment(schedule: ReportScheduleRecord, rows: Balance
   });
 }
 
+function buildTabularExcelAttachment(schedule: ReportScheduleRecord, table: ScheduledAttachmentTable) {
+  const header = table.headers
+    .map((item) => `<th style="border:1px solid #cbd5e1;padding:6px 8px;background:#eaf2f8;">${escapeHtml(item)}</th>`)
+    .join('');
+  const body = table.dataRows
+    .map((row) => `<tr>${row.map((cell) => `<td style="border:1px solid #cbd5e1;padding:6px 8px;">${escapeHtml(cell)}</td>`).join('')}</tr>`)
+    .join('');
+  const metaRows = Object.entries(schedule.reportParams)
+    .filter(([, value]) => String(value || '').trim())
+    .map(
+      ([key, value]) =>
+        `<tr><td style="border:1px solid #dbe5f0;padding:6px 10px;background:#f8fafc;font-weight:700;">${escapeHtml(key.replace(/_/g, ' '))}</td><td style="border:1px solid #dbe5f0;padding:6px 10px;">${escapeHtml(value)}</td></tr>`,
+    )
+    .join('');
+
+  const content =
+    '<html><head><meta charset="utf-8"></head><body style="font-family:Arial,Helvetica,sans-serif;">' +
+    `<h1 style="font-size:22px;">${escapeHtml(schedule.reportTitle)}</h1>` +
+    (table.warning ? `<p style="color:#475569;font-size:13px;margin:8px 0 12px 0;">${escapeHtml(table.warning)}</p>` : '') +
+    '<table style="border-collapse:collapse;margin:12px 0 18px 0;">' +
+    metaRows +
+    '</table>' +
+    `<table style="border-collapse:collapse;width:100%;"><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table>` +
+    '</body></html>';
+
+  return {
+    filename: `${schedule.reportKey.replace(/[^\w.-]+/g, '_')}.xls`,
+    content,
+    contentType: 'application/vnd.ms-excel;charset=utf-8;',
+  };
+}
+
+function buildTabularPdfAttachment(schedule: ReportScheduleRecord, table: ScheduledAttachmentTable) {
+  const doc = new PDFDocument({
+    size: 'A4',
+    margin: 36,
+    bufferPages: true,
+  });
+  const chunks: Buffer[] = [];
+  doc.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+
+  doc.fontSize(18).fillColor('#0f172a').text(schedule.reportTitle, { align: 'left' });
+  doc.moveDown(0.3);
+  doc.fontSize(10).fillColor('#475569').text(`Generado automaticamente · ${new Date().toLocaleString('es-PY')}`);
+  if (table.warning) {
+    doc.moveDown(0.2);
+    doc.fontSize(9).fillColor('#64748b').text(table.warning);
+  }
+  doc.moveDown(0.6);
+
+  for (const [key, value] of Object.entries(schedule.reportParams)) {
+    const normalized = String(value || '').trim();
+    if (!normalized) continue;
+    doc.fontSize(9).fillColor('#0f172a').text(`${key.replace(/_/g, ' ')}: ${normalized}`);
+  }
+
+  doc.moveDown(0.8);
+  doc.fontSize(10).fillColor('#0f172a');
+  const totalWidth = 520;
+  const firstWidth = 72;
+  const secondWidth = Math.min(220, Math.max(140, totalWidth - firstWidth - Math.max(1, table.headers.length - 2) * 58));
+  const restWidth = table.headers.length > 2 ? Math.max(56, Math.floor((totalWidth - firstWidth - secondWidth) / (table.headers.length - 2))) : 0;
+  const widths = table.headers.map((_, index) => (index === 0 ? firstWidth : index === 1 ? secondWidth : restWidth));
+  const columns = widths.reduce<number[]>((acc, width, index) => {
+    if (index === 0) return [16];
+    acc.push(acc[index - 1] + widths[index - 1] + 6);
+    return acc;
+  }, []);
+  const rowHeight = 14;
+  const startY = doc.y;
+
+  table.headers.forEach((header, index) => {
+    doc.font('Helvetica-Bold').text(header, columns[index], startY, { width: widths[index] });
+  });
+
+  let currentY = startY + 18;
+  for (const row of table.dataRows) {
+    if (currentY > 760) {
+      doc.addPage();
+      currentY = 48;
+    }
+    doc.font('Helvetica');
+    row.forEach((cell, cellIndex) => {
+      const widthHint = cellIndex === 1 ? 34 : cellIndex > 1 ? 12 : 18;
+      doc.text(
+        padPdfCell(String(cell), widthHint),
+        columns[cellIndex],
+        currentY,
+        { width: widths[cellIndex], align: cellIndex > 1 ? 'right' : 'left' },
+      );
+    });
+    currentY += rowHeight;
+  }
+
+  doc.end();
+
+  return new Promise<{ filename: string; content: Buffer; contentType: string }>((resolve) => {
+    doc.on('end', () => {
+      resolve({
+        filename: `${schedule.reportKey.replace(/[^\w.-]+/g, '_')}.pdf`,
+        content: Buffer.concat(chunks),
+        contentType: 'application/pdf',
+      });
+    });
+  });
+}
+
 async function resolveReportScheduleRecipients(schedule: ReportScheduleRecord) {
   const emails = new Set<string>(normalizeScheduleEmails(schedule.extraEmails));
   const labels: string[] = [];
@@ -1739,13 +2082,19 @@ async function sendScheduledReportEmail(schedule: ReportScheduleRecord, origin?:
     throw new Error('La programacion no tiene correos validos para enviar el informe.');
   }
 
-  if (!['finanzas.balance_general', 'finanzas.balance_general_puc'].includes(schedule.reportKey)) {
-    throw new Error('Esta primera etapa solo adjunta Balance general y Balance general PUC.');
-  }
+  const isBalanceSchedule = ['finanzas.balance_general', 'finanzas.balance_general_puc'].includes(schedule.reportKey);
+  let resolvedExcelAttachment: { filename: string; content: Buffer | string; contentType?: string };
+  let resolvedPdfAttachment: { filename: string; content: Buffer | string; contentType?: string };
 
-  const reportData = await loadScheduledBalanceReportData(schedule);
-  const excelAttachment = buildBalanceExcelAttachment(schedule, reportData.rows, reportData.moneda);
-  const pdfAttachment = await buildBalancePdfAttachment(schedule, reportData.rows, reportData.moneda);
+  if (isBalanceSchedule) {
+    const reportData = await loadScheduledBalanceReportData(schedule);
+    resolvedExcelAttachment = buildBalanceExcelAttachment(schedule, reportData.rows, reportData.moneda);
+    resolvedPdfAttachment = await buildBalancePdfAttachment(schedule, reportData.rows, reportData.moneda);
+  } else {
+    const table = await loadScheduledTabularReportData(schedule);
+    resolvedExcelAttachment = buildTabularExcelAttachment(schedule, table);
+    resolvedPdfAttachment = await buildTabularPdfAttachment(schedule, table);
+  }
 
   const empresa = String(schedule.reportParams.empresa || '').trim();
   const branding = empresa ? await loadBrandingConfig(empresa) : await loadBrandingConfig('GLOBAL');
@@ -1815,7 +2164,7 @@ async function sendScheduledReportEmail(schedule: ReportScheduleRecord, origin?:
       subject,
       text,
       html,
-      attachments: [excelAttachment, pdfAttachment],
+      attachments: [resolvedExcelAttachment, resolvedPdfAttachment],
     });
   }
 

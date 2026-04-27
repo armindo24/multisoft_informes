@@ -10,10 +10,16 @@ function toNumber(value: unknown) {
 export function StockValuationTable({
   rows,
   exportBranding,
+  scheduleConfig,
 }: {
   rows: StockValorizadoRow[];
   currencyLabel: string;
   exportBranding?: ExportBrandingOverride;
+  scheduleConfig?: {
+    reportKey: string;
+    reportModule: string;
+    reportParams?: Record<string, string>;
+  };
 }) {
   const normalizedRows = rows.map((row) => {
     const costo = toNumber(row.costo);
@@ -36,6 +42,8 @@ export function StockValuationTable({
       exportName="stock-valorizado"
       rows={normalizedRows}
       exportBranding={exportBranding}
+      taskModule="Stock"
+      scheduleConfig={scheduleConfig}
       emptyMessage="No hay datos valorizados para el filtro seleccionado."
       columns={[
         { key: 'articulo', header: 'Artículo', sortable: true },

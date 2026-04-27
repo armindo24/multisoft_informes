@@ -6,6 +6,7 @@ import { getVentaDetalle } from '@/lib/api';
 import { exportRowsToExcel, exportRowsToPdf } from '@/components/ui/export-utils';
 import type { ExportBrandingOverride } from '@/components/ui/export-utils';
 import { ReportNoticeButton } from '@/components/ui/report-notice-button';
+import { ReportScheduleButton } from '@/components/ui/report-schedule-button';
 import { ReportTaskButton } from '@/components/ui/report-task-button';
 import { VentaDetalle, VentaResumen } from '@/types/ventas';
 
@@ -44,10 +45,16 @@ export function SalesTable({
   rows,
   groupBy,
   exportBranding,
+  scheduleConfig,
 }: {
   rows: VentaResumen[];
   groupBy: string;
   exportBranding?: ExportBrandingOverride;
+  scheduleConfig?: {
+    reportKey: string;
+    reportModule: string;
+    reportParams?: Record<string, string>;
+  };
 }) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -228,6 +235,15 @@ export function SalesTable({
                 taskModule="Ventas"
                 detailHint={`Agrupado por ${groupLabel(groupBy).toLowerCase()}.`}
               />
+              {scheduleConfig ? (
+                <ReportScheduleButton
+                  reportKey={scheduleConfig.reportKey}
+                  reportTitle="Ventas resumido y detallado"
+                  reportModule={scheduleConfig.reportModule}
+                  detailHint={`Agrupado por ${groupLabel(groupBy).toLowerCase()}.`}
+                  reportParams={scheduleConfig.reportParams}
+                />
+              ) : null}
               <button type="button" onClick={exportResumenExcel} disabled={!rows.length} className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 disabled:cursor-not-allowed disabled:opacity-50">
                 <FileSpreadsheet className="size-4" />
                 Excel

@@ -10,9 +10,15 @@ function num(value: unknown) {
 export function PurchaseOrdersTable({
   rows,
   exportBranding,
+  scheduleConfig,
 }: {
   rows: OrdenCompraRow[];
   exportBranding?: ExportBrandingOverride;
+  scheduleConfig?: {
+    reportKey: string;
+    reportModule: string;
+    reportParams?: Record<string, string>;
+  };
 }) {
   const normalizedRows = rows.map((row) => ({
     ordenCompra: String(row.nroordcomp || 'oc'),
@@ -32,6 +38,8 @@ export function PurchaseOrdersTable({
       exportName="ordenes-compra"
       rows={normalizedRows}
       exportBranding={exportBranding}
+      taskModule="Compras"
+      scheduleConfig={scheduleConfig}
       columns={[
         { key: 'ordenCompra', header: 'N° OC', sortable: true },
         { key: 'fecha', header: 'Fecha', sortable: true, type: 'date' },

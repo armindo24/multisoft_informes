@@ -10,9 +10,15 @@ function num(value: unknown) {
 export function PurchasesTable({
   rows,
   exportBranding,
+  scheduleConfig,
 }: {
   rows: CompraRow[];
   exportBranding?: ExportBrandingOverride;
+  scheduleConfig?: {
+    reportKey: string;
+    reportModule: string;
+    reportParams?: Record<string, string>;
+  };
 }) {
   const normalizedRows = rows.map((row) => ({
     fecha: String(row.FechaFact || row.fecha_fact || '').slice(0, 10),
@@ -32,6 +38,8 @@ export function PurchasesTable({
       exportName="compras-periodo"
       rows={normalizedRows}
       exportBranding={exportBranding}
+      taskModule="Compras"
+      scheduleConfig={scheduleConfig}
       columns={[
         { key: 'fecha', header: 'Fecha', sortable: true, type: 'date' },
         { key: 'comprobante', header: 'Comprobante', sortable: true },

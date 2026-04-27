@@ -239,7 +239,15 @@ export default async function VentasPage({
         <SalesStats rows={estadisticasRows} agrupacion={agrupacion} moneda={moneda} exportBranding={exportBranding} />
       ) : isReceivablesMode ? (
         <div id="cuentas-cobrar" className="scroll-mt-28">
-          <ReceivablesTable rows={cuentasCobrar} exportBranding={exportBranding} />
+          <ReceivablesTable
+            rows={cuentasCobrar}
+            exportBranding={exportBranding}
+            scheduleConfig={{
+              reportKey: 'ventas.cuentas_cobrar',
+              reportModule: 'Ventas',
+              reportParams: current,
+            }}
+          />
         </div>
       ) : (
         <>
@@ -251,7 +259,16 @@ export default async function VentasPage({
           </section>
 
           <div id="ventas-resumen" className="scroll-mt-28">
-            <SalesTable rows={ventas} groupBy={order} exportBranding={exportBranding} />
+            <SalesTable
+              rows={ventas}
+              groupBy={order}
+              exportBranding={exportBranding}
+              scheduleConfig={{
+                reportKey: 'ventas.ventas_resumen',
+                reportModule: 'Ventas',
+                reportParams: current,
+              }}
+            />
           </div>
         </>
       )}

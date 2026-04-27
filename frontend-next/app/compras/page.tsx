@@ -239,8 +239,24 @@ export default async function ComprasPage({
             <KpiCard item={{ title: 'Monto ordenado', value: totalOrdenado.toLocaleString('es-PY'), change: 'Ordenes de compra', trend: 'up' }} />
           </section>
 
-          <PurchasesTable rows={compras} exportBranding={exportBranding} />
-          <PurchaseOrdersTable rows={ordenes} exportBranding={exportBranding} />
+          <PurchasesTable
+            rows={compras}
+            exportBranding={exportBranding}
+            scheduleConfig={{
+              reportKey: 'compras.compras_periodo',
+              reportModule: 'Compras',
+              reportParams: current,
+            }}
+          />
+          <PurchaseOrdersTable
+            rows={ordenes}
+            exportBranding={exportBranding}
+            scheduleConfig={{
+              reportKey: 'compras.ordenes_compra',
+              reportModule: 'Compras',
+              reportParams: current,
+            }}
+          />
         </>
       ) : (
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

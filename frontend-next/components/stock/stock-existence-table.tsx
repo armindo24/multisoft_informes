@@ -10,9 +10,15 @@ function toNumber(value: unknown) {
 export function StockExistenceTable({
   rows,
   exportBranding,
+  scheduleConfig,
 }: {
   rows: StockDepositoRow[];
   exportBranding?: ExportBrandingOverride;
+  scheduleConfig?: {
+    reportKey: string;
+    reportModule: string;
+    reportParams?: Record<string, string>;
+  };
 }) {
   const normalizedRows = rows.map((row) => {
     const existencia = toNumber(row.existencia);
@@ -36,6 +42,8 @@ export function StockExistenceTable({
       exportName="stock-existencia"
       rows={normalizedRows}
       exportBranding={exportBranding}
+      taskModule="Stock"
+      scheduleConfig={scheduleConfig}
       emptyMessage="No hay datos de existencia para el filtro seleccionado."
       columns={[
         { key: 'articulo', header: 'Artículo', sortable: true },

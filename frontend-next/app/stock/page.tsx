@@ -237,11 +237,28 @@ export default async function StockPage({
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-        <StockValuationTable rows={valorizadoRows} currencyLabel={currencyLabel} exportBranding={exportBranding} />
+        <StockValuationTable
+          rows={valorizadoRows}
+          currencyLabel={currencyLabel}
+          exportBranding={exportBranding}
+          scheduleConfig={{
+            reportKey: 'stock.stock_valorizado',
+            reportModule: 'Stock',
+            reportParams: current,
+          }}
+        />
         <StockAlerts rows={existenciaRows} />
       </section>
 
-      <StockExistenceTable rows={existenciaRows} exportBranding={exportBranding} />
+      <StockExistenceTable
+        rows={existenciaRows}
+        exportBranding={exportBranding}
+        scheduleConfig={{
+          reportKey: 'stock.stock_existencia',
+          reportModule: 'Stock',
+          reportParams: current,
+        }}
+      />
         </>
       )}
     </div>
