@@ -181,6 +181,28 @@ function scheduleFrequencyLabel(item: ReportScheduleItem) {
   return `Mensual · dia ${item.dayOfMonth ?? 1} · ${item.timeOfDay}`;
 }
 
+function scheduleRangeBadge(item: ReportScheduleItem) {
+  const mode = String(item.reportParams?.schedule_range_mode || '').trim();
+  if (mode !== 'enero_mes_actual') {
+    return {
+      label: 'Rango fijo',
+      className: 'border-slate-200 bg-white text-slate-600',
+    };
+  }
+
+  if (item.reportKey === 'stock.costo_articulo_full') {
+    return {
+      label: 'Rango dinamico mensual',
+      className: 'border-cyan-200 bg-cyan-50 text-cyan-700',
+    };
+  }
+
+  return {
+    label: 'Rango dinamico acumulado',
+    className: 'border-violet-200 bg-violet-50 text-violet-700',
+  };
+}
+
 export function NotificationsPanel({
   initialSummary,
   initialEvents,
@@ -1088,6 +1110,7 @@ export function NotificationsPanel({
             {reportSchedules.length ? (
               reportSchedules.map((item) => {
                 const scheduleLogs = (logsBySchedule[item.id] || []).slice(0, 3);
+                const rangeBadge = scheduleRangeBadge(item);
                 return (
                   <article key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1097,6 +1120,9 @@ export function NotificationsPanel({
                         <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
                           <span className={['rounded-full border px-2.5 py-1', item.isActive ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-600'].join(' ')}>
                             {item.isActive ? 'Activa' : 'Pausada'}
+                          </span>
+                          <span className={['rounded-full border px-2.5 py-1', rangeBadge.className].join(' ')}>
+                            {rangeBadge.label}
                           </span>
                           <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
                             Proximo: {fmtDate(item.nextRunAt)}
