@@ -24,6 +24,7 @@ export function BrandSignature({
   const searchParams = useSearchParams();
   const globalBranding = useMemo(() => getBranding(), []);
   const [branding, setBranding] = useState<BrandingConfig>(globalBranding);
+  const [isWideLogo, setIsWideLogo] = useState(false);
   const empresaParam = String(empresa || searchParams.get('empresa') || '').trim().toUpperCase();
 
   useEffect(() => {
@@ -72,9 +73,22 @@ export function BrandSignature({
     };
   }, [empresaParam, globalBranding]);
 
+  useEffect(() => {
+    setIsWideLogo(false);
+  }, [branding.logoUrl]);
+
   const hasLogo = Boolean(branding.logoUrl);
   const shortName = brandShortName(branding.clientName);
   const subTone = light ? 'text-slate-300' : 'text-slate-500';
+  const logoContainerClass = hasLogo
+    ? compact
+      ? isWideLogo
+        ? 'h-10 max-w-[180px] px-2.5'
+        : 'h-10 max-w-[140px] px-2'
+      : isWideLogo
+        ? 'h-14 max-w-[260px] px-3'
+        : 'h-12 max-w-[180px] px-3'
+    : '';
 
   return (
     <div className="flex items-center gap-3">
@@ -82,12 +96,19 @@ export function BrandSignature({
         <div
           className={[
             'flex items-center overflow-hidden rounded-xl bg-white/95 shadow-sm',
-            compact ? 'h-10 max-w-[140px] px-2' : 'h-12 max-w-[180px] px-3',
+            logoContainerClass,
           ].join(' ')}
         >
           <img
             src={resolveBrandAssetUrl(branding.logoUrl)}
             alt={branding.clientName}
+            onLoad={(event) => {
+              const image = event.currentTarget;
+              const width = Number(image.naturalWidth || 0);
+              const height = Number(image.naturalHeight || 0);
+              if (!width || !height) return;
+              setIsWideLogo(width / height >= 2.15);
+            }}
             className="max-h-full w-auto max-w-full object-contain"
           />
         </div>
