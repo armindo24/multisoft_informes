@@ -1116,6 +1116,12 @@ function normalizeTaskCommentRow(row: Record<string, unknown>): TaskCommentRecor
   };
 }
 
+function isRestrictedCollaborationUser(row: Record<string, unknown> | undefined) {
+  if (!row) return true;
+  const username = String(row.username || '').trim().toLowerCase();
+  return Boolean(row.is_superuser) || username === 'admin';
+}
+
 async function createUserNotification(input: {
   userId: number;
   actorUserId?: number | null;
@@ -1222,7 +1228,7 @@ export async function sendDirectUserNotification(input: {
 
   const userValidation = await pool.query<Record<string, unknown>>(
     `
-      SELECT id, username, first_name, last_name, email
+      SELECT id, username, first_name, last_name, email, is_superuser
       FROM auth_user
       WHERE id = ANY($1::int[])
         AND is_active = TRUE
@@ -1236,6 +1242,9 @@ export async function sendDirectUserNotification(input: {
   }
   if (!usersById.has(targetUserId)) {
     throw new Error('El usuario destinatario no esta disponible.');
+  }
+  if (isRestrictedCollaborationUser(usersById.get(targetUserId))) {
+    throw new Error('Las cuentas administrativas no reciben avisos internos.');
   }
 
   await createUserNotification({
@@ -1321,7 +1330,7 @@ export async function sendDirectUserNotification(input: {
 export async function loadActiveUserOptions(actorUserId?: number) {
   const result = await pool.query<Record<string, unknown>>(
     `
-      SELECT id, username, first_name, last_name
+      SELECT id, username, first_name, last_name, is_superuser
       FROM auth_user
       WHERE is_active = TRUE
       ORDER BY username
@@ -1329,6 +1338,7 @@ export async function loadActiveUserOptions(actorUserId?: number) {
   );
 
   return result.rows
+    .filter((row) => !isRestrictedCollaborationUser(row))
     .map((row) => ({
       id: Number(row.id || 0),
       username: String(row.username || ''),
@@ -1482,7 +1492,7 @@ export async function createUserTask(input: {
 
   const userValidation = await pool.query<{ id: number }>(
     `
-      SELECT id
+      SELECT id, username, is_superuser
       FROM auth_user
       WHERE id = ANY($1::int[])
         AND is_active = TRUE
@@ -1496,6 +1506,10 @@ export async function createUserTask(input: {
   }
   if (!validIds.has(assignedTo)) {
     throw new Error('El usuario asignado no esta disponible.');
+  }
+  const assignedUser = userValidation.rows.find((row) => Number(row.id) === assignedTo);
+  if (isRestrictedCollaborationUser(assignedUser)) {
+    throw new Error('Las cuentas administrativas no deben recibir tareas.');
   }
 
   const created = await pool.query<{ id: number }>(
