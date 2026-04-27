@@ -196,7 +196,7 @@ export function AppShell({
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)]">
-      <div className="grid min-h-screen lg:grid-cols-[300px_minmax(0,1fr)]">
+      <div className="grid min-h-screen lg:grid-cols-[284px_minmax(0,1fr)]">
         <aside className="hidden border-r border-slate-800 bg-slate-950 text-slate-100 lg:block">
           <div className="sticky top-0 flex h-screen flex-col overflow-y-auto px-3 py-4">
             <div className="px-2 pb-4">
@@ -313,7 +313,7 @@ export function AppShell({
 
         <div className="flex min-h-screen flex-col">
           <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur-xl">
-            <div className="flex flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center justify-between gap-3 lg:hidden">
                 <BrandSignature compact />
                 <LogoutButton />
@@ -339,7 +339,7 @@ export function AppShell({
                 })}
               </div>
 
-              <div className="flex items-center gap-3 rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500 lg:min-w-[370px]">
+              <div className="flex items-center gap-3 rounded-[1.3rem] border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-500 lg:min-w-[340px]">
                 <div className="hidden shrink-0 lg:block">
                   <BrandSignature compact />
                 </div>
@@ -351,7 +351,7 @@ export function AppShell({
                   href="/notificaciones"
                   title={notificationTooltip}
                   aria-label={notificationTooltip}
-                  className="relative rounded-2xl border border-slate-200 bg-white p-3 text-slate-600 shadow-sm transition hover:border-cyan-200 hover:bg-cyan-50/40"
+                  className="relative rounded-2xl border border-slate-200 bg-white p-2.5 text-slate-600 shadow-sm transition hover:border-cyan-200 hover:bg-cyan-50/40"
                 >
                   <Bell className="h-4 w-4" />
                   {notificationCount > 0 ? (
@@ -361,7 +361,7 @@ export function AppShell({
                   ) : null}
                   <span className="sr-only">{notificationTooltip}</span>
                 </Link>
-                <Link href="/perfil" className="block max-w-[320px] rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm shadow-sm transition hover:border-cyan-200 hover:bg-cyan-50/40">
+                <Link href="/perfil" className="block max-w-[300px] rounded-2xl border border-slate-200 bg-white px-3.5 py-2 text-sm shadow-sm transition hover:border-cyan-200 hover:bg-cyan-50/40">
                   <p className="truncate font-semibold text-slate-900">{user?.displayName || user?.username || 'Usuario'}</p>
                   <p className="truncate text-slate-500">{profileSubtitle(user)}</p>
                 </Link>
