@@ -10,9 +10,12 @@ import {
   getCuentasCobrar,
   getOrdenCompraList,
   getStockCostoArticuloFull,
+  getStockCostoArticuloFullAsyncResult,
+  getStockCostoArticuloFullAsyncStatus,
   getStockExistenciaDeposito,
   getStockValorizado,
   getVentasResumido,
+  startStockCostoArticuloFullAsync,
 } from '@/lib/api';
 import type { BalanceRow } from '@/types/finanzas';
 
@@ -1628,6 +1631,55 @@ type ScheduledAttachmentTable = {
   warning?: string;
 };
 
+async function loadScheduledCostoArticuloFullRows(params: {
+  empresa: string;
+  articulo: string;
+  tipo: string;
+  estado: string;
+  fechad: string;
+  fechah: string;
+  calcular_empresa: string;
+  ecuacion_mat: string;
+  periodo: string;
+  anho: string;
+  fecha_inicio_desde: string;
+  fecha_inicio_hasta: string;
+  fecha_fin_desde: string;
+  fecha_fin_hasta: string;
+  recalcular: string;
+}) {
+  const ecuacionMat = String(params.ecuacion_mat || '').trim().toUpperCase() === 'S';
+  if (!ecuacionMat) {
+    const response = await getStockCostoArticuloFull(params);
+    return ((response?.data || []) as Array<Record<string, unknown>>);
+  }
+
+  const started = await startStockCostoArticuloFullAsync(params);
+  const jobId = String(started?.data?.job_id || '').trim();
+  if (!jobId) {
+    throw new Error('No se pudo iniciar el proceso asincrono de Costo Articulo Full.');
+  }
+
+  for (let attempt = 0; attempt < 60; attempt += 1) {
+    const status = await getStockCostoArticuloFullAsyncStatus(params.empresa, jobId);
+    const job = status?.data || {};
+    const currentStatus = String(job.status || '').trim().toLowerCase();
+
+    if (currentStatus === 'done') {
+      const result = await getStockCostoArticuloFullAsyncResult(params.empresa, jobId);
+      return ((result?.data || []) as Array<Record<string, unknown>>);
+    }
+
+    if (currentStatus === 'error') {
+      throw new Error(String(job.error || 'El proceso asincrono de Costo Articulo Full finalizo con error.'));
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+  }
+
+  throw new Error('El proceso asincrono de Costo Articulo Full no finalizo dentro del tiempo esperado.');
+}
+
 const INTERNAL_SCHEDULE_PARAM_KEYS = new Set(['schedule_range_mode']);
 
 function isDynamicMonthlyBalanceSchedule(schedule: ReportScheduleRecord) {
@@ -1784,6 +1836,7 @@ function buildScheduledBalanceTable(rows: BalanceRow[], moneda: string) {
 
 async function loadScheduledTabularReportData(schedule: ReportScheduleRecord): Promise<ScheduledAttachmentTable> {
   const empresa = String(schedule.reportParams.empresa || '').trim();
+  const effectiveParams = resolveScheduledReportParams(schedule);
 
   if (schedule.reportKey === 'ventas.ventas_resumen') {
     const order = String(schedule.reportParams.order || 'cod_cliente').trim() || 'cod_cliente';
@@ -1973,25 +2026,24 @@ async function loadScheduledTabularReportData(schedule: ReportScheduleRecord): P
   }
 
   if (schedule.reportKey === 'stock.costo_articulo_full') {
-    const response = await getStockCostoArticuloFull({
+    const rows = await loadScheduledCostoArticuloFullRows({
       empresa,
-      articulo: String(schedule.reportParams.articulo || '').trim(),
-      tipo: String(schedule.reportParams.tipo || '').trim(),
-      estado: String(schedule.reportParams.estado || '').trim(),
-      fechad: String(schedule.reportParams.fechad || '').trim(),
-      fechah: String(schedule.reportParams.fechah || '').trim(),
-      calcular_empresa: String(schedule.reportParams.calcular_empresa || '').trim(),
-      ecuacion_mat: String(schedule.reportParams.ecuacion_mat || '').trim(),
-      periodo: String(schedule.reportParams.periodo || '').trim(),
-      anho: String(schedule.reportParams.anho || '').trim(),
-      fecha_inicio_desde: String(schedule.reportParams.fecha_inicio_desde || '').trim(),
-      fecha_inicio_hasta: String(schedule.reportParams.fecha_inicio_hasta || '').trim(),
-      fecha_fin_desde: String(schedule.reportParams.fecha_fin_desde || '').trim(),
-      fecha_fin_hasta: String(schedule.reportParams.fecha_fin_hasta || '').trim(),
-      recalcular: String(schedule.reportParams.recalcular || '').trim(),
+      articulo: String(effectiveParams.articulo || '').trim(),
+      tipo: String(effectiveParams.tipo || '').trim(),
+      estado: String(effectiveParams.estado || '').trim(),
+      fechad: String(effectiveParams.fechad || '').trim(),
+      fechah: String(effectiveParams.fechah || '').trim(),
+      calcular_empresa: String(effectiveParams.calcular_empresa || '').trim(),
+      ecuacion_mat: String(effectiveParams.ecuacion_mat || '').trim(),
+      periodo: String(effectiveParams.periodo || '').trim(),
+      anho: String(effectiveParams.anho || '').trim(),
+      fecha_inicio_desde: String(effectiveParams.fecha_inicio_desde || '').trim(),
+      fecha_inicio_hasta: String(effectiveParams.fecha_inicio_hasta || '').trim(),
+      fecha_fin_desde: String(effectiveParams.fecha_fin_desde || '').trim(),
+      fecha_fin_hasta: String(effectiveParams.fecha_fin_hasta || '').trim(),
+      recalcular: String(effectiveParams.recalcular || '').trim(),
     });
-    const rows = ((response?.data || []) as Array<Record<string, unknown>>);
-    const ecuacionMat = String(schedule.reportParams.ecuacion_mat || '').trim().toUpperCase() === 'S';
+    const ecuacionMat = String(effectiveParams.ecuacion_mat || '').trim().toUpperCase() === 'S';
     if (ecuacionMat) {
       return {
         headers: [
