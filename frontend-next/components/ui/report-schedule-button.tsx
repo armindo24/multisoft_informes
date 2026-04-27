@@ -64,7 +64,13 @@ export function ReportScheduleButton({
     return merged;
   }, [reportParams, searchParams]);
 
-  const supportsDynamicMonthRange = reportKey === 'finanzas.balance_general' || reportKey === 'finanzas.balance_general_puc';
+  const supportsDynamicMonthRange =
+    reportKey === 'finanzas.balance_general'
+    || reportKey === 'finanzas.balance_general_puc'
+    || reportKey === 'stock.costo_articulo_full';
+  const dynamicRangeHint = reportKey === 'stock.costo_articulo_full'
+    ? 'Mantiene la fecha inicial guardada y mueve la fecha final al ultimo dia del mes de ejecucion.'
+    : 'Si hoy guardas un balance con 01 - 05, el mes siguiente se enviara como 01 - 06, y asi sucesivamente.';
 
   const [form, setForm] = useState({
     recipientUserIds: [] as number[],
@@ -175,8 +181,8 @@ export function ReportScheduleButton({
       </button>
 
       {open ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/40 p-4">
-          <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-2xl">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]">
+          <div className="relative isolate flex max-h-[94vh] w-full max-w-3xl flex-col overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-2xl">
             <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-violet-700">Entrega automatica</p>
@@ -192,7 +198,7 @@ export function ReportScheduleButton({
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 py-5">
+            <div className="relative flex-1 overflow-y-auto bg-white px-6 py-5">
               <div className="space-y-4">
               {message ? (
                 <div
@@ -276,7 +282,7 @@ export function ReportScheduleButton({
                       <option value="enero_mes_actual">Dinamico, desde el mes inicial hasta el mes de ejecucion</option>
                     </select>
                     <p className="text-xs leading-5 text-slate-500">
-                      Si hoy guardas un balance con <strong>01 - 05</strong>, el mes siguiente se enviara como <strong>01 - 06</strong>, y asi sucesivamente.
+                      {dynamicRangeHint}
                     </p>
                   </label>
                 ) : null}

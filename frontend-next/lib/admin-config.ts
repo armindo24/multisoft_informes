@@ -1646,6 +1646,24 @@ function resolveScheduledReportParams(schedule: ReportScheduleRecord, runDate = 
     resolved.mesh = String(Math.max(currentMonth, startMonth)).padStart(2, '0');
   }
 
+  if (schedule.reportKey === 'stock.costo_articulo_full' && String(resolved.schedule_range_mode || '').trim() === 'enero_mes_actual') {
+    const startDate = String(resolved.fechad || '').trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+      const start = new Date(`${startDate}T00:00:00`);
+      const end = new Date(runDate.getFullYear(), runDate.getMonth() + 1, 0);
+      const normalizedEnd = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
+
+      resolved.fechad = startDate;
+      resolved.fechah = normalizedEnd;
+      resolved.periodo = `${end.getFullYear()}${String(end.getMonth() + 1).padStart(2, '0')}`;
+      resolved.anho = String(end.getFullYear());
+      resolved.fecha_inicio_desde = startDate;
+      resolved.fecha_inicio_hasta = normalizedEnd;
+      resolved.fecha_fin_desde = startDate;
+      resolved.fecha_fin_hasta = normalizedEnd;
+    }
+  }
+
   return resolved;
 }
 
@@ -1659,6 +1677,10 @@ function buildScheduleDisplayParams(
 
   if (isDynamicMonthlyBalanceSchedule(schedule)) {
     displayEntries.push(['rango mensual', 'Dinamico desde el mes inicial hasta el mes de ejecucion']);
+  }
+
+  if (schedule.reportKey === 'stock.costo_articulo_full' && String(schedule.reportParams.schedule_range_mode || '').trim() === 'enero_mes_actual') {
+    displayEntries.push(['rango mensual', 'Dinamico hasta el ultimo dia del mes de ejecucion']);
   }
 
   return displayEntries;
