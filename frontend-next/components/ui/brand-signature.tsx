@@ -82,6 +82,7 @@ export function BrandSignature({
   const hasLogo = Boolean(branding.logoUrl);
   const shortName = brandShortName(branding.clientName);
   const isSidebarMode = light && !compact;
+  const isSidebarWideLogo = isSidebarMode && isWideLogo;
   const subTone = light ? 'text-slate-300' : 'text-slate-500';
   const logoBackgroundClass = getLogoBackgroundClasses(branding.logoBackground, light);
   const logoContainerClass = hasLogo
@@ -129,7 +130,11 @@ export function BrandSignature({
       <div className={isSidebarMode ? 'min-w-0 flex-1' : 'min-w-0'}>
         <p
           className={[
-            isSidebarMode ? 'line-clamp-1 text-[0.9rem] tracking-[0.2em]' : 'truncate text-sm tracking-[0.24em]',
+            isSidebarMode
+              ? isSidebarWideLogo
+                ? 'line-clamp-2 text-[0.8rem] leading-4 tracking-[0.12em]'
+                : 'line-clamp-2 text-[0.88rem] leading-4 tracking-[0.14em]'
+              : 'truncate text-sm tracking-[0.24em]',
             'font-semibold uppercase',
             light ? 'text-cyan-300' : 'text-cyan-700',
           ].join(' ')}
@@ -140,7 +145,11 @@ export function BrandSignature({
         <p
           className={[
             compact ? 'hidden sm:block' : 'block',
-            isSidebarMode ? 'line-clamp-2 text-[0.92rem] leading-5' : 'truncate text-sm',
+            isSidebarMode
+              ? isSidebarWideLogo
+                ? 'line-clamp-2 text-[0.84rem] leading-4'
+                : 'line-clamp-2 text-[0.9rem] leading-5'
+              : 'truncate text-sm',
             subTone,
           ].join(' ')}
           title={branding.tagline}
