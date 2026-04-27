@@ -81,6 +81,7 @@ export function BrandSignature({
 
   const hasLogo = Boolean(branding.logoUrl);
   const shortName = brandShortName(branding.clientName);
+  const isSidebarMode = light && !compact;
   const subTone = light ? 'text-slate-300' : 'text-slate-500';
   const logoBackgroundClass = getLogoBackgroundClasses(branding.logoBackground, light);
   const logoContainerClass = hasLogo
@@ -88,9 +89,13 @@ export function BrandSignature({
       ? isWideLogo
         ? 'h-10 max-w-[180px] px-2.5'
         : 'h-10 max-w-[140px] px-2'
-      : isWideLogo
-        ? 'h-14 max-w-[260px] px-3'
-        : 'h-12 max-w-[180px] px-3'
+      : isSidebarMode
+        ? isWideLogo
+          ? 'h-11 max-w-[132px] px-2'
+          : 'h-10 max-w-[96px] px-2'
+        : isWideLogo
+          ? 'h-14 max-w-[260px] px-3'
+          : 'h-12 max-w-[180px] px-3'
     : '';
 
   return (
@@ -121,11 +126,27 @@ export function BrandSignature({
           {shortName}
         </div>
       )}
-      <div className="min-w-0">
-        <p className={`truncate text-sm font-semibold uppercase tracking-[0.24em] ${light ? 'text-cyan-300' : 'text-cyan-700'}`}>
+      <div className={isSidebarMode ? 'min-w-0 flex-1' : 'min-w-0'}>
+        <p
+          className={[
+            isSidebarMode ? 'line-clamp-1 text-[0.9rem] tracking-[0.2em]' : 'truncate text-sm tracking-[0.24em]',
+            'font-semibold uppercase',
+            light ? 'text-cyan-300' : 'text-cyan-700',
+          ].join(' ')}
+          title={branding.clientName}
+        >
           {branding.clientName}
         </p>
-        <p className={`truncate text-sm ${compact ? 'hidden sm:block' : 'block'} ${subTone}`}>{branding.tagline}</p>
+        <p
+          className={[
+            compact ? 'hidden sm:block' : 'block',
+            isSidebarMode ? 'line-clamp-2 text-[0.92rem] leading-5' : 'truncate text-sm',
+            subTone,
+          ].join(' ')}
+          title={branding.tagline}
+        >
+          {branding.tagline}
+        </p>
       </div>
     </div>
   );
