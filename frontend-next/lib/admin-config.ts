@@ -427,6 +427,22 @@ export async function registerNextSession(input: NextSessionInput) {
       input.expiresAt || new Date(Date.now() + 12 * 60 * 60 * 1000),
     ],
   );
+
+  await pool.query(
+    `
+      DELETE FROM custom_permissions_nextsession
+      WHERE user_id = $1
+        AND session_key <> $2
+        AND COALESCE(ip_address, '') = COALESCE($3, '')
+        AND COALESCE(user_agent, '') = COALESCE($4, '')
+    `,
+    [
+      input.userId,
+      input.sessionKey,
+      String(input.ipAddress || '').slice(0, 64),
+      String(input.userAgent || '').slice(0, 500),
+    ],
+  );
 }
 
 export async function touchNextSession(sessionKey?: string) {
@@ -1047,6 +1063,22 @@ export async function loadActiveSessions(): Promise<{ rows: ActiveSessionRecord[
   }
 
   await pool.query('DELETE FROM custom_permissions_nextsession WHERE expires_at <= NOW()');
+  await pool.query(`
+    WITH ranked AS (
+      SELECT
+        session_key,
+        ROW_NUMBER() OVER (
+          PARTITION BY user_id, COALESCE(ip_address, ''), COALESCE(user_agent, '')
+          ORDER BY last_activity DESC, created_at DESC, session_key DESC
+        ) AS rn
+      FROM custom_permissions_nextsession
+      WHERE expires_at > NOW()
+    )
+    DELETE FROM custom_permissions_nextsession
+    WHERE session_key IN (
+      SELECT session_key FROM ranked WHERE rn > 1
+    )
+  `);
 
   const nextResult = await pool.query<Record<string, unknown>>(
     `
@@ -1860,6 +1892,7 @@ function buildBalancePdfAttachment(schedule: ReportScheduleRecord, rows: Balance
   const { headers, dataRows } = buildScheduledBalanceTable(rows, moneda);
   const doc = new PDFDocument({
     size: 'A4',
+    layout: 'landscape',
     margin: 36,
     bufferPages: true,
   });
@@ -1878,31 +1911,41 @@ function buildBalancePdfAttachment(schedule: ReportScheduleRecord, rows: Balance
   }
 
   doc.moveDown(0.8);
-  doc.fontSize(10).fillColor('#0f172a');
-  const columns = moneda === 'ambas'
-    ? [16, 40, 82, 116]
-    : [16, 40, 92, 124, 156];
-  const rowHeight = 14;
+  doc.fontSize(8).fillColor('#0f172a');
+  const widths = moneda === 'ambas'
+    ? [72, 290, 110, 110]
+    : [72, 285, 90, 90, 100];
+  const columns = widths.reduce<number[]>((acc, width, index) => {
+    if (index === 0) return [20];
+    acc.push(acc[index - 1] + widths[index - 1] + 8);
+    return acc;
+  }, []);
+  const rowHeight = 12;
   const startY = doc.y;
 
   headers.forEach((header, index) => {
-    doc.font('Helvetica-Bold').text(header, columns[index], startY, { width: index === 1 ? 220 : 78 });
+    doc.font('Helvetica-Bold').text(header, columns[index], startY, { width: widths[index] });
   });
 
   let currentY = startY + 18;
   for (const [index, row] of dataRows.entries()) {
-    if (currentY > 760) {
+    if (currentY > 540) {
       doc.addPage();
       currentY = 48;
+      headers.forEach((header, headerIndex) => {
+        doc.font('Helvetica-Bold').text(header, columns[headerIndex], currentY, { width: widths[headerIndex] });
+      });
+      currentY += 18;
     }
+    doc.fontSize(7.5);
     doc.font(index % 5 === 0 || balanceLevel(rows[index]) <= 2 ? 'Helvetica-Bold' : 'Helvetica');
     row.forEach((cell, cellIndex) => {
-      const width = cellIndex === 1 ? 42 : 14;
+      const width = cellIndex === 1 ? 50 : 14;
       doc.text(
         padPdfCell(String(cell), width),
         columns[cellIndex],
         currentY,
-        { width: cellIndex === 1 ? 220 : 78, align: cellIndex > 1 ? 'right' : 'left' },
+        { width: widths[cellIndex], align: cellIndex > 1 ? 'right' : 'left' },
       );
     });
     currentY += rowHeight;
