@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import { downloadBlob, exportRowsToExcel, exportRowsToPdf } from '@/components/ui/export-utils';
 import type { ExportBrandingOverride, ExportMetaItem } from '@/components/ui/export-utils';
 import { ReportNoticeButton } from '@/components/ui/report-notice-button';
+import { ReportScheduleButton } from '@/components/ui/report-schedule-button';
 import { ReportTaskButton } from '@/components/ui/report-task-button';
 import { BalanceRow } from '@/types/finanzas';
 
@@ -58,6 +59,7 @@ export function BalanceTable({
   showPucMapping = false,
   exportMeta,
   exportBranding,
+  scheduleConfig,
 }: {
   rows: BalanceRow[];
   result?: number;
@@ -75,6 +77,11 @@ export function BalanceTable({
   showPucMapping?: boolean;
   exportMeta?: ExportMetaItem[];
   exportBranding?: ExportBrandingOverride;
+  scheduleConfig?: {
+    reportKey: string;
+    reportModule: string;
+    reportParams?: Record<string, string>;
+  };
 }) {
   const isBoth = moneda === 'ambas';
 
@@ -214,6 +221,15 @@ export function BalanceTable({
             <div className="flex items-center gap-2">
               <ReportNoticeButton reportTitle={title} detailHint={description} />
               <ReportTaskButton reportTitle={title} taskModule="Finanzas" detailHint={description} />
+              {scheduleConfig ? (
+                <ReportScheduleButton
+                  reportKey={scheduleConfig.reportKey}
+                  reportTitle={title}
+                  reportModule={scheduleConfig.reportModule}
+                  detailHint={description}
+                  reportParams={scheduleConfig.reportParams}
+                />
+              ) : null}
               {pucExport ? (
                 <button type="button" onClick={exportPucTxt} className="inline-flex items-center gap-2 rounded-xl border border-sky-300 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-900 transition hover:bg-sky-100">
                   <FileSpreadsheet className="size-4" /> Exportar Datos

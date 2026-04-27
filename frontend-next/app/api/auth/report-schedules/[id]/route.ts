@@ -1,0 +1,53 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getSessionUser } from '@/lib/auth-server';
+import { deleteReportSchedule, updateReportSchedule } from '@/lib/admin-config';
+
+export const runtime = 'nodejs';
+
+function getScheduleId(id: string) {
+  return Number(id || 0);
+}
+
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const sessionUser = await getSessionUser();
+    if (!sessionUser?.id) {
+      return NextResponse.json({ ok: false, message: 'Sesion no valida.' }, { status: 401 });
+    }
+
+    const routeParams = await params;
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    const schedule = await updateReportSchedule({
+      scheduleId: getScheduleId(routeParams.id),
+      actorUserId: sessionUser.id,
+      actorIsSuperuser: Boolean(sessionUser.isSuperuser),
+      isActive: typeof body.isActive === 'boolean' ? body.isActive : undefined,
+    });
+
+    return NextResponse.json({ ok: true, data: schedule });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'No se pudo actualizar la programacion.';
+    return NextResponse.json({ ok: false, message }, { status: 400 });
+  }
+}
+
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const sessionUser = await getSessionUser();
+    if (!sessionUser?.id) {
+      return NextResponse.json({ ok: false, message: 'Sesion no valida.' }, { status: 401 });
+    }
+
+    const routeParams = await params;
+    await deleteReportSchedule({
+      scheduleId: getScheduleId(routeParams.id),
+      actorUserId: sessionUser.id,
+      actorIsSuperuser: Boolean(sessionUser.isSuperuser),
+    });
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'No se pudo eliminar la programacion.';
+    return NextResponse.json({ ok: false, message }, { status: 400 });
+  }
+}

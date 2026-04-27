@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, CheckCheck, Clock3, ListTodo, Mail, MonitorSmartphone, RefreshCcw, Send, ShieldCheck } from 'lucide-react';
+import { Bell, CalendarClock, CheckCheck, Clock3, ListTodo, Mail, MonitorSmartphone, Play, RefreshCcw, Send, ShieldCheck, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 type NotificationSummary = {
@@ -72,6 +72,43 @@ type UserOption = {
   isCurrentUser: boolean;
 };
 
+type ReportScheduleFrequency = 'diaria' | 'semanal' | 'mensual';
+
+type ReportScheduleItem = {
+  id: number;
+  reportKey: string;
+  reportTitle: string;
+  module: string;
+  targetUrl: string;
+  reportParams: Record<string, string>;
+  frequency: ReportScheduleFrequency;
+  timeOfDay: string;
+  dayOfWeek: number | null;
+  dayOfMonth: number | null;
+  recipientUserIds: number[];
+  recipientUsers: Array<{ id: number; label: string; username: string; email: string }>;
+  extraEmails: string[];
+  emailSubject: string;
+  emailMessage: string;
+  isActive: boolean;
+  lastRunAt: string | null;
+  nextRunAt: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  createdById: number;
+  createdByName: string;
+  createdByUsername: string;
+};
+
+type ReportScheduleLogItem = {
+  id: number;
+  scheduleId: number;
+  status: 'success' | 'error';
+  sentCount: number;
+  message: string;
+  executedAt: string | null;
+};
+
 type NotificationsPanelProps = {
   initialSummary: NotificationSummary;
   initialEvents: NotificationEvent[];
@@ -79,6 +116,8 @@ type NotificationsPanelProps = {
   initialTasksCreated: TaskItem[];
   initialNotifications: UserNotificationItem[];
   initialTaskComments: TaskCommentItem[];
+  initialReportSchedules: ReportScheduleItem[];
+  initialReportScheduleLogs: ReportScheduleLogItem[];
   userOptions: UserOption[];
 };
 
@@ -131,6 +170,15 @@ function dueState(dueDate: string | null) {
   return { label: `Vence ${dueDate}`, className: 'border-slate-200 bg-white text-slate-600' };
 }
 
+function scheduleFrequencyLabel(item: ReportScheduleItem) {
+  if (item.frequency === 'diaria') return `Diaria · ${item.timeOfDay}`;
+  if (item.frequency === 'semanal') {
+    const labels = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
+    return `Semanal · ${labels[item.dayOfWeek ?? 1]} · ${item.timeOfDay}`;
+  }
+  return `Mensual · dia ${item.dayOfMonth ?? 1} · ${item.timeOfDay}`;
+}
+
 export function NotificationsPanel({
   initialSummary,
   initialEvents,
@@ -138,6 +186,8 @@ export function NotificationsPanel({
   initialTasksCreated,
   initialNotifications,
   initialTaskComments,
+  initialReportSchedules,
+  initialReportScheduleLogs,
   userOptions,
 }: NotificationsPanelProps) {
   const [summary, setSummary] = useState(initialSummary);
@@ -146,6 +196,8 @@ export function NotificationsPanel({
   const [tasksCreated, setTasksCreated] = useState(initialTasksCreated);
   const [notifications, setNotifications] = useState(initialNotifications);
   const [taskComments, setTaskComments] = useState(initialTaskComments);
+  const [reportSchedules, setReportSchedules] = useState(initialReportSchedules);
+  const [reportScheduleLogs, setReportScheduleLogs] = useState(initialReportScheduleLogs);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [messageTone, setMessageTone] = useState<'error' | 'success'>('error');
@@ -154,6 +206,7 @@ export function NotificationsPanel({
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [markingAll, setMarkingAll] = useState(false);
   const [commentSavingFor, setCommentSavingFor] = useState<number | null>(null);
+  const [scheduleActionId, setScheduleActionId] = useState<number | null>(null);
   const [commentForms, setCommentForms] = useState<Record<number, string>>({});
   const [form, setForm] = useState({
     assignedTo: String(userOptions.find((item) => !item.isCurrentUser)?.id || userOptions[0]?.id || ''),
@@ -180,6 +233,25 @@ export function NotificationsPanel({
       return acc;
     }, {});
   }, [taskComments]);
+
+  async function refreshSchedules() {
+    const response = await fetch('/api/auth/report-schedules', { cache: 'no-store' });
+    const payload = (await response.json().catch(() => ({}))) as {
+      ok?: boolean;
+      data?: {
+        schedules?: ReportScheduleItem[];
+        logs?: ReportScheduleLogItem[];
+      };
+      message?: string;
+    };
+
+    if (!response.ok || !payload.ok || !payload.data) {
+      throw new Error(payload.message || 'No se pudieron cargar las programaciones.');
+    }
+
+    setReportSchedules(payload.data.schedules || []);
+    setReportScheduleLogs(payload.data.logs || []);
+  }
 
   async function refresh() {
     setLoading(true);
@@ -213,6 +285,14 @@ export function NotificationsPanel({
     setTasksCreated(payload.data.tasksCreated || []);
     setNotifications(payload.data.notifications || []);
     setTaskComments(payload.data.taskComments || []);
+    try {
+      await refreshSchedules();
+    } catch (error) {
+      setMessageTone('error');
+      setMessage(error instanceof Error ? error.message : 'No se pudieron cargar las programaciones.');
+      setLoading(false);
+      return false;
+    }
     setLoading(false);
     return true;
   }
@@ -357,6 +437,70 @@ export function NotificationsPanel({
     setCommentForms((current) => ({ ...current, [taskId]: '' }));
     await refresh();
     setCommentSavingFor(null);
+  }
+
+  async function toggleSchedule(item: ReportScheduleItem, isActive: boolean) {
+    setScheduleActionId(item.id);
+    setMessage(null);
+
+    const response = await fetch(`/api/auth/report-schedules/${item.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isActive }),
+    });
+
+    const payload = (await response.json().catch(() => ({}))) as { ok?: boolean; message?: string };
+    if (!response.ok || !payload.ok) {
+      setMessageTone('error');
+      setMessage(payload.message || 'No se pudo actualizar la programacion.');
+      setScheduleActionId(null);
+      return;
+    }
+
+    await refreshSchedules();
+    setScheduleActionId(null);
+  }
+
+  async function runScheduleNow(item: ReportScheduleItem) {
+    setScheduleActionId(item.id);
+    setMessage(null);
+
+    const response = await fetch(`/api/auth/report-schedules/${item.id}/run`, {
+      method: 'POST',
+    });
+
+    const payload = (await response.json().catch(() => ({}))) as { ok?: boolean; message?: string };
+    if (!response.ok || !payload.ok) {
+      setMessageTone('error');
+      setMessage(payload.message || 'No se pudo ejecutar la programacion.');
+      setScheduleActionId(null);
+      return;
+    }
+
+    setMessageTone('success');
+    setMessage(payload.message || 'Programacion ejecutada correctamente.');
+    await refreshSchedules();
+    setScheduleActionId(null);
+  }
+
+  async function deleteSchedule(item: ReportScheduleItem) {
+    setScheduleActionId(item.id);
+    setMessage(null);
+
+    const response = await fetch(`/api/auth/report-schedules/${item.id}`, {
+      method: 'DELETE',
+    });
+
+    const payload = (await response.json().catch(() => ({}))) as { ok?: boolean; message?: string };
+    if (!response.ok || !payload.ok) {
+      setMessageTone('error');
+      setMessage(payload.message || 'No se pudo eliminar la programacion.');
+      setScheduleActionId(null);
+      return;
+    }
+
+    await refreshSchedules();
+    setScheduleActionId(null);
   }
 
   return (
@@ -892,6 +1036,116 @@ export function NotificationsPanel({
             ) : (
               <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
                 Todavia no creaste tareas internas.
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
+          <div className="flex items-center gap-2">
+            <CalendarClock className="h-5 w-5 text-violet-700" />
+            <h3 className="text-lg font-semibold text-slate-900">Informes programados</h3>
+          </div>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            Revisa las entregas automaticas guardadas desde los informes y pruebales manualmente antes de moverlas a cron.
+          </p>
+
+          <div className="mt-5 space-y-3">
+            {reportSchedules.length ? (
+              reportSchedules.map((item) => (
+                <article key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h4 className="font-semibold text-slate-900">{item.reportTitle}</h4>
+                      <p className="mt-1 text-sm text-slate-500">{item.module || 'General'} · {scheduleFrequencyLabel(item)}</p>
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+                        <span className={['rounded-full border px-2.5 py-1', item.isActive ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-600'].join(' ')}>
+                          {item.isActive ? 'Activa' : 'Pausada'}
+                        </span>
+                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
+                          Proximo: {fmtDate(item.nextRunAt)}
+                        </span>
+                        {item.lastRunAt ? (
+                          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
+                            Ultimo: {fmtDate(item.lastRunAt)}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void runScheduleNow(item)}
+                        disabled={scheduleActionId === item.id}
+                        className="inline-flex items-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm font-medium text-cyan-800 transition hover:bg-cyan-100 disabled:opacity-60"
+                      >
+                        <Play className="h-4 w-4" />
+                        Ejecutar ahora
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void toggleSchedule(item, !item.isActive)}
+                        disabled={scheduleActionId === item.id}
+                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+                      >
+                        {item.isActive ? 'Pausar' : 'Activar'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void deleteSchedule(item)}
+                        disabled={scheduleActionId === item.id}
+                        className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-100 disabled:opacity-60"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                    <span>Destinatarios internos: {item.recipientUsers.length || 0}</span>
+                    <span>Correos externos: {item.extraEmails.length || 0}</span>
+                    {item.targetUrl ? (
+                      <a href={item.targetUrl} className="font-semibold text-violet-700 hover:text-violet-600">
+                        Abrir informe
+                      </a>
+                    ) : null}
+                  </div>
+                </article>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
+                Todavia no guardaste informes programados. Usa el boton Programar correo desde Balance general para crear el primero.
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
+          <div className="flex items-center gap-2">
+            <Mail className="h-5 w-5 text-violet-700" />
+            <h3 className="text-lg font-semibold text-slate-900">Ultimas ejecuciones</h3>
+          </div>
+          <div className="mt-5 space-y-3">
+            {reportScheduleLogs.length ? (
+              reportScheduleLogs.map((item) => (
+                <article key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className={['rounded-full border px-2.5 py-1 text-xs font-semibold', item.status === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-rose-200 bg-rose-50 text-rose-700'].join(' ')}>
+                      {item.status === 'success' ? 'Correcto' : 'Con error'}
+                    </span>
+                    <span className="text-xs text-slate-500">{fmtDate(item.executedAt)}</span>
+                  </div>
+                  <p className="mt-3 text-sm font-semibold text-slate-900">Programacion #{item.scheduleId}</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">{item.message}</p>
+                  <p className="mt-2 text-xs text-slate-500">Destinatarios enviados: {item.sentCount}</p>
+                </article>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
+                Aun no hay ejecuciones registradas.
               </div>
             )}
           </div>

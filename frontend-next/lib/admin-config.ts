@@ -1,7 +1,10 @@
 import { Pool } from 'pg';
 import nodemailer from 'nodemailer';
+import PDFDocument from 'pdfkit';
 import { inflateSync } from 'node:zlib';
 import { pbkdf2Sync, randomBytes } from 'node:crypto';
+import { getBalanceGeneral, getBalanceGeneralPuc } from '@/lib/api';
+import type { BalanceRow } from '@/types/finanzas';
 
 const pool = new Pool({
   host: process.env.AUTH_DB_HOST || 'localhost',
@@ -102,6 +105,7 @@ export type ActiveSessionRecord = {
 
 export type TaskStatus = 'pendiente' | 'en_proceso' | 'resuelta';
 export type TaskPriority = 'baja' | 'media' | 'alta';
+export type ReportScheduleFrequency = 'diaria' | 'semanal' | 'mensual';
 
 export type UserTaskRecord = {
   id: number;
@@ -146,6 +150,41 @@ export type TaskCommentRecord = {
   authorId: number;
   authorName: string;
   authorUsername: string;
+};
+
+export type ReportScheduleRecord = {
+  id: number;
+  reportKey: string;
+  reportTitle: string;
+  module: string;
+  targetUrl: string;
+  reportParams: Record<string, string>;
+  frequency: ReportScheduleFrequency;
+  timeOfDay: string;
+  dayOfWeek: number | null;
+  dayOfMonth: number | null;
+  recipientUserIds: number[];
+  recipientUsers: Array<{ id: number; label: string; username: string; email: string }>;
+  extraEmails: string[];
+  emailSubject: string;
+  emailMessage: string;
+  isActive: boolean;
+  lastRunAt: string | null;
+  nextRunAt: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  createdById: number;
+  createdByName: string;
+  createdByUsername: string;
+};
+
+export type ReportScheduleLogRecord = {
+  id: number;
+  scheduleId: number;
+  status: 'success' | 'error';
+  sentCount: number;
+  message: string;
+  executedAt: string | null;
 };
 
 export type AdminGroupRecord = {
@@ -305,6 +344,49 @@ async function ensureTaskTables() {
       created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
       read_at TIMESTAMP WITH TIME ZONE NULL
     )
+  `);
+}
+
+async function ensureReportScheduleTables() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS custom_permissions_reportschedule (
+      id SERIAL PRIMARY KEY,
+      report_key VARCHAR(120) NOT NULL,
+      report_title VARCHAR(180) NOT NULL,
+      module VARCHAR(80) NOT NULL DEFAULT '',
+      target_url TEXT NOT NULL DEFAULT '',
+      report_params JSONB NOT NULL DEFAULT '{}'::jsonb,
+      frequency VARCHAR(20) NOT NULL DEFAULT 'mensual',
+      time_of_day VARCHAR(5) NOT NULL DEFAULT '08:00',
+      day_of_week SMALLINT NULL,
+      day_of_month SMALLINT NULL,
+      recipient_user_ids INTEGER[] NOT NULL DEFAULT '{}'::integer[],
+      extra_emails TEXT[] NOT NULL DEFAULT '{}'::text[],
+      email_subject VARCHAR(220) NOT NULL DEFAULT '',
+      email_message TEXT NOT NULL DEFAULT '',
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      last_run_at TIMESTAMPTZ NULL,
+      next_run_at TIMESTAMPTZ NOT NULL,
+      created_by INTEGER NOT NULL REFERENCES auth_user(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS custom_permissions_reportschedulelog (
+      id SERIAL PRIMARY KEY,
+      schedule_id INTEGER NOT NULL REFERENCES custom_permissions_reportschedule(id) ON DELETE CASCADE,
+      status VARCHAR(20) NOT NULL DEFAULT 'success',
+      sent_count INTEGER NOT NULL DEFAULT 0,
+      message TEXT NOT NULL DEFAULT '',
+      executed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_reportschedule_next_run
+    ON custom_permissions_reportschedule (is_active, next_run_at)
   `);
 }
 
@@ -1062,6 +1144,15 @@ function displayFullName(row: Record<string, unknown>, firstKey: string, lastKey
   return fullName || String(row[usernameKey] || '').trim() || 'Usuario';
 }
 
+function escapeHtml(value: unknown) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function normalizeTaskRow(row: Record<string, unknown>, userId: number): UserTaskRecord {
   const assignedToId = Number(row.assigned_to || 0);
   const createdById = Number(row.created_by || 0);
@@ -1158,6 +1249,11 @@ async function sendTransactionalEmail(input: {
   subject: string;
   text: string;
   html: string;
+  attachments?: Array<{
+    filename: string;
+    content: Buffer | string;
+    contentType?: string;
+  }>;
 }) {
   const emailConfig = await loadEmailConfig();
   if (!isEmailReady(emailConfig)) {
@@ -1188,6 +1284,7 @@ async function sendTransactionalEmail(input: {
     subject: input.subject,
     text: input.text,
     html: input.html,
+    attachments: input.attachments,
     replyTo: replyToEmail ? (replyToName ? `"${replyToName}" <${replyToEmail}>` : replyToEmail) : undefined,
     envelope: emailConfig.envelopeFrom
       ? {
@@ -1195,7 +1292,530 @@ async function sendTransactionalEmail(input: {
           to: input.to,
         }
       : undefined,
+    });
+}
+
+function resolvePublicBaseUrl(origin?: string) {
+  const configured =
+    process.env.REPORT_SCHEDULE_BASE_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.APP_BASE_URL ||
+    '';
+
+  const candidate = String(configured || origin || 'http://10.0.0.22:3001').trim();
+  const safeUrl = candidate.startsWith('http://') || candidate.startsWith('https://')
+    ? candidate
+    : 'http://10.0.0.22:3001';
+
+  return safeUrl.replace(/\/$/, '');
+}
+
+function normalizeScheduleFrequency(value: unknown): ReportScheduleFrequency {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (normalized === 'diaria') return 'diaria';
+  if (normalized === 'semanal') return 'semanal';
+  return 'mensual';
+}
+
+function normalizeTimeOfDay(value: unknown) {
+  const raw = String(value || '').trim();
+  return /^\d{2}:\d{2}$/.test(raw) ? raw : '08:00';
+}
+
+function normalizeScheduleEmails(value: unknown) {
+  const items = Array.isArray(value) ? value : String(value || '').split(',');
+  return Array.from(
+    new Set(
+      items
+        .map((item) => String(item || '').trim().toLowerCase())
+        .filter((item) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item)),
+    ),
+  );
+}
+
+function normalizeScheduleParams(value: unknown) {
+  const source = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+  return Object.fromEntries(
+    Object.entries(source)
+      .map(([key, raw]) => [String(key || '').trim(), String(raw || '').trim()])
+      .filter(([key, raw]) => key && raw),
+  );
+}
+
+function normalizeDayOfWeek(value: unknown) {
+  const numeric = Number(value);
+  return Number.isInteger(numeric) && numeric >= 0 && numeric <= 6 ? numeric : null;
+}
+
+function normalizeDayOfMonth(value: unknown) {
+  const numeric = Number(value);
+  return Number.isInteger(numeric) && numeric >= 1 && numeric <= 31 ? numeric : null;
+}
+
+function normalizeRecipientUserIds(value: unknown) {
+  const items = Array.isArray(value) ? value : [value];
+  return Array.from(
+    new Set(
+      items
+        .map((item) => Number(item))
+        .filter((item) => Number.isInteger(item) && item > 0),
+    ),
+  );
+}
+
+function buildNextScheduledRun(input: {
+  frequency: ReportScheduleFrequency;
+  timeOfDay: string;
+  dayOfWeek?: number | null;
+  dayOfMonth?: number | null;
+  from?: Date;
+}) {
+  const base = new Date(input.from || new Date());
+  const [hour, minute] = normalizeTimeOfDay(input.timeOfDay).split(':').map((item) => Number(item));
+
+  const atTime = (date: Date) => {
+    const next = new Date(date);
+    next.setHours(hour, minute, 0, 0);
+    return next;
+  };
+
+  if (input.frequency === 'diaria') {
+    const candidate = atTime(base);
+    if (candidate > base) return candidate;
+    candidate.setDate(candidate.getDate() + 1);
+    return candidate;
+  }
+
+  if (input.frequency === 'semanal') {
+    const targetDay = normalizeDayOfWeek(input.dayOfWeek) ?? 1;
+    const candidate = atTime(base);
+    const currentDay = candidate.getDay();
+    const diff = (targetDay - currentDay + 7) % 7;
+    candidate.setDate(candidate.getDate() + diff);
+    if (candidate <= base) {
+      candidate.setDate(candidate.getDate() + 7);
+    }
+    return candidate;
+  }
+
+  const targetDay = normalizeDayOfMonth(input.dayOfMonth) ?? 1;
+  const year = base.getFullYear();
+  const month = base.getMonth();
+  const lastDayCurrentMonth = new Date(year, month + 1, 0).getDate();
+  const candidate = new Date(year, month, Math.min(targetDay, lastDayCurrentMonth), hour, minute, 0, 0);
+  if (candidate > base) return candidate;
+
+  const nextMonthDate = new Date(year, month + 1, 1);
+  const lastDayNextMonth = new Date(nextMonthDate.getFullYear(), nextMonthDate.getMonth() + 1, 0).getDate();
+  return new Date(
+    nextMonthDate.getFullYear(),
+    nextMonthDate.getMonth(),
+    Math.min(targetDay, lastDayNextMonth),
+    hour,
+    minute,
+    0,
+    0,
+  );
+}
+
+function normalizeReportScheduleRow(row: Record<string, unknown>): ReportScheduleRecord {
+  const recipientUserIds = (Array.isArray(row.recipient_user_ids) ? row.recipient_user_ids : [])
+    .map((item) => Number(item))
+    .filter((item) => Number.isInteger(item) && item > 0);
+  const recipientUsersRaw = (Array.isArray(row.recipient_users) ? row.recipient_users : []) as Array<Record<string, unknown>>;
+
+  return {
+    id: Number(row.id || 0),
+    reportKey: String(row.report_key || ''),
+    reportTitle: String(row.report_title || ''),
+    module: String(row.module || ''),
+    targetUrl: String(row.target_url || ''),
+    reportParams: normalizeScheduleParams(row.report_params),
+    frequency: normalizeScheduleFrequency(row.frequency),
+    timeOfDay: normalizeTimeOfDay(row.time_of_day),
+    dayOfWeek: normalizeDayOfWeek(row.day_of_week),
+    dayOfMonth: normalizeDayOfMonth(row.day_of_month),
+    recipientUserIds,
+    recipientUsers: recipientUsersRaw.map((item) => ({
+      id: Number(item.id || 0),
+      label: String(item.label || ''),
+      username: String(item.username || ''),
+      email: String(item.email || ''),
+    })).filter((item) => item.id > 0),
+    extraEmails: normalizeScheduleEmails(row.extra_emails),
+    emailSubject: String(row.email_subject || ''),
+    emailMessage: String(row.email_message || ''),
+    isActive: Boolean(row.is_active),
+    lastRunAt: row.last_run_at ? String(row.last_run_at) : null,
+    nextRunAt: row.next_run_at ? String(row.next_run_at) : null,
+    createdAt: row.created_at ? String(row.created_at) : null,
+    updatedAt: row.updated_at ? String(row.updated_at) : null,
+    createdById: Number(row.created_by || 0),
+    createdByName: displayFullName(row, 'creator_first_name', 'creator_last_name', 'creator_username'),
+    createdByUsername: String(row.creator_username || ''),
+  };
+}
+
+function normalizeReportScheduleLogRow(row: Record<string, unknown>): ReportScheduleLogRecord {
+  return {
+    id: Number(row.id || 0),
+    scheduleId: Number(row.schedule_id || 0),
+    status: String(row.status || 'success') === 'error' ? 'error' : 'success',
+    sentCount: Number(row.sent_count || 0),
+    message: String(row.message || ''),
+    executedAt: row.executed_at ? String(row.executed_at) : null,
+  };
+}
+
+function humanFrequencyLabel(schedule: ReportScheduleRecord) {
+  if (schedule.frequency === 'diaria') return `Todos los dias a las ${schedule.timeOfDay}`;
+  if (schedule.frequency === 'semanal') {
+    const labels = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+    return `Cada ${labels[schedule.dayOfWeek ?? 1]} a las ${schedule.timeOfDay}`;
+  }
+  return `Cada mes, dia ${schedule.dayOfMonth ?? 1}, a las ${schedule.timeOfDay}`;
+}
+
+function balanceNum(value: unknown) {
+  const n = Number(value ?? 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function balanceCode(row: BalanceRow) {
+  return String(row.CodPlanCta || row.codplancta || '');
+}
+
+function balanceName(row: BalanceRow) {
+  return String(row.Nombre || row.nombre || 'Sin descripcion');
+}
+
+function balanceLevel(row: BalanceRow) {
+  return Number(row.Nivel || row.nivel || 0);
+}
+
+function formatBalanceCurrency(value: number, decimals = 0) {
+  return new Intl.NumberFormat('es-PY', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value);
+}
+
+function padPdfCell(value: string, width: number) {
+  const raw = String(value || '');
+  return raw.length > width ? `${raw.slice(0, Math.max(0, width - 1))}…` : raw;
+}
+
+async function loadScheduledBalanceReportData(schedule: ReportScheduleRecord) {
+  const empresa = String(schedule.reportParams.empresa || '').trim();
+  const periodo = String(schedule.reportParams.periodo || '').trim();
+  const mesd = String(schedule.reportParams.mesd || '01').padStart(2, '0');
+  const mesh = String(schedule.reportParams.mesh || mesd).padStart(2, '0');
+  const moneda = String(schedule.reportParams.moneda || 'local').trim() || 'local';
+  const cuentad = String(schedule.reportParams.cuentad || '1').trim() || '1';
+  const cuentah = String(schedule.reportParams.cuentah || '9').trim() || '9';
+  const nivel = String(schedule.reportParams.nivel || '9').trim() || '9';
+  const aux = String(schedule.reportParams.aux || 'NO').trim() || 'NO';
+  const saldo = String(schedule.reportParams.saldo || 'NO').trim() || 'NO';
+
+  const response = schedule.reportKey === 'finanzas.balance_general_puc'
+    ? await getBalanceGeneralPuc({
+        empresa,
+        periodo,
+        mesd,
+        mesh,
+        moneda,
+        cuentad,
+        cuentah,
+        nivel,
+        aux,
+        saldo,
+        practicado_al: String(schedule.reportParams.practicado_al || '').trim(),
+        recalcular_saldos: String(schedule.reportParams.recalcular_saldos || '').trim(),
+        codigo_entidad: String(schedule.reportParams.codigo_entidad || '').trim(),
+        balance_cuentas_puc: String(schedule.reportParams.balance_cuentas_puc || '').trim(),
+      })
+    : await getBalanceGeneral({
+        empresa,
+        periodo,
+        mesd,
+        mesh,
+        moneda,
+        cuentad,
+        cuentah,
+        nivel,
+        aux,
+        saldo,
+      });
+
+  const rows = ((response?.data || []) as BalanceRow[]);
+  return {
+    rows,
+    moneda,
+    periodo,
+    mesd,
+    mesh,
+    warning: String((response as { warning?: string } | null)?.warning || '').trim(),
+    resultadoLocal: Number((response as { resultado?: { local?: number } } | null)?.resultado?.local || 0),
+    resultadoME: Number((response as { resultado?: { extranjera?: number } } | null)?.resultado?.extranjera || 0),
+  };
+}
+
+function buildScheduledBalanceTable(rows: BalanceRow[], moneda: string) {
+  const isBoth = moneda === 'ambas';
+  const headers = isBoth
+    ? ['Cuenta', 'Descripcion', 'Guaranies', 'Dolares']
+    : ['Cuenta', 'Descripcion', 'Debito', 'Credito', 'Saldo'];
+
+  const dataRows = rows.map((row) =>
+    isBoth
+      ? [
+          balanceCode(row),
+          balanceName(row),
+          formatBalanceCurrency(balanceNum(row.SALDO_LOCAL || row.saldo_local || row.SALDO || row.saldo)),
+          formatBalanceCurrency(balanceNum(row.SALDO_ME || row.saldo_me), 2),
+        ]
+      : [
+          balanceCode(row),
+          balanceName(row),
+          formatBalanceCurrency(balanceNum(row.TOTAL_DEBITO || row.total_debito)),
+          formatBalanceCurrency(balanceNum(row.TOTAL_CREDITO || row.total_credito)),
+          formatBalanceCurrency(balanceNum(row.SALDO || row.saldo)),
+        ],
+  );
+
+  return { headers, dataRows };
+}
+
+function buildBalanceExcelAttachment(schedule: ReportScheduleRecord, rows: BalanceRow[], moneda: string) {
+  const { headers, dataRows } = buildScheduledBalanceTable(rows, moneda);
+  const metaRows = Object.entries(schedule.reportParams)
+    .filter(([, value]) => String(value || '').trim())
+    .map(
+      ([key, value]) =>
+        `<tr><td style="border:1px solid #dbe5f0;padding:6px 10px;background:#f8fafc;font-weight:700;">${escapeHtml(key.replace(/_/g, ' '))}</td><td style="border:1px solid #dbe5f0;padding:6px 10px;">${escapeHtml(value)}</td></tr>`,
+    )
+    .join('');
+  const header = headers.map((item) => `<th style="border:1px solid #cbd5e1;padding:6px 8px;background:#eaf2f8;">${escapeHtml(item)}</th>`).join('');
+  const body = dataRows
+    .map((row) => `<tr>${row.map((cell) => `<td style="border:1px solid #cbd5e1;padding:6px 8px;">${escapeHtml(cell)}</td>`).join('')}</tr>`)
+    .join('');
+
+  const content =
+    '<html><head><meta charset="utf-8"></head><body style="font-family:Arial,Helvetica,sans-serif;">' +
+    `<h1 style="font-size:22px;">${escapeHtml(schedule.reportTitle)}</h1>` +
+    '<table style="border-collapse:collapse;margin:12px 0 18px 0;">' +
+    metaRows +
+    '</table>' +
+    `<table style="border-collapse:collapse;width:100%;"><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table>` +
+    '</body></html>';
+
+  return {
+    filename: `${schedule.reportKey.replace(/[^\w.-]+/g, '_')}.xls`,
+    content,
+    contentType: 'application/vnd.ms-excel;charset=utf-8;',
+  };
+}
+
+function buildBalancePdfAttachment(schedule: ReportScheduleRecord, rows: BalanceRow[], moneda: string) {
+  const { headers, dataRows } = buildScheduledBalanceTable(rows, moneda);
+  const doc = new PDFDocument({
+    size: 'A4',
+    margin: 36,
+    bufferPages: true,
   });
+  const chunks: Buffer[] = [];
+  doc.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+
+  doc.fontSize(18).fillColor('#0f172a').text(schedule.reportTitle, { align: 'left' });
+  doc.moveDown(0.3);
+  doc.fontSize(10).fillColor('#475569').text(`Generado automaticamente · ${new Date().toLocaleString('es-PY')}`);
+  doc.moveDown(0.6);
+
+  for (const [key, value] of Object.entries(schedule.reportParams)) {
+    const normalized = String(value || '').trim();
+    if (!normalized) continue;
+    doc.fontSize(9).fillColor('#0f172a').text(`${key.replace(/_/g, ' ')}: ${normalized}`);
+  }
+
+  doc.moveDown(0.8);
+  doc.fontSize(10).fillColor('#0f172a');
+  const columns = moneda === 'ambas'
+    ? [16, 40, 82, 116]
+    : [16, 40, 92, 124, 156];
+  const rowHeight = 14;
+  const startY = doc.y;
+
+  headers.forEach((header, index) => {
+    doc.font('Helvetica-Bold').text(header, columns[index], startY, { width: index === 1 ? 220 : 78 });
+  });
+
+  let currentY = startY + 18;
+  for (const [index, row] of dataRows.entries()) {
+    if (currentY > 760) {
+      doc.addPage();
+      currentY = 48;
+    }
+    doc.font(index % 5 === 0 || balanceLevel(rows[index]) <= 2 ? 'Helvetica-Bold' : 'Helvetica');
+    row.forEach((cell, cellIndex) => {
+      const width = cellIndex === 1 ? 42 : 14;
+      doc.text(
+        padPdfCell(String(cell), width),
+        columns[cellIndex],
+        currentY,
+        { width: cellIndex === 1 ? 220 : 78, align: cellIndex > 1 ? 'right' : 'left' },
+      );
+    });
+    currentY += rowHeight;
+  }
+
+  doc.end();
+
+  return new Promise<{ filename: string; content: Buffer; contentType: string }>((resolve) => {
+    doc.on('end', () => {
+      resolve({
+        filename: `${schedule.reportKey.replace(/[^\w.-]+/g, '_')}.pdf`,
+        content: Buffer.concat(chunks),
+        contentType: 'application/pdf',
+      });
+    });
+  });
+}
+
+async function resolveReportScheduleRecipients(schedule: ReportScheduleRecord) {
+  const emails = new Set<string>(normalizeScheduleEmails(schedule.extraEmails));
+  const labels: string[] = [];
+
+  if (schedule.recipientUserIds.length > 0) {
+    const usersResult = await pool.query<Record<string, unknown>>(
+      `
+        SELECT id, username, first_name, last_name, email
+        FROM auth_user
+        WHERE id = ANY($1::int[])
+          AND is_active = TRUE
+      `,
+      [schedule.recipientUserIds],
+    );
+
+    for (const row of usersResult.rows) {
+      const email = String(row.email || '').trim().toLowerCase();
+      if (email) emails.add(email);
+      labels.push(displayFullName(row, 'first_name', 'last_name', 'username'));
+    }
+  } else {
+    labels.push(...schedule.recipientUsers.map((item) => item.label));
+  }
+
+  return {
+    emails: [...emails],
+    labels: Array.from(new Set(labels.filter(Boolean))),
+  };
+}
+
+async function createReportScheduleExecutionLog(input: {
+  scheduleId: number;
+  status: 'success' | 'error';
+  sentCount: number;
+  message: string;
+}) {
+  await ensureReportScheduleTables();
+  await pool.query(
+    `
+      INSERT INTO custom_permissions_reportschedulelog
+        (schedule_id, status, sent_count, message)
+      VALUES
+        ($1::int, $2::varchar(20), $3::int, $4::text)
+    `,
+    [input.scheduleId, input.status, input.sentCount, String(input.message || '').trim()],
+  );
+}
+
+async function sendScheduledReportEmail(schedule: ReportScheduleRecord, origin?: string) {
+  const recipients = await resolveReportScheduleRecipients(schedule);
+  if (recipients.emails.length === 0) {
+    throw new Error('La programacion no tiene correos validos para enviar el informe.');
+  }
+
+  if (!['finanzas.balance_general', 'finanzas.balance_general_puc'].includes(schedule.reportKey)) {
+    throw new Error('Esta primera etapa solo adjunta Balance general y Balance general PUC.');
+  }
+
+  const reportData = await loadScheduledBalanceReportData(schedule);
+  const excelAttachment = buildBalanceExcelAttachment(schedule, reportData.rows, reportData.moneda);
+  const pdfAttachment = await buildBalancePdfAttachment(schedule, reportData.rows, reportData.moneda);
+
+  const empresa = String(schedule.reportParams.empresa || '').trim();
+  const branding = empresa ? await loadBrandingConfig(empresa) : await loadBrandingConfig('GLOBAL');
+  const baseUrl = resolvePublicBaseUrl(origin);
+  const reportUrl = schedule.targetUrl.startsWith('http://') || schedule.targetUrl.startsWith('https://')
+    ? schedule.targetUrl
+    : `${baseUrl}${schedule.targetUrl.startsWith('/') ? '' : '/'}${schedule.targetUrl}`;
+  const filters = Object.entries(schedule.reportParams)
+    .filter(([, value]) => String(value || '').trim())
+    .map(([key, value]) => ({
+      label: key.replace(/_/g, ' '),
+      value: String(value || '').trim(),
+    }));
+
+  const clientName = branding?.clientName || 'MultiSoft';
+  const logoUrl = branding?.logoUrl || '';
+  const intro = String(schedule.emailMessage || '').trim() || `Se genero el informe programado "${schedule.reportTitle}".`;
+  const recipientsText = recipients.labels.length ? recipients.labels.join(', ') : recipients.emails.join(', ');
+  const filtersText = filters.map((item) => `- ${item.label}: ${item.value}`).join('\n');
+  const filtersHtml = filters
+    .map(
+      (item) =>
+        `<tr><td style="padding:8px 12px;border:1px solid #dbe5f0;background:#f8fafc;font-weight:700;color:#475569;">${item.label}</td><td style="padding:8px 12px;border:1px solid #dbe5f0;color:#0f172a;">${escapeHtml(item.value)}</td></tr>`,
+    )
+    .join('');
+
+  const logoBlock = logoUrl
+    ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(clientName)}" style="height:52px;max-width:220px;object-fit:contain;border-radius:12px;background:#fff;padding:6px;border:1px solid rgba(255,255,255,0.12);" />`
+    : `<div style="display:inline-flex;height:52px;min-width:52px;align-items:center;justify-content:center;border-radius:14px;background:#0ea5e9;color:#fff;font-size:20px;font-weight:900;letter-spacing:0.22em;padding:0 14px;">MS</div>`;
+
+  const subject = String(schedule.emailSubject || '').trim() || `Entrega automatica: ${schedule.reportTitle}`;
+  const text =
+    `${intro}\n\n` +
+    `Informe: ${schedule.reportTitle}\n` +
+    `Modulo: ${schedule.module}\n` +
+    `Frecuencia: ${humanFrequencyLabel(schedule)}\n` +
+    `Destinatarios: ${recipientsText}\n` +
+    (filtersText ? `\nFiltros:\n${filtersText}\n` : '\n') +
+    `\nAbrir informe: ${reportUrl}\n`;
+  const html =
+    '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>' +
+    '<body style="margin:0;padding:0;background:#eef2f7;font-family:Segoe UI,Arial,sans-serif;color:#0f172a;">' +
+    '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eef2f7;padding:32px 16px;">' +
+    '<tr><td align="center">' +
+    '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:760px;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 18px 45px rgba(15,23,42,0.12);">' +
+    '<tr><td style="padding:28px 32px;background:linear-gradient(135deg,#071122 0%,#0c1730 48%,#0b1430 100%);">' +
+    `${logoBlock}` +
+    '<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:0.35em;text-transform:uppercase;color:#67e8f9;">ENTREGA PROGRAMADA</div>' +
+    `<h1 style="margin:16px 0 8px 0;font-size:30px;line-height:1.1;color:#ffffff;">${escapeHtml(schedule.reportTitle)}</h1>` +
+    `<p style="margin:0;font-size:15px;line-height:1.8;color:#cbd5e1;">${escapeHtml(intro)}</p>` +
+    '</td></tr>' +
+    '<tr><td style="padding:32px;">' +
+    `<p style="margin:0 0 18px 0;font-size:15px;line-height:1.8;color:#334155;">Modulo: <strong>${escapeHtml(schedule.module)}</strong><br />Frecuencia: <strong>${escapeHtml(humanFrequencyLabel(schedule))}</strong><br />Destinatarios: <strong>${escapeHtml(recipientsText)}</strong></p>` +
+    (filtersHtml
+      ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:0 0 24px 0;">${filtersHtml}</table>`
+      : '') +
+    `<div style="margin:24px 0 0 0;"><a href="${escapeHtml(reportUrl)}" style="display:inline-block;padding:14px 22px;background:#050b23;color:#ffffff;text-decoration:none;border-radius:14px;font-size:15px;font-weight:700;">Abrir informe</a></div>` +
+    '</td></tr>' +
+    '</table>' +
+    '</td></tr>' +
+    '</table>' +
+    '</body></html>';
+
+  for (const email of recipients.emails) {
+    await sendTransactionalEmail({
+      to: email,
+      subject,
+      text,
+      html,
+      attachments: [excelAttachment, pdfAttachment],
+    });
+  }
+
+  return recipients.emails.length;
 }
 
 export async function sendDirectUserNotification(input: {
@@ -1691,6 +2311,443 @@ export async function createTaskComment(input: {
 
   const comments = await loadTaskCommentsForUser(actorUserId);
   return comments.filter((comment) => comment.taskId === taskId);
+}
+
+async function loadReportScheduleById(scheduleId: number) {
+  await ensureReportScheduleTables();
+
+  const result = await pool.query<Record<string, unknown>>(
+    `
+      SELECT
+        s.*,
+        creator.username AS creator_username,
+        creator.first_name AS creator_first_name,
+        creator.last_name AS creator_last_name,
+        COALESCE(
+          (
+            SELECT json_agg(
+              json_build_object(
+                'id', u.id,
+                'label', trim(concat(u.first_name, ' ', u.last_name)),
+                'username', u.username,
+                'email', u.email
+              )
+              ORDER BY u.username
+            )
+            FROM auth_user u
+            WHERE u.id = ANY(s.recipient_user_ids)
+          ),
+          '[]'::json
+        ) AS recipient_users
+      FROM custom_permissions_reportschedule s
+      INNER JOIN auth_user creator ON creator.id = s.created_by
+      WHERE s.id = $1::int
+      LIMIT 1
+    `,
+    [scheduleId],
+  );
+
+  const row = result.rows[0];
+  return row ? normalizeReportScheduleRow(row) : null;
+}
+
+export async function loadReportSchedulesForUser(userId: number, actorIsSuperuser = false) {
+  await ensureReportScheduleTables();
+
+  const result = await pool.query<Record<string, unknown>>(
+    `
+      SELECT
+        s.*,
+        creator.username AS creator_username,
+        creator.first_name AS creator_first_name,
+        creator.last_name AS creator_last_name,
+        COALESCE(
+          (
+            SELECT json_agg(
+              json_build_object(
+                'id', u.id,
+                'label', trim(concat(u.first_name, ' ', u.last_name)),
+                'username', u.username,
+                'email', u.email
+              )
+              ORDER BY u.username
+            )
+            FROM auth_user u
+            WHERE u.id = ANY(s.recipient_user_ids)
+          ),
+          '[]'::json
+        ) AS recipient_users
+      FROM custom_permissions_reportschedule s
+      INNER JOIN auth_user creator ON creator.id = s.created_by
+      WHERE ($1::boolean = TRUE OR s.created_by = $2::int)
+      ORDER BY s.is_active DESC, s.next_run_at ASC, s.id DESC
+    `,
+    [actorIsSuperuser, userId],
+  );
+
+  return result.rows.map((row) => normalizeReportScheduleRow(row));
+}
+
+export async function loadReportScheduleLogsForUser(userId: number, actorIsSuperuser = false, limit = 20) {
+  await ensureReportScheduleTables();
+
+  const result = await pool.query<Record<string, unknown>>(
+    `
+      SELECT l.*
+      FROM custom_permissions_reportschedulelog l
+      INNER JOIN custom_permissions_reportschedule s ON s.id = l.schedule_id
+      WHERE ($1::boolean = TRUE OR s.created_by = $2::int)
+      ORDER BY l.executed_at DESC, l.id DESC
+      LIMIT $3::int
+    `,
+    [actorIsSuperuser, userId, limit],
+  );
+
+  return result.rows.map((row) => normalizeReportScheduleLogRow(row));
+}
+
+export async function createReportSchedule(input: {
+  actorUserId: number;
+  reportKey: string;
+  reportTitle: string;
+  module: string;
+  targetUrl: string;
+  reportParams?: Record<string, string>;
+  frequency?: ReportScheduleFrequency;
+  timeOfDay?: string;
+  dayOfWeek?: number | null;
+  dayOfMonth?: number | null;
+  recipientUserIds?: number[];
+  extraEmails?: string[] | string;
+  emailSubject?: string;
+  emailMessage?: string;
+}) {
+  await ensureReportScheduleTables();
+
+  const actorUserId = Number(input.actorUserId || 0);
+  if (!actorUserId) throw new Error('El usuario actual no es valido.');
+
+  const reportKey = String(input.reportKey || '').trim();
+  const reportTitle = String(input.reportTitle || '').trim();
+  if (!reportKey || !reportTitle) {
+    throw new Error('La programacion requiere identificar el informe.');
+  }
+
+  const recipientUserIds = normalizeRecipientUserIds(input.recipientUserIds);
+  const extraEmails = normalizeScheduleEmails(input.extraEmails);
+  if (recipientUserIds.length === 0 && extraEmails.length === 0) {
+    throw new Error('Debes indicar al menos un destinatario interno o un correo externo.');
+  }
+
+  const frequency = normalizeScheduleFrequency(input.frequency);
+  const timeOfDay = normalizeTimeOfDay(input.timeOfDay);
+  const dayOfWeek = frequency === 'semanal' ? normalizeDayOfWeek(input.dayOfWeek) ?? 1 : null;
+  const dayOfMonth = frequency === 'mensual' ? normalizeDayOfMonth(input.dayOfMonth) ?? 1 : null;
+
+  if (recipientUserIds.length > 0) {
+    const recipientsResult = await pool.query<Record<string, unknown>>(
+      `
+        SELECT id, username, is_superuser
+        FROM auth_user
+        WHERE id = ANY($1::int[])
+          AND is_active = TRUE
+      `,
+      [recipientUserIds],
+    );
+
+    const validIds = new Set(recipientsResult.rows.map((row) => Number(row.id || 0)));
+    for (const id of recipientUserIds) {
+      if (!validIds.has(id)) {
+        throw new Error('Uno de los usuarios seleccionados ya no esta disponible.');
+      }
+    }
+    if (recipientsResult.rows.some((row) => isRestrictedCollaborationUser(row))) {
+      throw new Error('Las cuentas administrativas no deben recibir informes programados.');
+    }
+  }
+
+  const nextRunAt = buildNextScheduledRun({
+    frequency,
+    timeOfDay,
+    dayOfWeek,
+    dayOfMonth,
+  });
+
+  const result = await pool.query<{ id: number }>(
+    `
+      INSERT INTO custom_permissions_reportschedule
+        (
+          report_key, report_title, module, target_url, report_params,
+          frequency, time_of_day, day_of_week, day_of_month,
+          recipient_user_ids, extra_emails, email_subject, email_message,
+          is_active, next_run_at, created_by
+        )
+      VALUES
+        (
+          $1::varchar(120), $2::varchar(180), $3::varchar(80), $4::text, $5::jsonb,
+          $6::varchar(20), $7::varchar(5), $8::smallint, $9::smallint,
+          $10::int[], $11::text[], $12::varchar(220), $13::text,
+          TRUE, $14::timestamptz, $15::int
+        )
+      RETURNING id
+    `,
+    [
+      reportKey,
+      reportTitle,
+      String(input.module || '').trim(),
+      String(input.targetUrl || '').trim(),
+      JSON.stringify(normalizeScheduleParams(input.reportParams)),
+      frequency,
+      timeOfDay,
+      dayOfWeek,
+      dayOfMonth,
+      recipientUserIds,
+      extraEmails,
+      String(input.emailSubject || '').trim(),
+      String(input.emailMessage || '').trim(),
+      nextRunAt.toISOString(),
+      actorUserId,
+    ],
+  );
+
+  return loadReportScheduleById(Number(result.rows[0]?.id || 0));
+}
+
+export async function updateReportSchedule(input: {
+  scheduleId: number;
+  actorUserId: number;
+  actorIsSuperuser?: boolean;
+  isActive?: boolean;
+}) {
+  await ensureReportScheduleTables();
+
+  const schedule = await loadReportScheduleById(Number(input.scheduleId || 0));
+  if (!schedule) throw new Error('No se encontro la programacion.');
+
+  const actorUserId = Number(input.actorUserId || 0);
+  const canEdit = Boolean(input.actorIsSuperuser) || schedule.createdById === actorUserId;
+  if (!canEdit) throw new Error('No tienes permiso para modificar esta programacion.');
+
+  const isActive = typeof input.isActive === 'boolean' ? input.isActive : schedule.isActive;
+  const nextRunAt = isActive
+    ? buildNextScheduledRun({
+        frequency: schedule.frequency,
+        timeOfDay: schedule.timeOfDay,
+        dayOfWeek: schedule.dayOfWeek,
+        dayOfMonth: schedule.dayOfMonth,
+      })
+    : null;
+
+  await pool.query(
+    `
+      UPDATE custom_permissions_reportschedule
+      SET is_active = $2::boolean,
+          next_run_at = COALESCE($3::timestamptz, next_run_at),
+          updated_at = NOW()
+      WHERE id = $1::int
+    `,
+    [schedule.id, isActive, nextRunAt ? nextRunAt.toISOString() : null],
+  );
+
+  return loadReportScheduleById(schedule.id);
+}
+
+export async function deleteReportSchedule(input: {
+  scheduleId: number;
+  actorUserId: number;
+  actorIsSuperuser?: boolean;
+}) {
+  await ensureReportScheduleTables();
+
+  const schedule = await loadReportScheduleById(Number(input.scheduleId || 0));
+  if (!schedule) throw new Error('No se encontro la programacion.');
+
+  const canDelete = Boolean(input.actorIsSuperuser) || schedule.createdById === Number(input.actorUserId || 0);
+  if (!canDelete) throw new Error('No tienes permiso para eliminar esta programacion.');
+
+  await pool.query('DELETE FROM custom_permissions_reportschedule WHERE id = $1::int', [schedule.id]);
+  return { ok: true };
+}
+
+async function executeReportSchedule(input: {
+  schedule: ReportScheduleRecord;
+  origin?: string;
+  manual?: boolean;
+}) {
+  const sentCount = await sendScheduledReportEmail(input.schedule, input.origin);
+  const nextRunAt = buildNextScheduledRun({
+    frequency: input.schedule.frequency,
+    timeOfDay: input.schedule.timeOfDay,
+    dayOfWeek: input.schedule.dayOfWeek,
+    dayOfMonth: input.schedule.dayOfMonth,
+    from: new Date(Date.now() + 1000),
+  });
+
+  await pool.query(
+    `
+      UPDATE custom_permissions_reportschedule
+      SET last_run_at = NOW(),
+          next_run_at = $2::timestamptz,
+          updated_at = NOW()
+      WHERE id = $1::int
+    `,
+    [input.schedule.id, nextRunAt.toISOString()],
+  );
+
+  await createReportScheduleExecutionLog({
+    scheduleId: input.schedule.id,
+    status: 'success',
+    sentCount,
+    message: input.manual ? 'Envio manual ejecutado correctamente.' : 'Envio automatico ejecutado correctamente.',
+  });
+
+  await createUserNotification({
+    userId: input.schedule.createdById,
+    type: 'report_schedule_success',
+    title: 'Informe programado enviado',
+    message: `${input.schedule.reportTitle} · ${sentCount} destinatario(s)`,
+    href: '/notificaciones',
+  });
+
+  return {
+    schedule: await loadReportScheduleById(input.schedule.id),
+    sentCount,
+  };
+}
+
+export async function runReportScheduleNow(input: {
+  scheduleId: number;
+  actorUserId: number;
+  actorIsSuperuser?: boolean;
+  origin?: string;
+}) {
+  await ensureReportScheduleTables();
+
+  const schedule = await loadReportScheduleById(Number(input.scheduleId || 0));
+  if (!schedule) throw new Error('No se encontro la programacion.');
+
+  const canRun = Boolean(input.actorIsSuperuser) || schedule.createdById === Number(input.actorUserId || 0);
+  if (!canRun) throw new Error('No tienes permiso para ejecutar esta programacion.');
+
+  try {
+    return await executeReportSchedule({
+      schedule,
+      origin: input.origin,
+      manual: true,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'No se pudo ejecutar la programacion.';
+    await createReportScheduleExecutionLog({
+      scheduleId: schedule.id,
+      status: 'error',
+      sentCount: 0,
+      message,
+    });
+    await createUserNotification({
+      userId: schedule.createdById,
+      type: 'report_schedule_error',
+      title: 'Fallo un informe programado',
+      message: `${schedule.reportTitle} · ${message}`,
+      href: '/notificaciones',
+    });
+    throw error;
+  }
+}
+
+export async function runDueReportSchedules(origin?: string) {
+  await ensureReportScheduleTables();
+
+  const dueResult = await pool.query<Record<string, unknown>>(
+    `
+      SELECT
+        s.*,
+        creator.username AS creator_username,
+        creator.first_name AS creator_first_name,
+        creator.last_name AS creator_last_name,
+        COALESCE(
+          (
+            SELECT json_agg(
+              json_build_object(
+                'id', u.id,
+                'label', trim(concat(u.first_name, ' ', u.last_name)),
+                'username', u.username,
+                'email', u.email
+              )
+              ORDER BY u.username
+            )
+            FROM auth_user u
+            WHERE u.id = ANY(s.recipient_user_ids)
+          ),
+          '[]'::json
+        ) AS recipient_users
+      FROM custom_permissions_reportschedule s
+      INNER JOIN auth_user creator ON creator.id = s.created_by
+      WHERE s.is_active = TRUE
+        AND s.next_run_at <= NOW()
+      ORDER BY s.next_run_at ASC, s.id ASC
+    `,
+  );
+
+  const results: Array<{ scheduleId: number; ok: boolean; sentCount: number; message: string }> = [];
+
+  for (const row of dueResult.rows) {
+    const schedule = normalizeReportScheduleRow(row);
+    try {
+      const executed = await executeReportSchedule({ schedule, origin, manual: false });
+      results.push({
+        scheduleId: schedule.id,
+        ok: true,
+        sentCount: executed.sentCount,
+        message: 'Envio ejecutado correctamente.',
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudo ejecutar la programacion.';
+      await createReportScheduleExecutionLog({
+        scheduleId: schedule.id,
+        status: 'error',
+        sentCount: 0,
+        message,
+      });
+      await createUserNotification({
+        userId: schedule.createdById,
+        type: 'report_schedule_error',
+        title: 'Fallo un informe programado',
+        message: `${schedule.reportTitle} · ${message}`,
+        href: '/notificaciones',
+      });
+
+      const nextRunAt = buildNextScheduledRun({
+        frequency: schedule.frequency,
+        timeOfDay: schedule.timeOfDay,
+        dayOfWeek: schedule.dayOfWeek,
+        dayOfMonth: schedule.dayOfMonth,
+        from: new Date(Date.now() + 1000),
+      });
+      await pool.query(
+        `
+          UPDATE custom_permissions_reportschedule
+          SET next_run_at = $2::timestamptz,
+              updated_at = NOW()
+          WHERE id = $1::int
+        `,
+        [schedule.id, nextRunAt.toISOString()],
+      );
+
+      results.push({
+        scheduleId: schedule.id,
+        ok: false,
+        sentCount: 0,
+        message,
+      });
+    }
+  }
+
+  return {
+    processed: results.length,
+    success: results.filter((item) => item.ok).length,
+    failed: results.filter((item) => !item.ok).length,
+    results,
+  };
 }
 
 function encodePbkdf2Sha256(rawPassword: string) {

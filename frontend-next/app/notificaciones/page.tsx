@@ -6,6 +6,8 @@ import {
   loadActiveSessions,
   loadActiveUserOptions,
   loadNotificationsForUser,
+  loadReportScheduleLogsForUser,
+  loadReportSchedulesForUser,
   loadTaskCommentsForUser,
   loadTasksForUser,
   loadUserCompanyAssignments,
@@ -42,7 +44,7 @@ export default async function NotificacionesPage() {
     redirect('/login');
   }
 
-  const [user, activeSessions, assignments, tasks, notifications, users, comments] = await Promise.all([
+  const [user, activeSessions, assignments, tasks, notifications, users, comments, reportSchedules, reportScheduleLogs] = await Promise.all([
     loadUserDetailedById(sessionUser.id),
     loadActiveSessions(),
     loadUserCompanyAssignments(sessionUser.id),
@@ -50,6 +52,8 @@ export default async function NotificacionesPage() {
     loadNotificationsForUser(sessionUser.id),
     loadActiveUserOptions(sessionUser.id),
     loadTaskCommentsForUser(sessionUser.id),
+    loadReportSchedulesForUser(sessionUser.id, Boolean(sessionUser.isSuperuser)),
+    loadReportScheduleLogsForUser(sessionUser.id, Boolean(sessionUser.isSuperuser), 12),
   ]);
 
   if (!user) {
@@ -148,6 +152,8 @@ export default async function NotificacionesPage() {
         initialTasksCreated={tasks.created}
         initialNotifications={notifications}
         initialTaskComments={comments}
+        initialReportSchedules={reportSchedules}
+        initialReportScheduleLogs={reportScheduleLogs}
         userOptions={users.map((item) => ({ id: item.id, label: item.label, username: item.username, isCurrentUser: item.isCurrentUser }))}
       />
     </div>

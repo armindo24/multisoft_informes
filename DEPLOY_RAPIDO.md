@@ -77,6 +77,15 @@ systemctl status multisoft-next
 journalctl -u multisoft-next -n 100 --no-pager
 ```
 
+Si activaste informes programados por correo, definir tambien en el entorno de `Next`:
+
+```bash
+NEXT_PUBLIC_APP_URL=http://192.168.1.74:3001
+REPORT_SCHEDULE_SECRET=una-clave-segura
+```
+
+Luego reconstruir `Next`.
+
 ## Si Cambiaste Django
 
 Usar cuando cambies `multisoft_informes`, permisos, usuarios, vistas Django o configuracion backend.
@@ -184,6 +193,28 @@ source /home/multisoft/.nvm/nvm.sh
 nvm use 12.22.12
 npm install
 systemctl restart multisoft-node-api
+```
+
+## Cron Para Informes Programados
+
+Los informes programados se ejecutan pegando a esta ruta interna de `Next`:
+
+```bash
+POST /api/system/report-schedules/run
+Header: x-schedule-secret: TU_CLAVE
+```
+
+Ejemplo manual desde Linux:
+
+```bash
+curl -X POST http://127.0.0.1:3001/api/system/report-schedules/run \
+  -H "x-schedule-secret: TU_CLAVE"
+```
+
+Ejemplo de cron cada 5 minutos:
+
+```bash
+*/5 * * * * curl -s -X POST http://127.0.0.1:3001/api/system/report-schedules/run -H "x-schedule-secret: TU_CLAVE" >/dev/null 2>&1
 ```
 
 ## Comandos de Ayuda

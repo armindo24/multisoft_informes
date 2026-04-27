@@ -856,7 +856,31 @@ export default async function FinanzasPage({
 
       {!isFocusedSection || section === 'balance-general' ? (
         <div id="balance-general" className="scroll-mt-28">
-          <BalanceTable rows={balanceRows} result={resultado} resultME={resultadoME} moneda={moneda} exportMeta={reportMeta} exportBranding={exportBranding} />
+          <BalanceTable
+            rows={balanceRows}
+            result={resultado}
+            resultME={resultadoME}
+            moneda={moneda}
+            exportMeta={reportMeta}
+            exportBranding={exportBranding}
+            scheduleConfig={{
+              reportKey: 'finanzas.balance_general',
+              reportModule: 'Finanzas',
+              reportParams: {
+                empresa,
+                periodo,
+                mesd,
+                mesh,
+                moneda,
+                cuentad,
+                cuentah,
+                nivel,
+                aux,
+                saldo,
+                section: 'balance-general',
+              },
+            }}
+          />
         </div>
       ) : null}
 
