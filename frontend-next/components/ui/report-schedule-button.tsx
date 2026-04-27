@@ -69,7 +69,7 @@ export function ReportScheduleButton({
     || reportKey === 'finanzas.balance_general_puc'
     || reportKey === 'stock.costo_articulo_full';
   const dynamicRangeHint = reportKey === 'stock.costo_articulo_full'
-    ? 'Mantiene la fecha inicial guardada y mueve la fecha final al ultimo dia del mes de ejecucion.'
+    ? 'En Costo Articulo Full toma siempre el mes completo de ejecucion. Ejemplo: 2026-01-01 a 2026-01-31, luego 2026-02-01 a 2026-02-28.'
     : 'Si hoy guardas un balance con 01 - 05, el mes siguiente se enviara como 01 - 06, y asi sucesivamente.';
 
   const [form, setForm] = useState({

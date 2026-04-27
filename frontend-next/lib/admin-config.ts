@@ -1647,21 +1647,19 @@ function resolveScheduledReportParams(schedule: ReportScheduleRecord, runDate = 
   }
 
   if (schedule.reportKey === 'stock.costo_articulo_full' && String(resolved.schedule_range_mode || '').trim() === 'enero_mes_actual') {
-    const startDate = String(resolved.fechad || '').trim();
-    if (/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
-      const start = new Date(`${startDate}T00:00:00`);
-      const end = new Date(runDate.getFullYear(), runDate.getMonth() + 1, 0);
-      const normalizedEnd = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
+    const monthStart = new Date(runDate.getFullYear(), runDate.getMonth(), 1);
+    const monthEnd = new Date(runDate.getFullYear(), runDate.getMonth() + 1, 0);
+    const normalizedStart = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, '0')}-${String(monthStart.getDate()).padStart(2, '0')}`;
+    const normalizedEnd = `${monthEnd.getFullYear()}-${String(monthEnd.getMonth() + 1).padStart(2, '0')}-${String(monthEnd.getDate()).padStart(2, '0')}`;
 
-      resolved.fechad = startDate;
-      resolved.fechah = normalizedEnd;
-      resolved.periodo = `${end.getFullYear()}${String(end.getMonth() + 1).padStart(2, '0')}`;
-      resolved.anho = String(end.getFullYear());
-      resolved.fecha_inicio_desde = startDate;
-      resolved.fecha_inicio_hasta = normalizedEnd;
-      resolved.fecha_fin_desde = startDate;
-      resolved.fecha_fin_hasta = normalizedEnd;
-    }
+    resolved.fechad = normalizedStart;
+    resolved.fechah = normalizedEnd;
+    resolved.periodo = `${monthStart.getFullYear()}${String(monthStart.getMonth() + 1).padStart(2, '0')}`;
+    resolved.anho = String(monthStart.getFullYear());
+    resolved.fecha_inicio_desde = normalizedStart;
+    resolved.fecha_inicio_hasta = normalizedEnd;
+    resolved.fecha_fin_desde = normalizedStart;
+    resolved.fecha_fin_hasta = normalizedEnd;
   }
 
   return resolved;
@@ -1680,7 +1678,7 @@ function buildScheduleDisplayParams(
   }
 
   if (schedule.reportKey === 'stock.costo_articulo_full' && String(schedule.reportParams.schedule_range_mode || '').trim() === 'enero_mes_actual') {
-    displayEntries.push(['rango mensual', 'Dinamico hasta el ultimo dia del mes de ejecucion']);
+    displayEntries.push(['rango mensual', 'Dinamico por mes completo de ejecucion']);
   }
 
   return displayEntries;
