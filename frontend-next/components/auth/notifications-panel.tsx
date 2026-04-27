@@ -209,6 +209,7 @@ export function NotificationsPanel({
   const [markingAll, setMarkingAll] = useState(false);
   const [commentSavingFor, setCommentSavingFor] = useState<number | null>(null);
   const [scheduleActionId, setScheduleActionId] = useState<number | null>(null);
+  const [clearingScheduleErrors, setClearingScheduleErrors] = useState(false);
   const [commentForms, setCommentForms] = useState<Record<number, string>>({});
   const [form, setForm] = useState({
     assignedTo: String(userOptions.find((item) => !item.isCurrentUser)?.id || userOptions[0]?.id || ''),
@@ -510,6 +511,28 @@ export function NotificationsPanel({
 
     await refreshSchedules();
     setScheduleActionId(null);
+  }
+
+  async function clearScheduleErrors() {
+    setClearingScheduleErrors(true);
+    setMessage(null);
+
+    const response = await fetch('/api/auth/report-schedules/clear-errors', {
+      method: 'POST',
+    });
+
+    const payload = (await response.json().catch(() => ({}))) as { ok?: boolean; message?: string };
+    if (!response.ok || !payload.ok) {
+      setMessageTone('error');
+      setMessage(payload.message || 'No se pudieron limpiar los fallos.');
+      setClearingScheduleErrors(false);
+      return;
+    }
+
+    await refresh();
+    setMessageTone('success');
+    setMessage(payload.message || 'Fallos limpiados correctamente.');
+    setClearingScheduleErrors(false);
   }
 
   return (
@@ -1158,9 +1181,20 @@ export function NotificationsPanel({
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
-          <div className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-violet-700" />
-            <h3 className="text-lg font-semibold text-slate-900">Ultimas ejecuciones</h3>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-violet-700" />
+              <h3 className="text-lg font-semibold text-slate-900">Ultimas ejecuciones</h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => void clearScheduleErrors()}
+              disabled={clearingScheduleErrors}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+            >
+              <Trash2 className="h-4 w-4" />
+              {clearingScheduleErrors ? 'Limpiando...' : 'Limpiar fallos'}
+            </button>
           </div>
           <div className="mt-5 space-y-3">
             {reportScheduleLogs.length ? (

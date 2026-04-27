@@ -2001,15 +2001,7 @@ async function buildBalancePdfAttachment(
   doc.moveTo(36, 140).lineTo(559, 140).strokeColor('#0891b2').lineWidth(1.5).stroke();
   doc.y = 150;
   doc.fontSize(10).fillColor('#475569').text(`Generado automaticamente · ${new Date().toLocaleString('es-PY')}`);
-  doc.moveDown(0.6);
-
-  for (const [key, value] of buildScheduleDisplayParams(schedule, effectiveParams)) {
-    const normalized = String(value || '').trim();
-    if (!normalized) continue;
-    doc.fontSize(9).fillColor('#0f172a').text(`${key.replace(/_/g, ' ')}: ${normalized}`);
-  }
-
-  doc.moveDown(0.8);
+  doc.moveDown(1);
   doc.fontSize(7.4).fillColor('#0f172a');
   const widths = moneda === 'ambas'
     ? [62, 220, 105, 105]
@@ -2584,6 +2576,42 @@ export async function markAllNotificationsRead(userId: number) {
   );
 
   return loadNotificationsForUser(userId);
+}
+
+export async function clearReportScheduleErrorsForUser(userId: number, isSuperuser = false) {
+  await ensureReportScheduleTables();
+  await ensureTaskTables();
+
+  if (isSuperuser) {
+    await pool.query(
+      `
+        DELETE FROM custom_permissions_reportschedulelog
+        WHERE status = 'error'
+      `,
+    );
+  } else {
+    await pool.query(
+      `
+        DELETE FROM custom_permissions_reportschedulelog
+        WHERE status = 'error'
+          AND schedule_id IN (
+            SELECT id
+            FROM custom_permissions_reportschedule
+            WHERE created_by = $1::int
+          )
+      `,
+      [userId],
+    );
+  }
+
+  await pool.query(
+    `
+      DELETE FROM custom_permissions_usernotification
+      WHERE user_id = $1::int
+        AND type = 'report_schedule_error'
+    `,
+    [userId],
+  );
 }
 
 export async function loadTaskCommentsForUser(userId: number) {
