@@ -1538,6 +1538,24 @@ function balanceLevel(row: BalanceRow) {
   return Number(row.Nivel || row.nivel || 0);
 }
 
+function balanceSaldo(row: BalanceRow) {
+  return balanceNum(row.SALDO || row.saldo);
+}
+
+function balanceSaldoME(row: BalanceRow) {
+  return balanceNum(row.SALDO_ME || row.saldo_me);
+}
+
+function calculateBalanceResultFallback(rows: BalanceRow[], currency: 'local' | 'extranjera') {
+  return rows
+    .filter((row) => {
+      const code = balanceCode(row);
+      const name = balanceName(row).toLowerCase();
+      return code.startsWith('4') || code.startsWith('5') || name.includes('resultado');
+    })
+    .reduce((acc, row) => acc + (currency === 'extranjera' ? balanceSaldoME(row) : balanceSaldo(row)), 0);
+}
+
 function formatBalanceCurrency(value: number, decimals = 0) {
   return new Intl.NumberFormat('es-PY', {
     minimumFractionDigits: decimals,
@@ -1702,6 +1720,8 @@ async function loadScheduledBalanceReportData(schedule: ReportScheduleRecord) {
       });
 
   const rows = ((response?.data || []) as BalanceRow[]);
+  const apiResultLocal = Number((response as { resultado?: { local?: number } } | null)?.resultado?.local);
+  const apiResultME = Number((response as { resultado?: { extranjera?: number } } | null)?.resultado?.extranjera);
   return {
     rows,
     moneda,
@@ -1710,8 +1730,8 @@ async function loadScheduledBalanceReportData(schedule: ReportScheduleRecord) {
     mesh,
     effectiveParams,
     warning: String((response as { warning?: string } | null)?.warning || '').trim(),
-    resultadoLocal: Number((response as { resultado?: { local?: number } } | null)?.resultado?.local || 0),
-    resultadoME: Number((response as { resultado?: { extranjera?: number } } | null)?.resultado?.extranjera || 0),
+    resultadoLocal: Number.isFinite(apiResultLocal) ? apiResultLocal : calculateBalanceResultFallback(rows, 'local'),
+    resultadoME: Number.isFinite(apiResultME) ? apiResultME : calculateBalanceResultFallback(rows, 'extranjera'),
   };
 }
 
