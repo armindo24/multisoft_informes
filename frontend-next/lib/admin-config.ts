@@ -1550,6 +1550,31 @@ function padPdfCell(value: string, width: number) {
   return raw.length > width ? `${raw.slice(0, Math.max(0, width - 1))}…` : raw;
 }
 
+async function loadPdfImageBuffer(url?: string | null) {
+  const target = String(url || '').trim();
+  if (!target) return null;
+  if (!/^https?:\/\//i.test(target) && !target.startsWith('/')) return null;
+
+  try {
+    const baseUrl = resolvePublicBaseUrl();
+    const finalUrl = target.startsWith('http://') || target.startsWith('https://')
+      ? target
+      : `${baseUrl}${target.startsWith('/') ? '' : '/'}${target}`;
+    const response = await fetch(finalUrl, { cache: 'no-store' });
+    if (!response.ok) return null;
+
+    const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+    if (!contentType.includes('png') && !contentType.includes('jpeg') && !contentType.includes('jpg')) {
+      return null;
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  } catch {
+    return null;
+  }
+}
+
 function scheduleNum(value: unknown) {
   const n = Number(value ?? 0);
   return Number.isFinite(n) ? n : 0;
@@ -1888,19 +1913,37 @@ function buildBalanceExcelAttachment(schedule: ReportScheduleRecord, rows: Balan
   };
 }
 
-function buildBalancePdfAttachment(schedule: ReportScheduleRecord, rows: BalanceRow[], moneda: string) {
+async function buildBalancePdfAttachment(
+  schedule: ReportScheduleRecord,
+  rows: BalanceRow[],
+  moneda: string,
+  branding?: BrandingConfigRecord | null,
+  resultLocal = 0,
+  resultME = 0,
+) {
   const { headers, dataRows } = buildScheduledBalanceTable(rows, moneda);
+  const logoBuffer = await loadPdfImageBuffer(branding?.logoUrl);
   const doc = new PDFDocument({
     size: 'A4',
-    layout: 'landscape',
     margin: 36,
     bufferPages: true,
   });
   const chunks: Buffer[] = [];
   doc.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
 
-  doc.fontSize(18).fillColor('#0f172a').text(schedule.reportTitle, { align: 'left' });
-  doc.moveDown(0.3);
+  if (logoBuffer) {
+    doc.image(logoBuffer, 36, 34, { fit: [64, 64], valign: 'center' });
+  } else {
+    doc.roundedRect(36, 34, 64, 64, 12).fill('#e0f2fe');
+    doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(18).text('MS', 55, 56, { width: 28, align: 'center' });
+  }
+
+  const headerLeft = 116;
+  doc.fillColor('#0e7490').font('Helvetica-Bold').fontSize(10).text((branding?.clientName || 'Multisoft Informes').toUpperCase(), headerLeft, 38);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(15).text(branding?.tagline || 'Informes Gerenciales', headerLeft, 56);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(18).text(schedule.reportTitle, 36, 112, { align: 'left' });
+  doc.moveTo(36, 140).lineTo(559, 140).strokeColor('#0891b2').lineWidth(1.5).stroke();
+  doc.y = 150;
   doc.fontSize(10).fillColor('#475569').text(`Generado automaticamente · ${new Date().toLocaleString('es-PY')}`);
   doc.moveDown(0.6);
 
@@ -1911,36 +1954,35 @@ function buildBalancePdfAttachment(schedule: ReportScheduleRecord, rows: Balance
   }
 
   doc.moveDown(0.8);
-  doc.fontSize(8).fillColor('#0f172a');
+  doc.fontSize(7.4).fillColor('#0f172a');
   const widths = moneda === 'ambas'
-    ? [72, 290, 110, 110]
-    : [72, 285, 90, 90, 100];
+    ? [62, 220, 105, 105]
+    : [62, 215, 80, 80, 86];
   const columns = widths.reduce<number[]>((acc, width, index) => {
     if (index === 0) return [20];
     acc.push(acc[index - 1] + widths[index - 1] + 8);
     return acc;
   }, []);
   const rowHeight = 12;
-  const startY = doc.y;
+  const drawHeader = (y: number) => {
+    headers.forEach((header, index) => {
+      doc.font('Helvetica-Bold').fontSize(7.8).text(header, columns[index], y, { width: widths[index] });
+    });
+  };
 
-  headers.forEach((header, index) => {
-    doc.font('Helvetica-Bold').text(header, columns[index], startY, { width: widths[index] });
-  });
-
-  let currentY = startY + 18;
+  drawHeader(doc.y);
+  let currentY = doc.y + 18;
   for (const [index, row] of dataRows.entries()) {
-    if (currentY > 540) {
+    if (currentY > 760) {
       doc.addPage();
-      currentY = 48;
-      headers.forEach((header, headerIndex) => {
-        doc.font('Helvetica-Bold').text(header, columns[headerIndex], currentY, { width: widths[headerIndex] });
-      });
+      currentY = 42;
+      drawHeader(currentY);
       currentY += 18;
     }
-    doc.fontSize(7.5);
+    doc.fontSize(7.1);
     doc.font(index % 5 === 0 || balanceLevel(rows[index]) <= 2 ? 'Helvetica-Bold' : 'Helvetica');
     row.forEach((cell, cellIndex) => {
-      const width = cellIndex === 1 ? 50 : 14;
+      const width = cellIndex === 1 ? 38 : 14;
       doc.text(
         padPdfCell(String(cell), width),
         columns[cellIndex],
@@ -1949,6 +1991,23 @@ function buildBalancePdfAttachment(schedule: ReportScheduleRecord, rows: Balance
       );
     });
     currentY += rowHeight;
+  }
+
+  currentY += 10;
+  doc.font('Helvetica-Bold').fontSize(10).fillColor('#0f172a').text(
+    `RESULTADO DEL EJERCICIO (+) ${resultLocal >= 0 ? 'Utilidad' : 'Perdida'} (-) Perdida : ${formatBalanceCurrency(Math.abs(resultLocal))} GS.`,
+    36,
+    currentY,
+    { width: 520 },
+  );
+
+  if (moneda === 'ambas') {
+    doc.font('Helvetica').fontSize(9).fillColor('#334155').text(
+      `RESULTADO DEL EJERCICIO (+) ${resultME >= 0 ? 'Utilidad' : 'Perdida'} (-) Perdida : ${formatBalanceCurrency(Math.abs(resultME), 2)} U$S.`,
+      36,
+      currentY + 18,
+      { width: 520 },
+    );
   }
 
   doc.end();
@@ -2128,19 +2187,26 @@ async function sendScheduledReportEmail(schedule: ReportScheduleRecord, origin?:
   const isBalanceSchedule = ['finanzas.balance_general', 'finanzas.balance_general_puc'].includes(schedule.reportKey);
   let resolvedExcelAttachment: { filename: string; content: Buffer | string; contentType?: string };
   let resolvedPdfAttachment: { filename: string; content: Buffer | string; contentType?: string };
+  const empresa = String(schedule.reportParams.empresa || '').trim();
+  const branding = empresa ? await loadBrandingConfig(empresa) : await loadBrandingConfig('GLOBAL');
 
   if (isBalanceSchedule) {
     const reportData = await loadScheduledBalanceReportData(schedule);
     resolvedExcelAttachment = buildBalanceExcelAttachment(schedule, reportData.rows, reportData.moneda);
-    resolvedPdfAttachment = await buildBalancePdfAttachment(schedule, reportData.rows, reportData.moneda);
+    resolvedPdfAttachment = await buildBalancePdfAttachment(
+      schedule,
+      reportData.rows,
+      reportData.moneda,
+      branding,
+      reportData.resultadoLocal,
+      reportData.resultadoME,
+    );
   } else {
     const table = await loadScheduledTabularReportData(schedule);
     resolvedExcelAttachment = buildTabularExcelAttachment(schedule, table);
     resolvedPdfAttachment = await buildTabularPdfAttachment(schedule, table);
   }
 
-  const empresa = String(schedule.reportParams.empresa || '').trim();
-  const branding = empresa ? await loadBrandingConfig(empresa) : await loadBrandingConfig('GLOBAL');
   const baseUrl = resolvePublicBaseUrl(origin);
   const reportUrl = schedule.targetUrl.startsWith('http://') || schedule.targetUrl.startsWith('https://')
     ? schedule.targetUrl
