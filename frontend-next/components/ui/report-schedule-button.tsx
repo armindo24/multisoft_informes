@@ -12,6 +12,7 @@ type UserOption = {
 };
 
 type ReportScheduleFrequency = 'diaria' | 'semanal' | 'mensual';
+type ReportScheduleRangeMode = 'fijo' | 'enero_mes_actual';
 
 const WEEK_DAYS = [
   { value: 0, label: 'Domingo' },
@@ -63,10 +64,13 @@ export function ReportScheduleButton({
     return merged;
   }, [reportParams, searchParams]);
 
+  const supportsDynamicMonthRange = reportKey === 'finanzas.balance_general' || reportKey === 'finanzas.balance_general_puc';
+
   const [form, setForm] = useState({
     recipientUserIds: [] as number[],
     extraEmails: '',
     frequency: 'mensual' as ReportScheduleFrequency,
+    rangeMode: 'fijo' as ReportScheduleRangeMode,
     timeOfDay: '08:00',
     dayOfWeek: '1',
     dayOfMonth: '1',
@@ -113,6 +117,15 @@ export function ReportScheduleButton({
     setMessage(null);
     setMessageTone('error');
 
+    const scheduleParams = { ...currentParams };
+    if (supportsDynamicMonthRange) {
+      if (form.rangeMode === 'enero_mes_actual') {
+        scheduleParams.schedule_range_mode = 'enero_mes_actual';
+      } else {
+        delete scheduleParams.schedule_range_mode;
+      }
+    }
+
     const response = await fetch('/api/auth/report-schedules', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -121,7 +134,7 @@ export function ReportScheduleButton({
         reportTitle,
         module: reportModule,
         targetUrl: currentUrl,
-        reportParams: currentParams,
+        reportParams: scheduleParams,
         frequency: form.frequency,
         timeOfDay: form.timeOfDay,
         dayOfWeek: form.frequency === 'semanal' ? Number(form.dayOfWeek || 1) : null,
@@ -250,6 +263,23 @@ export function ReportScheduleButton({
                     className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-violet-400"
                   />
                 </label>
+
+                {supportsDynamicMonthRange ? (
+                  <label className="space-y-2 text-sm md:col-span-2">
+                    <span className="font-medium text-slate-700">Rango mensual</span>
+                    <select
+                      value={form.rangeMode}
+                      onChange={(event) => setForm((current) => ({ ...current, rangeMode: event.target.value as ReportScheduleRangeMode }))}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-violet-400"
+                    >
+                      <option value="fijo">Fijo, mantener exactamente los meses guardados</option>
+                      <option value="enero_mes_actual">Dinamico, desde el mes inicial hasta el mes de ejecucion</option>
+                    </select>
+                    <p className="text-xs leading-5 text-slate-500">
+                      Si hoy guardas un balance con <strong>01 - 05</strong>, el mes siguiente se enviara como <strong>01 - 06</strong>, y asi sucesivamente.
+                    </p>
+                  </label>
+                ) : null}
 
                 {form.frequency === 'semanal' ? (
                   <label className="space-y-2 text-sm">

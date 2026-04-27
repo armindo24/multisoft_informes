@@ -1609,17 +1609,67 @@ type ScheduledAttachmentTable = {
   warning?: string;
 };
 
+const INTERNAL_SCHEDULE_PARAM_KEYS = new Set(['schedule_range_mode']);
+
+function isDynamicMonthlyBalanceSchedule(schedule: ReportScheduleRecord) {
+  return ['finanzas.balance_general', 'finanzas.balance_general_puc'].includes(schedule.reportKey)
+    && String(schedule.reportParams.schedule_range_mode || '').trim() === 'enero_mes_actual';
+}
+
+function resolveScheduledReportParams(schedule: ReportScheduleRecord, runDate = new Date()) {
+  const resolved = normalizeScheduleParams(schedule.reportParams);
+
+  if (isDynamicMonthlyBalanceSchedule(schedule)) {
+    const startMonth = Math.min(12, Math.max(1, Number.parseInt(String(resolved.mesd || '01'), 10) || 1));
+    const currentMonth = runDate.getMonth() + 1;
+    resolved.periodo = String(runDate.getFullYear());
+    resolved.mesd = String(startMonth).padStart(2, '0');
+    resolved.mesh = String(Math.max(currentMonth, startMonth)).padStart(2, '0');
+  }
+
+  return resolved;
+}
+
+function buildScheduleDisplayParams(
+  schedule: ReportScheduleRecord,
+  effectiveParams = schedule.reportParams,
+) {
+  const displayEntries = Object.entries(effectiveParams).filter(
+    ([key, value]) => !INTERNAL_SCHEDULE_PARAM_KEYS.has(key) && String(value || '').trim(),
+  );
+
+  if (isDynamicMonthlyBalanceSchedule(schedule)) {
+    displayEntries.push(['rango mensual', 'Dinamico desde el mes inicial hasta el mes de ejecucion']);
+  }
+
+  return displayEntries;
+}
+
+function buildScheduledReportUrl(schedule: ReportScheduleRecord, baseUrl: string, effectiveParams: Record<string, string>) {
+  const rawUrl = schedule.targetUrl.startsWith('http://') || schedule.targetUrl.startsWith('https://')
+    ? schedule.targetUrl
+    : `${baseUrl}${schedule.targetUrl.startsWith('/') ? '' : '/'}${schedule.targetUrl}`;
+  const url = new URL(rawUrl);
+  for (const [key, value] of Object.entries(effectiveParams)) {
+    const normalized = String(value || '').trim();
+    if (!normalized || INTERNAL_SCHEDULE_PARAM_KEYS.has(key)) continue;
+    url.searchParams.set(key, normalized);
+  }
+  return url.toString();
+}
+
 async function loadScheduledBalanceReportData(schedule: ReportScheduleRecord) {
-  const empresa = String(schedule.reportParams.empresa || '').trim();
-  const periodo = String(schedule.reportParams.periodo || '').trim();
-  const mesd = String(schedule.reportParams.mesd || '01').padStart(2, '0');
-  const mesh = String(schedule.reportParams.mesh || mesd).padStart(2, '0');
-  const moneda = String(schedule.reportParams.moneda || 'local').trim() || 'local';
-  const cuentad = String(schedule.reportParams.cuentad || '1').trim() || '1';
-  const cuentah = String(schedule.reportParams.cuentah || '9').trim() || '9';
-  const nivel = String(schedule.reportParams.nivel || '9').trim() || '9';
-  const aux = String(schedule.reportParams.aux || 'NO').trim() || 'NO';
-  const saldo = String(schedule.reportParams.saldo || 'NO').trim() || 'NO';
+  const effectiveParams = resolveScheduledReportParams(schedule);
+  const empresa = String(effectiveParams.empresa || '').trim();
+  const periodo = String(effectiveParams.periodo || '').trim();
+  const mesd = String(effectiveParams.mesd || '01').padStart(2, '0');
+  const mesh = String(effectiveParams.mesh || mesd).padStart(2, '0');
+  const moneda = String(effectiveParams.moneda || 'local').trim() || 'local';
+  const cuentad = String(effectiveParams.cuentad || '1').trim() || '1';
+  const cuentah = String(effectiveParams.cuentah || '9').trim() || '9';
+  const nivel = String(effectiveParams.nivel || '9').trim() || '9';
+  const aux = String(effectiveParams.aux || 'NO').trim() || 'NO';
+  const saldo = String(effectiveParams.saldo || 'NO').trim() || 'NO';
 
   const response = schedule.reportKey === 'finanzas.balance_general_puc'
     ? await getBalanceGeneralPuc({
@@ -1633,10 +1683,10 @@ async function loadScheduledBalanceReportData(schedule: ReportScheduleRecord) {
         nivel,
         aux,
         saldo,
-        practicado_al: String(schedule.reportParams.practicado_al || '').trim(),
-        recalcular_saldos: String(schedule.reportParams.recalcular_saldos || '').trim(),
-        codigo_entidad: String(schedule.reportParams.codigo_entidad || '').trim(),
-        balance_cuentas_puc: String(schedule.reportParams.balance_cuentas_puc || '').trim(),
+        practicado_al: String(effectiveParams.practicado_al || '').trim(),
+        recalcular_saldos: String(effectiveParams.recalcular_saldos || '').trim(),
+        codigo_entidad: String(effectiveParams.codigo_entidad || '').trim(),
+        balance_cuentas_puc: String(effectiveParams.balance_cuentas_puc || '').trim(),
       })
     : await getBalanceGeneral({
         empresa,
@@ -1658,6 +1708,7 @@ async function loadScheduledBalanceReportData(schedule: ReportScheduleRecord) {
     periodo,
     mesd,
     mesh,
+    effectiveParams,
     warning: String((response as { warning?: string } | null)?.warning || '').trim(),
     resultadoLocal: Number((response as { resultado?: { local?: number } } | null)?.resultado?.local || 0),
     resultadoME: Number((response as { resultado?: { extranjera?: number } } | null)?.resultado?.extranjera || 0),
@@ -1883,10 +1934,14 @@ async function loadScheduledTabularReportData(schedule: ReportScheduleRecord): P
   throw new Error('El informe programado todavia no soporta adjuntos automáticos.');
 }
 
-function buildBalanceExcelAttachment(schedule: ReportScheduleRecord, rows: BalanceRow[], moneda: string) {
+function buildBalanceExcelAttachment(
+  schedule: ReportScheduleRecord,
+  rows: BalanceRow[],
+  moneda: string,
+  effectiveParams = schedule.reportParams,
+) {
   const { headers, dataRows } = buildScheduledBalanceTable(rows, moneda);
-  const metaRows = Object.entries(schedule.reportParams)
-    .filter(([, value]) => String(value || '').trim())
+  const metaRows = buildScheduleDisplayParams(schedule, effectiveParams)
     .map(
       ([key, value]) =>
         `<tr><td style="border:1px solid #dbe5f0;padding:6px 10px;background:#f8fafc;font-weight:700;">${escapeHtml(key.replace(/_/g, ' '))}</td><td style="border:1px solid #dbe5f0;padding:6px 10px;">${escapeHtml(value)}</td></tr>`,
@@ -1920,6 +1975,7 @@ async function buildBalancePdfAttachment(
   branding?: BrandingConfigRecord | null,
   resultLocal = 0,
   resultME = 0,
+  effectiveParams = schedule.reportParams,
 ) {
   const { headers, dataRows } = buildScheduledBalanceTable(rows, moneda);
   const logoBuffer = await loadPdfImageBuffer(branding?.logoUrl);
@@ -1947,7 +2003,7 @@ async function buildBalancePdfAttachment(
   doc.fontSize(10).fillColor('#475569').text(`Generado automaticamente · ${new Date().toLocaleString('es-PY')}`);
   doc.moveDown(0.6);
 
-  for (const [key, value] of Object.entries(schedule.reportParams)) {
+  for (const [key, value] of buildScheduleDisplayParams(schedule, effectiveParams)) {
     const normalized = String(value || '').trim();
     if (!normalized) continue;
     doc.fontSize(9).fillColor('#0f172a').text(`${key.replace(/_/g, ' ')}: ${normalized}`);
@@ -2023,15 +2079,18 @@ async function buildBalancePdfAttachment(
   });
 }
 
-function buildTabularExcelAttachment(schedule: ReportScheduleRecord, table: ScheduledAttachmentTable) {
+function buildTabularExcelAttachment(
+  schedule: ReportScheduleRecord,
+  table: ScheduledAttachmentTable,
+  effectiveParams = schedule.reportParams,
+) {
   const header = table.headers
     .map((item) => `<th style="border:1px solid #cbd5e1;padding:6px 8px;background:#eaf2f8;">${escapeHtml(item)}</th>`)
     .join('');
   const body = table.dataRows
     .map((row) => `<tr>${row.map((cell) => `<td style="border:1px solid #cbd5e1;padding:6px 8px;">${escapeHtml(cell)}</td>`).join('')}</tr>`)
     .join('');
-  const metaRows = Object.entries(schedule.reportParams)
-    .filter(([, value]) => String(value || '').trim())
+  const metaRows = buildScheduleDisplayParams(schedule, effectiveParams)
     .map(
       ([key, value]) =>
         `<tr><td style="border:1px solid #dbe5f0;padding:6px 10px;background:#f8fafc;font-weight:700;">${escapeHtml(key.replace(/_/g, ' '))}</td><td style="border:1px solid #dbe5f0;padding:6px 10px;">${escapeHtml(value)}</td></tr>`,
@@ -2055,7 +2114,11 @@ function buildTabularExcelAttachment(schedule: ReportScheduleRecord, table: Sche
   };
 }
 
-function buildTabularPdfAttachment(schedule: ReportScheduleRecord, table: ScheduledAttachmentTable) {
+function buildTabularPdfAttachment(
+  schedule: ReportScheduleRecord,
+  table: ScheduledAttachmentTable,
+  effectiveParams = schedule.reportParams,
+) {
   const doc = new PDFDocument({
     size: 'A4',
     margin: 36,
@@ -2073,7 +2136,7 @@ function buildTabularPdfAttachment(schedule: ReportScheduleRecord, table: Schedu
   }
   doc.moveDown(0.6);
 
-  for (const [key, value] of Object.entries(schedule.reportParams)) {
+  for (const [key, value] of buildScheduleDisplayParams(schedule, effectiveParams)) {
     const normalized = String(value || '').trim();
     if (!normalized) continue;
     doc.fontSize(9).fillColor('#0f172a').text(`${key.replace(/_/g, ' ')}: ${normalized}`);
@@ -2187,12 +2250,13 @@ async function sendScheduledReportEmail(schedule: ReportScheduleRecord, origin?:
   const isBalanceSchedule = ['finanzas.balance_general', 'finanzas.balance_general_puc'].includes(schedule.reportKey);
   let resolvedExcelAttachment: { filename: string; content: Buffer | string; contentType?: string };
   let resolvedPdfAttachment: { filename: string; content: Buffer | string; contentType?: string };
-  const empresa = String(schedule.reportParams.empresa || '').trim();
+  const effectiveParams = resolveScheduledReportParams(schedule);
+  const empresa = String(effectiveParams.empresa || '').trim();
   const branding = empresa ? await loadBrandingConfig(empresa) : await loadBrandingConfig('GLOBAL');
 
   if (isBalanceSchedule) {
     const reportData = await loadScheduledBalanceReportData(schedule);
-    resolvedExcelAttachment = buildBalanceExcelAttachment(schedule, reportData.rows, reportData.moneda);
+    resolvedExcelAttachment = buildBalanceExcelAttachment(schedule, reportData.rows, reportData.moneda, reportData.effectiveParams);
     resolvedPdfAttachment = await buildBalancePdfAttachment(
       schedule,
       reportData.rows,
@@ -2200,19 +2264,17 @@ async function sendScheduledReportEmail(schedule: ReportScheduleRecord, origin?:
       branding,
       reportData.resultadoLocal,
       reportData.resultadoME,
+      reportData.effectiveParams,
     );
   } else {
     const table = await loadScheduledTabularReportData(schedule);
-    resolvedExcelAttachment = buildTabularExcelAttachment(schedule, table);
-    resolvedPdfAttachment = await buildTabularPdfAttachment(schedule, table);
+    resolvedExcelAttachment = buildTabularExcelAttachment(schedule, table, effectiveParams);
+    resolvedPdfAttachment = await buildTabularPdfAttachment(schedule, table, effectiveParams);
   }
 
   const baseUrl = resolvePublicBaseUrl(origin);
-  const reportUrl = schedule.targetUrl.startsWith('http://') || schedule.targetUrl.startsWith('https://')
-    ? schedule.targetUrl
-    : `${baseUrl}${schedule.targetUrl.startsWith('/') ? '' : '/'}${schedule.targetUrl}`;
-  const filters = Object.entries(schedule.reportParams)
-    .filter(([, value]) => String(value || '').trim())
+  const reportUrl = buildScheduledReportUrl(schedule, baseUrl, effectiveParams);
+  const filters = buildScheduleDisplayParams(schedule, effectiveParams)
     .map(([key, value]) => ({
       label: key.replace(/_/g, ' '),
       value: String(value || '').trim(),
