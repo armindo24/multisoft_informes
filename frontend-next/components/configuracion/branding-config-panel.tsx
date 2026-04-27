@@ -2,6 +2,7 @@
 
 import { Building2, ImageIcon, Palette, Save } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { resolveBrandAssetUrl } from '@/lib/branding';
 
 type BrandingConfigRecord = {
   empresa: string;
@@ -257,7 +258,15 @@ export function BrandingConfigPanel() {
               <h3 className="mt-2 text-2xl font-semibold text-slate-950">Informe corporativo</h3>
               <p className="mt-2 text-sm text-slate-500">{form.tagline || 'Informes ejecutivos y exportaciones con identidad visual propia.'}</p>
               <div className="mt-4 flex flex-wrap items-center gap-3">
-                {form.logoUrl ? <img src={form.logoUrl} alt="Logo" className="h-14 w-14 rounded-xl border border-slate-200 object-contain p-1" /> : null}
+                {form.logoUrl ? (
+                  <div className="flex min-h-16 max-w-[240px] items-center rounded-xl border border-slate-200 bg-white px-3 py-2">
+                    <img
+                      src={resolveBrandAssetUrl(form.logoUrl)}
+                      alt="Logo"
+                      className="max-h-12 w-auto max-w-full object-contain"
+                    />
+                  </div>
+                ) : null}
                 <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
                   {selectedEmpresa === 'GLOBAL' ? 'Aplicacion global' : `Empresa ${selectedEmpresa}`}
                 </div>

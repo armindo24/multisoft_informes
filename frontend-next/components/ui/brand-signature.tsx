@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { brandShortName, getBranding, type BrandingConfig } from '@/lib/branding';
+import { brandShortName, getBranding, resolveBrandAssetUrl, type BrandingConfig } from '@/lib/branding';
 
 type BrandingApiRecord = {
   empresa: string;
@@ -79,11 +79,18 @@ export function BrandSignature({
   return (
     <div className="flex items-center gap-3">
       {hasLogo ? (
-        <img
-          src={branding.logoUrl}
-          alt={branding.clientName}
-          className={`${compact ? 'h-10 w-10' : 'h-12 w-12'} rounded-xl object-contain bg-white/95 p-1 shadow-sm`}
-        />
+        <div
+          className={[
+            'flex items-center overflow-hidden rounded-xl bg-white/95 shadow-sm',
+            compact ? 'h-10 max-w-[140px] px-2' : 'h-12 max-w-[180px] px-3',
+          ].join(' ')}
+        >
+          <img
+            src={resolveBrandAssetUrl(branding.logoUrl)}
+            alt={branding.clientName}
+            className="max-h-full w-auto max-w-full object-contain"
+          />
+        </div>
       ) : (
         <div className={`${compact ? 'h-10 w-10 text-sm' : 'h-12 w-12 text-base'} flex items-center justify-center rounded-xl bg-cyan-600 font-black tracking-[0.18em] text-white shadow-sm`}>
           {shortName}
