@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   experimental: {
     typedRoutes: true,
   },
+  serverExternalPackages: ['pdfkit'],
   webpack(config) {
     config.resolve = config.resolve || {};
     config.resolve.alias = {
