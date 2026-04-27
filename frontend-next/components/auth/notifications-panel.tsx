@@ -103,6 +103,8 @@ type ReportScheduleItem = {
 type ReportScheduleLogItem = {
   id: number;
   scheduleId: number;
+  reportTitle: string;
+  module: string;
   status: 'success' | 'error';
   sentCount: number;
   message: string;
@@ -233,6 +235,13 @@ export function NotificationsPanel({
       return acc;
     }, {});
   }, [taskComments]);
+  const logsBySchedule = useMemo(() => {
+    return reportScheduleLogs.reduce<Record<number, ReportScheduleLogItem[]>>((acc, item) => {
+      if (!acc[item.scheduleId]) acc[item.scheduleId] = [];
+      acc[item.scheduleId].push(item);
+      return acc;
+    }, {});
+  }, [reportScheduleLogs]);
 
   async function refreshSchedules() {
     const response = await fetch('/api/auth/report-schedules', { cache: 'no-store' });
@@ -1054,67 +1063,92 @@ export function NotificationsPanel({
 
           <div className="mt-5 space-y-3">
             {reportSchedules.length ? (
-              reportSchedules.map((item) => (
-                <article key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <h4 className="font-semibold text-slate-900">{item.reportTitle}</h4>
-                      <p className="mt-1 text-sm text-slate-500">{item.module || 'General'} · {scheduleFrequencyLabel(item)}</p>
-                      <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
-                        <span className={['rounded-full border px-2.5 py-1', item.isActive ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-600'].join(' ')}>
-                          {item.isActive ? 'Activa' : 'Pausada'}
-                        </span>
-                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
-                          Proximo: {fmtDate(item.nextRunAt)}
-                        </span>
-                        {item.lastRunAt ? (
-                          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
-                            Ultimo: {fmtDate(item.lastRunAt)}
+              reportSchedules.map((item) => {
+                const scheduleLogs = (logsBySchedule[item.id] || []).slice(0, 3);
+                return (
+                  <article key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h4 className="font-semibold text-slate-900">{item.reportTitle}</h4>
+                        <p className="mt-1 text-sm text-slate-500">{item.module || 'General'} · {scheduleFrequencyLabel(item)}</p>
+                        <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+                          <span className={['rounded-full border px-2.5 py-1', item.isActive ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-600'].join(' ')}>
+                            {item.isActive ? 'Activa' : 'Pausada'}
                           </span>
-                        ) : null}
+                          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
+                            Proximo: {fmtDate(item.nextRunAt)}
+                          </span>
+                          {item.lastRunAt ? (
+                            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
+                              Ultimo: {fmtDate(item.lastRunAt)}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void runScheduleNow(item)}
+                          disabled={scheduleActionId === item.id}
+                          className="inline-flex items-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm font-medium text-cyan-800 transition hover:bg-cyan-100 disabled:opacity-60"
+                        >
+                          <Play className="h-4 w-4" />
+                          Ejecutar ahora
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void toggleSchedule(item, !item.isActive)}
+                          disabled={scheduleActionId === item.id}
+                          className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+                        >
+                          {item.isActive ? 'Pausar' : 'Activar'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void deleteSchedule(item)}
+                          disabled={scheduleActionId === item.id}
+                          className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-100 disabled:opacity-60"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Eliminar
+                        </button>
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => void runScheduleNow(item)}
-                        disabled={scheduleActionId === item.id}
-                        className="inline-flex items-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm font-medium text-cyan-800 transition hover:bg-cyan-100 disabled:opacity-60"
-                      >
-                        <Play className="h-4 w-4" />
-                        Ejecutar ahora
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void toggleSchedule(item, !item.isActive)}
-                        disabled={scheduleActionId === item.id}
-                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
-                      >
-                        {item.isActive ? 'Pausar' : 'Activar'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void deleteSchedule(item)}
-                        disabled={scheduleActionId === item.id}
-                        className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-100 disabled:opacity-60"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Eliminar
-                      </button>
-                    </div>
-                  </div>
 
-                  <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                    <span>Destinatarios internos: {item.recipientUsers.length || 0}</span>
-                    <span>Correos externos: {item.extraEmails.length || 0}</span>
-                    {item.targetUrl ? (
-                      <a href={item.targetUrl} className="font-semibold text-violet-700 hover:text-violet-600">
-                        Abrir informe
-                      </a>
-                    ) : null}
-                  </div>
-                </article>
-              ))
+                    <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                      <span>Destinatarios internos: {item.recipientUsers.length || 0}</span>
+                      <span>Correos externos: {item.extraEmails.length || 0}</span>
+                      {item.targetUrl ? (
+                        <a href={item.targetUrl} className="font-semibold text-violet-700 hover:text-violet-600">
+                          Abrir informe
+                        </a>
+                      ) : null}
+                    </div>
+
+                    <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-700">Historial reciente</p>
+                      <div className="mt-3 space-y-2">
+                        {scheduleLogs.length ? (
+                          scheduleLogs.map((log) => (
+                            <div key={log.id} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+                              <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+                                <span className={['rounded-full border px-2 py-1 font-semibold', log.status === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-rose-200 bg-rose-50 text-rose-700'].join(' ')}>
+                                  {log.status === 'success' ? 'Correcto' : 'Con error'}
+                                </span>
+                                <span>{fmtDate(log.executedAt)}</span>
+                              </div>
+                              <p className="mt-2 text-sm leading-6 text-slate-700">{log.message}</p>
+                              <p className="mt-1 text-xs text-slate-500">Destinatarios enviados: {log.sentCount}</p>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-sm text-slate-500">Todavia no hay ejecuciones registradas para esta programacion.</p>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })
             ) : (
               <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
                 Todavia no guardaste informes programados. Usa el boton Programar correo desde Balance general para crear el primero.
@@ -1138,7 +1172,8 @@ export function NotificationsPanel({
                     </span>
                     <span className="text-xs text-slate-500">{fmtDate(item.executedAt)}</span>
                   </div>
-                  <p className="mt-3 text-sm font-semibold text-slate-900">Programacion #{item.scheduleId}</p>
+                  <p className="mt-3 text-sm font-semibold text-slate-900">{item.reportTitle || `Programacion #${item.scheduleId}`}</p>
+                  <p className="mt-1 text-xs uppercase tracking-[0.14em] text-slate-500">{item.module || 'General'}</p>
                   <p className="mt-1 text-sm leading-6 text-slate-600">{item.message}</p>
                   <p className="mt-2 text-xs text-slate-500">Destinatarios enviados: {item.sentCount}</p>
                 </article>

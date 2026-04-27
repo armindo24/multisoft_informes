@@ -181,6 +181,8 @@ export type ReportScheduleRecord = {
 export type ReportScheduleLogRecord = {
   id: number;
   scheduleId: number;
+  reportTitle: string;
+  module: string;
   status: 'success' | 'error';
   sentCount: number;
   message: string;
@@ -1460,6 +1462,8 @@ function normalizeReportScheduleLogRow(row: Record<string, unknown>): ReportSche
   return {
     id: Number(row.id || 0),
     scheduleId: Number(row.schedule_id || 0),
+    reportTitle: String(row.report_title || ''),
+    module: String(row.module || ''),
     status: String(row.status || 'success') === 'error' ? 'error' : 'success',
     sentCount: Number(row.sent_count || 0),
     message: String(row.message || ''),
@@ -2393,7 +2397,7 @@ export async function loadReportScheduleLogsForUser(userId: number, actorIsSuper
 
   const result = await pool.query<Record<string, unknown>>(
     `
-      SELECT l.*
+      SELECT l.*, s.report_title, s.module
       FROM custom_permissions_reportschedulelog l
       INNER JOIN custom_permissions_reportschedule s ON s.id = l.schedule_id
       WHERE ($1::boolean = TRUE OR s.created_by = $2::int)
