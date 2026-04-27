@@ -22,6 +22,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       actorUserId: sessionUser.id,
       actorIsSuperuser: Boolean(sessionUser.isSuperuser),
       isActive: typeof body.isActive === 'boolean' ? body.isActive : undefined,
+      reportParams: body.reportParams as Record<string, string> | undefined,
+      frequency: body.frequency ? String(body.frequency) as 'diaria' | 'semanal' | 'mensual' : undefined,
+      timeOfDay: typeof body.timeOfDay === 'string' ? body.timeOfDay : undefined,
+      dayOfWeek: body.dayOfWeek == null ? undefined : Number(body.dayOfWeek),
+      dayOfMonth: body.dayOfMonth == null ? undefined : Number(body.dayOfMonth),
+      recipientUserIds: Array.isArray(body.recipientUserIds) ? body.recipientUserIds.map((item) => Number(item)) : undefined,
+      extraEmails: Array.isArray(body.extraEmails) ? body.extraEmails.map((item) => String(item || '')) : typeof body.extraEmails === 'string' ? body.extraEmails : undefined,
+      emailSubject: typeof body.emailSubject === 'string' ? body.emailSubject : undefined,
+      emailMessage: typeof body.emailMessage === 'string' ? body.emailMessage : undefined,
     });
 
     return NextResponse.json({ ok: true, data: schedule });

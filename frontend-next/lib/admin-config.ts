@@ -3207,6 +3207,15 @@ export async function updateReportSchedule(input: {
   actorUserId: number;
   actorIsSuperuser?: boolean;
   isActive?: boolean;
+  reportParams?: Record<string, string>;
+  frequency?: ReportScheduleFrequency;
+  timeOfDay?: string;
+  dayOfWeek?: number | null;
+  dayOfMonth?: number | null;
+  recipientUserIds?: number[];
+  extraEmails?: string[] | string;
+  emailSubject?: string;
+  emailMessage?: string;
 }) {
   await ensureReportScheduleTables();
 
@@ -3217,25 +3226,85 @@ export async function updateReportSchedule(input: {
   const canEdit = Boolean(input.actorIsSuperuser) || schedule.createdById === actorUserId;
   if (!canEdit) throw new Error('No tienes permiso para modificar esta programacion.');
 
+  const nextReportParams = input.reportParams ? normalizeScheduleParams(input.reportParams) : schedule.reportParams;
+  const recipientUserIds = input.recipientUserIds ? normalizeRecipientUserIds(input.recipientUserIds) : schedule.recipientUserIds;
+  const extraEmails = input.extraEmails !== undefined ? normalizeScheduleEmails(input.extraEmails) : schedule.extraEmails;
+  if (recipientUserIds.length === 0 && extraEmails.length === 0) {
+    throw new Error('Debes indicar al menos un destinatario interno o un correo externo.');
+  }
+
+  const frequency = input.frequency ? normalizeScheduleFrequency(input.frequency) : schedule.frequency;
+  const timeOfDay = input.timeOfDay ? normalizeTimeOfDay(input.timeOfDay) : schedule.timeOfDay;
+  const dayOfWeek = frequency === 'semanal'
+    ? normalizeDayOfWeek(input.dayOfWeek ?? schedule.dayOfWeek) ?? 1
+    : null;
+  const dayOfMonth = frequency === 'mensual'
+    ? normalizeDayOfMonth(input.dayOfMonth ?? schedule.dayOfMonth) ?? 1
+    : null;
+
+  if (recipientUserIds.length > 0) {
+    const recipientsResult = await pool.query<Record<string, unknown>>(
+      `
+        SELECT id, username, is_superuser
+        FROM auth_user
+        WHERE id = ANY($1::int[])
+          AND is_active = TRUE
+      `,
+      [recipientUserIds],
+    );
+
+    const validIds = new Set(recipientsResult.rows.map((row) => Number(row.id || 0)));
+    for (const id of recipientUserIds) {
+      if (!validIds.has(id)) {
+        throw new Error('Uno de los usuarios seleccionados ya no esta disponible.');
+      }
+    }
+    if (recipientsResult.rows.some((row) => isRestrictedCollaborationUser(row))) {
+      throw new Error('Las cuentas administrativas no deben recibir informes programados.');
+    }
+  }
+
   const isActive = typeof input.isActive === 'boolean' ? input.isActive : schedule.isActive;
   const nextRunAt = isActive
     ? buildNextScheduledRun({
-        frequency: schedule.frequency,
-        timeOfDay: schedule.timeOfDay,
-        dayOfWeek: schedule.dayOfWeek,
-        dayOfMonth: schedule.dayOfMonth,
+        frequency,
+        timeOfDay,
+        dayOfWeek,
+        dayOfMonth,
       })
     : null;
 
   await pool.query(
     `
       UPDATE custom_permissions_reportschedule
-      SET is_active = $2::boolean,
-          next_run_at = COALESCE($3::timestamptz, next_run_at),
+      SET report_params = $2::jsonb,
+          frequency = $3::varchar(20),
+          time_of_day = $4::varchar(5),
+          day_of_week = $5::smallint,
+          day_of_month = $6::smallint,
+          recipient_user_ids = $7::int[],
+          extra_emails = $8::text[],
+          email_subject = $9::varchar(220),
+          email_message = $10::text,
+          is_active = $11::boolean,
+          next_run_at = COALESCE($12::timestamptz, next_run_at),
           updated_at = NOW()
       WHERE id = $1::int
     `,
-    [schedule.id, isActive, nextRunAt ? nextRunAt.toISOString() : null],
+    [
+      schedule.id,
+      JSON.stringify(nextReportParams),
+      frequency,
+      timeOfDay,
+      dayOfWeek,
+      dayOfMonth,
+      recipientUserIds,
+      extraEmails,
+      input.emailSubject !== undefined ? String(input.emailSubject || '').trim() : schedule.emailSubject,
+      input.emailMessage !== undefined ? String(input.emailMessage || '').trim() : schedule.emailMessage,
+      isActive,
+      nextRunAt ? nextRunAt.toISOString() : null,
+    ],
   );
 
   return loadReportScheduleById(schedule.id);

@@ -111,6 +111,8 @@ type ReportScheduleLogItem = {
   executedAt: string | null;
 };
 
+type EditableScheduleRangeMode = 'fijo' | 'enero_mes_actual';
+
 type NotificationsPanelProps = {
   initialSummary: NotificationSummary;
   initialEvents: NotificationEvent[];
@@ -203,6 +205,13 @@ function scheduleRangeBadge(item: ReportScheduleItem) {
   };
 }
 
+function supportsDynamicRangeForSchedule(item: ReportScheduleItem | null) {
+  if (!item) return false;
+  return item.reportKey === 'finanzas.balance_general'
+    || item.reportKey === 'finanzas.balance_general_puc'
+    || item.reportKey === 'stock.costo_articulo_full';
+}
+
 export function NotificationsPanel({
   initialSummary,
   initialEvents,
@@ -232,7 +241,20 @@ export function NotificationsPanel({
   const [commentSavingFor, setCommentSavingFor] = useState<number | null>(null);
   const [scheduleActionId, setScheduleActionId] = useState<number | null>(null);
   const [clearingScheduleErrors, setClearingScheduleErrors] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState<ReportScheduleItem | null>(null);
+  const [editingScheduleSaving, setEditingScheduleSaving] = useState(false);
   const [commentForms, setCommentForms] = useState<Record<number, string>>({});
+  const [scheduleForm, setScheduleForm] = useState({
+    recipientUserIds: [] as number[],
+    extraEmails: '',
+    frequency: 'mensual' as ReportScheduleFrequency,
+    rangeMode: 'fijo' as EditableScheduleRangeMode,
+    timeOfDay: '08:00',
+    dayOfWeek: '1',
+    dayOfMonth: '1',
+    emailSubject: '',
+    emailMessage: '',
+  });
   const [form, setForm] = useState({
     assignedTo: String(userOptions.find((item) => !item.isCurrentUser)?.id || userOptions[0]?.id || ''),
     title: '',
@@ -533,6 +555,67 @@ export function NotificationsPanel({
 
     await refreshSchedules();
     setScheduleActionId(null);
+  }
+
+  function openEditSchedule(item: ReportScheduleItem) {
+    setEditingSchedule(item);
+    setScheduleForm({
+      recipientUserIds: item.recipientUserIds,
+      extraEmails: item.extraEmails.join(', '),
+      frequency: item.frequency,
+      rangeMode: String(item.reportParams?.schedule_range_mode || '').trim() === 'enero_mes_actual' ? 'enero_mes_actual' : 'fijo',
+      timeOfDay: item.timeOfDay || '08:00',
+      dayOfWeek: String(item.dayOfWeek ?? 1),
+      dayOfMonth: String(item.dayOfMonth ?? 1),
+      emailSubject: item.emailSubject || '',
+      emailMessage: item.emailMessage || '',
+    });
+    setMessage(null);
+  }
+
+  async function saveScheduleEdit() {
+    if (!editingSchedule) return;
+    setEditingScheduleSaving(true);
+    setMessage(null);
+
+    const reportParams = { ...(editingSchedule.reportParams || {}) };
+    if (supportsDynamicRangeForSchedule(editingSchedule)) {
+      if (scheduleForm.rangeMode === 'enero_mes_actual') {
+        reportParams.schedule_range_mode = 'enero_mes_actual';
+      } else {
+        delete reportParams.schedule_range_mode;
+      }
+    }
+
+    const response = await fetch(`/api/auth/report-schedules/${editingSchedule.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        reportParams,
+        frequency: scheduleForm.frequency,
+        timeOfDay: scheduleForm.timeOfDay,
+        dayOfWeek: scheduleForm.frequency === 'semanal' ? Number(scheduleForm.dayOfWeek || 1) : null,
+        dayOfMonth: scheduleForm.frequency === 'mensual' ? Number(scheduleForm.dayOfMonth || 1) : null,
+        recipientUserIds: scheduleForm.recipientUserIds,
+        extraEmails: scheduleForm.extraEmails,
+        emailSubject: scheduleForm.emailSubject,
+        emailMessage: scheduleForm.emailMessage,
+      }),
+    });
+
+    const payload = (await response.json().catch(() => ({}))) as { ok?: boolean; message?: string };
+    if (!response.ok || !payload.ok) {
+      setMessageTone('error');
+      setMessage(payload.message || 'No se pudo guardar la programacion.');
+      setEditingScheduleSaving(false);
+      return;
+    }
+
+    await refreshSchedules();
+    setEditingSchedule(null);
+    setMessageTone('success');
+    setMessage('Programacion actualizada correctamente.');
+    setEditingScheduleSaving(false);
   }
 
   async function clearScheduleErrors() {
@@ -1146,6 +1229,14 @@ export function NotificationsPanel({
                         </button>
                         <button
                           type="button"
+                          onClick={() => openEditSchedule(item)}
+                          disabled={scheduleActionId === item.id}
+                          className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-sm font-medium text-violet-700 transition hover:bg-violet-100 disabled:opacity-60"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => void toggleSchedule(item, !item.isActive)}
                           disabled={scheduleActionId === item.id}
                           className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
@@ -1246,6 +1337,171 @@ export function NotificationsPanel({
           </div>
         </section>
       </div>
+
+      {editingSchedule ? (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]">
+          <div className="flex max-h-[94vh] w-full max-w-3xl flex-col overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-violet-700">Entrega automatica</p>
+                <h3 className="mt-2 text-xl font-semibold text-slate-900">Editar programacion</h3>
+                <p className="mt-2 text-sm text-slate-500">{editingSchedule.reportTitle}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingSchedule(null)}
+                className="rounded-xl border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50 hover:text-slate-800"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2 text-sm md:col-span-2">
+                  <span className="font-medium text-slate-700">Destinatarios internos</span>
+                  <div className="grid gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-2">
+                    {userOptions.filter((item) => !item.isCurrentUser).map((item) => (
+                      <label key={item.id} className="flex items-center gap-3 rounded-xl border border-white bg-white px-3 py-2 text-sm text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={scheduleForm.recipientUserIds.includes(item.id)}
+                          onChange={() =>
+                            setScheduleForm((current) => ({
+                              ...current,
+                              recipientUserIds: current.recipientUserIds.includes(item.id)
+                                ? current.recipientUserIds.filter((value) => value !== item.id)
+                                : [...current.recipientUserIds, item.id],
+                            }))
+                          }
+                          className="h-4 w-4 rounded border-slate-300 text-violet-500 focus:ring-violet-400"
+                        />
+                        <span>{item.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <label className="space-y-2 text-sm md:col-span-2">
+                  <span className="font-medium text-slate-700">Correos externos adicionales</span>
+                  <input
+                    value={scheduleForm.extraEmails}
+                    onChange={(event) => setScheduleForm((current) => ({ ...current, extraEmails: event.target.value }))}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-violet-400"
+                  />
+                </label>
+
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Frecuencia</span>
+                  <select
+                    value={scheduleForm.frequency}
+                    onChange={(event) => setScheduleForm((current) => ({ ...current, frequency: event.target.value as ReportScheduleFrequency }))}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-violet-400"
+                  >
+                    <option value="diaria">Diaria</option>
+                    <option value="semanal">Semanal</option>
+                    <option value="mensual">Mensual</option>
+                  </select>
+                </label>
+
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Hora</span>
+                  <input
+                    type="time"
+                    value={scheduleForm.timeOfDay}
+                    onChange={(event) => setScheduleForm((current) => ({ ...current, timeOfDay: event.target.value }))}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-violet-400"
+                  />
+                </label>
+
+                {supportsDynamicRangeForSchedule(editingSchedule) ? (
+                  <label className="space-y-2 text-sm md:col-span-2">
+                    <span className="font-medium text-slate-700">Rango mensual</span>
+                    <select
+                      value={scheduleForm.rangeMode}
+                      onChange={(event) => setScheduleForm((current) => ({ ...current, rangeMode: event.target.value as EditableScheduleRangeMode }))}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-violet-400"
+                    >
+                      <option value="fijo">Fijo</option>
+                      <option value="enero_mes_actual">Dinamico</option>
+                    </select>
+                  </label>
+                ) : null}
+
+                {scheduleForm.frequency === 'semanal' ? (
+                  <label className="space-y-2 text-sm">
+                    <span className="font-medium text-slate-700">Dia semanal</span>
+                    <select
+                      value={scheduleForm.dayOfWeek}
+                      onChange={(event) => setScheduleForm((current) => ({ ...current, dayOfWeek: event.target.value }))}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-violet-400"
+                    >
+                      <option value="0">Domingo</option>
+                      <option value="1">Lunes</option>
+                      <option value="2">Martes</option>
+                      <option value="3">Miercoles</option>
+                      <option value="4">Jueves</option>
+                      <option value="5">Viernes</option>
+                      <option value="6">Sabado</option>
+                    </select>
+                  </label>
+                ) : null}
+
+                {scheduleForm.frequency === 'mensual' ? (
+                  <label className="space-y-2 text-sm">
+                    <span className="font-medium text-slate-700">Dia del mes</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={31}
+                      value={scheduleForm.dayOfMonth}
+                      onChange={(event) => setScheduleForm((current) => ({ ...current, dayOfMonth: event.target.value }))}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-violet-400"
+                    />
+                  </label>
+                ) : null}
+
+                <label className="space-y-2 text-sm md:col-span-2">
+                  <span className="font-medium text-slate-700">Asunto del correo</span>
+                  <input
+                    value={scheduleForm.emailSubject}
+                    onChange={(event) => setScheduleForm((current) => ({ ...current, emailSubject: event.target.value }))}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-violet-400"
+                  />
+                </label>
+
+                <label className="space-y-2 text-sm md:col-span-2">
+                  <span className="font-medium text-slate-700">Mensaje base</span>
+                  <textarea
+                    rows={4}
+                    value={scheduleForm.emailMessage}
+                    onChange={(event) => setScheduleForm((current) => ({ ...current, emailMessage: event.target.value }))}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-violet-400"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="flex shrink-0 justify-end gap-3 border-t border-slate-200 bg-white px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setEditingSchedule(null)}
+                className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => void saveScheduleEdit()}
+                disabled={editingScheduleSaving}
+                className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
+              >
+                {editingScheduleSaving ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
