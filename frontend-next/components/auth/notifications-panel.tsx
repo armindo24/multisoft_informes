@@ -557,6 +557,45 @@ export function NotificationsPanel({
     setScheduleActionId(null);
   }
 
+  async function duplicateSchedule(item: ReportScheduleItem) {
+    setScheduleActionId(item.id);
+    setMessage(null);
+
+    const response = await fetch('/api/auth/report-schedules', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        reportKey: item.reportKey,
+        reportTitle: item.reportTitle,
+        module: item.module,
+        targetUrl: item.targetUrl,
+        reportParams: item.reportParams,
+        frequency: item.frequency,
+        timeOfDay: item.timeOfDay,
+        dayOfWeek: item.dayOfWeek,
+        dayOfMonth: item.dayOfMonth,
+        recipientUserIds: item.recipientUserIds,
+        extraEmails: item.extraEmails,
+        emailSubject: item.emailSubject,
+        emailMessage: item.emailMessage,
+        isActive: false,
+      }),
+    });
+
+    const payload = (await response.json().catch(() => ({}))) as { ok?: boolean; message?: string };
+    if (!response.ok || !payload.ok) {
+      setMessageTone('error');
+      setMessage(payload.message || 'No se pudo duplicar la programacion.');
+      setScheduleActionId(null);
+      return;
+    }
+
+    await refreshSchedules();
+    setMessageTone('success');
+    setMessage('Programacion duplicada en estado pausado.');
+    setScheduleActionId(null);
+  }
+
   function openEditSchedule(item: ReportScheduleItem) {
     setEditingSchedule(item);
     setScheduleForm({
@@ -1234,6 +1273,14 @@ export function NotificationsPanel({
                           className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-sm font-medium text-violet-700 transition hover:bg-violet-100 disabled:opacity-60"
                         >
                           Editar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void duplicateSchedule(item)}
+                          disabled={scheduleActionId === item.id}
+                          className="rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm font-medium text-cyan-700 transition hover:bg-cyan-100 disabled:opacity-60"
+                        >
+                          Duplicar
                         </button>
                         <button
                           type="button"

@@ -3110,6 +3110,7 @@ export async function createReportSchedule(input: {
   extraEmails?: string[] | string;
   emailSubject?: string;
   emailMessage?: string;
+  isActive?: boolean;
 }) {
   await ensureReportScheduleTables();
 
@@ -3132,6 +3133,7 @@ export async function createReportSchedule(input: {
   const timeOfDay = normalizeTimeOfDay(input.timeOfDay);
   const dayOfWeek = frequency === 'semanal' ? normalizeDayOfWeek(input.dayOfWeek) ?? 1 : null;
   const dayOfMonth = frequency === 'mensual' ? normalizeDayOfMonth(input.dayOfMonth) ?? 1 : null;
+  const isActive = typeof input.isActive === 'boolean' ? input.isActive : true;
 
   if (recipientUserIds.length > 0) {
     const recipientsResult = await pool.query<Record<string, unknown>>(
@@ -3176,7 +3178,7 @@ export async function createReportSchedule(input: {
           $1::varchar(120), $2::varchar(180), $3::varchar(80), $4::text, $5::jsonb,
           $6::varchar(20), $7::varchar(5), $8::smallint, $9::smallint,
           $10::int[], $11::text[], $12::varchar(220), $13::text,
-          TRUE, $14::timestamptz, $15::int
+          $14::boolean, $15::timestamptz, $16::int
         )
       RETURNING id
     `,
@@ -3194,6 +3196,7 @@ export async function createReportSchedule(input: {
       extraEmails,
       String(input.emailSubject || '').trim(),
       String(input.emailMessage || '').trim(),
+      isActive,
       nextRunAt.toISOString(),
       actorUserId,
     ],

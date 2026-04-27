@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
       extraEmails: Array.isArray(body.extraEmails) ? body.extraEmails.map((item) => String(item || '')) : String(body.extraEmails || ''),
       emailSubject: String(body.emailSubject || ''),
       emailMessage: String(body.emailMessage || ''),
+      isActive: typeof body.isActive === 'boolean' ? body.isActive : undefined,
     });
 
     return NextResponse.json({ ok: true, data: schedule });
