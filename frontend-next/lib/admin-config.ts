@@ -9,6 +9,7 @@ import {
   getComprasList,
   getCuentasCobrar,
   getOrdenCompraList,
+  getStockCostoArticuloFull,
   getStockExistenciaDeposito,
   getStockValorizado,
   getVentasResumido,
@@ -1951,6 +1952,92 @@ async function loadScheduledTabularReportData(schedule: ReportScheduleRecord): P
     };
   }
 
+  if (schedule.reportKey === 'stock.costo_articulo_full') {
+    const response = await getStockCostoArticuloFull({
+      empresa,
+      articulo: String(schedule.reportParams.articulo || '').trim(),
+      tipo: String(schedule.reportParams.tipo || '').trim(),
+      estado: String(schedule.reportParams.estado || '').trim(),
+      fechad: String(schedule.reportParams.fechad || '').trim(),
+      fechah: String(schedule.reportParams.fechah || '').trim(),
+      calcular_empresa: String(schedule.reportParams.calcular_empresa || '').trim(),
+      ecuacion_mat: String(schedule.reportParams.ecuacion_mat || '').trim(),
+      periodo: String(schedule.reportParams.periodo || '').trim(),
+      anho: String(schedule.reportParams.anho || '').trim(),
+      fecha_inicio_desde: String(schedule.reportParams.fecha_inicio_desde || '').trim(),
+      fecha_inicio_hasta: String(schedule.reportParams.fecha_inicio_hasta || '').trim(),
+      fecha_fin_desde: String(schedule.reportParams.fecha_fin_desde || '').trim(),
+      fecha_fin_hasta: String(schedule.reportParams.fecha_fin_hasta || '').trim(),
+      recalcular: String(schedule.reportParams.recalcular || '').trim(),
+    });
+    const rows = ((response?.data || []) as Array<Record<string, unknown>>);
+    const ecuacionMat = String(schedule.reportParams.ecuacion_mat || '').trim().toUpperCase() === 'S';
+    if (ecuacionMat) {
+      return {
+        headers: [
+          'AÑO',
+          'MES',
+          'CODIGO PY',
+          'CODIGO PY REACOND.',
+          'PRODUCTO',
+          'FOB U$S (CARTILLA EN ORIGEN)',
+          '% CTO. TOTAL IMPORT.',
+          'CTO. TOTAL USD (ACTUAL)',
+          'SERV. COLOCACION STICKER / ENGOMADO GS.',
+          'SERV. COLOCACION PROSPECTO GS.',
+          'SERVICIO MO GS.',
+          'ESTUCHE GS.',
+          'PROSPECTO GS.',
+          'INKJET GS.',
+          'STICKER / SELLO DE SEGURIDAD',
+          'SOLVENTE / CUCHARA',
+          'TOTAL COSTO PRODUCCION GS.',
+          'TOTAL COSTO PRODUCCION U$S',
+          'COSTO TOTAL FINAL U$S',
+        ],
+        dataRows: rows.map((row) => [
+          String(row.anio || '-'),
+          String(row.mes || '-'),
+          String(row.cod_articulo || '-'),
+          String(row.cod_pt_reacondicionado || '-'),
+          String(row.des_art || '-'),
+          formatScheduledCurrency(row.fob_usd_origen, 2),
+          formatScheduledCurrency(row.porcentaje_costo_total_importacion, 2),
+          formatScheduledCurrency(row.costo_total_us_actual, 2),
+          formatScheduledCurrency(row.servicio_clasificacion_director),
+          formatScheduledCurrency(row.servicio_clasificacion_proveedor),
+          formatScheduledCurrency(row.servicio_no_gr),
+          formatScheduledCurrency(row.estuche_gr),
+          formatScheduledCurrency(row.prospecto_gr),
+          formatScheduledCurrency(row.inkjet_gr),
+          formatScheduledCurrency(row.sticker_sello_seguridad),
+          formatScheduledCurrency(row.solvente_celofane),
+          formatScheduledCurrency(row.total_costo_produccion_gs),
+          formatScheduledCurrency(row.total_costo_produccion_us, 2),
+          formatScheduledCurrency(row.costo_total_final_us, 2),
+        ]),
+        warning: 'Informe generado en modo Ecuacion BC materiales.',
+      };
+    }
+
+    return {
+      headers: ['Codigo', 'Descripcion', 'Tipo', 'Estado', 'Costo Promedio Gs', 'Costo Ultimo Gs', 'Costo Promedio U$', 'Costo Ultimo U$', 'Moneda', 'IVA', 'Existencia'],
+      dataRows: rows.map((row) => [
+        String(row.cod_articulo || '-'),
+        String(row.des_art || '-'),
+        String(row.cod_tp_art || '-'),
+        String(row.estado || '-'),
+        formatScheduledCurrency(row.cto_prom_gs),
+        formatScheduledCurrency(row.cto_ult_gs),
+        formatScheduledCurrency(row.cto_prom_me, 2),
+        formatScheduledCurrency(row.cto_ult_me, 2),
+        String(row.codmoneda || '-'),
+        String(row.iva ?? row.cod_iva ?? '-'),
+        formatScheduledCurrency(row.existencia, 2),
+      ]),
+    };
+  }
+
   throw new Error('El informe programado todavia no soporta adjuntos automáticos.');
 }
 
@@ -2262,6 +2349,7 @@ async function sendScheduledReportEmail(schedule: ReportScheduleRecord, origin?:
   const isBalanceSchedule = ['finanzas.balance_general', 'finanzas.balance_general_puc'].includes(schedule.reportKey);
   let resolvedExcelAttachment: { filename: string; content: Buffer | string; contentType?: string };
   let resolvedPdfAttachment: { filename: string; content: Buffer | string; contentType?: string };
+  let scheduledResultSummary = '';
   const effectiveParams = resolveScheduledReportParams(schedule);
   const empresa = String(effectiveParams.empresa || '').trim();
   const branding = empresa ? await loadBrandingConfig(empresa) : await loadBrandingConfig('GLOBAL');
@@ -2278,6 +2366,11 @@ async function sendScheduledReportEmail(schedule: ReportScheduleRecord, origin?:
       reportData.resultadoME,
       reportData.effectiveParams,
     );
+    const resultLabelLocal = reportData.resultadoLocal >= 0 ? 'Utilidad' : 'Perdida';
+    const resultLabelME = reportData.resultadoME >= 0 ? 'Utilidad' : 'Perdida';
+    scheduledResultSummary = reportData.moneda === 'ambas'
+      ? `Resultado del ejercicio: ${resultLabelLocal} ${formatBalanceCurrency(Math.abs(reportData.resultadoLocal))} GS. / ${resultLabelME} ${formatBalanceCurrency(Math.abs(reportData.resultadoME), 2)} U$S.`
+      : `Resultado del ejercicio: ${resultLabelLocal} ${formatBalanceCurrency(Math.abs(reportData.resultadoLocal))} GS.`;
   } else {
     const table = await loadScheduledTabularReportData(schedule);
     resolvedExcelAttachment = buildTabularExcelAttachment(schedule, table, effectiveParams);
@@ -2315,6 +2408,7 @@ async function sendScheduledReportEmail(schedule: ReportScheduleRecord, origin?:
     `Modulo: ${schedule.module}\n` +
     `Frecuencia: ${humanFrequencyLabel(schedule)}\n` +
     `Destinatarios: ${recipientsText}\n` +
+    (scheduledResultSummary ? `${scheduledResultSummary}\n` : '') +
     (filtersText ? `\nFiltros:\n${filtersText}\n` : '\n') +
     `\nAbrir informe: ${reportUrl}\n`;
   const html =
@@ -2331,6 +2425,9 @@ async function sendScheduledReportEmail(schedule: ReportScheduleRecord, origin?:
     '</td></tr>' +
     '<tr><td style="padding:32px;">' +
     `<p style="margin:0 0 18px 0;font-size:15px;line-height:1.8;color:#334155;">Modulo: <strong>${escapeHtml(schedule.module)}</strong><br />Frecuencia: <strong>${escapeHtml(humanFrequencyLabel(schedule))}</strong><br />Destinatarios: <strong>${escapeHtml(recipientsText)}</strong></p>` +
+    (scheduledResultSummary
+      ? `<div style="margin:0 0 20px 0;padding:14px 18px;border-radius:16px;background:#ecfeff;border:1px solid #a5f3fc;color:#0f172a;font-size:14px;font-weight:700;">${escapeHtml(scheduledResultSummary)}</div>`
+      : '') +
     (filtersHtml
       ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:0 0 24px 0;">${filtersHtml}</table>`
       : '') +

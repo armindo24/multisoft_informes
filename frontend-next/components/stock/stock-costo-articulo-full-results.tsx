@@ -194,6 +194,26 @@ export function StockCostoArticuloFullResults(props: Props) {
         fechah={props.fechah}
         ecuacionMat={props.ecuacion_mat === 'S'}
         exportBranding={props.exportBranding}
+        scheduleConfig={{
+          reportKey: 'stock.costo_articulo_full',
+          reportModule: 'Stock',
+          reportParams: {
+            empresa: props.empresa,
+            articulo: props.articulo,
+            tipo: props.tipo,
+            estado: props.estado,
+            fechad: props.fechad,
+            fechah: props.fechah,
+            calcular_empresa: props.calcular_empresa,
+            ecuacion_mat: props.ecuacion_mat,
+            section: 'costo-articulo-full',
+            ...(periodInfo.periodo ? { periodo: periodInfo.periodo } : {}),
+            ...(periodInfo.anho ? { anho: periodInfo.anho } : {}),
+            ...(props.fechad ? { fecha_inicio_desde: props.fechad, fecha_fin_desde: props.fechad } : {}),
+            ...(props.fechah ? { fecha_inicio_hasta: props.fechah, fecha_fin_hasta: props.fechah } : {}),
+            ...(props.ecuacion_mat === 'S' ? { recalcular: 'S' } : {}),
+          },
+        }}
       />
 
       {loading ? (

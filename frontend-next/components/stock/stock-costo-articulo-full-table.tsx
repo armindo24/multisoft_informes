@@ -3,6 +3,7 @@
 import { FileDown, FileSpreadsheet } from 'lucide-react';
 import { exportRowsToExcel, exportRowsToPdf } from '@/components/ui/export-utils';
 import type { ExportBrandingOverride, ExportMetaItem } from '@/components/ui/export-utils';
+import { ReportScheduleButton } from '@/components/ui/report-schedule-button';
 import { StockCostoArticuloFullRow } from '@/types/stock';
 
 function formatNumber(value: unknown, decimals = 0) {
@@ -111,6 +112,7 @@ export function StockCostoArticuloFullTable({
   fechah,
   ecuacionMat,
   exportBranding,
+  scheduleConfig,
 }: {
   rows: StockCostoArticuloFullRow[];
   empresa: string;
@@ -118,6 +120,11 @@ export function StockCostoArticuloFullTable({
   fechah: string;
   ecuacionMat?: boolean;
   exportBranding?: ExportBrandingOverride;
+  scheduleConfig?: {
+    reportKey: string;
+    reportModule: string;
+    reportParams?: Record<string, string>;
+  };
 }) {
   const columns = buildColumns(ecuacionMat);
   const exportMeta: ExportMetaItem[] = [
@@ -168,6 +175,18 @@ export function StockCostoArticuloFullTable({
             </p>
           </div>
           <div className="flex gap-2">
+            {scheduleConfig ? (
+              <ReportScheduleButton
+                reportKey={scheduleConfig.reportKey}
+                reportTitle="Costo Articulo Full"
+                reportModule={scheduleConfig.reportModule}
+                detailHint={ecuacionMat
+                  ? 'Entrega automatica de costo articulo full en modo ecuacion BC materiales.'
+                  : 'Entrega automatica de costo articulo full para seguimiento corporativo.'}
+                reportParams={scheduleConfig.reportParams}
+                buttonClassName="inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-medium text-violet-800 transition hover:bg-violet-100"
+              />
+            ) : null}
             <button
               type="button"
               onClick={exportExcel}
