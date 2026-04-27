@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { brandShortName, getBranding, resolveBrandAssetUrl, type BrandingConfig } from '@/lib/branding';
+import { brandShortName, getBranding, getLogoBackgroundClasses, resolveBrandAssetUrl, type BrandingConfig } from '@/lib/branding';
 
 type BrandingApiRecord = {
   empresa: string;
@@ -10,6 +10,7 @@ type BrandingApiRecord = {
   tagline: string;
   logoUrl: string;
   faviconUrl: string;
+  logoBackground: 'auto' | 'light' | 'dark';
 };
 
 export function BrandSignature({
@@ -63,6 +64,7 @@ export function BrandSignature({
         tagline: payload.data.tagline || globalBranding.tagline,
         logoUrl: payload.data.logoUrl || globalBranding.logoUrl,
         faviconUrl: payload.data.faviconUrl || globalBranding.faviconUrl,
+        logoBackground: payload.data.logoBackground || globalBranding.logoBackground,
       });
     }
 
@@ -80,6 +82,7 @@ export function BrandSignature({
   const hasLogo = Boolean(branding.logoUrl);
   const shortName = brandShortName(branding.clientName);
   const subTone = light ? 'text-slate-300' : 'text-slate-500';
+  const logoBackgroundClass = getLogoBackgroundClasses(branding.logoBackground, light);
   const logoContainerClass = hasLogo
     ? compact
       ? isWideLogo
@@ -95,7 +98,8 @@ export function BrandSignature({
       {hasLogo ? (
         <div
           className={[
-            'flex items-center overflow-hidden rounded-xl bg-white/95 shadow-sm',
+            'flex items-center justify-center overflow-hidden rounded-xl shadow-sm',
+            logoBackgroundClass,
             logoContainerClass,
           ].join(' ')}
         >

@@ -2,7 +2,7 @@
 
 import { Building2, ImageIcon, Palette, Save } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { resolveBrandAssetUrl } from '@/lib/branding';
+import { getLogoBackgroundClasses, normalizeLogoBackground, resolveBrandAssetUrl } from '@/lib/branding';
 
 type BrandingConfigRecord = {
   empresa: string;
@@ -11,6 +11,7 @@ type BrandingConfigRecord = {
   tagline: string;
   logoUrl: string;
   faviconUrl: string;
+  logoBackground: 'auto' | 'light' | 'dark';
   updatedAt: string | null;
 };
 
@@ -26,6 +27,7 @@ const emptyRecord: BrandingConfigRecord = {
   tagline: '',
   logoUrl: '',
   faviconUrl: '',
+  logoBackground: 'auto',
   updatedAt: null,
 };
 
@@ -40,6 +42,7 @@ export function BrandingConfigPanel() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [faviconFile, setFaviconFile] = useState<File | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [previewWideLogo, setPreviewWideLogo] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -219,6 +222,18 @@ export function BrandingConfigPanel() {
               <span className="mb-2 flex items-center gap-2 font-medium"><Palette className="h-4 w-4 text-cyan-700" />Tagline corporativo</span>
               <input value={form.tagline} onChange={(event) => updateField('tagline', event.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2" />
             </label>
+            <label className="text-sm text-slate-700">
+              <span className="mb-2 flex items-center gap-2 font-medium"><Palette className="h-4 w-4 text-cyan-700" />Fondo del logo</span>
+              <select
+                value={form.logoBackground}
+                onChange={(event) => updateField('logoBackground', normalizeLogoBackground(event.target.value))}
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2"
+              >
+                <option value="auto">Automatico</option>
+                <option value="light">Claro</option>
+                <option value="dark">Oscuro</option>
+              </select>
+            </label>
             <label className="text-sm text-slate-700 md:col-span-2">
               <span className="mb-2 flex items-center gap-2 font-medium"><ImageIcon className="h-4 w-4 text-cyan-700" />URL de logo</span>
               <input value={form.logoUrl} onChange={(event) => updateField('logoUrl', event.target.value)} placeholder="https://dominio/logo.png" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2" />
@@ -259,10 +274,22 @@ export function BrandingConfigPanel() {
               <p className="mt-2 text-sm text-slate-500">{form.tagline || 'Informes ejecutivos y exportaciones con identidad visual propia.'}</p>
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 {form.logoUrl ? (
-                  <div className="flex min-h-16 max-w-[240px] items-center rounded-xl border border-slate-200 bg-white px-3 py-2">
+                  <div
+                    className={[
+                      'flex items-center justify-center rounded-xl px-3 py-2',
+                      previewWideLogo ? 'min-h-16 max-w-[260px]' : 'min-h-16 max-w-[180px]',
+                      getLogoBackgroundClasses(form.logoBackground),
+                    ].join(' ')}
+                  >
                     <img
                       src={resolveBrandAssetUrl(form.logoUrl)}
                       alt="Logo"
+                      onLoad={(event) => {
+                        const image = event.currentTarget;
+                        const width = Number(image.naturalWidth || 0);
+                        const height = Number(image.naturalHeight || 0);
+                        setPreviewWideLogo(Boolean(width && height && width / height >= 2.15));
+                      }}
                       className="max-h-12 w-auto max-w-full object-contain"
                     />
                   </div>

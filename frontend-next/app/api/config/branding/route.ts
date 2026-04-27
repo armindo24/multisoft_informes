@@ -30,6 +30,7 @@ export async function POST(request: Request) {
       tagline: String(body.tagline || ''),
       logoUrl: String(body.logoUrl || ''),
       faviconUrl: String(body.faviconUrl || ''),
+      logoBackground: String(body.logoBackground || 'auto'),
     });
 
     return NextResponse.json({ ok: true, data: saved });

@@ -4,6 +4,7 @@ export type BrandingConfig = {
   tagline: string;
   logoUrl: string;
   faviconUrl: string;
+  logoBackground: 'auto' | 'light' | 'dark';
 };
 
 export function getBranding(): BrandingConfig {
@@ -13,6 +14,7 @@ export function getBranding(): BrandingConfig {
     tagline: process.env.NEXT_PUBLIC_CLIENT_TAGLINE || 'Informes Gerenciales',
     logoUrl: process.env.NEXT_PUBLIC_CLIENT_LOGO_URL || '',
     faviconUrl: process.env.NEXT_PUBLIC_CLIENT_FAVICON_URL || process.env.NEXT_PUBLIC_CLIENT_LOGO_URL || '',
+    logoBackground: 'auto',
   };
 }
 
@@ -34,4 +36,21 @@ export function resolveBrandAssetUrl(value: string) {
     return raw;
   }
   return raw.startsWith('/') ? raw : `/${raw}`;
+}
+
+export function normalizeLogoBackground(value: string) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (normalized === 'light' || normalized === 'dark') return normalized;
+  return 'auto';
+}
+
+export function getLogoBackgroundClasses(mode: string, light = false) {
+  const normalized = normalizeLogoBackground(mode);
+  if (normalized === 'light') {
+    return 'bg-white border border-slate-200';
+  }
+  if (normalized === 'dark') {
+    return light ? 'bg-slate-950/95 border border-white/10' : 'bg-slate-950 border border-slate-800';
+  }
+  return light ? 'bg-white/95 border border-white/10' : 'bg-white border border-slate-200';
 }
