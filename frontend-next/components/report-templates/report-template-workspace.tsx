@@ -91,6 +91,26 @@ function buildFormFromTemplate(template: ReportTemplateRecord, companies: Compan
   };
 }
 
+function describeTemplate(template: ReportTemplateRecord) {
+  const raw = (template.config || {}) as Record<string, unknown>;
+  const filters = raw.filters && typeof raw.filters === 'object' && !Array.isArray(raw.filters)
+    ? raw.filters as Record<string, unknown>
+    : {};
+  const blocksRaw = Array.isArray(raw.blocks) ? raw.blocks : [];
+  const blockKeys = blocksRaw
+    .map((item) => (item && typeof item === 'object' ? String((item as Record<string, unknown>).key || '').trim() : ''))
+    .filter(Boolean);
+
+  return {
+    empresa: String(filters.empresa || '').trim(),
+    periodo: String(filters.periodo || '').trim(),
+    blockCount: blockKeys.length,
+    blockLabels: blockKeys
+      .map((key) => CARTERA_TEMPLATE_BLOCKS.find((block) => block.key === key)?.label || key)
+      .slice(0, 2),
+  };
+}
+
 export function ReportTemplateWorkspace({ companies, templates, selectedTemplate, selectedTemplateId }: Props) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
@@ -422,11 +442,14 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
         </div>
 
         <div className="mt-5 space-y-3">
-          {templates.length ? templates.map((template) => (
-            <article
-              key={template.id}
-              className={`rounded-2xl border px-4 py-4 ${selectedTemplateId === template.id ? 'border-cyan-200 bg-cyan-50' : 'border-slate-200 bg-white'}`}
-            >
+          {templates.length ? templates.map((template) => {
+            const meta = describeTemplate(template);
+
+            return (
+              <article
+                key={template.id}
+                className={`rounded-2xl border px-4 py-4 ${selectedTemplateId === template.id ? 'border-cyan-200 bg-cyan-50' : 'border-slate-200 bg-white'}`}
+              >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -437,6 +460,26 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
                   <p className="mt-2 text-xs uppercase tracking-[0.22em] text-slate-400">
                     {template.templateKey.replace(/_/g, ' ')} · {template.createdByName || template.createdByUsername}
                   </p>
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+                    {meta.empresa ? (
+                      <span className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 font-medium text-cyan-700">
+                        Empresa {meta.empresa}
+                      </span>
+                    ) : null}
+                    {meta.periodo ? (
+                      <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
+                        Periodo {meta.periodo}
+                      </span>
+                    ) : null}
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
+                      {meta.blockCount} bloque(s)
+                    </span>
+                    {meta.blockLabels.map((label) => (
+                      <span key={label} className="rounded-full border border-white bg-white px-3 py-1">
+                        {label}
+                      </span>
+                    ))}
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -472,8 +515,9 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
                   Abrir plantilla
                 </Link>
               </div>
-            </article>
-          )) : (
+              </article>
+            );
+          }) : (
             <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">
               Todavia no hay plantillas guardadas.
             </div>

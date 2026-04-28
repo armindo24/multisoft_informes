@@ -6,6 +6,7 @@ import type { ExportBrandingOverride } from '@/components/ui/export-utils';
 import { getSessionUser } from '@/lib/auth-server';
 import { loadBrandingConfig, loadReportTemplateById, loadReportTemplatesForUser, type ReportTemplateRecord } from '@/lib/admin-config';
 import { getCuentasCobrar, getCuentasPagar } from '@/lib/api';
+import { brandShortName, getLogoBackgroundClasses, resolveBrandAssetUrl } from '@/lib/branding';
 import { getScopedEmpresas } from '@/lib/empresas-server';
 import { CARTERA_TEMPLATE_BLOCKS, getCarteraTemplateBlock } from '@/lib/report-template-presets';
 
@@ -121,6 +122,11 @@ export default async function InformesPersonalizadosPage({
   const empresa = config.filters.empresa;
   const brandingConfig = empresa ? await loadBrandingConfig(empresa) : await loadBrandingConfig();
   const exportBranding = buildExportBranding(brandingConfig);
+  const brandName = brandingConfig?.clientName || exportBranding?.clientName || 'Multisoft';
+  const brandTagline = brandingConfig?.tagline || exportBranding?.tagline || 'Informes Gerenciales';
+  const brandLogoUrl = brandingConfig?.logoUrl ? resolveBrandAssetUrl(brandingConfig.logoUrl) : '';
+  const brandInitials = brandShortName(brandName);
+  const brandLogoBackground = getLogoBackgroundClasses(brandingConfig?.logoBackground || 'auto');
 
   const [cobrarResponse, pagarResponse] = selectedTemplate && empresa
     ? await Promise.all([
@@ -265,12 +271,40 @@ export default async function InformesPersonalizadosPage({
 
       {selectedTemplate ? (
         <>
-          <section className="card px-5 py-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div>
+        <section className="card px-5 py-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div className="flex min-w-0 items-start gap-4">
+                {brandLogoUrl ? (
+                  <div className={['flex h-16 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl px-3 shadow-sm', brandLogoBackground].join(' ')}>
+                    <img
+                      src={brandLogoUrl}
+                      alt={brandName}
+                      className="max-h-full w-auto max-w-full object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-cyan-600 text-lg font-black tracking-[0.18em] text-white shadow-sm">
+                    {brandInitials}
+                  </div>
+                )}
+                <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-700">Plantilla activa</p>
                 <h2 className="mt-2 text-lg font-semibold text-slate-900">{selectedTemplate.name}</h2>
                 <p className="mt-1 text-sm text-slate-500">{selectedTemplate.description || 'Sin descripcion.'}</p>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+                  <span className="rounded-full border border-slate-200 bg-white px-3 py-1 font-medium text-slate-600">
+                    {brandName}
+                  </span>
+                  <span className="rounded-full border border-slate-200 bg-white px-3 py-1">
+                    {brandTagline}
+                  </span>
+                  {empresa ? (
+                    <span className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 font-medium text-cyan-700">
+                      Empresa {empresa}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
               </div>
               <div className="grid gap-2 sm:grid-cols-3">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
