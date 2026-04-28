@@ -126,6 +126,7 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
       return;
     }
 
+    setSaving(false);
     setTone('success');
     setMessage('Plantilla guardada correctamente.');
     router.push(`/informes-personalizados?template=${payload.data.id}`);
@@ -376,4 +377,3 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
     </div>
   );
 }
-
