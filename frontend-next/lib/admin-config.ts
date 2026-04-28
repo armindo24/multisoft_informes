@@ -1794,6 +1794,18 @@ async function loadScheduledCostoArticuloFullRows(params: {
 }
 
 const INTERNAL_SCHEDULE_PARAM_KEYS = new Set(['schedule_range_mode']);
+const HIDDEN_DISPLAY_PARAMS_BY_REPORT: Record<string, string[]> = {
+  'stock.costo_articulo_full': [
+    'section',
+    'submitted',
+    'recalcular',
+    'ecuacion_mat',
+    'fecha_inicio_desde',
+    'fecha_inicio_hasta',
+    'fecha_fin_desde',
+    'fecha_fin_hasta',
+  ],
+};
 
 function isDynamicMonthlyBalanceSchedule(schedule: ReportScheduleRecord) {
   return ['finanzas.balance_general', 'finanzas.balance_general_puc'].includes(schedule.reportKey)
@@ -1834,8 +1846,9 @@ function buildScheduleDisplayParams(
   schedule: ReportScheduleRecord,
   effectiveParams = schedule.reportParams,
 ) {
+  const hiddenParams = new Set(HIDDEN_DISPLAY_PARAMS_BY_REPORT[schedule.reportKey] || []);
   const displayEntries = Object.entries(effectiveParams).filter(
-    ([key, value]) => !INTERNAL_SCHEDULE_PARAM_KEYS.has(key) && String(value || '').trim(),
+    ([key, value]) => !INTERNAL_SCHEDULE_PARAM_KEYS.has(key) && !hiddenParams.has(key) && String(value || '').trim(),
   );
 
   if (isDynamicMonthlyBalanceSchedule(schedule)) {
@@ -2403,8 +2416,10 @@ function buildTabularPdfAttachment(
   table: ScheduledAttachmentTable,
   effectiveParams = schedule.reportParams,
 ) {
+  const isCostoFullEquation = schedule.reportKey === 'stock.costo_articulo_full' && table.headers.length > 12;
   const doc = new PDFDocument({
-    size: 'A4',
+    size: isCostoFullEquation ? 'A3' : 'A4',
+    layout: isCostoFullEquation ? 'landscape' : 'portrait',
     margin: 36,
     bufferPages: true,
   });
@@ -2428,37 +2443,58 @@ function buildTabularPdfAttachment(
 
   doc.moveDown(0.8);
   doc.fontSize(10).fillColor('#0f172a');
-  const totalWidth = 520;
-  const firstWidth = 72;
-  const secondWidth = Math.min(220, Math.max(140, totalWidth - firstWidth - Math.max(1, table.headers.length - 2) * 58));
-  const restWidth = table.headers.length > 2 ? Math.max(56, Math.floor((totalWidth - firstWidth - secondWidth) / (table.headers.length - 2))) : 0;
-  const widths = table.headers.map((_, index) => (index === 0 ? firstWidth : index === 1 ? secondWidth : restWidth));
+  const tableLeft = doc.page.margins.left;
+  const tableTop = doc.y;
+  const usableWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+  const columnGap = isCostoFullEquation ? 4 : 6;
+  const widths = isCostoFullEquation
+    ? [32, 30, 48, 54, 120, 48, 48, 50, 52, 52, 48, 44, 44, 42, 54, 48, 62, 62, 62]
+    : (() => {
+        const firstWidth = 72;
+        const secondWidth = Math.min(220, Math.max(140, usableWidth - firstWidth - Math.max(1, table.headers.length - 2) * 58));
+        const restWidth = table.headers.length > 2 ? Math.max(56, Math.floor((usableWidth - firstWidth - secondWidth) / (table.headers.length - 2))) : 0;
+        return table.headers.map((_, index) => (index === 0 ? firstWidth : index === 1 ? secondWidth : restWidth));
+      })();
   const columns = widths.reduce<number[]>((acc, width, index) => {
-    if (index === 0) return [16];
-    acc.push(acc[index - 1] + widths[index - 1] + 6);
+    if (index === 0) return [tableLeft];
+    acc.push(acc[index - 1] + widths[index - 1] + columnGap);
     return acc;
   }, []);
-  const rowHeight = 14;
-  const startY = doc.y;
+  const headerFontSize = isCostoFullEquation ? 6.2 : 10;
+  const bodyFontSize = isCostoFullEquation ? 6.3 : 10;
+  const rowHeight = isCostoFullEquation ? 11 : 14;
+  const headerHeight = isCostoFullEquation ? 34 : 18;
+  const pageBottom = doc.page.height - doc.page.margins.bottom;
+  const numericStartIndex = isCostoFullEquation ? 5 : 2;
 
-  table.headers.forEach((header, index) => {
-    doc.font('Helvetica-Bold').text(header, columns[index], startY, { width: widths[index] });
-  });
+  const drawHeader = (y: number) => {
+    doc.font('Helvetica-Bold').fontSize(headerFontSize).fillColor('#0f172a');
+    table.headers.forEach((header, index) => {
+      doc.text(header, columns[index], y, {
+        width: widths[index],
+        align: index >= numericStartIndex ? 'right' : 'left',
+      });
+    });
+  };
 
-  let currentY = startY + 18;
+  drawHeader(tableTop);
+  let currentY = tableTop + headerHeight;
   for (const row of table.dataRows) {
-    if (currentY > 760) {
+    if (currentY + rowHeight > pageBottom) {
       doc.addPage();
-      currentY = 48;
+      drawHeader(doc.page.margins.top);
+      currentY = doc.page.margins.top + headerHeight;
     }
-    doc.font('Helvetica');
+    doc.font('Helvetica').fontSize(bodyFontSize).fillColor('#0f172a');
     row.forEach((cell, cellIndex) => {
-      const widthHint = cellIndex === 1 ? 34 : cellIndex > 1 ? 12 : 18;
+      const widthHint = isCostoFullEquation
+        ? (cellIndex === 4 ? 24 : cellIndex >= numericStartIndex ? 10 : 12)
+        : (cellIndex === 1 ? 34 : cellIndex > 1 ? 12 : 18);
       doc.text(
         padPdfCell(String(cell), widthHint),
         columns[cellIndex],
         currentY,
-        { width: widths[cellIndex], align: cellIndex > 1 ? 'right' : 'left' },
+        { width: widths[cellIndex], align: cellIndex >= numericStartIndex ? 'right' : 'left' },
       );
     });
     currentY += rowHeight;
