@@ -60,6 +60,7 @@ export function DataTable<T extends Record<string, unknown>>({
   exportBranding,
   taskModule,
   scheduleConfig,
+  tableClassName,
 }: {
   title: string;
   subtitle?: string;
@@ -77,6 +78,7 @@ export function DataTable<T extends Record<string, unknown>>({
     reportModule: string;
     reportParams?: Record<string, string>;
   };
+  tableClassName?: string;
 }) {
   const [query, setQuery] = useState('');
   const [sortKey, setSortKey] = useState<string>(String(columns.find((column) => column.sortable)?.key || columns[0]?.key || ''));
@@ -206,7 +208,7 @@ export function DataTable<T extends Record<string, unknown>>({
       ) : (
         <>
           <div className="max-h-[72vh] overflow-auto">
-            <table className="min-w-[920px] divide-y divide-slate-200 text-sm">
+            <table className={`min-w-[920px] divide-y divide-slate-200 text-sm ${tableClassName || ''}`}>
               <thead className="sticky top-0 z-[1] bg-slate-50 text-left text-slate-600 shadow-[0_1px_0_#e2e8f0]">
                 <tr>
                   {normalizedColumns.map((column) => (

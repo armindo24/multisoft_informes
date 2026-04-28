@@ -351,12 +351,13 @@ export default async function CarteraPage({
         exportMeta={exportMeta}
         exportBranding={exportBranding}
         taskModule="Cartera"
+        tableClassName="min-w-[1040px]"
         columns={[
-          { key: 'indicador', header: 'Indicador', sortable: true },
-          { key: 'cobrar', header: 'Cobrar', sortable: true, type: 'number', align: 'right' },
-          { key: 'pagar', header: 'Pagar', sortable: true, type: 'number', align: 'right' },
-          { key: 'neto', header: 'Neto / diferencia', sortable: true, type: 'number', align: 'right' },
-          { key: 'lectura', header: 'Lectura gerencial', sortable: true },
+          { key: 'indicador', header: 'Indicador', sortable: true, className: 'min-w-[210px] whitespace-normal' },
+          { key: 'cobrar', header: 'Cobrar', sortable: true, type: 'number', align: 'right', className: 'min-w-[160px] whitespace-nowrap' },
+          { key: 'pagar', header: 'Pagar', sortable: true, type: 'number', align: 'right', className: 'min-w-[160px] whitespace-nowrap' },
+          { key: 'neto', header: 'Neto / diferencia', sortable: true, type: 'number', align: 'right', className: 'min-w-[180px] whitespace-nowrap' },
+          { key: 'lectura', header: 'Lectura gerencial', sortable: true, className: 'min-w-[260px] whitespace-normal' },
         ]}
       />
 
@@ -368,16 +369,17 @@ export default async function CarteraPage({
         exportMeta={exportMeta}
         exportBranding={exportBranding}
         taskModule="Cartera"
+        tableClassName="min-w-[1360px]"
         columns={[
-          { key: 'tipo', header: 'Tipo Comprobante', sortable: true },
-          { key: 'comprobante', header: '# Comprobante', sortable: true },
-          { key: 'cuota', header: 'Cuota', sortable: true },
-          { key: 'cliente', header: 'Cliente', sortable: true },
-          { key: 'emision', header: 'Emision', sortable: true, type: 'date' },
-          { key: 'vencimiento', header: 'Vencimiento', sortable: true, type: 'date' },
-          { key: 'importe', header: 'Importe', sortable: true, type: 'currency', align: 'right' },
-          { key: 'saldo', header: 'Saldo', sortable: true, type: 'currency', align: 'right' },
-          { key: 'saldoAcumulado', header: 'Saldo acumulado', sortable: true, type: 'currency', align: 'right' },
+          { key: 'tipo', header: 'Tipo Comprobante', sortable: true, className: 'min-w-[220px] max-w-[220px] truncate' },
+          { key: 'comprobante', header: '# Comprobante', sortable: true, className: 'min-w-[120px] whitespace-nowrap' },
+          { key: 'cuota', header: 'Cuota', sortable: true, className: 'min-w-[90px] whitespace-nowrap' },
+          { key: 'cliente', header: 'Cliente', sortable: true, className: 'min-w-[240px] max-w-[280px] whitespace-normal break-words' },
+          { key: 'emision', header: 'Emision', sortable: true, type: 'date', className: 'min-w-[110px] whitespace-nowrap' },
+          { key: 'vencimiento', header: 'Vencimiento', sortable: true, type: 'date', className: 'min-w-[120px] whitespace-nowrap' },
+          { key: 'importe', header: 'Importe', sortable: true, type: 'currency', align: 'right', className: 'min-w-[140px] whitespace-nowrap' },
+          { key: 'saldo', header: 'Saldo', sortable: true, type: 'currency', align: 'right', className: 'min-w-[140px] whitespace-nowrap' },
+          { key: 'saldoAcumulado', header: 'Saldo acumulado', sortable: true, type: 'currency', align: 'right', className: 'min-w-[160px] whitespace-nowrap' },
         ]}
       />
 
@@ -389,13 +391,14 @@ export default async function CarteraPage({
         exportMeta={exportMeta}
         exportBranding={exportBranding}
         taskModule="Cartera"
+        tableClassName="min-w-[980px]"
         columns={[
-          { key: 'proveedor', header: 'Proveedor', sortable: true },
-          { key: 'moneda', header: 'Moneda', sortable: true },
-          { key: 'saldoAnterior', header: 'Saldo anterior', sortable: true, type: 'currency', align: 'right' },
-          { key: 'creditos', header: 'Creditos', sortable: true, type: 'currency', align: 'right' },
-          { key: 'debitos', header: 'Debitos', sortable: true, type: 'currency', align: 'right' },
-          { key: 'saldo', header: 'Saldo', sortable: true, type: 'currency', align: 'right' },
+          { key: 'proveedor', header: 'Proveedor', sortable: true, className: 'min-w-[240px] max-w-[300px] whitespace-normal break-words' },
+          { key: 'moneda', header: 'Moneda', sortable: true, className: 'min-w-[110px] whitespace-nowrap' },
+          { key: 'saldoAnterior', header: 'Saldo anterior', sortable: true, type: 'currency', align: 'right', className: 'min-w-[140px] whitespace-nowrap' },
+          { key: 'creditos', header: 'Creditos', sortable: true, type: 'currency', align: 'right', className: 'min-w-[130px] whitespace-nowrap' },
+          { key: 'debitos', header: 'Debitos', sortable: true, type: 'currency', align: 'right', className: 'min-w-[130px] whitespace-nowrap' },
+          { key: 'saldo', header: 'Saldo', sortable: true, type: 'currency', align: 'right', className: 'min-w-[140px] whitespace-nowrap' },
         ]}
       />
     </div>
