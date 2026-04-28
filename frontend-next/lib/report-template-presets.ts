@@ -1,3 +1,5 @@
+export type ReportTemplatePresetKey = 'cartera_bloques' | 'ventas_compras_bloques';
+
 export type ReportTemplateColumnMeta = {
   key: string;
   header: string;
@@ -6,11 +8,20 @@ export type ReportTemplateColumnMeta = {
 };
 
 export type ReportTemplateBlockMeta = {
-  key: 'summary' | 'receivables' | 'payables';
+  key: string;
   label: string;
   subtitle: string;
   exportName: string;
   columns: ReportTemplateColumnMeta[];
+};
+
+export type ReportTemplatePresetMeta = {
+  key: ReportTemplatePresetKey;
+  label: string;
+  description: string;
+  scheduleReportKey: string;
+  dynamicRangeLabel?: string;
+  blocks: ReportTemplateBlockMeta[];
 };
 
 export const CARTERA_TEMPLATE_BLOCKS: ReportTemplateBlockMeta[] = [
@@ -60,13 +71,105 @@ export const CARTERA_TEMPLATE_BLOCKS: ReportTemplateBlockMeta[] = [
   },
 ];
 
-export function getCarteraTemplateBlock(blockKey: string) {
-  return CARTERA_TEMPLATE_BLOCKS.find((block) => block.key === blockKey);
+export const VENTAS_COMPRAS_TEMPLATE_BLOCKS: ReportTemplateBlockMeta[] = [
+  {
+    key: 'summary',
+    label: 'Resumen comparativo',
+    subtitle: 'Lectura ejecutiva del equilibrio entre facturacion comercial y compras del mismo periodo.',
+    exportName: 'ventas-compras-resumen-comparativo',
+    columns: [
+      { key: 'indicador', header: 'Indicador' },
+      { key: 'ventas', header: 'Ventas', type: 'currency', align: 'right' },
+      { key: 'compras', header: 'Compras', type: 'currency', align: 'right' },
+      { key: 'diferencia', header: 'Diferencia', type: 'currency', align: 'right' },
+      { key: 'lectura', header: 'Lectura gerencial' },
+    ],
+  },
+  {
+    key: 'sales',
+    label: 'Ventas resumidas',
+    subtitle: 'Comprobantes de venta del periodo con cliente, fecha y totales visibles.',
+    exportName: 'ventas-compras-ventas',
+    columns: [
+      { key: 'grupo', header: 'Grupo' },
+      { key: 'comprobante', header: 'Comprobante' },
+      { key: 'cliente', header: 'Cliente' },
+      { key: 'ruc', header: 'RUC' },
+      { key: 'fecha', header: 'Fecha', type: 'date' },
+      { key: 'iva', header: 'IVA', type: 'currency', align: 'right' },
+      { key: 'gravado', header: 'Gravado', type: 'currency', align: 'right' },
+      { key: 'descuento', header: 'Descuento', type: 'currency', align: 'right' },
+      { key: 'total', header: 'Total', type: 'currency', align: 'right' },
+    ],
+  },
+  {
+    key: 'purchases',
+    label: 'Compras del periodo',
+    subtitle: 'Facturas de compra consolidadas con proveedor, sucursal y totales.',
+    exportName: 'ventas-compras-compras',
+    columns: [
+      { key: 'fecha', header: 'Fecha', type: 'date' },
+      { key: 'comprobante', header: 'Comprobante' },
+      { key: 'proveedor', header: 'Proveedor' },
+      { key: 'sucursal', header: 'Sucursal' },
+      { key: 'gravada', header: 'Gravada', type: 'currency', align: 'right' },
+      { key: 'iva', header: 'IVA', type: 'currency', align: 'right' },
+      { key: 'total', header: 'Total', type: 'currency', align: 'right' },
+      { key: 'estado', header: 'Estado' },
+    ],
+  },
+];
+
+export const REPORT_TEMPLATE_PRESETS: ReportTemplatePresetMeta[] = [
+  {
+    key: 'cartera_bloques',
+    label: 'Cartera',
+    description: 'Cruza cobrar y pagar con un resumen comparativo para seguimiento financiero.',
+    scheduleReportKey: 'plantillas.cartera_bloques',
+    dynamicRangeLabel: 'Rango dinamico mensual',
+    blocks: CARTERA_TEMPLATE_BLOCKS,
+  },
+  {
+    key: 'ventas_compras_bloques',
+    label: 'Ventas + Compras',
+    description: 'Compara la facturacion comercial contra las compras del mismo periodo en un informe unificado.',
+    scheduleReportKey: 'plantillas.ventas_compras_bloques',
+    dynamicRangeLabel: 'Rango dinamico mensual',
+    blocks: VENTAS_COMPRAS_TEMPLATE_BLOCKS,
+  },
+];
+
+export function getReportTemplatePreset(key: string) {
+  return REPORT_TEMPLATE_PRESETS.find((preset) => preset.key === key);
 }
 
-export function buildDefaultCarteraTemplateBlocks() {
-  return CARTERA_TEMPLATE_BLOCKS.map((block) => ({
+export function getReportTemplateBlocks(templateKey: string) {
+  return getReportTemplatePreset(templateKey)?.blocks || CARTERA_TEMPLATE_BLOCKS;
+}
+
+export function getReportTemplateBlock(templateKey: string, blockKey: string) {
+  return getReportTemplateBlocks(templateKey).find((block) => block.key === blockKey);
+}
+
+export function buildDefaultTemplateBlocks(templateKey: string) {
+  return getReportTemplateBlocks(templateKey).map((block) => ({
     key: block.key,
     columns: block.columns.map((column) => column.key),
   }));
+}
+
+export function getCarteraTemplateBlock(blockKey: string) {
+  return getReportTemplateBlock('cartera_bloques', blockKey);
+}
+
+export function buildDefaultCarteraTemplateBlocks() {
+  return buildDefaultTemplateBlocks('cartera_bloques');
+}
+
+export function getVentasComprasTemplateBlock(blockKey: string) {
+  return getReportTemplateBlock('ventas_compras_bloques', blockKey);
+}
+
+export function buildDefaultVentasComprasTemplateBlocks() {
+  return buildDefaultTemplateBlocks('ventas_compras_bloques');
 }

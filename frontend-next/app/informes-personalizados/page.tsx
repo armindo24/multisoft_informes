@@ -5,14 +5,35 @@ import { ReportTemplateWorkspace } from '@/components/report-templates/report-te
 import type { ExportBrandingOverride } from '@/components/ui/export-utils';
 import { getSessionUser } from '@/lib/auth-server';
 import { loadBrandingConfig, loadReportTemplateById, loadReportTemplatesForUser, type ReportTemplateRecord } from '@/lib/admin-config';
-import { getCuentasCobrar, getCuentasPagar } from '@/lib/api';
+import { getComprasList, getCuentasCobrar, getCuentasPagar, getVentasResumido } from '@/lib/api';
 import { brandShortName, getLogoBackgroundClasses, resolveBrandAssetUrl } from '@/lib/branding';
 import { getScopedEmpresas } from '@/lib/empresas-server';
-import { CARTERA_TEMPLATE_BLOCKS, getCarteraTemplateBlock } from '@/lib/report-template-presets';
+import { getReportTemplateBlock, getReportTemplatePreset, type ReportTemplatePresetKey } from '@/lib/report-template-presets';
 
 type SelectOption = {
   value: string;
   label: string;
+};
+
+type TemplateBlockSelection = {
+  key: string;
+  columns: string[];
+};
+
+type TemplateConfig = {
+  templateKey: ReportTemplatePresetKey;
+  filters: {
+    empresa: string;
+    sucursal: string;
+    periodo: string;
+    desde: string;
+    hasta: string;
+    vencimiento: string;
+    moneda: string;
+    departamento: string;
+    order: string;
+  };
+  blocks: TemplateBlockSelection[];
 };
 
 function toNumber(value: unknown) {
@@ -49,12 +70,13 @@ function buildExportBranding(config: Awaited<ReturnType<typeof loadBrandingConfi
   };
 }
 
-function normalizeTemplateConfig(template: ReportTemplateRecord | null) {
+function normalizeTemplateConfig(template: ReportTemplateRecord | null): TemplateConfig {
   const raw = (template?.config || {}) as Record<string, unknown>;
   const filters = (raw.filters && typeof raw.filters === 'object' && !Array.isArray(raw.filters))
     ? raw.filters as Record<string, unknown>
     : {};
   const blocksRaw = Array.isArray(raw.blocks) ? raw.blocks : [];
+  const templateKey = (String(template?.templateKey || 'cartera_bloques').trim() || 'cartera_bloques') as ReportTemplatePresetKey;
   const blocks = blocksRaw
     .map((item) => (item && typeof item === 'object' ? item as Record<string, unknown> : null))
     .filter(Boolean)
@@ -65,6 +87,7 @@ function normalizeTemplateConfig(template: ReportTemplateRecord | null) {
     .filter((item) => item.key);
 
   return {
+    templateKey,
     filters: {
       empresa: String(filters.empresa || '').trim(),
       sucursal: String(filters.sucursal || '').trim(),
@@ -72,6 +95,9 @@ function normalizeTemplateConfig(template: ReportTemplateRecord | null) {
       desde: String(filters.desde || '').trim(),
       hasta: String(filters.hasta || '').trim(),
       vencimiento: String(filters.vencimiento || 'true').trim() || 'true',
+      moneda: String(filters.moneda || 'GS').trim() || 'GS',
+      departamento: String(filters.departamento || '').trim(),
+      order: String(filters.order || 'cod_cliente').trim() || 'cod_cliente',
     },
     blocks,
   };
@@ -79,6 +105,18 @@ function normalizeTemplateConfig(template: ReportTemplateRecord | null) {
 
 function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? String(value[0] || '').trim() : String(value || '').trim();
+}
+
+function salesGroupLabel(groupBy: string) {
+  if (groupBy === 'cod_tp_comp') return 'Comprobante';
+  if (groupBy === 'cod_vendedor') return 'Vendedor';
+  return 'Cliente';
+}
+
+function salesGroupValue(row: Record<string, unknown>, groupBy: string) {
+  if (groupBy === 'cod_tp_comp') return String(row.des_tp_comp || row.cod_tp_comp || 'Sin comprobante');
+  if (groupBy === 'cod_vendedor') return String(row.des_vendedor || 'Sin vendedor');
+  return String(row.razon_social || row.cliente || 'Sin cliente');
 }
 
 export default async function InformesPersonalizadosPage({
@@ -107,7 +145,7 @@ export default async function InformesPersonalizadosPage({
     : null;
 
   const baseConfig = normalizeTemplateConfig(selectedTemplate);
-  const config = {
+  const config: TemplateConfig = {
     ...baseConfig,
     filters: {
       ...baseConfig.filters,
@@ -117,9 +155,14 @@ export default async function InformesPersonalizadosPage({
       desde: firstParam(params.desde) || baseConfig.filters.desde,
       hasta: firstParam(params.hasta) || baseConfig.filters.hasta,
       vencimiento: firstParam(params.vencimiento) || baseConfig.filters.vencimiento,
+      moneda: firstParam(params.moneda) || baseConfig.filters.moneda,
+      departamento: firstParam(params.departamento) || baseConfig.filters.departamento,
+      order: firstParam(params.order) || baseConfig.filters.order,
     },
   };
+
   const empresa = config.filters.empresa;
+  const preset = getReportTemplatePreset(config.templateKey);
   const brandingConfig = empresa ? await loadBrandingConfig(empresa) : await loadBrandingConfig();
   const exportBranding = buildExportBranding(brandingConfig);
   const brandName = brandingConfig?.clientName || exportBranding?.clientName || 'Multisoft';
@@ -128,26 +171,62 @@ export default async function InformesPersonalizadosPage({
   const brandInitials = brandShortName(brandName);
   const brandLogoBackground = getLogoBackgroundClasses(brandingConfig?.logoBackground || 'auto');
 
-  const [cobrarResponse, pagarResponse] = selectedTemplate && empresa
-    ? await Promise.all([
-        getCuentasCobrar({
+  const shouldLoadCartera = Boolean(selectedTemplate && empresa && config.templateKey === 'cartera_bloques');
+  const shouldLoadVentasCompras = Boolean(
+    selectedTemplate
+      && empresa
+      && config.templateKey === 'ventas_compras_bloques'
+      && config.filters.sucursal
+      && config.filters.departamento,
+  );
+
+  const [cobrarResponse, pagarResponse, ventasResponse, comprasResponse] = await Promise.all([
+    shouldLoadCartera
+      ? getCuentasCobrar({
           empresa,
           sucursal: config.filters.sucursal,
           start: config.filters.desde,
           end: config.filters.hasta,
           vencimiento: config.filters.vencimiento === 'true',
-        }),
-        getCuentasPagar({
+        })
+      : Promise.resolve(null),
+    shouldLoadCartera
+      ? getCuentasPagar({
           empresa,
           periodo: config.filters.periodo,
           compras_start: config.filters.desde,
           compras_end: config.filters.hasta,
-        }),
-      ])
-    : [null, null];
+        })
+      : Promise.resolve(null),
+    shouldLoadVentasCompras
+      ? getVentasResumido({
+          empresa,
+          sucursal: config.filters.sucursal,
+          moneda: config.filters.moneda,
+          desde: config.filters.desde,
+          hasta: config.filters.hasta,
+          order: config.filters.order,
+        })
+      : Promise.resolve(null),
+    shouldLoadVentasCompras
+      ? getComprasList({
+          empresa,
+          sucursal: config.filters.sucursal,
+          moneda: config.filters.moneda,
+          compras_start: config.filters.desde,
+          compras_end: config.filters.hasta,
+          departamento: config.filters.departamento,
+          proveedor: '',
+          tipooc: '',
+          agrupar: '',
+        })
+      : Promise.resolve(null),
+  ]);
 
   const cobrarRows = (cobrarResponse?.data || []) as Array<Record<string, unknown>>;
   const pagarRows = (pagarResponse?.data || []) as Array<Record<string, unknown>>;
+  const ventasRows = (ventasResponse?.data || []) as Array<Record<string, unknown>>;
+  const comprasRows = (comprasResponse?.data || []) as Array<Record<string, unknown>>;
 
   let saldoAcumulado = 0;
   const receivablesRows = cobrarRows.map((row) => {
@@ -176,6 +255,29 @@ export default async function InformesPersonalizadosPage({
     saldo: toNumber(row.Saldo || row.saldo),
   }));
 
+  const salesRows = ventasRows.map((row) => ({
+    grupo: salesGroupValue(row, config.filters.order),
+    comprobante: `${String(row.cod_tp_comp || '')} - ${String(row.comp_numero || '')}`.trim(),
+    cliente: String(row.razon_social || row.cliente || '-'),
+    ruc: String(row.ruc || '-'),
+    fecha: String(row.fecha || '').slice(0, 10),
+    iva: toNumber(row.total_iva),
+    gravado: toNumber(row.to_gravado),
+    descuento: toNumber(row.totaldescuento),
+    total: toNumber(row.to_gravado) + toNumber(row.total_iva),
+  }));
+
+  const purchasesRows = comprasRows.map((row) => ({
+    fecha: String(row.FechaFact || row.fecha_fact || '').slice(0, 10),
+    comprobante: `${String(row.Cod_Tp_Comp || row.cod_tp_comp || '')} - ${String(row.NroFact || row.nrofact || '')}`.trim(),
+    proveedor: String(row.RazonSocial || row.razon_social || '-'),
+    sucursal: String(row.des_sucursal || '-'),
+    gravada: toNumber(row.gravada),
+    iva: toNumber(row.IVA || row.iva),
+    total: toNumber(row.total),
+    estado: String(row.estado || row.Asentado || '-'),
+  }));
+
   const totalCobrarImporte = receivablesRows.reduce((acc, row) => acc + row.importe, 0);
   const totalCobrarSaldo = receivablesRows.reduce((acc, row) => acc + row.saldo, 0);
   const totalPagarSaldo = payablesRows.reduce((acc, row) => acc + row.saldo, 0);
@@ -184,7 +286,12 @@ export default async function InformesPersonalizadosPage({
   const coverage = totalPagarSaldo > 0 ? (totalCobrarSaldo / totalPagarSaldo) * 100 : 100;
   const ratioCobroPago = totalPagarSaldo > 0 ? totalCobrarSaldo / totalPagarSaldo : 1;
 
-  const summaryRows = [
+  const totalFacturado = salesRows.reduce((acc, row) => acc + row.total, 0);
+  const totalComprado = purchasesRows.reduce((acc, row) => acc + row.total, 0);
+  const netoComercial = totalFacturado - totalComprado;
+  const ventasVsComprasRatio = totalComprado > 0 ? totalFacturado / totalComprado : 1;
+
+  const carteraSummaryRows = [
     {
       indicador: 'Saldo operativo',
       cobrar: totalCobrarSaldo,
@@ -222,42 +329,115 @@ export default async function InformesPersonalizadosPage({
     },
   ];
 
+  const ventasComprasSummaryRows = [
+    {
+      indicador: 'Volumen del periodo',
+      ventas: totalFacturado,
+      compras: totalComprado,
+      diferencia: netoComercial,
+      lectura: netoComercial >= 0 ? 'Ventas por encima de compras' : 'Compras por encima de ventas',
+    },
+    {
+      indicador: 'Documentos visibles',
+      ventas: salesRows.length,
+      compras: purchasesRows.length,
+      diferencia: salesRows.length - purchasesRows.length,
+      lectura: 'Cantidad de comprobantes visibles',
+    },
+    {
+      indicador: 'IVA comparado',
+      ventas: salesRows.reduce((acc, row) => acc + row.iva, 0),
+      compras: purchasesRows.reduce((acc, row) => acc + row.iva, 0),
+      diferencia: salesRows.reduce((acc, row) => acc + row.iva, 0) - purchasesRows.reduce((acc, row) => acc + row.iva, 0),
+      lectura: 'Diferencia de carga impositiva visible',
+    },
+    {
+      indicador: 'Ratio ventas/compras',
+      ventas: Number(ventasVsComprasRatio.toFixed(2)),
+      compras: 1,
+      diferencia: Number((ventasVsComprasRatio - 1).toFixed(2)),
+      lectura: ventasVsComprasRatio >= 1 ? 'Relacion comercial saludable' : 'Relacion comercial presionada',
+    },
+  ];
+
   const exportMeta = [
     { label: 'Plantilla', value: selectedTemplate?.name || '-' },
+    { label: 'Preset', value: preset?.label || config.templateKey },
     { label: 'Empresa', value: empresa || '-' },
     { label: 'Sucursal', value: config.filters.sucursal || '-' },
     { label: 'Periodo', value: config.filters.periodo || '-' },
     { label: 'Desde', value: config.filters.desde || '-' },
     { label: 'Hasta', value: config.filters.hasta || '-' },
+    ...(config.templateKey === 'ventas_compras_bloques'
+      ? [
+          { label: 'Moneda', value: config.filters.moneda || '-' },
+          { label: 'Departamento', value: config.filters.departamento || '-' },
+        ]
+      : []),
   ];
 
-  const blockRows: Record<string, Array<Record<string, unknown>>> = {
-    summary: summaryRows,
-    receivables: receivablesRows,
-    payables: payablesRows,
-  };
+  const blockRows: Record<string, Array<Record<string, unknown>>> = config.templateKey === 'ventas_compras_bloques'
+    ? {
+        summary: ventasComprasSummaryRows,
+        sales: salesRows,
+        purchases: purchasesRows,
+      }
+    : {
+        summary: carteraSummaryRows,
+        receivables: receivablesRows,
+        payables: payablesRows,
+      };
+
+  const activeCards = config.templateKey === 'ventas_compras_bloques'
+    ? [
+        { label: 'Facturado', value: formatAmount(totalFacturado) },
+        { label: 'Comprado', value: formatAmount(totalComprado) },
+        { label: 'Neto comercial', value: formatAmount(netoComercial) },
+        { label: 'Bloques', value: String(config.blocks.length) },
+      ]
+    : [
+        { label: 'Neto', value: formatAmount(netoCartera) },
+        { label: 'Cobertura', value: `${coverage.toFixed(1)}%` },
+        { label: 'Por cobrar', value: formatAmount(totalCobrarSaldo) },
+        { label: 'Bloques', value: String(config.blocks.length) },
+      ];
+
+  const scheduleReportKey = preset?.scheduleReportKey || 'plantillas.cartera_bloques';
+  const scheduleParams: Record<string, string> = config.templateKey === 'ventas_compras_bloques'
+    ? {
+        template_id: String(selectedTemplate?.id || ''),
+        empresa: config.filters.empresa,
+        sucursal: config.filters.sucursal,
+        periodo: config.filters.periodo,
+        desde: config.filters.desde,
+        hasta: config.filters.hasta,
+        moneda: config.filters.moneda,
+        departamento: config.filters.departamento,
+        order: config.filters.order,
+      }
+    : {
+        template_id: String(selectedTemplate?.id || ''),
+        empresa: config.filters.empresa,
+        sucursal: config.filters.sucursal,
+        periodo: config.filters.periodo,
+        desde: config.filters.desde,
+        hasta: config.filters.hasta,
+        vencimiento: config.filters.vencimiento,
+      };
 
   return (
     <div className="space-y-5">
       <PageHeader
         eyebrow="Plantillas"
         title="Informes personalizados"
-        description="Primera etapa del constructor por bloques: guarda plantillas de cartera, elige columnas visibles y reutiliza el informe unificado con criterio gerencial."
+        description="Constructor por presets para guardar, reutilizar y programar informes unificados con criterio ejecutivo."
         actions={selectedTemplate ? (
           <ReportScheduleButton
-            reportKey="plantillas.cartera_bloques"
+            reportKey={scheduleReportKey}
             reportTitle={selectedTemplate.name}
             reportModule="Plantillas"
             detailHint={selectedTemplate.description || 'Entrega automatica de plantilla personalizada.'}
-            reportParams={{
-              template_id: String(selectedTemplate.id),
-              empresa: config.filters.empresa,
-              sucursal: config.filters.sucursal,
-              periodo: config.filters.periodo,
-              desde: config.filters.desde,
-              hasta: config.filters.hasta,
-              vencimiento: config.filters.vencimiento,
-            }}
+            reportParams={scheduleParams}
           />
         ) : null}
       />
@@ -271,8 +451,8 @@ export default async function InformesPersonalizadosPage({
 
       {selectedTemplate ? (
         <>
-        <section className="card px-5 py-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <section className="card px-5 py-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div className="flex min-w-0 items-start gap-4">
                 {brandLogoUrl ? (
                   <div className={['flex h-16 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl px-3 shadow-sm', brandLogoBackground].join(' ')}>
@@ -288,43 +468,40 @@ export default async function InformesPersonalizadosPage({
                   </div>
                 )}
                 <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-700">Plantilla activa</p>
-                <h2 className="mt-2 text-lg font-semibold text-slate-900">{selectedTemplate.name}</h2>
-                <p className="mt-1 text-sm text-slate-500">{selectedTemplate.description || 'Sin descripcion.'}</p>
-                <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
-                  <span className="rounded-full border border-slate-200 bg-white px-3 py-1 font-medium text-slate-600">
-                    {brandName}
-                  </span>
-                  <span className="rounded-full border border-slate-200 bg-white px-3 py-1">
-                    {brandTagline}
-                  </span>
-                  {empresa ? (
-                    <span className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 font-medium text-cyan-700">
-                      Empresa {empresa}
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-700">Plantilla activa</p>
+                  <h2 className="mt-2 text-lg font-semibold text-slate-900">{selectedTemplate.name}</h2>
+                  <p className="mt-1 text-sm text-slate-500">{selectedTemplate.description || 'Sin descripcion.'}</p>
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1 font-medium text-slate-600">
+                      {brandName}
                     </span>
-                  ) : null}
+                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1">
+                      {brandTagline}
+                    </span>
+                    <span className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 font-medium text-cyan-700">
+                      {preset?.label || config.templateKey}
+                    </span>
+                    {empresa ? (
+                      <span className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 font-medium text-cyan-700">
+                        Empresa {empresa}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
               </div>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-3">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-teal-700">Neto</p>
-                  <p className="mt-2 text-2xl font-semibold text-slate-900">{formatAmount(netoCartera)}</p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-teal-700">Cobertura</p>
-                  <p className="mt-2 text-2xl font-semibold text-slate-900">{coverage.toFixed(1)}%</p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-teal-700">Bloques</p>
-                  <p className="mt-2 text-2xl font-semibold text-slate-900">{config.blocks.length}</p>
-                </div>
+              <div className={`grid gap-2 ${activeCards.length > 3 ? 'sm:grid-cols-4' : 'sm:grid-cols-3'}`}>
+                {activeCards.map((card) => (
+                  <div key={card.label} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-teal-700">{card.label}</p>
+                    <p className="mt-2 text-2xl font-semibold text-slate-900">{card.value}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </section>
 
           {config.blocks.map((blockConfig) => {
-            const block = getCarteraTemplateBlock(blockConfig.key);
+            const block = getReportTemplateBlock(config.templateKey, blockConfig.key);
             if (!block) return null;
             const selectedColumns = block.columns.filter((column) => blockConfig.columns.includes(column.key));
             if (!selectedColumns.length) return null;
@@ -355,7 +532,7 @@ export default async function InformesPersonalizadosPage({
           <p className="text-sm font-medium uppercase tracking-[0.24em] text-teal-700">Vista previa</p>
           <h2 className="mt-3 text-xl font-semibold text-slate-900">Abre una plantilla para ejecutar el informe</h2>
           <p className="mt-2 text-sm text-slate-500">
-            Guarda tu primera plantilla de cartera y luego selecciona `Abrir plantilla` para ver el informe armado con sus bloques y columnas elegidas.
+            Guarda una plantilla de cartera o de ventas más compras, y luego selecciona `Abrir plantilla` para ver el informe armado con sus bloques y columnas elegidas.
           </p>
         </section>
       )}

@@ -6,7 +6,13 @@ import { Copy, FilePenLine, FileStack, Loader2, Plus, Trash2, X } from 'lucide-r
 import { useEffect, useMemo, useState } from 'react';
 
 import type { ReportTemplateRecord } from '@/lib/admin-config';
-import { CARTERA_TEMPLATE_BLOCKS } from '@/lib/report-template-presets';
+import {
+  buildDefaultTemplateBlocks,
+  getReportTemplateBlocks,
+  getReportTemplatePreset,
+  REPORT_TEMPLATE_PRESETS,
+  type ReportTemplatePresetKey,
+} from '@/lib/report-template-presets';
 
 type CompanyOption = {
   value: string;
@@ -18,6 +24,26 @@ type Props = {
   templates: ReportTemplateRecord[];
   selectedTemplate?: ReportTemplateRecord | null;
   selectedTemplateId?: number | null;
+};
+
+type TemplateFormState = {
+  name: string;
+  description: string;
+  templateKey: ReportTemplatePresetKey;
+  empresa: string;
+  sucursal: string;
+  periodo: string;
+  desde: string;
+  hasta: string;
+  vencimiento: string;
+  moneda: string;
+  departamento: string;
+  order: string;
+  blocks: Array<{
+    key: string;
+    enabled: boolean;
+    columns: string[];
+  }>;
 };
 
 function monthStart() {
@@ -33,33 +59,34 @@ function currentYear() {
   return String(new Date().getFullYear());
 }
 
-function buildDefaultBlocks() {
-  return CARTERA_TEMPLATE_BLOCKS.map((block) => ({
-    key: block.key,
-    enabled: true,
-    columns: block.columns.map((column) => column.key),
-  }));
-}
-
-function buildDefaultForm(companies: CompanyOption[]) {
+function buildDefaultForm(companies: CompanyOption[], templateKey: ReportTemplatePresetKey = 'cartera_bloques'): TemplateFormState {
   return {
     name: '',
     description: '',
+    templateKey,
     empresa: companies[0]?.value || '',
     sucursal: '',
     periodo: currentYear(),
     desde: monthStart(),
     hasta: today(),
     vencimiento: 'true',
-    blocks: buildDefaultBlocks(),
+    moneda: 'GS',
+    departamento: '',
+    order: 'cod_cliente',
+    blocks: buildDefaultTemplateBlocks(templateKey).map((block) => ({
+      key: block.key,
+      enabled: true,
+      columns: block.columns,
+    })),
   };
 }
 
-function buildFormFromTemplate(template: ReportTemplateRecord, companies: CompanyOption[]) {
+function buildFormFromTemplate(template: ReportTemplateRecord, companies: CompanyOption[]): TemplateFormState {
   const raw = (template.config || {}) as Record<string, unknown>;
   const filters = raw.filters && typeof raw.filters === 'object' && !Array.isArray(raw.filters)
     ? raw.filters as Record<string, unknown>
     : {};
+  const templateKey = (String(template.templateKey || 'cartera_bloques').trim() || 'cartera_bloques') as ReportTemplatePresetKey;
   const blocksRaw = Array.isArray(raw.blocks) ? raw.blocks : [];
 
   const selectedBlocks = blocksRaw
@@ -74,13 +101,17 @@ function buildFormFromTemplate(template: ReportTemplateRecord, companies: Compan
   return {
     name: template.name,
     description: template.description,
+    templateKey,
     empresa: String(filters.empresa || companies[0]?.value || '').trim(),
     sucursal: String(filters.sucursal || '').trim(),
     periodo: String(filters.periodo || currentYear()).trim(),
     desde: String(filters.desde || monthStart()).trim(),
     hasta: String(filters.hasta || today()).trim(),
     vencimiento: String(filters.vencimiento || 'true').trim() || 'true',
-    blocks: CARTERA_TEMPLATE_BLOCKS.map((block) => {
+    moneda: String(filters.moneda || 'GS').trim() || 'GS',
+    departamento: String(filters.departamento || '').trim(),
+    order: String(filters.order || 'cod_cliente').trim() || 'cod_cliente',
+    blocks: getReportTemplateBlocks(templateKey).map((block) => {
       const selected = selectedBlocks.find((item) => item.key === block.key);
       return {
         key: block.key,
@@ -96,6 +127,8 @@ function describeTemplate(template: ReportTemplateRecord) {
   const filters = raw.filters && typeof raw.filters === 'object' && !Array.isArray(raw.filters)
     ? raw.filters as Record<string, unknown>
     : {};
+  const templateKey = String(template.templateKey || '').trim();
+  const preset = getReportTemplatePreset(templateKey);
   const blocksRaw = Array.isArray(raw.blocks) ? raw.blocks : [];
   const blockKeys = blocksRaw
     .map((item) => (item && typeof item === 'object' ? String((item as Record<string, unknown>).key || '').trim() : ''))
@@ -104,9 +137,10 @@ function describeTemplate(template: ReportTemplateRecord) {
   return {
     empresa: String(filters.empresa || '').trim(),
     periodo: String(filters.periodo || '').trim(),
+    presetLabel: preset?.label || template.templateKey,
     blockCount: blockKeys.length,
     blockLabels: blockKeys
-      .map((key) => CARTERA_TEMPLATE_BLOCKS.find((block) => block.key === key)?.label || key)
+      .map((key) => getReportTemplateBlocks(templateKey).find((block) => block.key === key)?.label || key)
       .slice(0, 2),
   };
 }
@@ -118,7 +152,7 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
   const [editingTemplateId, setEditingTemplateId] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [tone, setTone] = useState<'success' | 'error'>('success');
-  const [form, setForm] = useState(() => buildDefaultForm(companies));
+  const [form, setForm] = useState<TemplateFormState>(() => buildDefaultForm(companies));
 
   useEffect(() => {
     if (!selectedTemplate) return;
@@ -126,7 +160,24 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
     setForm(buildFormFromTemplate(selectedTemplate, companies));
   }, [companies, selectedTemplate]);
 
+  const currentPreset = useMemo(
+    () => getReportTemplatePreset(form.templateKey) || REPORT_TEMPLATE_PRESETS[0],
+    [form.templateKey],
+  );
+
   const enabledCount = useMemo(() => form.blocks.filter((block) => block.enabled).length, [form.blocks]);
+
+  function replaceBlocks(templateKey: ReportTemplatePresetKey) {
+    setForm((current) => ({
+      ...current,
+      templateKey,
+      blocks: buildDefaultTemplateBlocks(templateKey).map((block) => ({
+        key: block.key,
+        enabled: true,
+        columns: block.columns,
+      })),
+    }));
+  }
 
   function toggleBlock(blockKey: string) {
     setForm((current) => ({
@@ -175,7 +226,7 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
         name: form.name,
         description: form.description,
         module: 'Informes personalizados',
-        templateKey: 'cartera_bloques',
+        templateKey: form.templateKey,
         config: {
           filters: {
             empresa: form.empresa,
@@ -184,6 +235,9 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
             desde: form.desde,
             hasta: form.hasta,
             vencimiento: form.vencimiento,
+            moneda: form.moneda,
+            departamento: form.departamento,
+            order: form.order,
           },
           blocks,
         },
@@ -260,7 +314,7 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-700">{editingTemplateId ? 'Edicion' : 'Nueva plantilla'}</p>
             <h2 className="mt-2 text-lg font-semibold text-slate-900">Constructor por bloques</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Primera etapa para armar informes configurables. Hoy trabaja con el modelo unificado de cartera.
+              Arma informes unificados por preset y guarda la combinacion de bloques, columnas y filtros para reutilizarla.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -287,12 +341,33 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
         ) : null}
 
         <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <label className="text-sm font-medium text-slate-700">
+            Preset
+            <select
+              value={form.templateKey}
+              onChange={(event) => replaceBlocks(event.target.value as ReportTemplatePresetKey)}
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400"
+            >
+              {REPORT_TEMPLATE_PRESETS.map((preset) => (
+                <option key={preset.key} value={preset.key}>
+                  {preset.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-700">Preset activo</p>
+            <p className="mt-2 font-semibold text-slate-900">{currentPreset.label}</p>
+            <p className="mt-1 leading-6">{currentPreset.description}</p>
+          </div>
+
           <label className="text-sm font-medium text-slate-700 md:col-span-2">
             Nombre de la plantilla
             <input
               value={form.name}
               onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-              placeholder="Ejemplo: Cartera mensual gerencial"
+              placeholder="Ejemplo: Cierre comercial mensual"
               className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400"
             />
           </label>
@@ -303,7 +378,7 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
               value={form.description}
               onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
               rows={3}
-              placeholder="Resumen ejecutivo para seguimiento de cobrar vs pagar."
+              placeholder="Resumen ejecutivo del informe personalizado."
               className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400"
             />
           </label>
@@ -326,7 +401,7 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
             <input
               value={form.sucursal}
               onChange={(event) => setForm((current) => ({ ...current, sucursal: event.target.value }))}
-              placeholder="Opcional"
+              placeholder="Codigo de sucursal"
               className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400"
             />
           </label>
@@ -338,18 +413,6 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
               onChange={(event) => setForm((current) => ({ ...current, periodo: event.target.value }))}
               className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400"
             />
-          </label>
-
-          <label className="text-sm font-medium text-slate-700">
-            Cobrar por vencimiento
-            <select
-              value={form.vencimiento}
-              onChange={(event) => setForm((current) => ({ ...current, vencimiento: event.target.value }))}
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400"
-            >
-              <option value="true">Si</option>
-              <option value="false">No</option>
-            </select>
           </label>
 
           <label className="text-sm font-medium text-slate-700">
@@ -371,6 +434,57 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
               className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400"
             />
           </label>
+
+          {form.templateKey === 'cartera_bloques' ? (
+            <label className="text-sm font-medium text-slate-700">
+              Cobrar por vencimiento
+              <select
+                value={form.vencimiento}
+                onChange={(event) => setForm((current) => ({ ...current, vencimiento: event.target.value }))}
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400"
+              >
+                <option value="true">Si</option>
+                <option value="false">No</option>
+              </select>
+            </label>
+          ) : null}
+
+          {form.templateKey === 'ventas_compras_bloques' ? (
+            <>
+              <label className="text-sm font-medium text-slate-700">
+                Moneda
+                <input
+                  value={form.moneda}
+                  onChange={(event) => setForm((current) => ({ ...current, moneda: event.target.value }))}
+                  placeholder="GS"
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400"
+                />
+              </label>
+
+              <label className="text-sm font-medium text-slate-700">
+                Departamento compras
+                <input
+                  value={form.departamento}
+                  onChange={(event) => setForm((current) => ({ ...current, departamento: event.target.value }))}
+                  placeholder="Ejemplo: 1"
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400"
+                />
+              </label>
+
+              <label className="text-sm font-medium text-slate-700 md:col-span-2">
+                Agrupar ventas por
+                <select
+                  value={form.order}
+                  onChange={(event) => setForm((current) => ({ ...current, order: event.target.value }))}
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400"
+                >
+                  <option value="cod_cliente">Cliente</option>
+                  <option value="cod_tp_comp">Comprobante</option>
+                  <option value="cod_vendedor">Vendedor</option>
+                </select>
+              </label>
+            </>
+          ) : null}
         </div>
 
         <div className="mt-6 space-y-4">
@@ -379,7 +493,7 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
             <p className="mt-1 text-sm text-slate-500">Activa los bloques y define qué columnas visibles quieres guardar en la plantilla.</p>
           </div>
 
-          {CARTERA_TEMPLATE_BLOCKS.map((block) => {
+          {currentPreset.blocks.map((block) => {
             const blockState = form.blocks.find((item) => item.key === block.key);
             const enabled = Boolean(blockState?.enabled);
             return (
@@ -450,71 +564,71 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
                 key={template.id}
                 className={`rounded-2xl border px-4 py-4 ${selectedTemplateId === template.id ? 'border-cyan-200 bg-cyan-50' : 'border-slate-200 bg-white'}`}
               >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <FileStack className="size-4 text-cyan-700" />
-                    <h3 className="truncate font-semibold text-slate-900">{template.name}</h3>
-                  </div>
-                  <p className="mt-1 text-sm text-slate-500">{template.description || 'Sin descripcion.'}</p>
-                  <p className="mt-2 text-xs uppercase tracking-[0.22em] text-slate-400">
-                    {template.templateKey.replace(/_/g, ' ')} · {template.createdByName || template.createdByUsername}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
-                    {meta.empresa ? (
-                      <span className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 font-medium text-cyan-700">
-                        Empresa {meta.empresa}
-                      </span>
-                    ) : null}
-                    {meta.periodo ? (
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <FileStack className="size-4 text-cyan-700" />
+                      <h3 className="truncate font-semibold text-slate-900">{template.name}</h3>
+                    </div>
+                    <p className="mt-1 text-sm text-slate-500">{template.description || 'Sin descripcion.'}</p>
+                    <p className="mt-2 text-xs uppercase tracking-[0.22em] text-slate-400">
+                      {meta.presetLabel} · {template.createdByName || template.createdByUsername}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+                      {meta.empresa ? (
+                        <span className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 font-medium text-cyan-700">
+                          Empresa {meta.empresa}
+                        </span>
+                      ) : null}
+                      {meta.periodo ? (
+                        <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
+                          Periodo {meta.periodo}
+                        </span>
+                      ) : null}
                       <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
-                        Periodo {meta.periodo}
+                        {meta.blockCount} bloque(s)
                       </span>
-                    ) : null}
-                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
-                      {meta.blockCount} bloque(s)
-                    </span>
-                    {meta.blockLabels.map((label) => (
-                      <span key={label} className="rounded-full border border-white bg-white px-3 py-1">
-                        {label}
-                      </span>
-                    ))}
+                      {meta.blockLabels.map((label) => (
+                        <span key={label} className="rounded-full border border-white bg-white px-3 py-1">
+                          {label}
+                        </span>
+                      ))}
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => void deleteTemplate(template.id)}
+                    disabled={deletingId === template.id}
+                    className="rounded-xl border border-rose-200 px-3 py-2 text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {deletingId === template.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => void deleteTemplate(template.id)}
-                  disabled={deletingId === template.id}
-                  className="rounded-xl border border-rose-200 px-3 py-2 text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {deletingId === template.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
-                </button>
-              </div>
 
-              <div className="mt-4 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => startEditTemplate(template)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-cyan-200 px-3 py-2 text-sm font-medium text-cyan-700 transition hover:bg-cyan-50"
-                >
-                  <FilePenLine className="size-4" />
-                  Editar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => duplicateTemplate(template)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-violet-200 px-3 py-2 text-sm font-medium text-violet-700 transition hover:bg-violet-50"
-                >
-                  <Copy className="size-4" />
-                  Duplicar
-                </button>
-                <Link
-                  href={`/informes-personalizados?template=${template.id}`}
-                  className="inline-flex items-center rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                >
-                  Abrir plantilla
-                </Link>
-              </div>
+                <div className="mt-4 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => startEditTemplate(template)}
+                    className="inline-flex items-center gap-2 rounded-xl border border-cyan-200 px-3 py-2 text-sm font-medium text-cyan-700 transition hover:bg-cyan-50"
+                  >
+                    <FilePenLine className="size-4" />
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => duplicateTemplate(template)}
+                    className="inline-flex items-center gap-2 rounded-xl border border-violet-200 px-3 py-2 text-sm font-medium text-violet-700 transition hover:bg-violet-50"
+                  >
+                    <Copy className="size-4" />
+                    Duplicar
+                  </button>
+                  <Link
+                    href={`/informes-personalizados?template=${template.id}`}
+                    className="inline-flex items-center rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Abrir plantilla
+                  </Link>
+                </div>
               </article>
             );
           }) : (

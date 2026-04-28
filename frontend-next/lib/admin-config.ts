@@ -15,7 +15,7 @@ import {
   getStockValorizado,
   getVentasResumido,
 } from '@/lib/api';
-import { buildDefaultCarteraTemplateBlocks, getCarteraTemplateBlock } from '@/lib/report-template-presets';
+import { buildDefaultTemplateBlocks, getReportTemplateBlock } from '@/lib/report-template-presets';
 import type { BalanceRow } from '@/types/finanzas';
 
 const pool = new Pool({
@@ -1801,8 +1801,19 @@ type ScheduledCarteraReportData = {
   coverage: number;
 };
 
-type SelectedCarteraBlock = {
-  key: 'summary' | 'receivables' | 'payables';
+type ScheduledVentasComprasReportData = {
+  summary: ScheduledAttachmentTable;
+  sales: ScheduledAttachmentTable;
+  purchases: ScheduledAttachmentTable;
+  effectiveParams: Record<string, string>;
+  totalFacturado: number;
+  totalComprado: number;
+  netoComercial: number;
+  ventasVsComprasRatio: number;
+};
+
+type SelectedTemplateBlock = {
+  key: string;
   label: string;
   subtitle: string;
   warning: string | undefined;
@@ -1909,6 +1920,7 @@ const HIDDEN_DISPLAY_PARAMS_BY_REPORT: Record<string, string[]> = {
     'fecha_fin_hasta',
   ],
   'plantillas.cartera_bloques': ['template_id'],
+  'plantillas.ventas_compras_bloques': ['template_id'],
 };
 
 function isDynamicMonthlyBalanceSchedule(schedule: ReportScheduleRecord) {
@@ -1965,6 +1977,17 @@ function resolveScheduledReportParams(schedule: ReportScheduleRecord, runDate = 
     resolved.periodo = String(monthStart.getFullYear());
   }
 
+  if (schedule.reportKey === 'plantillas.ventas_compras_bloques' && String(resolved.schedule_range_mode || '').trim() === 'enero_mes_actual') {
+    const monthStart = new Date(runDate.getFullYear(), runDate.getMonth(), 1);
+    const monthEnd = new Date(runDate.getFullYear(), runDate.getMonth() + 1, 0);
+    const normalizedStart = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, '0')}-${String(monthStart.getDate()).padStart(2, '0')}`;
+    const normalizedEnd = `${monthEnd.getFullYear()}-${String(monthEnd.getMonth() + 1).padStart(2, '0')}-${String(monthEnd.getDate()).padStart(2, '0')}`;
+
+    resolved.desde = normalizedStart;
+    resolved.hasta = normalizedEnd;
+    resolved.periodo = String(monthStart.getFullYear());
+  }
+
   return resolved;
 }
 
@@ -1990,6 +2013,10 @@ function buildScheduleDisplayParams(
   }
 
   if (schedule.reportKey === 'plantillas.cartera_bloques' && String(schedule.reportParams.schedule_range_mode || '').trim() === 'enero_mes_actual') {
+    displayEntries.push(['rango mensual', 'Dinamico por mes completo de ejecucion']);
+  }
+
+  if (schedule.reportKey === 'plantillas.ventas_compras_bloques' && String(schedule.reportParams.schedule_range_mode || '').trim() === 'enero_mes_actual') {
     displayEntries.push(['rango mensual', 'Dinamico por mes completo de ejecucion']);
   }
 
@@ -2140,7 +2167,124 @@ async function loadScheduledCarteraReportData(schedule: ReportScheduleRecord): P
   };
 }
 
-function normalizeTemplateBlockSelections(value: unknown) {
+async function loadScheduledVentasComprasReportData(schedule: ReportScheduleRecord): Promise<ScheduledVentasComprasReportData> {
+  const effectiveParams = resolveScheduledReportParams(schedule);
+  const empresa = String(effectiveParams.empresa || '').trim();
+  const sucursal = String(effectiveParams.sucursal || '').trim();
+  const moneda = String(effectiveParams.moneda || 'GS').trim() || 'GS';
+  const desde = String(effectiveParams.desde || '').trim();
+  const hasta = String(effectiveParams.hasta || '').trim();
+  const departamento = String(effectiveParams.departamento || '').trim();
+  const order = String(effectiveParams.order || 'cod_cliente').trim() || 'cod_cliente';
+
+  const [ventasResponse, comprasResponse] = await Promise.all([
+    getVentasResumido({
+      empresa,
+      sucursal,
+      moneda,
+      desde,
+      hasta,
+      order,
+    }),
+    getComprasList({
+      empresa,
+      sucursal,
+      moneda,
+      compras_start: desde,
+      compras_end: hasta,
+      departamento,
+      proveedor: '',
+      tipooc: '',
+      agrupar: '',
+    }),
+  ]);
+
+  const ventasRows = ((ventasResponse?.data || []) as Array<Record<string, unknown>>);
+  const comprasRows = ((comprasResponse?.data || []) as Array<Record<string, unknown>>);
+
+  const salesDataRows = ventasRows.map((row) => [
+    salesGroupValue(row, order),
+    `${String(row.cod_tp_comp || '')} - ${String(row.comp_numero || '')}`.trim(),
+    String(row.razon_social || row.cliente || '-'),
+    String(row.ruc || '-'),
+    formatScheduledDate(row.fecha),
+    formatScheduledCurrency(row.total_iva),
+    formatScheduledCurrency(row.to_gravado),
+    formatScheduledCurrency(row.totaldescuento),
+    formatScheduledCurrency(scheduleNum(row.to_gravado) + scheduleNum(row.total_iva)),
+  ]);
+
+  const purchasesDataRows = comprasRows.map((row) => [
+    formatScheduledDate(row.FechaFact || row.fecha_fact),
+    `${String(row.Cod_Tp_Comp || row.cod_tp_comp || '')} - ${String(row.NroFact || row.nrofact || '')}`.trim(),
+    String(row.RazonSocial || row.razon_social || '-'),
+    String(row.des_sucursal || '-'),
+    formatScheduledCurrency(row.gravada),
+    formatScheduledCurrency(row.IVA || row.iva),
+    formatScheduledCurrency(row.total),
+    String(row.estado || row.Asentado || '-'),
+  ]);
+
+  const totalFacturado = ventasRows.reduce((acc, row) => acc + scheduleNum(row.to_gravado) + scheduleNum(row.total_iva), 0);
+  const totalComprado = comprasRows.reduce((acc, row) => acc + scheduleNum(row.total), 0);
+  const totalIvaVentas = ventasRows.reduce((acc, row) => acc + scheduleNum(row.total_iva), 0);
+  const totalIvaCompras = comprasRows.reduce((acc, row) => acc + scheduleNum(row.IVA || row.iva), 0);
+  const netoComercial = totalFacturado - totalComprado;
+  const ventasVsComprasRatio = totalComprado > 0 ? totalFacturado / totalComprado : 1;
+
+  return {
+    summary: {
+      headers: ['Indicador', 'Ventas', 'Compras', 'Diferencia', 'Lectura gerencial'],
+      dataRows: [
+        [
+          'Volumen del periodo',
+          formatScheduledCurrency(totalFacturado),
+          formatScheduledCurrency(totalComprado),
+          formatScheduledCurrency(netoComercial),
+          netoComercial >= 0 ? 'Ventas por encima de compras' : 'Compras por encima de ventas',
+        ],
+        [
+          'Documentos visibles',
+          formatScheduledCurrency(salesDataRows.length, 0),
+          formatScheduledCurrency(purchasesDataRows.length, 0),
+          formatScheduledCurrency(salesDataRows.length - purchasesDataRows.length, 0),
+          'Cantidad de comprobantes visibles',
+        ],
+        [
+          'IVA comparado',
+          formatScheduledCurrency(totalIvaVentas),
+          formatScheduledCurrency(totalIvaCompras),
+          formatScheduledCurrency(totalIvaVentas - totalIvaCompras),
+          'Diferencia de carga impositiva visible',
+        ],
+        [
+          'Ratio ventas/compras',
+          formatScheduledCurrency(ventasVsComprasRatio, 2),
+          formatScheduledCurrency(1, 2),
+          formatScheduledCurrency(ventasVsComprasRatio - 1, 2),
+          ventasVsComprasRatio >= 1 ? 'Relacion comercial saludable' : 'Relacion comercial presionada',
+        ],
+      ],
+      warning: 'Cruce consolidado entre ventas visibles y compras del mismo periodo operativo.',
+    },
+    sales: {
+      headers: ['Grupo', 'Comprobante', 'Cliente', 'RUC', 'Fecha', 'IVA', 'Gravado', 'Descuento', 'Total'],
+      dataRows: salesDataRows,
+      warning: `Agrupado por ${salesGroupLabel(order).toLowerCase()}.`,
+    },
+    purchases: {
+      headers: ['Fecha', 'Comprobante', 'Proveedor', 'Sucursal', 'Gravada', 'IVA', 'Total', 'Estado'],
+      dataRows: purchasesDataRows,
+    },
+    effectiveParams,
+    totalFacturado,
+    totalComprado,
+    netoComercial,
+    ventasVsComprasRatio,
+  };
+}
+
+function normalizeTemplateBlockSelections(templateKey: string, value: unknown) {
   const selectedBlocks = Array.isArray(value)
     ? value
       .map((item) => (item && typeof item === 'object' ? item as Record<string, unknown> : null))
@@ -2152,11 +2296,11 @@ function normalizeTemplateBlockSelections(value: unknown) {
       .filter((item) => item.key)
     : [];
 
-  return selectedBlocks.length ? selectedBlocks : buildDefaultCarteraTemplateBlocks();
+  return selectedBlocks.length ? selectedBlocks : buildDefaultTemplateBlocks(templateKey);
 }
 
-function selectCarteraBlocks(report: ScheduledCarteraReportData, selectedBlocksInput: unknown): SelectedCarteraBlock[] {
-  const selectedBlocks = normalizeTemplateBlockSelections(selectedBlocksInput);
+function selectCarteraBlocks(report: ScheduledCarteraReportData, selectedBlocksInput: unknown): SelectedTemplateBlock[] {
+  const selectedBlocks = normalizeTemplateBlockSelections('cartera_bloques', selectedBlocksInput);
   const sourceMap = {
     summary: report.summary,
     receivables: report.receivables,
@@ -2165,7 +2309,7 @@ function selectCarteraBlocks(report: ScheduledCarteraReportData, selectedBlocksI
 
   const resolvedBlocks = selectedBlocks
     .map((selection) => {
-      const meta = getCarteraTemplateBlock(selection.key);
+      const meta = getReportTemplateBlock('cartera_bloques', selection.key);
       if (!meta) return null;
       const source = sourceMap[selection.key as keyof typeof sourceMap];
       if (!source) return null;
@@ -2181,7 +2325,39 @@ function selectCarteraBlocks(report: ScheduledCarteraReportData, selectedBlocksI
         warning: source.warning,
         headers: indexes.map((index) => source.headers[index] || meta.columns[index]?.header || ''),
         dataRows: source.dataRows.map((row) => indexes.map((index) => row[index] || '')),
-      } satisfies SelectedCarteraBlock;
+      } satisfies SelectedTemplateBlock;
+    });
+
+  return resolvedBlocks.filter((block): block is NonNullable<typeof block> => Boolean(block));
+}
+
+function selectVentasComprasBlocks(report: ScheduledVentasComprasReportData, selectedBlocksInput: unknown): SelectedTemplateBlock[] {
+  const selectedBlocks = normalizeTemplateBlockSelections('ventas_compras_bloques', selectedBlocksInput);
+  const sourceMap = {
+    summary: report.summary,
+    sales: report.sales,
+    purchases: report.purchases,
+  } as const;
+
+  const resolvedBlocks = selectedBlocks
+    .map((selection) => {
+      const meta = getReportTemplateBlock('ventas_compras_bloques', selection.key);
+      if (!meta) return null;
+      const source = sourceMap[selection.key as keyof typeof sourceMap];
+      if (!source) return null;
+      const indexes = meta.columns
+        .map((column, index) => (selection.columns.includes(column.key) ? index : -1))
+        .filter((index) => index >= 0);
+      if (!indexes.length) return null;
+
+      return {
+        key: meta.key,
+        label: meta.label,
+        subtitle: meta.subtitle,
+        warning: source.warning,
+        headers: indexes.map((index) => source.headers[index] || meta.columns[index]?.header || ''),
+        dataRows: source.dataRows.map((row) => indexes.map((index) => row[index] || '')),
+      } satisfies SelectedTemplateBlock;
     });
 
   return resolvedBlocks.filter((block): block is NonNullable<typeof block> => Boolean(block));
@@ -2837,7 +3013,7 @@ function buildCarteraExcelAttachment(
     )
     .join('');
 
-  const buildSection = (block: SelectedCarteraBlock) => {
+  const buildSection = (block: SelectedTemplateBlock) => {
     const header = block.headers
       .map((item) => `<th style="border:1px solid #cbd5e1;padding:6px 8px;background:#eaf2f8;">${escapeHtml(item)}</th>`)
       .join('');
@@ -2943,7 +3119,7 @@ async function buildCarteraPdfAttachment(
 
   const selectedBlocks = selectCarteraBlocks(report, selectedBlocksInput);
 
-  const drawSection = (block: SelectedCarteraBlock) => {
+  const drawSection = (block: SelectedTemplateBlock) => {
     if (doc.y > 500) {
       doc.addPage();
       doc.y = 32;
@@ -3026,6 +3202,202 @@ async function buildCarteraPdfAttachment(
   });
 }
 
+function buildVentasComprasExcelAttachment(
+  schedule: ReportScheduleRecord,
+  report: ScheduledVentasComprasReportData,
+  selectedBlocksInput?: unknown,
+) {
+  const metaRows = buildScheduleDisplayParams(schedule, report.effectiveParams)
+    .map(
+      ([key, value]) =>
+        `<tr><td style="border:1px solid #dbe5f0;padding:6px 10px;background:#f8fafc;font-weight:700;">${escapeHtml(key.replace(/_/g, ' '))}</td><td style="border:1px solid #dbe5f0;padding:6px 10px;">${escapeHtml(value)}</td></tr>`,
+    )
+    .join('');
+
+  const buildSection = (block: SelectedTemplateBlock) => {
+    const header = block.headers
+      .map((item) => `<th style="border:1px solid #cbd5e1;padding:6px 8px;background:#eaf2f8;">${escapeHtml(item)}</th>`)
+      .join('');
+    const body = block.dataRows
+      .map((row) => `<tr>${row.map((cell) => `<td style="border:1px solid #cbd5e1;padding:6px 8px;">${escapeHtml(cell)}</td>`).join('')}</tr>`)
+      .join('');
+
+    return (
+      `<h2 style="font-size:18px;margin:18px 0 10px 0;">${escapeHtml(block.label)}</h2>` +
+      (block.warning ? `<p style="color:#475569;font-size:13px;margin:0 0 10px 0;">${escapeHtml(block.warning)}</p>` : '') +
+      `<table style="border-collapse:collapse;width:100%;margin-bottom:18px;"><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table>`
+    );
+  };
+
+  const selectedBlocks = selectVentasComprasBlocks(report, selectedBlocksInput);
+  const executiveBody = [
+    ['Facturado visible', formatScheduledCurrency(report.totalFacturado)],
+    ['Comprado visible', formatScheduledCurrency(report.totalComprado)],
+    ['Neto comercial', formatScheduledCurrency(report.netoComercial)],
+    ['Ratio ventas/compras', report.ventasVsComprasRatio.toFixed(2)],
+  ]
+    .map(
+      ([label, value]) =>
+        `<tr><td style="border:1px solid #dbe5f0;padding:6px 10px;background:#f8fafc;font-weight:700;">${escapeHtml(label)}</td><td style="border:1px solid #dbe5f0;padding:6px 10px;">${escapeHtml(value)}</td></tr>`,
+    )
+    .join('');
+
+  const content =
+    '<html><head><meta charset="utf-8"></head><body style="font-family:Arial,Helvetica,sans-serif;">' +
+    `<h1 style="font-size:22px;">${escapeHtml(schedule.reportTitle)}</h1>` +
+    '<table style="border-collapse:collapse;margin:12px 0 18px 0;">' +
+    metaRows +
+    '</table>' +
+    '<h2 style="font-size:18px;margin:10px 0;">Resumen ejecutivo</h2>' +
+    `<table style="border-collapse:collapse;width:100%;margin-bottom:18px;">${executiveBody}</table>` +
+    selectedBlocks.map((block) => buildSection(block)).join('') +
+    '</body></html>';
+
+  return {
+    filename: `${schedule.reportKey.replace(/[^\w.-]+/g, '_')}.xls`,
+    content,
+    contentType: 'application/vnd.ms-excel;charset=utf-8;',
+  };
+}
+
+async function buildVentasComprasPdfAttachment(
+  schedule: ReportScheduleRecord,
+  report: ScheduledVentasComprasReportData,
+  branding?: BrandingConfigRecord | null,
+  selectedBlocksInput?: unknown,
+) {
+  const logoBuffer = await loadPdfImageBuffer(branding?.logoUrl);
+  const doc = new PDFDocument({
+    size: 'A4',
+    layout: 'landscape',
+    margin: 32,
+    bufferPages: true,
+  });
+  const chunks: Buffer[] = [];
+  doc.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+
+  if (logoBuffer) {
+    doc.image(logoBuffer, 32, 28, { fit: [70, 54], valign: 'center' });
+  } else {
+    doc.roundedRect(32, 28, 70, 54, 10).fill('#e0f2fe');
+    doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(18).text('MS', 54, 47, { width: 26, align: 'center' });
+  }
+
+  const headerLeft = 116;
+  doc.fillColor('#0e7490').font('Helvetica-Bold').fontSize(10).text((branding?.clientName || 'Multisoft Informes').toUpperCase(), headerLeft, 32);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(15).text(branding?.tagline || 'Informes Gerenciales', headerLeft, 50);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(18).text(schedule.reportTitle, 32, 96, { align: 'left' });
+  doc.moveTo(32, 122).lineTo(810, 122).strokeColor('#0891b2').lineWidth(1.5).stroke();
+  doc.y = 132;
+  doc.fontSize(10).fillColor('#475569').text(`Generado automaticamente · ${new Date().toLocaleString('es-PY')}`);
+  doc.moveDown(0.8);
+
+  for (const [key, value] of buildScheduleDisplayParams(schedule, report.effectiveParams)) {
+    const normalized = String(value || '').trim();
+    if (!normalized) continue;
+    doc.fontSize(9).fillColor('#0f172a').text(`${key.replace(/_/g, ' ')}: ${normalized}`);
+  }
+
+  doc.moveDown(0.8);
+  doc.roundedRect(32, doc.y, 778, 72, 16).fill('#eff6ff');
+  const kpiTop = doc.y + 12;
+  const kpiItems = [
+    ['Facturado', formatScheduledCurrency(report.totalFacturado)],
+    ['Comprado', formatScheduledCurrency(report.totalComprado)],
+    ['Neto', formatScheduledCurrency(report.netoComercial)],
+    ['Ratio', report.ventasVsComprasRatio.toFixed(2)],
+  ];
+  kpiItems.forEach(([label, value], index) => {
+    const left = 48 + index * 190;
+    doc.fillColor('#0e7490').font('Helvetica-Bold').fontSize(9).text(label, left, kpiTop, { width: 160 });
+    doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(13).text(value, left, kpiTop + 18, { width: 160 });
+  });
+
+  doc.y += 92;
+  const selectedBlocks = selectVentasComprasBlocks(report, selectedBlocksInput);
+
+  const drawSection = (block: SelectedTemplateBlock) => {
+    if (doc.y > 500) {
+      doc.addPage();
+      doc.y = 32;
+    }
+
+    doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(13).text(block.label, 32, doc.y);
+    doc.moveDown(0.3);
+    if (block.warning) {
+      doc.font('Helvetica').fontSize(8.5).fillColor('#64748b').text(block.warning);
+      doc.moveDown(0.3);
+    }
+
+    const tableLeft = 32;
+    const usableWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+    const widths = block.headers.length <= 5
+      ? [170, 100, 100, 100, 240]
+      : block.key === 'sales'
+        ? [86, 100, 160, 90, 62, 72, 72, 72, 74]
+        : [72, 110, 180, 100, 72, 72, 72, 82];
+    const columnGap = 6;
+    const columns = widths.reduce<number[]>((acc, width, index) => {
+      if (index === 0) return [tableLeft];
+      acc.push(acc[index - 1] + widths[index - 1] + columnGap);
+      return acc;
+    }, []);
+    const pageBottom = doc.page.height - doc.page.margins.bottom;
+    const numericStartIndex = block.key === 'summary' ? 1 : (block.key === 'sales' ? 5 : 4);
+
+    const drawHeader = (y: number) => {
+      doc.font('Helvetica-Bold').fontSize(8.2).fillColor('#0f172a');
+      block.headers.forEach((header, index) => {
+        doc.text(header, columns[index], y, {
+          width: widths[index] || Math.floor(usableWidth / Math.max(1, block.headers.length)),
+          align: index >= numericStartIndex ? 'right' : 'left',
+        });
+      });
+    };
+
+    drawHeader(doc.y);
+    let currentY = doc.y + 18;
+
+    for (const row of block.dataRows) {
+      if (currentY + 12 > pageBottom) {
+        doc.addPage();
+        doc.y = 32;
+        doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(13).text(block.label, 32, doc.y);
+        doc.moveDown(0.6);
+        drawHeader(doc.y);
+        currentY = doc.y + 18;
+      }
+
+      doc.font('Helvetica').fontSize(8).fillColor('#0f172a');
+      row.forEach((cell, cellIndex) => {
+        const widthHint = cellIndex >= numericStartIndex ? 12 : 22;
+        doc.text(
+          padPdfCell(String(cell), widthHint),
+          columns[cellIndex],
+          currentY,
+          { width: widths[cellIndex], align: cellIndex >= numericStartIndex ? 'right' : 'left' },
+        );
+      });
+      currentY += 12;
+    }
+
+    doc.y = currentY + 10;
+  };
+
+  selectedBlocks.forEach((block) => drawSection(block));
+  doc.end();
+
+  return new Promise<{ filename: string; content: Buffer; contentType: string }>((resolve) => {
+    doc.on('end', () => {
+      resolve({
+        filename: `${schedule.reportKey.replace(/[^\w.-]+/g, '_')}.pdf`,
+        content: Buffer.concat(chunks),
+        contentType: 'application/pdf',
+      });
+    });
+  });
+}
+
 async function resolveReportScheduleRecipients(schedule: ReportScheduleRecord) {
   const emails = new Set<string>(normalizeScheduleEmails(schedule.extraEmails));
   const labels: string[] = [];
@@ -3083,6 +3455,7 @@ async function sendScheduledReportEmail(schedule: ReportScheduleRecord, origin?:
   const isBalanceSchedule = ['finanzas.balance_general', 'finanzas.balance_general_puc'].includes(schedule.reportKey);
   const isCarteraSchedule = schedule.reportKey === 'cartera.unificada';
   const isTemplateCarteraSchedule = schedule.reportKey === 'plantillas.cartera_bloques';
+  const isTemplateVentasComprasSchedule = schedule.reportKey === 'plantillas.ventas_compras_bloques';
   let resolvedExcelAttachment: { filename: string; content: Buffer | string; contentType?: string };
   let resolvedPdfAttachment: { filename: string; content: Buffer | string; contentType?: string };
   let scheduledResultSummary = '';
@@ -3135,6 +3508,29 @@ async function sendScheduledReportEmail(schedule: ReportScheduleRecord, origin?:
       selectedBlocks,
     );
     scheduledResultSummary = `Plantilla: ${template?.name || schedule.reportTitle} | Neto de cartera: ${formatScheduledCurrency(reportData.netoCartera)} | Cobertura: ${reportData.coverage.toFixed(2)}%.`;
+  } else if (isTemplateVentasComprasSchedule) {
+    const templateId = Number(schedule.reportParams.template_id || 0);
+    const template = templateId
+      ? await loadReportTemplateById({ templateId, actorUserId: 0, actorIsSuperuser: true })
+      : null;
+    const reportData = await loadScheduledVentasComprasReportData({
+      ...schedule,
+      reportTitle: template?.name || schedule.reportTitle,
+    });
+    const templateConfig = (template?.config || {}) as Record<string, unknown>;
+    const selectedBlocks = templateConfig.blocks;
+    resolvedExcelAttachment = buildVentasComprasExcelAttachment(
+      { ...schedule, reportTitle: template?.name || schedule.reportTitle },
+      reportData,
+      selectedBlocks,
+    );
+    resolvedPdfAttachment = await buildVentasComprasPdfAttachment(
+      { ...schedule, reportTitle: template?.name || schedule.reportTitle },
+      reportData,
+      branding,
+      selectedBlocks,
+    );
+    scheduledResultSummary = `Plantilla: ${template?.name || schedule.reportTitle} | Facturado: ${formatScheduledCurrency(reportData.totalFacturado)} | Comprado: ${formatScheduledCurrency(reportData.totalComprado)} | Neto: ${formatScheduledCurrency(reportData.netoComercial)}.`;
   } else {
     const table = await loadScheduledTabularReportData(schedule);
     resolvedExcelAttachment = buildTabularExcelAttachment(schedule, table, effectiveParams);
