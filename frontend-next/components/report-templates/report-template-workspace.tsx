@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FileStack, Loader2, Plus, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Copy, FilePenLine, FileStack, Loader2, Plus, Trash2, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
 import type { ReportTemplateRecord } from '@/lib/admin-config';
 import { CARTERA_TEMPLATE_BLOCKS } from '@/lib/report-template-presets';
@@ -16,6 +16,7 @@ type CompanyOption = {
 type Props = {
   companies: CompanyOption[];
   templates: ReportTemplateRecord[];
+  selectedTemplate?: ReportTemplateRecord | null;
   selectedTemplateId?: number | null;
 };
 
@@ -32,13 +33,16 @@ function currentYear() {
   return String(new Date().getFullYear());
 }
 
-export function ReportTemplateWorkspace({ companies, templates, selectedTemplateId }: Props) {
-  const router = useRouter();
-  const [saving, setSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [tone, setTone] = useState<'success' | 'error'>('success');
-  const [form, setForm] = useState({
+function buildDefaultBlocks() {
+  return CARTERA_TEMPLATE_BLOCKS.map((block) => ({
+    key: block.key,
+    enabled: true,
+    columns: block.columns.map((column) => column.key),
+  }));
+}
+
+function buildDefaultForm(companies: CompanyOption[]) {
+  return {
     name: '',
     description: '',
     empresa: companies[0]?.value || '',
@@ -47,12 +51,60 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
     desde: monthStart(),
     hasta: today(),
     vencimiento: 'true',
-    blocks: CARTERA_TEMPLATE_BLOCKS.map((block) => ({
-      key: block.key,
-      enabled: true,
-      columns: block.columns.map((column) => column.key),
-    })),
-  });
+    blocks: buildDefaultBlocks(),
+  };
+}
+
+function buildFormFromTemplate(template: ReportTemplateRecord, companies: CompanyOption[]) {
+  const raw = (template.config || {}) as Record<string, unknown>;
+  const filters = raw.filters && typeof raw.filters === 'object' && !Array.isArray(raw.filters)
+    ? raw.filters as Record<string, unknown>
+    : {};
+  const blocksRaw = Array.isArray(raw.blocks) ? raw.blocks : [];
+
+  const selectedBlocks = blocksRaw
+    .map((item) => (item && typeof item === 'object' ? item as Record<string, unknown> : null))
+    .filter(Boolean)
+    .map((item) => ({
+      key: String(item?.key || '').trim(),
+      columns: Array.isArray(item?.columns) ? item.columns.map((column) => String(column || '').trim()).filter(Boolean) : [],
+    }))
+    .filter((item) => item.key);
+
+  return {
+    name: template.name,
+    description: template.description,
+    empresa: String(filters.empresa || companies[0]?.value || '').trim(),
+    sucursal: String(filters.sucursal || '').trim(),
+    periodo: String(filters.periodo || currentYear()).trim(),
+    desde: String(filters.desde || monthStart()).trim(),
+    hasta: String(filters.hasta || today()).trim(),
+    vencimiento: String(filters.vencimiento || 'true').trim() || 'true',
+    blocks: CARTERA_TEMPLATE_BLOCKS.map((block) => {
+      const selected = selectedBlocks.find((item) => item.key === block.key);
+      return {
+        key: block.key,
+        enabled: Boolean(selected),
+        columns: selected?.columns.length ? selected.columns : block.columns.map((column) => column.key),
+      };
+    }),
+  };
+}
+
+export function ReportTemplateWorkspace({ companies, templates, selectedTemplate, selectedTemplateId }: Props) {
+  const router = useRouter();
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [editingTemplateId, setEditingTemplateId] = useState<number | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [tone, setTone] = useState<'success' | 'error'>('success');
+  const [form, setForm] = useState(() => buildDefaultForm(companies));
+
+  useEffect(() => {
+    if (!selectedTemplate) return;
+    setEditingTemplateId(selectedTemplate.id);
+    setForm(buildFormFromTemplate(selectedTemplate, companies));
+  }, [companies, selectedTemplate]);
 
   const enabledCount = useMemo(() => form.blocks.filter((block) => block.enabled).length, [form.blocks]);
 
@@ -96,8 +148,8 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
 
     setSaving(true);
     setMessage(null);
-    const response = await fetch('/api/report-templates', {
-      method: 'POST',
+    const response = await fetch(editingTemplateId ? `/api/report-templates/${editingTemplateId}` : '/api/report-templates', {
+      method: editingTemplateId ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: form.name,
@@ -122,15 +174,41 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
     if (!response.ok || !payload.ok || !payload.data?.id) {
       setSaving(false);
       setTone('error');
-      setMessage(payload.message || 'No se pudo guardar la plantilla.');
+      setMessage(payload.message || `No se pudo ${editingTemplateId ? 'actualizar' : 'guardar'} la plantilla.`);
       return;
     }
 
     setSaving(false);
     setTone('success');
-    setMessage('Plantilla guardada correctamente.');
+    setMessage(editingTemplateId ? 'Plantilla actualizada correctamente.' : 'Plantilla guardada correctamente.');
+    setEditingTemplateId(payload.data.id || null);
     router.push(`/informes-personalizados?template=${payload.data.id}`);
     router.refresh();
+  }
+
+  function startEditTemplate(template: ReportTemplateRecord) {
+    setEditingTemplateId(template.id);
+    setMessage(null);
+    setForm(buildFormFromTemplate(template, companies));
+  }
+
+  function duplicateTemplate(template: ReportTemplateRecord) {
+    const next = buildFormFromTemplate(template, companies);
+    setEditingTemplateId(null);
+    setMessage('La plantilla se cargo como copia. Ajusta lo que necesites y guarda.');
+    setTone('success');
+    setForm({
+      ...next,
+      name: `${template.name} (Copia)`,
+    });
+    router.push('/informes-personalizados');
+  }
+
+  function resetForm() {
+    setEditingTemplateId(null);
+    setMessage(null);
+    setForm(buildDefaultForm(companies));
+    router.push('/informes-personalizados');
   }
 
   async function deleteTemplate(id: number) {
@@ -159,15 +237,27 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
       <section className="card px-5 py-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-700">Nueva plantilla</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-700">{editingTemplateId ? 'Edicion' : 'Nueva plantilla'}</p>
             <h2 className="mt-2 text-lg font-semibold text-slate-900">Constructor por bloques</h2>
             <p className="mt-1 text-sm text-slate-500">
               Primera etapa para armar informes configurables. Hoy trabaja con el modelo unificado de cartera.
             </p>
           </div>
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
-            {enabledCount} bloque(s)
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+              {enabledCount} bloque(s)
+            </span>
+            {editingTemplateId ? (
+              <button
+                type="button"
+                onClick={resetForm}
+                className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+              >
+                <X className="size-3.5" />
+                Cancelar
+              </button>
+            ) : null}
+          </div>
         </div>
 
         {message ? (
@@ -314,7 +404,7 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
             className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {saving ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
-            Guardar plantilla
+            {editingTemplateId ? 'Actualizar plantilla' : 'Guardar plantilla'}
           </button>
         </div>
       </section>
@@ -359,6 +449,22 @@ export function ReportTemplateWorkspace({ companies, templates, selectedTemplate
               </div>
 
               <div className="mt-4 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => startEditTemplate(template)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-cyan-200 px-3 py-2 text-sm font-medium text-cyan-700 transition hover:bg-cyan-50"
+                >
+                  <FilePenLine className="size-4" />
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => duplicateTemplate(template)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-violet-200 px-3 py-2 text-sm font-medium text-violet-700 transition hover:bg-violet-50"
+                >
+                  <Copy className="size-4" />
+                  Duplicar
+                </button>
                 <Link
                   href={`/informes-personalizados?template=${template.id}`}
                   className="inline-flex items-center rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"

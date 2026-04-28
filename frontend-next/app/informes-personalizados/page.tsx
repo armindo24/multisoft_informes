@@ -225,6 +225,7 @@ export default async function InformesPersonalizadosPage({
       <ReportTemplateWorkspace
         companies={empresas}
         templates={templates}
+        selectedTemplate={selectedTemplate}
         selectedTemplateId={selectedTemplateId}
       />
 
@@ -293,4 +294,3 @@ export default async function InformesPersonalizadosPage({
     </div>
   );
 }
-

@@ -3818,6 +3818,64 @@ export async function createReportTemplate(input: {
   });
 }
 
+export async function updateReportTemplate(input: {
+  templateId: number;
+  actorUserId: number;
+  actorIsSuperuser: boolean;
+  name?: string;
+  description?: string;
+  module?: string;
+  templateKey?: string;
+  config?: Record<string, unknown>;
+}) {
+  const existing = await loadReportTemplateById({
+    templateId: input.templateId,
+    actorUserId: input.actorUserId,
+    actorIsSuperuser: input.actorIsSuperuser,
+  });
+  if (!existing) {
+    throw new Error('La plantilla no existe o no tienes permisos para editarla.');
+  }
+
+  const updated = await pool.query<Record<string, unknown>>(
+    `
+      UPDATE custom_permissions_reporttemplate
+      SET
+        name = $2::varchar(160),
+        description = $3::text,
+        module = $4::varchar(80),
+        template_key = $5::varchar(80),
+        config = $6::jsonb,
+        updated_at = NOW()
+      WHERE id = $1::int
+      RETURNING *
+    `,
+    [
+      existing.id,
+      String(input.name ?? existing.name).trim(),
+      String(input.description ?? existing.description).trim(),
+      String(input.module ?? existing.module).trim() || 'Informes personalizados',
+      String(input.templateKey ?? existing.templateKey).trim(),
+      JSON.stringify(input.config ?? existing.config ?? {}),
+    ],
+  );
+
+  const creator = await pool.query<Record<string, unknown>>(
+    `
+      SELECT username AS creator_username, first_name AS creator_first_name, last_name AS creator_last_name
+      FROM auth_user
+      WHERE id = $1::int
+      LIMIT 1
+    `,
+    [existing.createdById],
+  );
+
+  return normalizeReportTemplateRow({
+    ...updated.rows[0],
+    ...(creator.rows[0] || {}),
+  });
+}
+
 export async function deleteReportTemplate(input: {
   templateId: number;
   actorUserId: number;
