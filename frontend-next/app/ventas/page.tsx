@@ -174,9 +174,9 @@ export default async function VentasPage({
   const [ventasResponse, clientesResponse, articulosResponse, vendedoresStatsResponse, cobrarResponse] = empresa && hasSubmittedFilters
     ? await Promise.all([
         !isStatsMode && !isReceivablesMode ? getVentasResumido({ empresa, sucursal, moneda, desde, hasta, order, tipo_cliente }) : Promise.resolve(null),
-        isStatsMode && sucursal ? getVentasClientesStats({ empresa, sucursal, moneda, start: desde, end: hasta, cliente, tipoCliente: tipo_cliente }) : Promise.resolve(null),
-        isStatsMode && sucursal ? getVentasArticulosStats({ empresa, sucursal, moneda, start: desde, end: hasta, articulo }) : Promise.resolve(null),
-        isStatsMode && sucursal ? getVentasVendedoresStats({ empresa, sucursal, moneda, start: desde, end: hasta, vendedor }) : Promise.resolve(null),
+        isStatsMode ? getVentasClientesStats({ empresa, sucursal, moneda, start: desde, end: hasta, cliente, tipoCliente: tipo_cliente }) : Promise.resolve(null),
+        isStatsMode ? getVentasArticulosStats({ empresa, sucursal, moneda, start: desde, end: hasta, articulo }) : Promise.resolve(null),
+        isStatsMode ? getVentasVendedoresStats({ empresa, sucursal, moneda, start: desde, end: hasta, vendedor }) : Promise.resolve(null),
         isReceivablesMode
           ? getCuentasCobrar({ empresa, sucursal, start: desde, end: hasta, vencimiento: vencimiento === 'true', cliente, calificacion, movimiento, condicion, cobrador, vendedor, zona, tipoCliente: tipoClienteCobrar })
           : !isStatsMode

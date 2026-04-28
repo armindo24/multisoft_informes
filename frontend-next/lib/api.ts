@@ -176,7 +176,7 @@ export async function getVentaDetalle(params: { empresa: string; comprobante: st
 
 export async function getVentasClientesStats(params: {
   empresa: string;
-  sucursal: string;
+  sucursal?: string;
   moneda?: string;
   start: string;
   end: string;
@@ -197,7 +197,7 @@ export async function getVentasClientesStats(params: {
 
 export async function getVentasArticulosStats(params: {
   empresa: string;
-  sucursal: string;
+  sucursal?: string;
   moneda?: string;
   start: string;
   end: string;
@@ -216,7 +216,7 @@ export async function getVentasArticulosStats(params: {
 
 export async function getVentasVendedoresStats(params: {
   empresa: string;
-  sucursal: string;
+  sucursal?: string;
   moneda?: string;
   start: string;
   end: string;
