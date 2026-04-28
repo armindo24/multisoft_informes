@@ -200,6 +200,20 @@ export type ReportScheduleLogRecord = {
   executedAt: string | null;
 };
 
+export type ReportTemplateRecord = {
+  id: number;
+  name: string;
+  description: string;
+  module: string;
+  templateKey: string;
+  config: Record<string, unknown>;
+  createdAt: string | null;
+  updatedAt: string | null;
+  createdById: number;
+  createdByName: string;
+  createdByUsername: string;
+};
+
 export type AdminGroupRecord = {
   id: number;
   name: string;
@@ -400,6 +414,27 @@ async function ensureReportScheduleTables() {
   await pool.query(`
     CREATE INDEX IF NOT EXISTS idx_reportschedule_next_run
     ON custom_permissions_reportschedule (is_active, next_run_at)
+  `);
+}
+
+async function ensureReportTemplateTables() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS custom_permissions_reporttemplate (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(160) NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      module VARCHAR(80) NOT NULL,
+      template_key VARCHAR(80) NOT NULL,
+      config JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_by_id INTEGER NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS custom_permissions_reporttemplate_owner_idx
+    ON custom_permissions_reporttemplate (created_by_id, module)
   `);
 }
 
@@ -1519,6 +1554,27 @@ function normalizeReportScheduleRow(row: Record<string, unknown>): ReportSchedul
     createdAt: row.created_at ? String(row.created_at) : null,
     updatedAt: row.updated_at ? String(row.updated_at) : null,
     createdById: Number(row.created_by || 0),
+    createdByName: displayFullName(row, 'creator_first_name', 'creator_last_name', 'creator_username'),
+    createdByUsername: String(row.creator_username || ''),
+  };
+}
+
+function normalizeTemplateConfig(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return value as Record<string, unknown>;
+}
+
+function normalizeReportTemplateRow(row: Record<string, unknown>): ReportTemplateRecord {
+  return {
+    id: Number(row.id || 0),
+    name: String(row.name || '').trim(),
+    description: String(row.description || '').trim(),
+    module: String(row.module || '').trim(),
+    templateKey: String(row.template_key || '').trim(),
+    config: normalizeTemplateConfig(row.config),
+    createdAt: row.created_at ? String(row.created_at) : null,
+    updatedAt: row.updated_at ? String(row.updated_at) : null,
+    createdById: Number(row.created_by_id || 0),
     createdByName: displayFullName(row, 'creator_first_name', 'creator_last_name', 'creator_username'),
     createdByUsername: String(row.creator_username || ''),
   };
@@ -3663,6 +3719,117 @@ async function loadReportScheduleById(scheduleId: number) {
 
   const row = result.rows[0];
   return row ? normalizeReportScheduleRow(row) : null;
+}
+
+export async function loadReportTemplatesForUser(userId: number, actorIsSuperuser = false) {
+  await ensureReportTemplateTables();
+
+  const result = await pool.query<Record<string, unknown>>(
+    `
+      SELECT
+        t.*,
+        creator.username AS creator_username,
+        creator.first_name AS creator_first_name,
+        creator.last_name AS creator_last_name
+      FROM custom_permissions_reporttemplate t
+      INNER JOIN auth_user creator ON creator.id = t.created_by_id
+      WHERE ($1::boolean = TRUE OR t.created_by_id = $2::int)
+      ORDER BY t.updated_at DESC, t.id DESC
+    `,
+    [actorIsSuperuser, userId],
+  );
+
+  return result.rows.map(normalizeReportTemplateRow);
+}
+
+export async function loadReportTemplateById(input: {
+  templateId: number;
+  actorUserId: number;
+  actorIsSuperuser: boolean;
+}) {
+  await ensureReportTemplateTables();
+
+  const result = await pool.query<Record<string, unknown>>(
+    `
+      SELECT
+        t.*,
+        creator.username AS creator_username,
+        creator.first_name AS creator_first_name,
+        creator.last_name AS creator_last_name
+      FROM custom_permissions_reporttemplate t
+      INNER JOIN auth_user creator ON creator.id = t.created_by_id
+      WHERE t.id = $1::int
+        AND ($2::boolean = TRUE OR t.created_by_id = $3::int)
+      LIMIT 1
+    `,
+    [input.templateId, input.actorIsSuperuser, input.actorUserId],
+  );
+
+  const row = result.rows[0];
+  return row ? normalizeReportTemplateRow(row) : null;
+}
+
+export async function createReportTemplate(input: {
+  actorUserId: number;
+  name: string;
+  description?: string;
+  module: string;
+  templateKey: string;
+  config: Record<string, unknown>;
+}) {
+  await ensureReportTemplateTables();
+
+  const name = String(input.name || '').trim();
+  if (!name) {
+    throw new Error('El nombre de la plantilla es obligatorio.');
+  }
+
+  const inserted = await pool.query<Record<string, unknown>>(
+    `
+      INSERT INTO custom_permissions_reporttemplate
+        (name, description, module, template_key, config, created_by_id)
+      VALUES
+        ($1::varchar(160), $2::text, $3::varchar(80), $4::varchar(80), $5::jsonb, $6::int)
+      RETURNING *
+    `,
+    [
+      name,
+      String(input.description || '').trim(),
+      String(input.module || '').trim() || 'Informes personalizados',
+      String(input.templateKey || '').trim(),
+      JSON.stringify(input.config || {}),
+      input.actorUserId,
+    ],
+  );
+
+  const creator = await pool.query<Record<string, unknown>>(
+    `
+      SELECT username AS creator_username, first_name AS creator_first_name, last_name AS creator_last_name
+      FROM auth_user
+      WHERE id = $1::int
+      LIMIT 1
+    `,
+    [input.actorUserId],
+  );
+
+  return normalizeReportTemplateRow({
+    ...inserted.rows[0],
+    ...(creator.rows[0] || {}),
+  });
+}
+
+export async function deleteReportTemplate(input: {
+  templateId: number;
+  actorUserId: number;
+  actorIsSuperuser: boolean;
+}) {
+  const template = await loadReportTemplateById(input);
+  if (!template) {
+    throw new Error('La plantilla no existe o no tienes permisos para eliminarla.');
+  }
+
+  await ensureReportTemplateTables();
+  await pool.query('DELETE FROM custom_permissions_reporttemplate WHERE id = $1::int', [template.id]);
 }
 
 export async function loadReportSchedulesForUser(userId: number, actorIsSuperuser = false) {
