@@ -1876,6 +1876,17 @@ function resolveScheduledReportParams(schedule: ReportScheduleRecord, runDate = 
     resolved.fecha_fin_hasta = normalizedEnd;
   }
 
+  if (schedule.reportKey === 'cartera.unificada' && String(resolved.schedule_range_mode || '').trim() === 'enero_mes_actual') {
+    const monthStart = new Date(runDate.getFullYear(), runDate.getMonth(), 1);
+    const monthEnd = new Date(runDate.getFullYear(), runDate.getMonth() + 1, 0);
+    const normalizedStart = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, '0')}-${String(monthStart.getDate()).padStart(2, '0')}`;
+    const normalizedEnd = `${monthEnd.getFullYear()}-${String(monthEnd.getMonth() + 1).padStart(2, '0')}-${String(monthEnd.getDate()).padStart(2, '0')}`;
+
+    resolved.desde = normalizedStart;
+    resolved.hasta = normalizedEnd;
+    resolved.periodo = String(monthStart.getFullYear());
+  }
+
   return resolved;
 }
 
@@ -1893,6 +1904,10 @@ function buildScheduleDisplayParams(
   }
 
   if (schedule.reportKey === 'stock.costo_articulo_full' && String(schedule.reportParams.schedule_range_mode || '').trim() === 'enero_mes_actual') {
+    displayEntries.push(['rango mensual', 'Dinamico por mes completo de ejecucion']);
+  }
+
+  if (schedule.reportKey === 'cartera.unificada' && String(schedule.reportParams.schedule_range_mode || '').trim() === 'enero_mes_actual') {
     displayEntries.push(['rango mensual', 'Dinamico por mes completo de ejecucion']);
   }
 

@@ -69,10 +69,13 @@ export function ReportScheduleButton({
   const supportsDynamicMonthRange =
     reportKey === 'finanzas.balance_general'
     || reportKey === 'finanzas.balance_general_puc'
-    || reportKey === 'stock.costo_articulo_full';
+    || reportKey === 'stock.costo_articulo_full'
+    || reportKey === 'cartera.unificada';
   const dynamicRangeHint = reportKey === 'stock.costo_articulo_full'
     ? 'En Costo Articulo Full toma siempre el mes completo de ejecucion. Ejemplo: 2026-01-01 a 2026-01-31, luego 2026-02-01 a 2026-02-28.'
-    : 'Si hoy guardas un balance con 01 - 05, el mes siguiente se enviara como 01 - 06, y asi sucesivamente.';
+    : reportKey === 'cartera.unificada'
+      ? 'En Cartera toma siempre el mes completo de ejecucion. Ejemplo: 2026-01-01 a 2026-01-31, luego 2026-02-01 a 2026-02-28.'
+      : 'Si hoy guardas un balance con 01 - 05, el mes siguiente se enviara como 01 - 06, y asi sucesivamente.';
 
   const [form, setForm] = useState({
     recipientUserIds: [] as number[],
@@ -296,7 +299,11 @@ export function ReportScheduleButton({
                             className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-violet-400"
                           >
                             <option value="fijo">Fijo, mantener exactamente los meses guardados</option>
-                            <option value="enero_mes_actual">Dinamico, desde el mes inicial hasta el mes de ejecucion</option>
+                            <option value="enero_mes_actual">
+                              {reportKey === 'stock.costo_articulo_full' || reportKey === 'cartera.unificada'
+                                ? 'Dinamico, mes completo de ejecucion'
+                                : 'Dinamico, desde el mes inicial hasta el mes de ejecucion'}
+                            </option>
                           </select>
                           <p className="text-xs leading-5 text-slate-500">
                             {dynamicRangeHint}
