@@ -170,6 +170,45 @@ export default async function CarteraPage({
   const totalPagarDebitos = payablesRows.reduce((acc, row) => acc + row.debitos, 0);
   const netoCartera = totalCobrarSaldo - totalPagarSaldo;
   const coverage = totalPagarSaldo > 0 ? (totalCobrarSaldo / totalPagarSaldo) * 100 : 100;
+  const ratioCobroPago = totalPagarSaldo > 0 ? totalCobrarSaldo / totalPagarSaldo : 1;
+
+  const summaryRows = [
+    {
+      indicador: 'Saldo operativo',
+      cobrar: totalCobrarSaldo,
+      pagar: totalPagarSaldo,
+      neto: netoCartera,
+      lectura: netoCartera >= 0 ? 'Cobertura favorable' : 'Presion de pagos',
+    },
+    {
+      indicador: 'Volumen documentado',
+      cobrar: receivablesRows.length,
+      pagar: payablesRows.length,
+      neto: receivablesRows.length - payablesRows.length,
+      lectura: 'Cantidad de documentos vs proveedores',
+    },
+    {
+      indicador: 'Importe / movimiento',
+      cobrar: totalCobrarImporte,
+      pagar: totalPagarDebitos,
+      neto: totalCobrarImporte - totalPagarDebitos,
+      lectura: 'Comparacion entre importe a cobrar y debitos del periodo',
+    },
+    {
+      indicador: 'Cobertura porcentual',
+      cobrar: Number(coverage.toFixed(2)),
+      pagar: 100,
+      neto: Number(((coverage - 100) || 0).toFixed(2)),
+      lectura: coverage >= 100 ? 'La cartera cubre pagos' : 'La cartera no cubre pagos',
+    },
+    {
+      indicador: 'Ratio cobrar/pagar',
+      cobrar: Number(ratioCobroPago.toFixed(2)),
+      pagar: 1,
+      neto: Number((ratioCobroPago - 1).toFixed(2)),
+      lectura: ratioCobroPago >= 1 ? 'Relacion saludable' : 'Relacion por debajo de 1',
+    },
+  ];
 
   const exportMeta = [
     { label: 'Empresa', value: empresa || '-' },
@@ -285,6 +324,23 @@ export default async function CarteraPage({
           </div>
         </div>
       </section>
+
+      <DataTable
+        title="Resumen comparativo"
+        subtitle="Cruce ejecutivo de cartera para leer rapidamente el equilibrio entre cobrar y pagar antes de entrar al detalle."
+        exportName="cartera-resumen-comparativo"
+        rows={summaryRows}
+        exportMeta={exportMeta}
+        exportBranding={exportBranding}
+        taskModule="Cartera"
+        columns={[
+          { key: 'indicador', header: 'Indicador', sortable: true },
+          { key: 'cobrar', header: 'Cobrar', sortable: true, type: 'number', align: 'right' },
+          { key: 'pagar', header: 'Pagar', sortable: true, type: 'number', align: 'right' },
+          { key: 'neto', header: 'Neto / diferencia', sortable: true, type: 'number', align: 'right' },
+          { key: 'lectura', header: 'Lectura gerencial', sortable: true },
+        ]}
+      />
 
       <DataTable
         title="Cuentas por cobrar"
