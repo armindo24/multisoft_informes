@@ -20,6 +20,8 @@ type NotificationSummary = {
   dueTodayTasks: number;
 };
 
+const NOTIFICATION_SUMMARY_EVENT = 'multisoft:notification-summary-updated';
+
 function isActivePath(pathname: string, href: string) {
   if (href === '/') return pathname === '/';
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -185,8 +187,17 @@ export function AppShell({
 
     void loadNotifications();
 
+    function handleSummaryEvent(event: Event) {
+      const customEvent = event as CustomEvent<NotificationSummary>;
+      if (!customEvent.detail || cancelled) return;
+      setNotificationSummary(customEvent.detail);
+    }
+
+    window.addEventListener(NOTIFICATION_SUMMARY_EVENT, handleSummaryEvent as EventListener);
+
     return () => {
       cancelled = true;
+      window.removeEventListener(NOTIFICATION_SUMMARY_EVENT, handleSummaryEvent as EventListener);
     };
   }, [pathname, user]);
 

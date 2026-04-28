@@ -125,6 +125,13 @@ type NotificationsPanelProps = {
   userOptions: UserOption[];
 };
 
+const NOTIFICATION_SUMMARY_EVENT = 'multisoft:notification-summary-updated';
+
+function publishNotificationSummary(summary: NotificationSummary) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent(NOTIFICATION_SUMMARY_EVENT, { detail: summary }));
+}
+
 function fmtDate(value: string | null) {
   if (!value) return '-';
   const date = new Date(value);
@@ -360,6 +367,7 @@ export function NotificationsPanel({
     }
 
     setSummary(payload.data.summary);
+    publishNotificationSummary(payload.data.summary);
     setEvents(payload.data.events);
     setTasksAssigned(payload.data.tasksAssigned || []);
     setTasksCreated(payload.data.tasksCreated || []);
