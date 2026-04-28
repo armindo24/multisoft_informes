@@ -15,6 +15,7 @@ import {
   getStockValorizado,
   getVentasResumido,
 } from '@/lib/api';
+import { buildDefaultCarteraTemplateBlocks, getCarteraTemplateBlock } from '@/lib/report-template-presets';
 import type { BalanceRow } from '@/types/finanzas';
 
 const pool = new Pool({
@@ -1800,6 +1801,15 @@ type ScheduledCarteraReportData = {
   coverage: number;
 };
 
+type SelectedCarteraBlock = {
+  key: 'summary' | 'receivables' | 'payables';
+  label: string;
+  subtitle: string;
+  warning: string | undefined;
+  headers: string[];
+  dataRows: string[][];
+};
+
 async function loadScheduledCostoArticuloFullRows(params: {
   empresa: string;
   articulo: string;
@@ -1898,6 +1908,7 @@ const HIDDEN_DISPLAY_PARAMS_BY_REPORT: Record<string, string[]> = {
     'fecha_fin_desde',
     'fecha_fin_hasta',
   ],
+  'plantillas.cartera_bloques': ['template_id'],
 };
 
 function isDynamicMonthlyBalanceSchedule(schedule: ReportScheduleRecord) {
@@ -1943,6 +1954,17 @@ function resolveScheduledReportParams(schedule: ReportScheduleRecord, runDate = 
     resolved.periodo = String(monthStart.getFullYear());
   }
 
+  if (schedule.reportKey === 'plantillas.cartera_bloques' && String(resolved.schedule_range_mode || '').trim() === 'enero_mes_actual') {
+    const monthStart = new Date(runDate.getFullYear(), runDate.getMonth(), 1);
+    const monthEnd = new Date(runDate.getFullYear(), runDate.getMonth() + 1, 0);
+    const normalizedStart = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, '0')}-${String(monthStart.getDate()).padStart(2, '0')}`;
+    const normalizedEnd = `${monthEnd.getFullYear()}-${String(monthEnd.getMonth() + 1).padStart(2, '0')}-${String(monthEnd.getDate()).padStart(2, '0')}`;
+
+    resolved.desde = normalizedStart;
+    resolved.hasta = normalizedEnd;
+    resolved.periodo = String(monthStart.getFullYear());
+  }
+
   return resolved;
 }
 
@@ -1964,6 +1986,10 @@ function buildScheduleDisplayParams(
   }
 
   if (schedule.reportKey === 'cartera.unificada' && String(schedule.reportParams.schedule_range_mode || '').trim() === 'enero_mes_actual') {
+    displayEntries.push(['rango mensual', 'Dinamico por mes completo de ejecucion']);
+  }
+
+  if (schedule.reportKey === 'plantillas.cartera_bloques' && String(schedule.reportParams.schedule_range_mode || '').trim() === 'enero_mes_actual') {
     displayEntries.push(['rango mensual', 'Dinamico por mes completo de ejecucion']);
   }
 
@@ -2112,6 +2138,53 @@ async function loadScheduledCarteraReportData(schedule: ReportScheduleRecord): P
     netoCartera,
     coverage,
   };
+}
+
+function normalizeTemplateBlockSelections(value: unknown) {
+  const selectedBlocks = Array.isArray(value)
+    ? value
+      .map((item) => (item && typeof item === 'object' ? item as Record<string, unknown> : null))
+      .filter(Boolean)
+      .map((item) => ({
+        key: String(item?.key || '').trim(),
+        columns: Array.isArray(item?.columns) ? item.columns.map((column) => String(column || '').trim()).filter(Boolean) : [],
+      }))
+      .filter((item) => item.key)
+    : [];
+
+  return selectedBlocks.length ? selectedBlocks : buildDefaultCarteraTemplateBlocks();
+}
+
+function selectCarteraBlocks(report: ScheduledCarteraReportData, selectedBlocksInput: unknown): SelectedCarteraBlock[] {
+  const selectedBlocks = normalizeTemplateBlockSelections(selectedBlocksInput);
+  const sourceMap = {
+    summary: report.summary,
+    receivables: report.receivables,
+    payables: report.payables,
+  } as const;
+
+  const resolvedBlocks = selectedBlocks
+    .map((selection) => {
+      const meta = getCarteraTemplateBlock(selection.key);
+      if (!meta) return null;
+      const source = sourceMap[selection.key as keyof typeof sourceMap];
+      if (!source) return null;
+      const indexes = meta.columns
+        .map((column, index) => (selection.columns.includes(column.key) ? index : -1))
+        .filter((index) => index >= 0);
+      if (!indexes.length) return null;
+
+      return {
+        key: meta.key,
+        label: meta.label,
+        subtitle: meta.subtitle,
+        warning: source.warning,
+        headers: indexes.map((index) => source.headers[index] || meta.columns[index]?.header || ''),
+        dataRows: source.dataRows.map((row) => indexes.map((index) => row[index] || '')),
+      } satisfies SelectedCarteraBlock;
+    });
+
+  return resolvedBlocks.filter((block): block is NonNullable<typeof block> => Boolean(block));
 }
 
 async function loadScheduledBalanceReportData(schedule: ReportScheduleRecord) {
@@ -2755,6 +2828,7 @@ function buildTabularPdfAttachment(
 function buildCarteraExcelAttachment(
   schedule: ReportScheduleRecord,
   report: ScheduledCarteraReportData,
+  selectedBlocksInput?: unknown,
 ) {
   const metaRows = buildScheduleDisplayParams(schedule, report.effectiveParams)
     .map(
@@ -2763,20 +2837,22 @@ function buildCarteraExcelAttachment(
     )
     .join('');
 
-  const buildSection = (title: string, table: ScheduledAttachmentTable) => {
-    const header = table.headers
+  const buildSection = (block: SelectedCarteraBlock) => {
+    const header = block.headers
       .map((item) => `<th style="border:1px solid #cbd5e1;padding:6px 8px;background:#eaf2f8;">${escapeHtml(item)}</th>`)
       .join('');
-    const body = table.dataRows
+    const body = block.dataRows
       .map((row) => `<tr>${row.map((cell) => `<td style="border:1px solid #cbd5e1;padding:6px 8px;">${escapeHtml(cell)}</td>`).join('')}</tr>`)
       .join('');
 
     return (
-      `<h2 style="font-size:18px;margin:18px 0 10px 0;">${escapeHtml(title)}</h2>` +
-      (table.warning ? `<p style="color:#475569;font-size:13px;margin:0 0 10px 0;">${escapeHtml(table.warning)}</p>` : '') +
+      `<h2 style="font-size:18px;margin:18px 0 10px 0;">${escapeHtml(block.label)}</h2>` +
+      (block.warning ? `<p style="color:#475569;font-size:13px;margin:0 0 10px 0;">${escapeHtml(block.warning)}</p>` : '') +
       `<table style="border-collapse:collapse;width:100%;margin-bottom:18px;"><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table>`
     );
   };
+
+  const selectedBlocks = selectCarteraBlocks(report, selectedBlocksInput);
 
   const executiveBody = [
     ['Saldo por cobrar', formatScheduledCurrency(report.totalCobrarSaldo)],
@@ -2800,9 +2876,7 @@ function buildCarteraExcelAttachment(
     '</table>' +
     '<h2 style="font-size:18px;margin:10px 0;">Resumen ejecutivo</h2>' +
     `<table style="border-collapse:collapse;width:100%;margin-bottom:18px;">${executiveBody}</table>` +
-    buildSection('Resumen comparativo', report.summary) +
-    buildSection('Cuentas por cobrar', report.receivables) +
-    buildSection('Cuentas por pagar', report.payables) +
+    selectedBlocks.map((block) => buildSection(block)).join('') +
     '</body></html>';
 
   return {
@@ -2816,6 +2890,7 @@ async function buildCarteraPdfAttachment(
   schedule: ReportScheduleRecord,
   report: ScheduledCarteraReportData,
   branding?: BrandingConfigRecord | null,
+  selectedBlocksInput?: unknown,
 ) {
   const logoBuffer = await loadPdfImageBuffer(branding?.logoUrl);
   const doc = new PDFDocument({
@@ -2866,16 +2941,18 @@ async function buildCarteraPdfAttachment(
 
   doc.y += 92;
 
-  const drawSection = (title: string, table: ScheduledAttachmentTable) => {
+  const selectedBlocks = selectCarteraBlocks(report, selectedBlocksInput);
+
+  const drawSection = (block: SelectedCarteraBlock) => {
     if (doc.y > 500) {
       doc.addPage();
       doc.y = 32;
     }
 
-    doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(13).text(title, 32, doc.y);
+    doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(13).text(block.label, 32, doc.y);
     doc.moveDown(0.3);
-    if (table.warning) {
-      doc.font('Helvetica').fontSize(8.5).fillColor('#64748b').text(table.warning);
+    if (block.warning) {
+      doc.font('Helvetica').fontSize(8.5).fillColor('#64748b').text(block.warning);
       doc.moveDown(0.3);
     }
 
@@ -2883,20 +2960,20 @@ async function buildCarteraPdfAttachment(
     const usableWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
     const columnGap = 6;
     const firstWidth = Math.min(170, Math.max(90, Math.floor(usableWidth * 0.2)));
-    const secondWidth = table.headers.length > 2 ? Math.min(190, Math.max(110, Math.floor(usableWidth * 0.22))) : 0;
-    const remainingColumns = Math.max(1, table.headers.length - 2);
-    const restWidth = Math.max(64, Math.floor((usableWidth - firstWidth - secondWidth - columnGap * (table.headers.length - 1)) / remainingColumns));
-    const widths = table.headers.map((_, index) => (index === 0 ? firstWidth : index === 1 ? secondWidth : restWidth));
+    const secondWidth = block.headers.length > 2 ? Math.min(190, Math.max(110, Math.floor(usableWidth * 0.22))) : 0;
+    const remainingColumns = Math.max(1, block.headers.length - 2);
+    const restWidth = Math.max(64, Math.floor((usableWidth - firstWidth - secondWidth - columnGap * (block.headers.length - 1)) / remainingColumns));
+    const widths = block.headers.map((_, index) => (index === 0 ? firstWidth : index === 1 ? secondWidth : restWidth));
     const columns = widths.reduce<number[]>((acc, width, index) => {
       if (index === 0) return [tableLeft];
       acc.push(acc[index - 1] + widths[index - 1] + columnGap);
       return acc;
     }, []);
-    const numericStartIndex = title === 'Resumen comparativo' ? 1 : Math.max(2, table.headers.length - 3);
+    const numericStartIndex = block.key === 'summary' ? 1 : Math.max(2, block.headers.length - 3);
 
     const drawHeader = (y: number) => {
       doc.font('Helvetica-Bold').fontSize(8).fillColor('#0f172a');
-      table.headers.forEach((header, index) => {
+      block.headers.forEach((header, index) => {
         doc.text(header, columns[index], y, {
           width: widths[index],
           align: index >= numericStartIndex ? 'right' : 'left',
@@ -2908,11 +2985,11 @@ async function buildCarteraPdfAttachment(
     let currentY = doc.y + 18;
     const pageBottom = doc.page.height - doc.page.margins.bottom;
 
-    for (const row of table.dataRows) {
+    for (const row of block.dataRows) {
       if (currentY + 12 > pageBottom) {
         doc.addPage();
         doc.y = 32;
-        doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(13).text(title, 32, doc.y);
+        doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(13).text(block.label, 32, doc.y);
         doc.moveDown(0.6);
         drawHeader(doc.y);
         currentY = doc.y + 18;
@@ -2934,9 +3011,7 @@ async function buildCarteraPdfAttachment(
     doc.y = currentY + 10;
   };
 
-  drawSection('Resumen comparativo', report.summary);
-  drawSection('Cuentas por cobrar', report.receivables);
-  drawSection('Cuentas por pagar', report.payables);
+  selectedBlocks.forEach((block) => drawSection(block));
 
   doc.end();
 
@@ -3007,6 +3082,7 @@ async function sendScheduledReportEmail(schedule: ReportScheduleRecord, origin?:
 
   const isBalanceSchedule = ['finanzas.balance_general', 'finanzas.balance_general_puc'].includes(schedule.reportKey);
   const isCarteraSchedule = schedule.reportKey === 'cartera.unificada';
+  const isTemplateCarteraSchedule = schedule.reportKey === 'plantillas.cartera_bloques';
   let resolvedExcelAttachment: { filename: string; content: Buffer | string; contentType?: string };
   let resolvedPdfAttachment: { filename: string; content: Buffer | string; contentType?: string };
   let scheduledResultSummary = '';
@@ -3036,6 +3112,29 @@ async function sendScheduledReportEmail(schedule: ReportScheduleRecord, origin?:
     resolvedExcelAttachment = buildCarteraExcelAttachment(schedule, reportData);
     resolvedPdfAttachment = await buildCarteraPdfAttachment(schedule, reportData, branding);
     scheduledResultSummary = `Neto de cartera: ${formatScheduledCurrency(reportData.netoCartera)} | Cobertura: ${reportData.coverage.toFixed(2)}%.`;
+  } else if (isTemplateCarteraSchedule) {
+    const templateId = Number(schedule.reportParams.template_id || 0);
+    const template = templateId
+      ? await loadReportTemplateById({ templateId, actorUserId: 0, actorIsSuperuser: true })
+      : null;
+    const reportData = await loadScheduledCarteraReportData({
+      ...schedule,
+      reportTitle: template?.name || schedule.reportTitle,
+    });
+    const templateConfig = (template?.config || {}) as Record<string, unknown>;
+    const selectedBlocks = templateConfig.blocks;
+    resolvedExcelAttachment = buildCarteraExcelAttachment(
+      { ...schedule, reportTitle: template?.name || schedule.reportTitle },
+      reportData,
+      selectedBlocks,
+    );
+    resolvedPdfAttachment = await buildCarteraPdfAttachment(
+      { ...schedule, reportTitle: template?.name || schedule.reportTitle },
+      reportData,
+      branding,
+      selectedBlocks,
+    );
+    scheduledResultSummary = `Plantilla: ${template?.name || schedule.reportTitle} | Neto de cartera: ${formatScheduledCurrency(reportData.netoCartera)} | Cobertura: ${reportData.coverage.toFixed(2)}%.`;
   } else {
     const table = await loadScheduledTabularReportData(schedule);
     resolvedExcelAttachment = buildTabularExcelAttachment(schedule, table, effectiveParams);

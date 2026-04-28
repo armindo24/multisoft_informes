@@ -64,3 +64,9 @@ export function getCarteraTemplateBlock(blockKey: string) {
   return CARTERA_TEMPLATE_BLOCKS.find((block) => block.key === blockKey);
 }
 
+export function buildDefaultCarteraTemplateBlocks() {
+  return CARTERA_TEMPLATE_BLOCKS.map((block) => ({
+    key: block.key,
+    columns: block.columns.map((column) => column.key),
+  }));
+}

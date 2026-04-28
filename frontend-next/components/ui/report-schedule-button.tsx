@@ -70,10 +70,11 @@ export function ReportScheduleButton({
     reportKey === 'finanzas.balance_general'
     || reportKey === 'finanzas.balance_general_puc'
     || reportKey === 'stock.costo_articulo_full'
-    || reportKey === 'cartera.unificada';
+    || reportKey === 'cartera.unificada'
+    || reportKey === 'plantillas.cartera_bloques';
   const dynamicRangeHint = reportKey === 'stock.costo_articulo_full'
     ? 'En Costo Articulo Full toma siempre el mes completo de ejecucion. Ejemplo: 2026-01-01 a 2026-01-31, luego 2026-02-01 a 2026-02-28.'
-    : reportKey === 'cartera.unificada'
+    : reportKey === 'cartera.unificada' || reportKey === 'plantillas.cartera_bloques'
       ? 'En Cartera toma siempre el mes completo de ejecucion. Ejemplo: 2026-01-01 a 2026-01-31, luego 2026-02-01 a 2026-02-28.'
       : 'Si hoy guardas un balance con 01 - 05, el mes siguiente se enviara como 01 - 06, y asi sucesivamente.';
 
@@ -300,7 +301,7 @@ export function ReportScheduleButton({
                           >
                             <option value="fijo">Fijo, mantener exactamente los meses guardados</option>
                             <option value="enero_mes_actual">
-                              {reportKey === 'stock.costo_articulo_full' || reportKey === 'cartera.unificada'
+                              {reportKey === 'stock.costo_articulo_full' || reportKey === 'cartera.unificada' || reportKey === 'plantillas.cartera_bloques'
                                 ? 'Dinamico, mes completo de ejecucion'
                                 : 'Dinamico, desde el mes inicial hasta el mes de ejecucion'}
                             </option>

@@ -206,6 +206,13 @@ function scheduleRangeBadge(item: ReportScheduleItem) {
     };
   }
 
+  if (item.reportKey === 'plantillas.cartera_bloques') {
+    return {
+      label: 'Rango dinamico mensual',
+      className: 'border-cyan-200 bg-cyan-50 text-cyan-700',
+    };
+  }
+
   return {
     label: 'Rango dinamico acumulado',
     className: 'border-violet-200 bg-violet-50 text-violet-700',
@@ -217,7 +224,8 @@ function supportsDynamicRangeForSchedule(item: ReportScheduleItem | null) {
   return item.reportKey === 'finanzas.balance_general'
     || item.reportKey === 'finanzas.balance_general_puc'
     || item.reportKey === 'stock.costo_articulo_full'
-    || item.reportKey === 'cartera.unificada';
+    || item.reportKey === 'cartera.unificada'
+    || item.reportKey === 'plantillas.cartera_bloques';
 }
 
 export function NotificationsPanel({

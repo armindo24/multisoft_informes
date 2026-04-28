@@ -1,5 +1,6 @@
 import { DataTable } from '@/components/ui/data-table';
 import { PageHeader } from '@/components/ui/page-header';
+import { ReportScheduleButton } from '@/components/ui/report-schedule-button';
 import { ReportTemplateWorkspace } from '@/components/report-templates/report-template-workspace';
 import type { ExportBrandingOverride } from '@/components/ui/export-utils';
 import { getSessionUser } from '@/lib/auth-server';
@@ -75,6 +76,10 @@ function normalizeTemplateConfig(template: ReportTemplateRecord | null) {
   };
 }
 
+function firstParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? String(value[0] || '').trim() : String(value || '').trim();
+}
+
 export default async function InformesPersonalizadosPage({
   searchParams,
 }: {
@@ -100,7 +105,19 @@ export default async function InformesPersonalizadosPage({
       })
     : null;
 
-  const config = normalizeTemplateConfig(selectedTemplate);
+  const baseConfig = normalizeTemplateConfig(selectedTemplate);
+  const config = {
+    ...baseConfig,
+    filters: {
+      ...baseConfig.filters,
+      empresa: firstParam(params.empresa) || baseConfig.filters.empresa,
+      sucursal: firstParam(params.sucursal) || baseConfig.filters.sucursal,
+      periodo: firstParam(params.periodo) || baseConfig.filters.periodo,
+      desde: firstParam(params.desde) || baseConfig.filters.desde,
+      hasta: firstParam(params.hasta) || baseConfig.filters.hasta,
+      vencimiento: firstParam(params.vencimiento) || baseConfig.filters.vencimiento,
+    },
+  };
   const empresa = config.filters.empresa;
   const brandingConfig = empresa ? await loadBrandingConfig(empresa) : await loadBrandingConfig();
   const exportBranding = buildExportBranding(brandingConfig);
@@ -220,6 +237,23 @@ export default async function InformesPersonalizadosPage({
         eyebrow="Plantillas"
         title="Informes personalizados"
         description="Primera etapa del constructor por bloques: guarda plantillas de cartera, elige columnas visibles y reutiliza el informe unificado con criterio gerencial."
+        actions={selectedTemplate ? (
+          <ReportScheduleButton
+            reportKey="plantillas.cartera_bloques"
+            reportTitle={selectedTemplate.name}
+            reportModule="Plantillas"
+            detailHint={selectedTemplate.description || 'Entrega automatica de plantilla personalizada.'}
+            reportParams={{
+              template_id: String(selectedTemplate.id),
+              empresa: config.filters.empresa,
+              sucursal: config.filters.sucursal,
+              periodo: config.filters.periodo,
+              desde: config.filters.desde,
+              hasta: config.filters.hasta,
+              vencimiento: config.filters.vencimiento,
+            }}
+          />
+        ) : null}
       />
 
       <ReportTemplateWorkspace
