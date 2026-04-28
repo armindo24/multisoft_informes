@@ -1,6 +1,6 @@
 import type { Route } from 'next';
 import type { ComponentType } from 'react';
-import { BarChart3, Boxes, CreditCard, LayoutDashboard, RefreshCw, Settings, ShoppingCart } from 'lucide-react';
+import { BarChart3, Boxes, CreditCard, HandCoins, LayoutDashboard, RefreshCw, Settings, ShoppingCart } from 'lucide-react';
 
 export type NavigationSubItem = {
   label: string;
@@ -22,6 +22,7 @@ export type NavigationItem = {
 
 export const navigation: NavigationItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { label: 'Cartera', href: '/cartera', icon: HandCoins },
   {
     label: 'Finanzas',
     href: '/finanzas',
