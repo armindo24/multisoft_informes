@@ -3896,6 +3896,23 @@ export async function markAllNotificationsRead(userId: number) {
   return loadNotificationsForUser(userId);
 }
 
+export async function markNotificationRead(userId: number, notificationId: number) {
+  await ensureTaskTables();
+  await pool.query(
+    `
+      UPDATE custom_permissions_usernotification
+      SET is_read = TRUE,
+          read_at = NOW()
+      WHERE user_id = $1::int
+        AND id = $2::int
+        AND is_read = FALSE
+    `,
+    [userId, notificationId],
+  );
+
+  return loadNotificationsForUser(userId);
+}
+
 export async function cleanupNotificationsForUser(userId: number, olderThanDays = 30) {
   await ensureTaskTables();
 

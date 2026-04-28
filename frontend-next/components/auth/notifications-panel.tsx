@@ -2,6 +2,7 @@
 
 import { Bell, CalendarClock, CheckCheck, Clock3, ListTodo, Mail, MonitorSmartphone, Play, RefreshCcw, Send, ShieldCheck, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 type NotificationSummary = {
   activeSessions: number;
@@ -254,6 +255,7 @@ export function NotificationsPanel({
   initialReportScheduleLogs,
   userOptions,
 }: NotificationsPanelProps) {
+  const router = useRouter();
   const [summary, setSummary] = useState(initialSummary);
   const [events, setEvents] = useState(initialEvents);
   const [tasksAssigned, setTasksAssigned] = useState(initialTasksAssigned);
@@ -486,6 +488,38 @@ export function NotificationsPanel({
 
     await refresh();
     setMarkingAll(false);
+  }
+
+  async function openNotification(notification: UserNotificationItem) {
+    if (!notification.href) return;
+
+    setMessage(null);
+
+    if (!notification.isRead) {
+      const response = await fetch(`/api/auth/notifications/${notification.id}/read`, {
+        method: 'POST',
+      });
+
+      const payload = (await response.json().catch(() => ({}))) as {
+        ok?: boolean;
+        data?: UserNotificationItem[];
+        message?: string;
+      };
+
+      if (response.ok && payload.ok) {
+        const nextNotifications = payload.data || [];
+        setNotifications(nextNotifications);
+        const nextUnread = nextNotifications.filter((item) => !item.isRead).length;
+        const nextSummary = {
+          ...summary,
+          unreadNotifications: nextUnread,
+        };
+        setSummary(nextSummary);
+        publishNotificationSummary(nextSummary);
+      }
+    }
+
+    router.push(notification.href);
   }
 
   async function cleanupNotifications() {
@@ -1085,9 +1119,13 @@ export function NotificationsPanel({
                         <p className="mt-1 leading-6">{notification.message}</p>
                         <p className="mt-2 text-xs opacity-80">Por: {notification.actorName || 'Sistema'}</p>
                         {notification.href ? (
-                          <a href={notification.href} className="mt-2 inline-flex text-xs font-semibold text-cyan-800 hover:text-cyan-600">
+                          <button
+                            type="button"
+                            onClick={() => void openNotification(notification)}
+                            className="mt-2 inline-flex text-xs font-semibold text-cyan-800 hover:text-cyan-600"
+                          >
                             Abrir
-                          </a>
+                          </button>
                         ) : null}
                       </div>
                       <span className="text-[11px] font-medium opacity-80">{fmtDate(notification.createdAt)}</span>
