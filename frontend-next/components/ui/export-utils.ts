@@ -28,6 +28,10 @@ export type ExportMetaItem = {
 };
 
 export type ExportBrandingOverride = Partial<BrandingConfig>;
+export type ExportPdfOptions = {
+  landscape?: boolean;
+  compact?: boolean;
+};
 
 function resolveBranding(override?: ExportBrandingOverride) {
   const base = getBranding();
@@ -188,6 +192,7 @@ export function exportRowsToPdf(params: {
   rows: Array<Array<unknown>>;
   meta?: ExportMetaItem[];
   branding?: ExportBrandingOverride;
+  pdfOptions?: ExportPdfOptions;
 }) {
   const header = params.headers.map((item) => `<th>${escapeHtml(item)}</th>`).join('');
   const body = params.rows
@@ -197,9 +202,18 @@ export function exportRowsToPdf(params: {
   const popup = window.open('', '_blank', 'width=1200,height=800');
   if (!popup) return;
 
+  const landscapeStyles = params.pdfOptions?.landscape
+    ? '<style>@page{size:A4 landscape;margin:10mm;}table.report{table-layout:fixed;font-size:10px;}table.report th,table.report td{padding:5px 6px;word-break:break-word;overflow-wrap:anywhere;}</style>'
+    : '';
+  const compactStyles = params.pdfOptions?.compact
+    ? '<style>table.report{font-size:10px;}table.report th,table.report td{padding:4px 6px;}</style>'
+    : '';
+
   popup.document.write(
     '<html><head><meta charset="utf-8"><title>Multisoft Reporte</title>' +
       buildCorporateStyles() +
+      landscapeStyles +
+      compactStyles +
       `</head><body>${buildPdfCover(params.title, params.subtitle, params.meta, params.branding)}<div class="page-break">${buildBrandBlock(params.title, params.subtitle, params.branding)}<table class="meta"><tbody>${buildMetaRows(params.meta)}</tbody></table><table class="report"><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table></div></body></html>`,
   );
   popup.document.close();

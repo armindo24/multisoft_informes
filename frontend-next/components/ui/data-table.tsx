@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 
 import { exportRowsToExcel, exportRowsToPdf } from '@/components/ui/export-utils';
 import type { ExportBrandingOverride, ExportMetaItem } from '@/components/ui/export-utils';
+import type { ExportPdfOptions } from '@/components/ui/export-utils';
 import { ReportNoticeButton } from '@/components/ui/report-notice-button';
 import { ReportScheduleButton } from '@/components/ui/report-schedule-button';
 import { ReportTaskButton } from '@/components/ui/report-task-button';
@@ -61,6 +62,7 @@ export function DataTable<T extends Record<string, unknown>>({
   taskModule,
   scheduleConfig,
   tableClassName,
+  pdfOptions,
 }: {
   title: string;
   subtitle?: string;
@@ -79,6 +81,7 @@ export function DataTable<T extends Record<string, unknown>>({
     reportParams?: Record<string, string>;
   };
   tableClassName?: string;
+  pdfOptions?: ExportPdfOptions;
 }) {
   const [query, setQuery] = useState('');
   const [sortKey, setSortKey] = useState<string>(String(columns.find((column) => column.sortable)?.key || columns[0]?.key || ''));
@@ -154,6 +157,7 @@ export function DataTable<T extends Record<string, unknown>>({
       rows: exportRows.map((row) => headers.map((header) => row[header])),
       meta: exportMeta,
       branding: exportBranding,
+      pdfOptions,
     });
   }
 

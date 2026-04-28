@@ -351,13 +351,14 @@ export default async function CarteraPage({
         exportMeta={exportMeta}
         exportBranding={exportBranding}
         taskModule="Cartera"
-        tableClassName="min-w-[1040px]"
+        tableClassName="min-w-[1180px] table-fixed"
+        pdfOptions={{ landscape: true, compact: true }}
         columns={[
-          { key: 'indicador', header: 'Indicador', sortable: true, className: 'min-w-[210px] whitespace-normal' },
-          { key: 'cobrar', header: 'Cobrar', sortable: true, type: 'number', align: 'right', className: 'min-w-[160px] whitespace-nowrap' },
-          { key: 'pagar', header: 'Pagar', sortable: true, type: 'number', align: 'right', className: 'min-w-[160px] whitespace-nowrap' },
-          { key: 'neto', header: 'Neto / diferencia', sortable: true, type: 'number', align: 'right', className: 'min-w-[180px] whitespace-nowrap' },
-          { key: 'lectura', header: 'Lectura gerencial', sortable: true, className: 'min-w-[260px] whitespace-normal' },
+          { key: 'indicador', header: 'Indicador', sortable: true, className: 'w-[250px] max-w-[250px] truncate' },
+          { key: 'cobrar', header: 'Cobrar', sortable: true, type: 'number', align: 'right', className: 'w-[170px] whitespace-nowrap' },
+          { key: 'pagar', header: 'Pagar', sortable: true, type: 'number', align: 'right', className: 'w-[170px] whitespace-nowrap' },
+          { key: 'neto', header: 'Neto / diferencia', sortable: true, type: 'number', align: 'right', className: 'w-[190px] whitespace-nowrap' },
+          { key: 'lectura', header: 'Lectura gerencial', sortable: true, className: 'w-[300px] max-w-[300px] truncate' },
         ]}
       />
 
@@ -369,12 +370,13 @@ export default async function CarteraPage({
         exportMeta={exportMeta}
         exportBranding={exportBranding}
         taskModule="Cartera"
-        tableClassName="min-w-[1360px]"
+        tableClassName="min-w-[1500px] table-fixed"
+        pdfOptions={{ landscape: true, compact: true }}
         columns={[
           { key: 'tipo', header: 'Tipo Comprobante', sortable: true, className: 'min-w-[220px] max-w-[220px] truncate' },
           { key: 'comprobante', header: '# Comprobante', sortable: true, className: 'min-w-[120px] whitespace-nowrap' },
           { key: 'cuota', header: 'Cuota', sortable: true, className: 'min-w-[90px] whitespace-nowrap' },
-          { key: 'cliente', header: 'Cliente', sortable: true, className: 'min-w-[240px] max-w-[280px] whitespace-normal break-words' },
+          { key: 'cliente', header: 'Cliente', sortable: true, className: 'min-w-[280px] max-w-[280px] truncate' },
           { key: 'emision', header: 'Emision', sortable: true, type: 'date', className: 'min-w-[110px] whitespace-nowrap' },
           { key: 'vencimiento', header: 'Vencimiento', sortable: true, type: 'date', className: 'min-w-[120px] whitespace-nowrap' },
           { key: 'importe', header: 'Importe', sortable: true, type: 'currency', align: 'right', className: 'min-w-[140px] whitespace-nowrap' },
@@ -391,9 +393,10 @@ export default async function CarteraPage({
         exportMeta={exportMeta}
         exportBranding={exportBranding}
         taskModule="Cartera"
-        tableClassName="min-w-[980px]"
+        tableClassName="min-w-[1080px] table-fixed"
+        pdfOptions={{ landscape: true, compact: true }}
         columns={[
-          { key: 'proveedor', header: 'Proveedor', sortable: true, className: 'min-w-[240px] max-w-[300px] whitespace-normal break-words' },
+          { key: 'proveedor', header: 'Proveedor', sortable: true, className: 'min-w-[300px] max-w-[300px] truncate' },
           { key: 'moneda', header: 'Moneda', sortable: true, className: 'min-w-[110px] whitespace-nowrap' },
           { key: 'saldoAnterior', header: 'Saldo anterior', sortable: true, type: 'currency', align: 'right', className: 'min-w-[140px] whitespace-nowrap' },
           { key: 'creditos', header: 'Creditos', sortable: true, type: 'currency', align: 'right', className: 'min-w-[130px] whitespace-nowrap' },
