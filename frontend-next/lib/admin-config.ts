@@ -8,6 +8,7 @@ import {
   getBalanceGeneralPuc,
   getComprasList,
   getCuentasCobrar,
+  getCuentasPagar,
   getOrdenCompraList,
   getStockCostoArticuloFull,
   getStockExistenciaDeposito,
@@ -1730,6 +1731,19 @@ type ScheduledAttachmentTable = {
   warning?: string;
 };
 
+type ScheduledCarteraReportData = {
+  summary: ScheduledAttachmentTable;
+  receivables: ScheduledAttachmentTable;
+  payables: ScheduledAttachmentTable;
+  effectiveParams: Record<string, string>;
+  totalCobrarSaldo: number;
+  totalCobrarImporte: number;
+  totalPagarSaldo: number;
+  totalPagarDebitos: number;
+  netoCartera: number;
+  coverage: number;
+};
+
 async function loadScheduledCostoArticuloFullRows(params: {
   empresa: string;
   articulo: string;
@@ -1896,6 +1910,137 @@ function buildScheduledReportUrl(schedule: ReportScheduleRecord, baseUrl: string
     url.searchParams.set(key, normalized);
   }
   return url.toString();
+}
+
+async function loadScheduledCarteraReportData(schedule: ReportScheduleRecord): Promise<ScheduledCarteraReportData> {
+  const effectiveParams = resolveScheduledReportParams(schedule);
+  const empresa = String(effectiveParams.empresa || '').trim();
+  const sucursal = String(effectiveParams.sucursal || '').trim();
+  const periodo = String(effectiveParams.periodo || '').trim();
+  const desde = String(effectiveParams.desde || '').trim();
+  const hasta = String(effectiveParams.hasta || '').trim();
+  const vencimiento = String(effectiveParams.vencimiento || 'true').trim() === 'true';
+
+  const [cobrarResponse, pagarResponse] = await Promise.all([
+    getCuentasCobrar({
+      empresa,
+      sucursal,
+      start: desde,
+      end: hasta,
+      vencimiento,
+    }),
+    getCuentasPagar({
+      empresa,
+      periodo,
+      compras_start: desde,
+      compras_end: hasta,
+    }),
+  ]);
+
+  const cobrarRows = ((cobrarResponse?.data || []) as Array<Record<string, unknown>>);
+  const pagarRows = ((pagarResponse?.data || []) as Array<Record<string, unknown>>);
+
+  let saldoAcumulado = 0;
+  const receivablesRows = cobrarRows.map((row) => {
+    const importe = scheduleNum(row.importe);
+    const saldo = scheduleNum(row.saldo);
+    saldoAcumulado += saldo;
+
+    return [
+      row.des_tp_comp ? `${String(row.cod_tp_comp || '')} - ${String(row.des_tp_comp || '')}` : String(row.cod_tp_comp || '-'),
+      String(row.comp_numero || '-'),
+      String(row.cuota_numero || '-'),
+      String(row.razon_social || row.cod_cliente || '-'),
+      formatScheduledDate(row.fecha_emi),
+      formatScheduledDate(row.fecha_ven),
+      formatScheduledCurrency(importe),
+      formatScheduledCurrency(saldo),
+      formatScheduledCurrency(saldoAcumulado),
+    ];
+  });
+
+  const payablesRows = pagarRows.map((row) => {
+    const saldoAnterior = scheduleNum(row.SaldoAnterior || row.saldoanterior);
+    const creditos = scheduleNum(row.TotalCredito || row.totalcredito);
+    const debitos = scheduleNum(row.TotalDebito || row.totaldebito);
+    const saldo = scheduleNum(row.Saldo || row.saldo);
+
+    return [
+      String(row.RazonSocial || row.razonsocial || row.CodProv || row.codprov || 'Proveedor'),
+      String(row.Descrip || row.descrip || row.CodMoneda || row.codmoneda || '-'),
+      formatScheduledCurrency(saldoAnterior),
+      formatScheduledCurrency(creditos),
+      formatScheduledCurrency(debitos),
+      formatScheduledCurrency(saldo),
+    ];
+  });
+
+  const totalCobrarImporte = cobrarRows.reduce((acc, row) => acc + scheduleNum(row.importe), 0);
+  const totalCobrarSaldo = cobrarRows.reduce((acc, row) => acc + scheduleNum(row.saldo), 0);
+  const totalPagarSaldo = pagarRows.reduce((acc, row) => acc + scheduleNum(row.Saldo || row.saldo), 0);
+  const totalPagarDebitos = pagarRows.reduce((acc, row) => acc + scheduleNum(row.TotalDebito || row.totaldebito), 0);
+  const netoCartera = totalCobrarSaldo - totalPagarSaldo;
+  const coverage = totalPagarSaldo > 0 ? (totalCobrarSaldo / totalPagarSaldo) * 100 : 100;
+  const ratioCobroPago = totalPagarSaldo > 0 ? totalCobrarSaldo / totalPagarSaldo : 1;
+
+  return {
+    summary: {
+      headers: ['Indicador', 'Cobrar', 'Pagar', 'Neto / diferencia', 'Lectura gerencial'],
+      dataRows: [
+        [
+          'Saldo operativo',
+          formatScheduledCurrency(totalCobrarSaldo),
+          formatScheduledCurrency(totalPagarSaldo),
+          formatScheduledCurrency(netoCartera),
+          netoCartera >= 0 ? 'Cobertura favorable' : 'Presion de pagos',
+        ],
+        [
+          'Volumen documentado',
+          formatScheduledCurrency(receivablesRows.length, 0),
+          formatScheduledCurrency(payablesRows.length, 0),
+          formatScheduledCurrency(receivablesRows.length - payablesRows.length, 0),
+          'Cantidad de documentos vs proveedores',
+        ],
+        [
+          'Importe / movimiento',
+          formatScheduledCurrency(totalCobrarImporte),
+          formatScheduledCurrency(totalPagarDebitos),
+          formatScheduledCurrency(totalCobrarImporte - totalPagarDebitos),
+          'Comparacion entre importe a cobrar y debitos del periodo',
+        ],
+        [
+          'Cobertura porcentual',
+          formatScheduledCurrency(coverage, 2),
+          formatScheduledCurrency(100, 2),
+          formatScheduledCurrency(coverage - 100, 2),
+          coverage >= 100 ? 'La cartera cubre pagos' : 'La cartera no cubre pagos',
+        ],
+        [
+          'Ratio cobrar/pagar',
+          formatScheduledCurrency(ratioCobroPago, 2),
+          formatScheduledCurrency(1, 2),
+          formatScheduledCurrency(ratioCobroPago - 1, 2),
+          ratioCobroPago >= 1 ? 'Relacion saludable' : 'Relacion por debajo de 1',
+        ],
+      ],
+      warning: 'Cruce ejecutivo consolidado entre cuentas por cobrar y cuentas por pagar.',
+    },
+    receivables: {
+      headers: ['Tipo Comprobante', 'Comprobante', 'Cuota', 'Cliente', 'Emision', 'Vencimiento', 'Importe', 'Saldo', 'Saldo acumulado'],
+      dataRows: receivablesRows,
+    },
+    payables: {
+      headers: ['Proveedor', 'Moneda', 'Saldo anterior', 'Creditos', 'Debitos', 'Saldo'],
+      dataRows: payablesRows,
+    },
+    effectiveParams,
+    totalCobrarSaldo,
+    totalCobrarImporte,
+    totalPagarSaldo,
+    totalPagarDebitos,
+    netoCartera,
+    coverage,
+  };
 }
 
 async function loadScheduledBalanceReportData(schedule: ReportScheduleRecord) {
@@ -2536,6 +2681,205 @@ function buildTabularPdfAttachment(
   });
 }
 
+function buildCarteraExcelAttachment(
+  schedule: ReportScheduleRecord,
+  report: ScheduledCarteraReportData,
+) {
+  const metaRows = buildScheduleDisplayParams(schedule, report.effectiveParams)
+    .map(
+      ([key, value]) =>
+        `<tr><td style="border:1px solid #dbe5f0;padding:6px 10px;background:#f8fafc;font-weight:700;">${escapeHtml(key.replace(/_/g, ' '))}</td><td style="border:1px solid #dbe5f0;padding:6px 10px;">${escapeHtml(value)}</td></tr>`,
+    )
+    .join('');
+
+  const buildSection = (title: string, table: ScheduledAttachmentTable) => {
+    const header = table.headers
+      .map((item) => `<th style="border:1px solid #cbd5e1;padding:6px 8px;background:#eaf2f8;">${escapeHtml(item)}</th>`)
+      .join('');
+    const body = table.dataRows
+      .map((row) => `<tr>${row.map((cell) => `<td style="border:1px solid #cbd5e1;padding:6px 8px;">${escapeHtml(cell)}</td>`).join('')}</tr>`)
+      .join('');
+
+    return (
+      `<h2 style="font-size:18px;margin:18px 0 10px 0;">${escapeHtml(title)}</h2>` +
+      (table.warning ? `<p style="color:#475569;font-size:13px;margin:0 0 10px 0;">${escapeHtml(table.warning)}</p>` : '') +
+      `<table style="border-collapse:collapse;width:100%;margin-bottom:18px;"><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table>`
+    );
+  };
+
+  const executiveBody = [
+    ['Saldo por cobrar', formatScheduledCurrency(report.totalCobrarSaldo)],
+    ['Importe por cobrar', formatScheduledCurrency(report.totalCobrarImporte)],
+    ['Saldo por pagar', formatScheduledCurrency(report.totalPagarSaldo)],
+    ['Debitos por pagar', formatScheduledCurrency(report.totalPagarDebitos)],
+    ['Neto de cartera', formatScheduledCurrency(report.netoCartera)],
+    ['Cobertura', `${report.coverage.toFixed(2)}%`],
+  ]
+    .map(
+      ([label, value]) =>
+        `<tr><td style="border:1px solid #dbe5f0;padding:6px 10px;background:#f8fafc;font-weight:700;">${escapeHtml(label)}</td><td style="border:1px solid #dbe5f0;padding:6px 10px;">${escapeHtml(value)}</td></tr>`,
+    )
+    .join('');
+
+  const content =
+    '<html><head><meta charset="utf-8"></head><body style="font-family:Arial,Helvetica,sans-serif;">' +
+    `<h1 style="font-size:22px;">${escapeHtml(schedule.reportTitle)}</h1>` +
+    '<table style="border-collapse:collapse;margin:12px 0 18px 0;">' +
+    metaRows +
+    '</table>' +
+    '<h2 style="font-size:18px;margin:10px 0;">Resumen ejecutivo</h2>' +
+    `<table style="border-collapse:collapse;width:100%;margin-bottom:18px;">${executiveBody}</table>` +
+    buildSection('Resumen comparativo', report.summary) +
+    buildSection('Cuentas por cobrar', report.receivables) +
+    buildSection('Cuentas por pagar', report.payables) +
+    '</body></html>';
+
+  return {
+    filename: `${schedule.reportKey.replace(/[^\w.-]+/g, '_')}.xls`,
+    content,
+    contentType: 'application/vnd.ms-excel;charset=utf-8;',
+  };
+}
+
+async function buildCarteraPdfAttachment(
+  schedule: ReportScheduleRecord,
+  report: ScheduledCarteraReportData,
+  branding?: BrandingConfigRecord | null,
+) {
+  const logoBuffer = await loadPdfImageBuffer(branding?.logoUrl);
+  const doc = new PDFDocument({
+    size: 'A4',
+    layout: 'landscape',
+    margin: 32,
+    bufferPages: true,
+  });
+  const chunks: Buffer[] = [];
+  doc.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+
+  if (logoBuffer) {
+    doc.image(logoBuffer, 32, 28, { fit: [70, 54], valign: 'center' });
+  } else {
+    doc.roundedRect(32, 28, 70, 54, 10).fill('#e0f2fe');
+    doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(18).text('MS', 54, 47, { width: 26, align: 'center' });
+  }
+
+  const headerLeft = 116;
+  doc.fillColor('#0e7490').font('Helvetica-Bold').fontSize(10).text((branding?.clientName || 'Multisoft Informes').toUpperCase(), headerLeft, 32);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(15).text(branding?.tagline || 'Informes Gerenciales', headerLeft, 50);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(18).text(schedule.reportTitle, 32, 96, { align: 'left' });
+  doc.moveTo(32, 122).lineTo(810, 122).strokeColor('#0891b2').lineWidth(1.5).stroke();
+  doc.y = 132;
+  doc.fontSize(10).fillColor('#475569').text(`Generado automaticamente · ${new Date().toLocaleString('es-PY')}`);
+  doc.moveDown(0.8);
+
+  for (const [key, value] of buildScheduleDisplayParams(schedule, report.effectiveParams)) {
+    const normalized = String(value || '').trim();
+    if (!normalized) continue;
+    doc.fontSize(9).fillColor('#0f172a').text(`${key.replace(/_/g, ' ')}: ${normalized}`);
+  }
+
+  doc.moveDown(0.8);
+  doc.roundedRect(32, doc.y, 778, 72, 16).fill('#ecfeff');
+  const kpiTop = doc.y + 12;
+  const kpiItems = [
+    ['Saldo por cobrar', formatScheduledCurrency(report.totalCobrarSaldo)],
+    ['Saldo por pagar', formatScheduledCurrency(report.totalPagarSaldo)],
+    ['Neto de cartera', formatScheduledCurrency(report.netoCartera)],
+    ['Cobertura', `${report.coverage.toFixed(2)}%`],
+  ];
+  kpiItems.forEach(([label, value], index) => {
+    const left = 48 + index * 190;
+    doc.fillColor('#0e7490').font('Helvetica-Bold').fontSize(9).text(label, left, kpiTop, { width: 160 });
+    doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(13).text(value, left, kpiTop + 18, { width: 160 });
+  });
+
+  doc.y += 92;
+
+  const drawSection = (title: string, table: ScheduledAttachmentTable) => {
+    if (doc.y > 500) {
+      doc.addPage();
+      doc.y = 32;
+    }
+
+    doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(13).text(title, 32, doc.y);
+    doc.moveDown(0.3);
+    if (table.warning) {
+      doc.font('Helvetica').fontSize(8.5).fillColor('#64748b').text(table.warning);
+      doc.moveDown(0.3);
+    }
+
+    const tableLeft = 32;
+    const usableWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+    const columnGap = 6;
+    const firstWidth = Math.min(170, Math.max(90, Math.floor(usableWidth * 0.2)));
+    const secondWidth = table.headers.length > 2 ? Math.min(190, Math.max(110, Math.floor(usableWidth * 0.22))) : 0;
+    const remainingColumns = Math.max(1, table.headers.length - 2);
+    const restWidth = Math.max(64, Math.floor((usableWidth - firstWidth - secondWidth - columnGap * (table.headers.length - 1)) / remainingColumns));
+    const widths = table.headers.map((_, index) => (index === 0 ? firstWidth : index === 1 ? secondWidth : restWidth));
+    const columns = widths.reduce<number[]>((acc, width, index) => {
+      if (index === 0) return [tableLeft];
+      acc.push(acc[index - 1] + widths[index - 1] + columnGap);
+      return acc;
+    }, []);
+    const numericStartIndex = title === 'Resumen comparativo' ? 1 : Math.max(2, table.headers.length - 3);
+
+    const drawHeader = (y: number) => {
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#0f172a');
+      table.headers.forEach((header, index) => {
+        doc.text(header, columns[index], y, {
+          width: widths[index],
+          align: index >= numericStartIndex ? 'right' : 'left',
+        });
+      });
+    };
+
+    drawHeader(doc.y);
+    let currentY = doc.y + 18;
+    const pageBottom = doc.page.height - doc.page.margins.bottom;
+
+    for (const row of table.dataRows) {
+      if (currentY + 12 > pageBottom) {
+        doc.addPage();
+        doc.y = 32;
+        doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(13).text(title, 32, doc.y);
+        doc.moveDown(0.6);
+        drawHeader(doc.y);
+        currentY = doc.y + 18;
+      }
+
+      doc.font('Helvetica').fontSize(8).fillColor('#0f172a');
+      row.forEach((cell, cellIndex) => {
+        const widthHint = cellIndex >= numericStartIndex ? 12 : cellIndex === 1 ? 26 : 18;
+        doc.text(
+          padPdfCell(String(cell), widthHint),
+          columns[cellIndex],
+          currentY,
+          { width: widths[cellIndex], align: cellIndex >= numericStartIndex ? 'right' : 'left' },
+        );
+      });
+      currentY += 12;
+    }
+
+    doc.y = currentY + 10;
+  };
+
+  drawSection('Resumen comparativo', report.summary);
+  drawSection('Cuentas por cobrar', report.receivables);
+  drawSection('Cuentas por pagar', report.payables);
+
+  doc.end();
+
+  return new Promise<{ filename: string; content: Buffer; contentType: string }>((resolve) => {
+    doc.on('end', () => {
+      resolve({
+        filename: `${schedule.reportKey.replace(/[^\w.-]+/g, '_')}.pdf`,
+        content: Buffer.concat(chunks),
+        contentType: 'application/pdf',
+      });
+    });
+  });
+}
+
 async function resolveReportScheduleRecipients(schedule: ReportScheduleRecord) {
   const emails = new Set<string>(normalizeScheduleEmails(schedule.extraEmails));
   const labels: string[] = [];
@@ -2591,6 +2935,7 @@ async function sendScheduledReportEmail(schedule: ReportScheduleRecord, origin?:
   }
 
   const isBalanceSchedule = ['finanzas.balance_general', 'finanzas.balance_general_puc'].includes(schedule.reportKey);
+  const isCarteraSchedule = schedule.reportKey === 'cartera.unificada';
   let resolvedExcelAttachment: { filename: string; content: Buffer | string; contentType?: string };
   let resolvedPdfAttachment: { filename: string; content: Buffer | string; contentType?: string };
   let scheduledResultSummary = '';
@@ -2615,6 +2960,11 @@ async function sendScheduledReportEmail(schedule: ReportScheduleRecord, origin?:
     scheduledResultSummary = reportData.moneda === 'ambas'
       ? `Resultado del ejercicio: ${resultLabelLocal} ${formatBalanceCurrency(Math.abs(reportData.resultadoLocal))} GS. / ${resultLabelME} ${formatBalanceCurrency(Math.abs(reportData.resultadoME), 2)} U$S.`
       : `Resultado del ejercicio: ${resultLabelLocal} ${formatBalanceCurrency(Math.abs(reportData.resultadoLocal))} GS.`;
+  } else if (isCarteraSchedule) {
+    const reportData = await loadScheduledCarteraReportData(schedule);
+    resolvedExcelAttachment = buildCarteraExcelAttachment(schedule, reportData);
+    resolvedPdfAttachment = await buildCarteraPdfAttachment(schedule, reportData, branding);
+    scheduledResultSummary = `Neto de cartera: ${formatScheduledCurrency(reportData.netoCartera)} | Cobertura: ${reportData.coverage.toFixed(2)}%.`;
   } else {
     const table = await loadScheduledTabularReportData(schedule);
     resolvedExcelAttachment = buildTabularExcelAttachment(schedule, table, effectiveParams);

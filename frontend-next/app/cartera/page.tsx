@@ -1,6 +1,7 @@
 import { DataTable } from '@/components/ui/data-table';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { PageHeader } from '@/components/ui/page-header';
+import { ReportScheduleButton } from '@/components/ui/report-schedule-button';
 import type { ExportBrandingOverride } from '@/components/ui/export-utils';
 import { loadBrandingConfig } from '@/lib/admin-config';
 import { getCuentasCobrar, getCuentasPagar, getSucursales } from '@/lib/api';
@@ -217,6 +218,14 @@ export default async function CarteraPage({
     { label: 'Desde', value: desde || '-' },
     { label: 'Hasta', value: hasta || '-' },
   ];
+  const scheduleParams = {
+    empresa,
+    sucursal,
+    periodo,
+    desde,
+    hasta,
+    vencimiento,
+  };
 
   const warning = !empresa
     ? 'No se encontraron empresas disponibles para armar el informe unificado.'
@@ -230,6 +239,15 @@ export default async function CarteraPage({
         eyebrow="Informe unificado"
         title="Cartera gerencial"
         description="Cruza cuentas por cobrar y cuentas por pagar en una sola vista ejecutiva para analizar exposición, cobertura y saldo neto del periodo."
+        actions={empresa ? (
+          <ReportScheduleButton
+            reportKey="cartera.unificada"
+            reportTitle="Cartera gerencial"
+            reportModule="Cartera"
+            detailHint="Entrega automatica del informe unificado de cuentas por cobrar y cuentas por pagar."
+            reportParams={scheduleParams}
+          />
+        ) : null}
       />
 
       <section className="card px-5 py-5">
