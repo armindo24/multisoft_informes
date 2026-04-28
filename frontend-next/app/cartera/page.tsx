@@ -107,7 +107,7 @@ export default async function CarteraPage({
 
   const sucursalesResponse = empresa ? await getSucursales(empresa) : null;
   const sucursales = sanitizeOptions((sucursalesResponse?.data || []) as Array<Record<string, string>>);
-  const sucursal = String(params.sucursal || sucursales[0]?.value || '');
+  const sucursal = String(params.sucursal || '');
   const periodo = String(params.periodo || currentYear());
   const desde = String(params.desde || monthStart());
   const hasta = String(params.hasta || today());
@@ -213,7 +213,7 @@ export default async function CarteraPage({
 
   const exportMeta = [
     { label: 'Empresa', value: empresa || '-' },
-    { label: 'Sucursal', value: sucursal || '-' },
+    { label: 'Sucursal', value: sucursal || 'Todas' },
     { label: 'Periodo', value: periodo || '-' },
     { label: 'Desde', value: desde || '-' },
     { label: 'Hasta', value: hasta || '-' },
@@ -264,6 +264,7 @@ export default async function CarteraPage({
           <label className="text-sm font-medium text-slate-700">
             Sucursal
             <select name="sucursal" defaultValue={sucursal} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400">
+              <option value="">Todas</option>
               {sucursales.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}

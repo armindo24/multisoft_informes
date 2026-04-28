@@ -3062,6 +3062,35 @@ function buildCarteraExcelAttachment(
   };
 }
 
+function getCarteraPdfLayout(block: SelectedTemplateBlock, usableWidth: number) {
+  if (block.key === 'summary') {
+    return {
+      widths: [185, 120, 120, 135, Math.max(170, usableWidth - (185 + 120 + 120 + 135) - 24)],
+      numericStartIndex: 1,
+    };
+  }
+
+  if (block.key === 'receivables') {
+    return {
+      widths: [150, 74, 48, 170, 72, 78, 82, 82, Math.max(92, usableWidth - (150 + 74 + 48 + 170 + 72 + 78 + 82 + 82) - 48)],
+      numericStartIndex: 6,
+    };
+  }
+
+  if (block.key === 'payables') {
+    return {
+      widths: [230, 70, 95, 85, 85, Math.max(95, usableWidth - (230 + 70 + 95 + 85 + 85) - 30)],
+      numericStartIndex: 2,
+    };
+  }
+
+  const baseWidth = Math.max(72, Math.floor((usableWidth - Math.max(0, block.headers.length - 1) * 6) / Math.max(1, block.headers.length)));
+  return {
+    widths: block.headers.map(() => baseWidth),
+    numericStartIndex: Math.max(2, block.headers.length - 3),
+  };
+}
+
 async function buildCarteraPdfAttachment(
   schedule: ReportScheduleRecord,
   report: ScheduledCarteraReportData,
@@ -3135,17 +3164,14 @@ async function buildCarteraPdfAttachment(
     const tableLeft = 32;
     const usableWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
     const columnGap = 6;
-    const firstWidth = Math.min(170, Math.max(90, Math.floor(usableWidth * 0.2)));
-    const secondWidth = block.headers.length > 2 ? Math.min(190, Math.max(110, Math.floor(usableWidth * 0.22))) : 0;
-    const remainingColumns = Math.max(1, block.headers.length - 2);
-    const restWidth = Math.max(64, Math.floor((usableWidth - firstWidth - secondWidth - columnGap * (block.headers.length - 1)) / remainingColumns));
-    const widths = block.headers.map((_, index) => (index === 0 ? firstWidth : index === 1 ? secondWidth : restWidth));
+    const layout = getCarteraPdfLayout(block, usableWidth);
+    const widths = layout.widths;
     const columns = widths.reduce<number[]>((acc, width, index) => {
       if (index === 0) return [tableLeft];
       acc.push(acc[index - 1] + widths[index - 1] + columnGap);
       return acc;
     }, []);
-    const numericStartIndex = block.key === 'summary' ? 1 : Math.max(2, block.headers.length - 3);
+    const numericStartIndex = layout.numericStartIndex;
 
     const drawHeader = (y: number) => {
       doc.font('Helvetica-Bold').fontSize(8).fillColor('#0f172a');
@@ -3158,30 +3184,44 @@ async function buildCarteraPdfAttachment(
     };
 
     drawHeader(doc.y);
-    let currentY = doc.y + 18;
+    let currentY = doc.y + 20;
     const pageBottom = doc.page.height - doc.page.margins.bottom;
 
     for (const row of block.dataRows) {
-      if (currentY + 12 > pageBottom) {
+      const rowHeight = Math.max(
+        ...row.map((cell, cellIndex) => {
+          doc.font('Helvetica').fontSize(7.5);
+          return doc.heightOfString(String(cell || '-'), {
+            width: widths[cellIndex],
+            align: cellIndex >= numericStartIndex ? 'right' : 'left',
+          });
+        }),
+        10,
+      ) + 4;
+
+      if (currentY + rowHeight > pageBottom) {
         doc.addPage();
         doc.y = 32;
         doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(13).text(block.label, 32, doc.y);
         doc.moveDown(0.6);
         drawHeader(doc.y);
-        currentY = doc.y + 18;
+        currentY = doc.y + 20;
       }
 
-      doc.font('Helvetica').fontSize(8).fillColor('#0f172a');
+      doc.font('Helvetica').fontSize(7.5).fillColor('#0f172a');
       row.forEach((cell, cellIndex) => {
-        const widthHint = cellIndex >= numericStartIndex ? 12 : cellIndex === 1 ? 26 : 18;
         doc.text(
-          padPdfCell(String(cell), widthHint),
+          String(cell || '-'),
           columns[cellIndex],
           currentY,
-          { width: widths[cellIndex], align: cellIndex >= numericStartIndex ? 'right' : 'left' },
+          {
+            width: widths[cellIndex],
+            align: cellIndex >= numericStartIndex ? 'right' : 'left',
+            lineBreak: true,
+          },
         );
       });
-      currentY += 12;
+      currentY += rowHeight;
     }
 
     doc.y = currentY + 10;
