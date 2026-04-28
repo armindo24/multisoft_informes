@@ -1239,6 +1239,12 @@ function normalizeNotificationRow(row: Record<string, unknown>): UserNotificatio
   };
 }
 
+const NOTIFICATION_RETENTION = {
+  successDays: 15,
+  errorDays: 90,
+  readDays: 30,
+} as const;
+
 function normalizeTaskCommentRow(row: Record<string, unknown>): TaskCommentRecord {
   return {
     id: Number(row.id || 0),
@@ -1281,6 +1287,23 @@ async function createUserNotification(input: {
       String(input.message || '').trim(),
       String(input.href || '').trim(),
     ],
+  );
+}
+
+async function pruneNotificationsForUser(userId: number) {
+  await ensureTaskTables();
+
+  await pool.query(
+    `
+      DELETE FROM custom_permissions_usernotification
+      WHERE user_id = $1::int
+        AND (
+          (type = 'report_schedule_success' AND created_at < NOW() - ($2::int * INTERVAL '1 day'))
+          OR (type = 'report_schedule_error' AND created_at < NOW() - ($3::int * INTERVAL '1 day'))
+          OR (is_read = TRUE AND created_at < NOW() - ($4::int * INTERVAL '1 day'))
+        )
+    `,
+    [userId, NOTIFICATION_RETENTION.successDays, NOTIFICATION_RETENTION.errorDays, NOTIFICATION_RETENTION.readDays],
   );
 }
 
@@ -2873,6 +2896,7 @@ export async function loadTasksForUser(userId: number) {
 
 export async function loadNotificationsForUser(userId: number, limit = 20) {
   await ensureTaskTables();
+  await pruneNotificationsForUser(userId);
 
   const result = await pool.query<Record<string, unknown>>(
     `
