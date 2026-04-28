@@ -10,12 +10,9 @@ import {
   getCuentasCobrar,
   getOrdenCompraList,
   getStockCostoArticuloFull,
-  getStockCostoArticuloFullAsyncResult,
-  getStockCostoArticuloFullAsyncStatus,
   getStockExistenciaDeposito,
   getStockValorizado,
   getVentasResumido,
-  startStockCostoArticuloFullAsync,
 } from '@/lib/api';
 import type { BalanceRow } from '@/types/finanzas';
 
@@ -1625,6 +1622,85 @@ function salesGroupValue(row: Record<string, unknown>, groupBy: string) {
   return String(row.razon_social || row.cliente || 'Sin cliente');
 }
 
+function toNodeQuery(params: Record<string, string | undefined>) {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    const normalized = String(value || '').trim();
+    if (normalized) {
+      search.set(key, normalized);
+    }
+  }
+  const query = search.toString();
+  return query ? `?${query}` : '';
+}
+
+async function fetchNodeEnvelope(path: string, timeoutMs = 20000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(`${NODE_API_BASE}${path}`, {
+      method: 'GET',
+      cache: 'no-store',
+      signal: controller.signal,
+      headers: {
+        Accept: 'application/json',
+        Connection: 'close',
+      },
+    });
+    const json = await response.json().catch(() => ({}));
+    return { ok: response.ok, status: response.status, data: json as Record<string, unknown> };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function startScheduledCostoArticuloFullAsyncJob(params: {
+  empresa: string;
+  articulo: string;
+  tipo: string;
+  estado: string;
+  fechad: string;
+  fechah: string;
+  calcular_empresa: string;
+  ecuacion_mat: string;
+  periodo: string;
+  anho: string;
+  fecha_inicio_desde: string;
+  fecha_inicio_hasta: string;
+  fecha_fin_desde: string;
+  fecha_fin_hasta: string;
+  recalcular: string;
+}) {
+  const query = toNodeQuery({
+    articulo: params.articulo,
+    tipo: params.tipo,
+    estado: params.estado,
+    fechad: params.fechad,
+    fechah: params.fechah,
+    calcular_empresa: params.calcular_empresa,
+    ecuacion_mat: params.ecuacion_mat,
+    periodo: params.periodo,
+    anho: params.anho,
+    fecha_inicio_desde: params.fecha_inicio_desde,
+    fecha_inicio_hasta: params.fecha_inicio_hasta,
+    fecha_fin_desde: params.fecha_fin_desde,
+    fecha_fin_hasta: params.fecha_fin_hasta,
+    recalcular: params.recalcular,
+  });
+  return fetchNodeEnvelope(`/stock/informes/${params.empresa}/costo_articulo_full_async/start${query}`, 20000);
+}
+
+async function getScheduledCostoArticuloFullAsyncStatus(empresa: string, jobId: string) {
+  const query = toNodeQuery({ job_id: jobId });
+  return fetchNodeEnvelope(`/stock/informes/${empresa}/costo_articulo_full_async/status${query}`, 10000);
+}
+
+async function getScheduledCostoArticuloFullAsyncResult(empresa: string, jobId: string) {
+  const query = toNodeQuery({ job_id: jobId });
+  return fetchNodeEnvelope(`/stock/informes/${empresa}/costo_articulo_full_async/result${query}`, 30000);
+}
+
 type ScheduledAttachmentTable = {
   headers: string[];
   dataRows: string[][];
@@ -1654,20 +1730,53 @@ async function loadScheduledCostoArticuloFullRows(params: {
     return ((response?.data || []) as Array<Record<string, unknown>>);
   }
 
-  const started = await startStockCostoArticuloFullAsync(params);
-  const jobId = String(started?.data?.job_id || '').trim();
+  const started = await startScheduledCostoArticuloFullAsyncJob(params);
+  const jobId = String(started.data?.data && typeof started.data.data === 'object'
+    ? (started.data.data as Record<string, unknown>).job_id || ''
+    : '').trim();
   if (!jobId) {
     throw new Error('No se pudo iniciar el proceso asincrono de Costo Articulo Full.');
   }
 
-  for (let attempt = 0; attempt < 60; attempt += 1) {
-    const status = await getStockCostoArticuloFullAsyncStatus(params.empresa, jobId);
-    const job = status?.data || {};
+  let transientErrors = 0;
+  let lastKnownStatus = '';
+
+  for (let attempt = 0; attempt < 120; attempt += 1) {
+    const resultResponse = await getScheduledCostoArticuloFullAsyncResult(params.empresa, jobId).catch(() => null);
+    if (resultResponse?.ok) {
+      const rows = Array.isArray(resultResponse.data?.data) ? (resultResponse.data.data as Array<Record<string, unknown>>) : [];
+      return rows;
+    }
+
+    const pendingMeta = resultResponse?.data?.data as Record<string, unknown> | undefined;
+    const pendingStatus = String(pendingMeta?.status || '').trim().toLowerCase();
+    if (pendingStatus === 'error') {
+      throw new Error(
+        String(pendingMeta?.error || resultResponse?.data?.error || 'El proceso asincrono de Costo Articulo Full finalizo con error.'),
+      );
+    }
+
+    const statusResponse = await getScheduledCostoArticuloFullAsyncStatus(params.empresa, jobId).catch(() => null);
+    if (!statusResponse || !statusResponse.ok) {
+      transientErrors += 1;
+      if (transientErrors >= 12) {
+        throw new Error('No se pudo consultar el estado del proceso asincrono de Costo Articulo Full.');
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      continue;
+    }
+
+    transientErrors = 0;
+    const job = (statusResponse.data?.data || {}) as Record<string, unknown>;
     const currentStatus = String(job.status || '').trim().toLowerCase();
+    lastKnownStatus = currentStatus || lastKnownStatus;
 
     if (currentStatus === 'done') {
-      const result = await getStockCostoArticuloFullAsyncResult(params.empresa, jobId);
-      return ((result?.data || []) as Array<Record<string, unknown>>);
+      const result = await getScheduledCostoArticuloFullAsyncResult(params.empresa, jobId);
+      if (!result.ok) {
+        throw new Error(String(result.data?.error || 'El proceso finalizo, pero no se pudo recuperar el resultado.'));
+      }
+      return (Array.isArray(result.data?.data) ? (result.data.data as Array<Record<string, unknown>>) : []);
     }
 
     if (currentStatus === 'error') {
@@ -1677,7 +1786,11 @@ async function loadScheduledCostoArticuloFullRows(params: {
     await new Promise((resolve) => setTimeout(resolve, 1500));
   }
 
-  throw new Error('El proceso asincrono de Costo Articulo Full no finalizo dentro del tiempo esperado.');
+  throw new Error(
+    lastKnownStatus
+      ? `El proceso asincrono de Costo Articulo Full no finalizo dentro del tiempo esperado. Ultimo estado: ${lastKnownStatus}.`
+      : 'El proceso asincrono de Costo Articulo Full no finalizo dentro del tiempo esperado.',
+  );
 }
 
 const INTERNAL_SCHEDULE_PARAM_KEYS = new Set(['schedule_range_mode']);
