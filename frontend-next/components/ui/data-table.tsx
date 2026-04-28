@@ -238,17 +238,19 @@ export function DataTable<T extends Record<string, unknown>>({
                   <tr key={index} className="hover:bg-slate-50/80">
                     {normalizedColumns.map((column) => {
                       const value = getValue(row, String(column.key));
+                      const formattedValue = formatValue(value, column.type);
                       const content = column.type === 'badge' ? (
                         <span className={`badge ${column.badgeMap?.[safeString(value)] || 'bg-slate-100 text-slate-700'}`}>
                           {safeString(value) || '-'}
                         </span>
                       ) : (
-                        formatValue(value, column.type)
+                        formattedValue
                       );
 
                       return (
                         <td
                           key={String(column.key)}
+                          title={column.type === 'badge' ? undefined : formattedValue}
                           className={`px-4 py-2.5 align-top text-slate-700 ${column.align === 'right' ? 'text-right tabular-nums' : column.align === 'center' ? 'text-center' : 'text-left'} ${column.className || ''}`}
                         >
                           {content}
