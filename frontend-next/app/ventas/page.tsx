@@ -108,6 +108,85 @@ function sanitizeOptions(items: Array<Record<string, string>> | undefined | null
   return result;
 }
 
+async function loadSalesStatsForScope(params: {
+  empresa: string;
+  sucursal: string;
+  sucursales: SelectOption[];
+  moneda: string;
+  desde: string;
+  hasta: string;
+  cliente: string;
+  tipoCliente: string;
+  vendedor: string;
+  articulo: string;
+}) {
+  const scope = params.sucursal
+    ? [params.sucursal]
+    : params.sucursales.map((item) => item.value).filter(Boolean);
+
+  if (!scope.length) {
+    return {
+      clientesResponse: null,
+      articulosResponse: null,
+      vendedoresStatsResponse: null,
+    };
+  }
+
+  const [clientesResults, articulosResults, vendedoresResults] = await Promise.all([
+    Promise.all(
+      scope.map((sucursal) =>
+        getVentasClientesStats({
+          empresa: params.empresa,
+          sucursal,
+          moneda: params.moneda,
+          start: params.desde,
+          end: params.hasta,
+          cliente: params.cliente,
+          tipoCliente: params.tipoCliente,
+        }),
+      ),
+    ),
+    Promise.all(
+      scope.map((sucursal) =>
+        getVentasArticulosStats({
+          empresa: params.empresa,
+          sucursal,
+          moneda: params.moneda,
+          start: params.desde,
+          end: params.hasta,
+          articulo: params.articulo,
+        }),
+      ),
+    ),
+    Promise.all(
+      scope.map((sucursal) =>
+        getVentasVendedoresStats({
+          empresa: params.empresa,
+          sucursal,
+          moneda: params.moneda,
+          start: params.desde,
+          end: params.hasta,
+          vendedor: params.vendedor,
+        }),
+      ),
+    ),
+  ]);
+
+  const merge = (items: Array<{ data?: Array<Record<string, unknown>> } | null>) => {
+    const valid = items.filter(Boolean) as Array<{ data?: Array<Record<string, unknown>> }>;
+    if (!valid.length) return null;
+    return {
+      data: valid.flatMap((item) => item.data || []),
+    };
+  };
+
+  return {
+    clientesResponse: merge(clientesResults),
+    articulosResponse: merge(articulosResults),
+    vendedoresStatsResponse: merge(vendedoresResults),
+  };
+}
+
 export default async function VentasPage({
   searchParams,
 }: {
@@ -171,19 +250,37 @@ export default async function VentasPage({
   const zonas = sanitizeOptions((zonasResponse?.data || []) as Array<Record<string, string>>);
   const movimientosCobrar = sanitizeOptions((movimientosCobrarResponse?.data || []) as Array<Record<string, string>>);
 
-  const [ventasResponse, clientesResponse, articulosResponse, vendedoresStatsResponse, cobrarResponse] = empresa && hasSubmittedFilters
+  const salesStatsResponses = empresa && hasSubmittedFilters && isStatsMode
+    ? await loadSalesStatsForScope({
+        empresa,
+        sucursal,
+        sucursales,
+        moneda,
+        desde,
+        hasta,
+        cliente,
+        tipoCliente: tipo_cliente,
+        vendedor,
+        articulo,
+      })
+    : {
+        clientesResponse: null,
+        articulosResponse: null,
+        vendedoresStatsResponse: null,
+      };
+
+  const [ventasResponse, cobrarResponse] = empresa && hasSubmittedFilters
     ? await Promise.all([
         !isStatsMode && !isReceivablesMode ? getVentasResumido({ empresa, sucursal, moneda, desde, hasta, order, tipo_cliente }) : Promise.resolve(null),
-        isStatsMode ? getVentasClientesStats({ empresa, sucursal, moneda, start: desde, end: hasta, cliente, tipoCliente: tipo_cliente }) : Promise.resolve(null),
-        isStatsMode ? getVentasArticulosStats({ empresa, sucursal, moneda, start: desde, end: hasta, articulo }) : Promise.resolve(null),
-        isStatsMode ? getVentasVendedoresStats({ empresa, sucursal, moneda, start: desde, end: hasta, vendedor }) : Promise.resolve(null),
         isReceivablesMode
           ? getCuentasCobrar({ empresa, sucursal, start: desde, end: hasta, vencimiento: vencimiento === 'true', cliente, calificacion, movimiento, condicion, cobrador, vendedor, zona, tipoCliente: tipoClienteCobrar })
           : !isStatsMode
             ? getCuentasCobrar({ empresa, sucursal, start: desde, end: hasta, vencimiento: true })
             : Promise.resolve(null),
       ])
-    : [null, null, null, null, null];
+    : [null, null];
+
+  const { clientesResponse, articulosResponse, vendedoresStatsResponse } = salesStatsResponses;
 
   const ventas = (ventasResponse?.data || []) as VentaResumen[];
   const cuentasCobrar = (cobrarResponse?.data || []) as CuentaCobrar[];
