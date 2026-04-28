@@ -2916,6 +2916,26 @@ export async function markAllNotificationsRead(userId: number) {
   return loadNotificationsForUser(userId);
 }
 
+export async function cleanupNotificationsForUser(userId: number, olderThanDays = 30) {
+  await ensureTaskTables();
+
+  const normalizedDays = Number.isFinite(Number(olderThanDays)) ? Math.max(1, Math.min(365, Number(olderThanDays))) : 30;
+
+  await pool.query(
+    `
+      DELETE FROM custom_permissions_usernotification
+      WHERE user_id = $1::int
+        AND (
+          is_read = TRUE
+          OR created_at < NOW() - ($2::int * INTERVAL '1 day')
+        )
+    `,
+    [userId, normalizedDays],
+  );
+
+  return loadNotificationsForUser(userId);
+}
+
 export async function clearReportScheduleErrorsForUser(userId: number, isSuperuser = false) {
   await ensureReportScheduleTables();
   await ensureTaskTables();

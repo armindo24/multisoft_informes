@@ -238,6 +238,7 @@ export function NotificationsPanel({
   const [noticeSaving, setNoticeSaving] = useState(false);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [markingAll, setMarkingAll] = useState(false);
+  const [cleaningNotifications, setCleaningNotifications] = useState(false);
   const [commentSavingFor, setCommentSavingFor] = useState<number | null>(null);
   const [scheduleActionId, setScheduleActionId] = useState<number | null>(null);
   const [clearingScheduleErrors, setClearingScheduleErrors] = useState(false);
@@ -452,6 +453,25 @@ export function NotificationsPanel({
 
     await refresh();
     setMarkingAll(false);
+  }
+
+  async function cleanupNotifications() {
+    setCleaningNotifications(true);
+    setMessage(null);
+
+    const response = await fetch('/api/auth/notifications/cleanup', { method: 'POST' });
+    const payload = (await response.json().catch(() => ({}))) as { ok?: boolean; message?: string };
+    if (!response.ok || !payload.ok) {
+      setMessageTone('error');
+      setMessage(payload.message || 'No se pudo limpiar la bandeja interna.');
+      setCleaningNotifications(false);
+      return;
+    }
+
+    setMessageTone('success');
+    setMessage(payload.message || 'La bandeja interna fue depurada.');
+    await refresh();
+    setCleaningNotifications(false);
   }
 
   async function submitComment(taskId: number) {
@@ -967,15 +987,26 @@ export function NotificationsPanel({
                 <Bell className="h-4 w-4 text-cyan-700" />
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-700">Bandeja interna</p>
               </div>
-              <button
-                type="button"
-                onClick={() => void markAllRead()}
-                disabled={markingAll || currentUnread === 0}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-              >
-                <CheckCheck className="h-4 w-4" />
-                {markingAll ? 'Marcando...' : 'Marcar todo leido'}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void cleanupNotifications()}
+                  disabled={cleaningNotifications || notifications.length === 0}
+                  className="inline-flex items-center gap-2 rounded-xl border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {cleaningNotifications ? 'Limpiando...' : 'Limpiar bandeja'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void markAllRead()}
+                  disabled={markingAll || currentUnread === 0}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  <CheckCheck className="h-4 w-4" />
+                  {markingAll ? 'Marcando...' : 'Marcar todo leido'}
+                </button>
+              </div>
             </div>
             <div className="mt-4 space-y-3">
               {notifications.length ? (
