@@ -239,6 +239,7 @@ export function NotificationsPanel({
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [markingAll, setMarkingAll] = useState(false);
   const [cleaningNotifications, setCleaningNotifications] = useState(false);
+  const [cleaningSuccessNotifications, setCleaningSuccessNotifications] = useState(false);
   const [commentSavingFor, setCommentSavingFor] = useState<number | null>(null);
   const [scheduleActionId, setScheduleActionId] = useState<number | null>(null);
   const [clearingScheduleErrors, setClearingScheduleErrors] = useState(false);
@@ -472,6 +473,25 @@ export function NotificationsPanel({
     setMessage(payload.message || 'La bandeja interna fue depurada.');
     await refresh();
     setCleaningNotifications(false);
+  }
+
+  async function cleanupSuccessNotifications() {
+    setCleaningSuccessNotifications(true);
+    setMessage(null);
+
+    const response = await fetch('/api/auth/notifications/cleanup-success', { method: 'POST' });
+    const payload = (await response.json().catch(() => ({}))) as { ok?: boolean; message?: string };
+    if (!response.ok || !payload.ok) {
+      setMessageTone('error');
+      setMessage(payload.message || 'No se pudieron limpiar los eventos exitosos.');
+      setCleaningSuccessNotifications(false);
+      return;
+    }
+
+    setMessageTone('success');
+    setMessage(payload.message || 'Los eventos exitosos fueron eliminados.');
+    await refresh();
+    setCleaningSuccessNotifications(false);
   }
 
   async function submitComment(taskId: number) {
@@ -988,6 +1008,15 @@ export function NotificationsPanel({
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-700">Bandeja interna</p>
               </div>
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void cleanupSuccessNotifications()}
+                  disabled={cleaningSuccessNotifications || notifications.length === 0}
+                  className="inline-flex items-center gap-2 rounded-xl border border-amber-200 px-3 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-50 disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {cleaningSuccessNotifications ? 'Limpiando...' : 'Limpiar exitos'}
+                </button>
                 <button
                   type="button"
                   onClick={() => void cleanupNotifications()}

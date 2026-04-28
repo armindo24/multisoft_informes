@@ -2936,6 +2936,21 @@ export async function cleanupNotificationsForUser(userId: number, olderThanDays 
   return loadNotificationsForUser(userId);
 }
 
+export async function cleanupSuccessNotificationsForUser(userId: number) {
+  await ensureTaskTables();
+
+  await pool.query(
+    `
+      DELETE FROM custom_permissions_usernotification
+      WHERE user_id = $1::int
+        AND type = 'report_schedule_success'
+    `,
+    [userId],
+  );
+
+  return loadNotificationsForUser(userId);
+}
+
 export async function clearReportScheduleErrorsForUser(userId: number, isSuperuser = false) {
   await ensureReportScheduleTables();
   await ensureTaskTables();
