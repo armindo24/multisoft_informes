@@ -36,16 +36,16 @@ function mergeBranding(globalConfig: BrandingConfigRecord | null, scopedConfig: 
     return {
       ...emptyRecord,
       empresa,
-      scope: empresa === 'GLOBAL' ? 'global' : 'empresa',
-    };
+      scope: empresa === 'GLOBAL' ? 'global' as const : 'empresa' as const,
+    } satisfies BrandingConfigRecord;
   }
 
   if (!scopedConfig) {
     return {
       ...(globalConfig || emptyRecord),
       empresa,
-      scope: empresa === 'GLOBAL' ? 'global' : 'empresa',
-    };
+      scope: empresa === 'GLOBAL' ? 'global' as const : 'empresa' as const,
+    } satisfies BrandingConfigRecord;
   }
 
   if (!globalConfig || empresa === 'GLOBAL') {
