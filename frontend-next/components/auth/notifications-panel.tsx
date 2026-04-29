@@ -2,7 +2,6 @@
 
 import { Bell, CalendarClock, CheckCheck, Clock3, ListTodo, Mail, MonitorSmartphone, Play, RefreshCcw, Send, ShieldCheck, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 type NotificationSummary = {
   activeSessions: number;
@@ -255,7 +254,6 @@ export function NotificationsPanel({
   initialReportScheduleLogs,
   userOptions,
 }: NotificationsPanelProps) {
-  const router = useRouter();
   const [summary, setSummary] = useState(initialSummary);
   const [events, setEvents] = useState(initialEvents);
   const [tasksAssigned, setTasksAssigned] = useState(initialTasksAssigned);
@@ -519,7 +517,7 @@ export function NotificationsPanel({
       }
     }
 
-    router.push(notification.href);
+    window.location.assign(notification.href);
   }
 
   async function cleanupNotifications() {

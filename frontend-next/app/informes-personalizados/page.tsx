@@ -5,7 +5,7 @@ import { ReportTemplateWorkspace } from '@/components/report-templates/report-te
 import type { ExportBrandingOverride } from '@/components/ui/export-utils';
 import { getSessionUser } from '@/lib/auth-server';
 import { loadBrandingConfig, loadReportTemplateById, loadReportTemplatesForUser, type ReportTemplateRecord } from '@/lib/admin-config';
-import { getComprasList, getCuentasCobrar, getCuentasPagar, getVentasResumido } from '@/lib/api';
+import { getComprasList, getCuentasCobrar, getCuentasPagar, getDepartamentos, getSucursales, getVentasResumido } from '@/lib/api';
 import { brandShortName, getLogoBackgroundClasses, resolveBrandAssetUrl } from '@/lib/branding';
 import { getScopedEmpresas } from '@/lib/empresas-server';
 import { getReportTemplateBlock, getReportTemplatePreset, type ReportTemplatePresetKey } from '@/lib/report-template-presets';
@@ -50,8 +50,30 @@ function sanitizeEmpresas(items: Array<Record<string, string>> | undefined | nul
   const result: SelectOption[] = [];
 
   for (const item of items || []) {
-    const value = String(item.cod_empresa || item.Cod_Empresa || item.value || '').trim();
-    const label = String(item.des_empresa || item.Des_Empresa || item.label || value).trim();
+    const value = String(
+      item.cod_empresa
+      || item.Cod_Empresa
+      || item.cod_sucursal
+      || item.Cod_Sucursal
+      || item.coddpto
+      || item.CodDpto
+      || item.codigo
+      || item.Codigo
+      || item.value
+      || '',
+    ).trim();
+    const label = String(
+      item.des_empresa
+      || item.Des_Empresa
+      || item.des_sucursal
+      || item.Des_Sucursal
+      || item.descrip
+      || item.Descrip
+      || item.descripcion
+      || item.Descripcion
+      || item.label
+      || value,
+    ).trim();
     if (!value || !label || seen.has(value)) continue;
     seen.add(value);
     result.push({ value, label: value !== label ? `${value} · ${label}` : label });
@@ -170,14 +192,27 @@ export default async function InformesPersonalizadosPage({
   const brandLogoUrl = brandingConfig?.logoUrl ? resolveBrandAssetUrl(brandingConfig.logoUrl) : '';
   const brandInitials = brandShortName(brandName);
   const brandLogoBackground = getLogoBackgroundClasses(brandingConfig?.logoBackground || 'auto');
+  const sucursalesResponse = empresa && config.templateKey === 'ventas_compras_bloques' ? await getSucursales(empresa) : null;
+  const sucursales = sanitizeEmpresas((sucursalesResponse?.data || []) as Array<Record<string, string>>);
+  const resolvedSucursal = config.filters.sucursal || sucursales[0]?.value || '';
+  const departamentosResponse = empresa && resolvedSucursal && config.templateKey === 'ventas_compras_bloques'
+    ? await getDepartamentos(empresa, resolvedSucursal)
+    : null;
+  const departamentos = sanitizeEmpresas((departamentosResponse?.data || []) as Array<Record<string, string>>);
+  const resolvedDepartamento = config.filters.departamento || departamentos[0]?.value || '';
+  const resolvedFilters = {
+    ...config.filters,
+    sucursal: resolvedSucursal,
+    departamento: resolvedDepartamento,
+  };
 
   const shouldLoadCartera = Boolean(selectedTemplate && empresa && config.templateKey === 'cartera_bloques');
   const shouldLoadVentasCompras = Boolean(
     selectedTemplate
       && empresa
       && config.templateKey === 'ventas_compras_bloques'
-      && config.filters.sucursal
-      && config.filters.departamento,
+      && resolvedFilters.sucursal
+      && resolvedFilters.departamento,
   );
 
   const [cobrarResponse, pagarResponse, ventasResponse, comprasResponse] = await Promise.all([
@@ -201,21 +236,21 @@ export default async function InformesPersonalizadosPage({
     shouldLoadVentasCompras
       ? getVentasResumido({
           empresa,
-          sucursal: config.filters.sucursal,
-          moneda: config.filters.moneda,
-          desde: config.filters.desde,
-          hasta: config.filters.hasta,
-          order: config.filters.order,
+          sucursal: resolvedFilters.sucursal,
+          moneda: resolvedFilters.moneda,
+          desde: resolvedFilters.desde,
+          hasta: resolvedFilters.hasta,
+          order: resolvedFilters.order,
         })
       : Promise.resolve(null),
     shouldLoadVentasCompras
       ? getComprasList({
           empresa,
-          sucursal: config.filters.sucursal,
-          moneda: config.filters.moneda,
-          compras_start: config.filters.desde,
-          compras_end: config.filters.hasta,
-          departamento: config.filters.departamento,
+          sucursal: resolvedFilters.sucursal,
+          moneda: resolvedFilters.moneda,
+          compras_start: resolvedFilters.desde,
+          compras_end: resolvedFilters.hasta,
+          departamento: resolvedFilters.departamento,
           proveedor: '',
           tipooc: '',
           agrupar: '',
@@ -256,7 +291,7 @@ export default async function InformesPersonalizadosPage({
   }));
 
   const salesRows = ventasRows.map((row) => ({
-    grupo: salesGroupValue(row, config.filters.order),
+    grupo: salesGroupValue(row, resolvedFilters.order),
     comprobante: `${String(row.cod_tp_comp || '')} - ${String(row.comp_numero || '')}`.trim(),
     cliente: String(row.razon_social || row.cliente || '-'),
     ruc: String(row.ruc || '-'),
@@ -364,14 +399,14 @@ export default async function InformesPersonalizadosPage({
     { label: 'Plantilla', value: selectedTemplate?.name || '-' },
     { label: 'Preset', value: preset?.label || config.templateKey },
     { label: 'Empresa', value: empresa || '-' },
-    { label: 'Sucursal', value: config.filters.sucursal || '-' },
+    { label: 'Sucursal', value: resolvedFilters.sucursal || '-' },
     { label: 'Periodo', value: config.filters.periodo || '-' },
     { label: 'Desde', value: config.filters.desde || '-' },
     { label: 'Hasta', value: config.filters.hasta || '-' },
     ...(config.templateKey === 'ventas_compras_bloques'
       ? [
           { label: 'Moneda', value: config.filters.moneda || '-' },
-          { label: 'Departamento', value: config.filters.departamento || '-' },
+          { label: 'Departamento', value: resolvedFilters.departamento || '-' },
         ]
       : []),
   ];
@@ -407,12 +442,12 @@ export default async function InformesPersonalizadosPage({
     ? {
         template_id: String(selectedTemplate?.id || ''),
         empresa: config.filters.empresa,
-        sucursal: config.filters.sucursal,
+        sucursal: resolvedFilters.sucursal,
         periodo: config.filters.periodo,
         desde: config.filters.desde,
         hasta: config.filters.hasta,
         moneda: config.filters.moneda,
-        departamento: config.filters.departamento,
+        departamento: resolvedFilters.departamento,
         order: config.filters.order,
       }
     : {
@@ -479,11 +514,21 @@ export default async function InformesPersonalizadosPage({
                       {brandTagline}
                     </span>
                     <span className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 font-medium text-cyan-700">
-                      {preset?.label || config.templateKey}
+                    {preset?.label || config.templateKey}
                     </span>
                     {empresa ? (
                       <span className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 font-medium text-cyan-700">
                         Empresa {empresa}
+                      </span>
+                    ) : null}
+                    {config.templateKey === 'ventas_compras_bloques' && resolvedFilters.sucursal ? (
+                      <span className="rounded-full border border-slate-200 bg-white px-3 py-1">
+                        Sucursal {resolvedFilters.sucursal}
+                      </span>
+                    ) : null}
+                    {config.templateKey === 'ventas_compras_bloques' && resolvedFilters.departamento ? (
+                      <span className="rounded-full border border-slate-200 bg-white px-3 py-1">
+                        Departamento {resolvedFilters.departamento}
                       </span>
                     ) : null}
                   </div>

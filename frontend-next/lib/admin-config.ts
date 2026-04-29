@@ -757,6 +757,30 @@ function normalizeBrandingRow(row: Record<string, unknown>): BrandingConfigRecor
   };
 }
 
+function mergeBrandingRecords(
+  globalConfig: BrandingConfigRecord | null,
+  scopedConfig: BrandingConfigRecord | null,
+  empresa?: string | null,
+): BrandingConfigRecord | null {
+  if (!globalConfig && !scopedConfig) return null;
+  if (!scopedConfig) return globalConfig;
+  if (!globalConfig || scopedConfig.empresa === 'GLOBAL') return scopedConfig;
+
+  const normalizedEmpresa = String(empresa || scopedConfig.empresa || '').trim().toUpperCase() || scopedConfig.empresa;
+  return {
+    ...globalConfig,
+    ...scopedConfig,
+    empresa: normalizedEmpresa,
+    scope: normalizedEmpresa === 'GLOBAL' ? 'global' : 'empresa',
+    clientName: scopedConfig.clientName || globalConfig.clientName,
+    tagline: scopedConfig.tagline || globalConfig.tagline,
+    logoUrl: scopedConfig.logoUrl || globalConfig.logoUrl,
+    faviconUrl: scopedConfig.faviconUrl || globalConfig.faviconUrl,
+    logoBackground: scopedConfig.logoBackground !== 'auto' ? scopedConfig.logoBackground : globalConfig.logoBackground,
+    updatedAt: scopedConfig.updatedAt || globalConfig.updatedAt,
+  };
+}
+
 export async function loadBrandingConfigs(): Promise<BrandingConfigRecord[]> {
   await ensureBrandingConfigTable();
 
@@ -781,13 +805,16 @@ export async function loadBrandingConfig(empresa?: string | null): Promise<Brand
       FROM custom_permissions_brandconfig
       WHERE empresa = ANY($1::varchar[])
       ORDER BY CASE WHEN empresa = $2::varchar THEN 0 WHEN empresa = 'GLOBAL' THEN 1 ELSE 2 END
-      LIMIT 1
     `,
     [[...(normalizedEmpresa ? [normalizedEmpresa] : []), 'GLOBAL'], normalizedEmpresa || 'GLOBAL'],
   );
 
-  const row = result.rows[0];
-  return row ? normalizeBrandingRow(row) : null;
+  const records = result.rows.map(normalizeBrandingRow);
+  const globalConfig = records.find((item) => item.empresa === 'GLOBAL') || null;
+  const scopedConfig = normalizedEmpresa
+    ? records.find((item) => item.empresa === normalizedEmpresa) || null
+    : globalConfig;
+  return mergeBrandingRecords(globalConfig, scopedConfig, normalizedEmpresa || 'GLOBAL');
 }
 
 export async function saveBrandingConfig(input: {

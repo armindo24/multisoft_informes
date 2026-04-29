@@ -3,7 +3,6 @@
 
 $ErrorActionPreference = "Stop"
 
-# Colores para output
 $green = "`e[32m"
 $yellow = "`e[33m"
 $red = "`e[31m"

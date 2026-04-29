@@ -31,6 +31,41 @@ const emptyRecord: BrandingConfigRecord = {
   updatedAt: null,
 };
 
+function mergeBranding(globalConfig: BrandingConfigRecord | null, scopedConfig: BrandingConfigRecord | null, empresa: string) {
+  if (!globalConfig && !scopedConfig) {
+    return {
+      ...emptyRecord,
+      empresa,
+      scope: empresa === 'GLOBAL' ? 'global' : 'empresa',
+    };
+  }
+
+  if (!scopedConfig) {
+    return {
+      ...(globalConfig || emptyRecord),
+      empresa,
+      scope: empresa === 'GLOBAL' ? 'global' : 'empresa',
+    };
+  }
+
+  if (!globalConfig || empresa === 'GLOBAL') {
+    return scopedConfig;
+  }
+
+  return {
+    ...globalConfig,
+    ...scopedConfig,
+    empresa,
+    scope: 'empresa' as const,
+    clientName: scopedConfig.clientName || globalConfig.clientName,
+    tagline: scopedConfig.tagline || globalConfig.tagline,
+    logoUrl: scopedConfig.logoUrl || globalConfig.logoUrl,
+    faviconUrl: scopedConfig.faviconUrl || globalConfig.faviconUrl,
+    logoBackground: scopedConfig.logoBackground !== 'auto' ? scopedConfig.logoBackground : globalConfig.logoBackground,
+    updatedAt: scopedConfig.updatedAt || globalConfig.updatedAt,
+  };
+}
+
 export function BrandingConfigPanel() {
   const [configs, setConfigs] = useState<BrandingConfigRecord[]>([]);
   const [companies, setCompanies] = useState<CompanyOption[]>([]);
@@ -91,11 +126,9 @@ export function BrandingConfigPanel() {
   }, []);
 
   const currentRecord = useMemo<BrandingConfigRecord>(() => {
-    return configs.find((item) => item.empresa === selectedEmpresa) || {
-      ...emptyRecord,
-      empresa: selectedEmpresa,
-      scope: selectedEmpresa === 'GLOBAL' ? 'global' : 'empresa',
-    };
+    const globalConfig = configs.find((item) => item.empresa === 'GLOBAL') || null;
+    const scopedConfig = configs.find((item) => item.empresa === selectedEmpresa) || null;
+    return mergeBranding(globalConfig, scopedConfig, selectedEmpresa);
   }, [configs, selectedEmpresa]);
 
   useEffect(() => {

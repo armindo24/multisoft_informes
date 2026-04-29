@@ -3,7 +3,6 @@
 
 $ErrorActionPreference = "Stop"
 
-# Colores para output
 $green = "`e[32m"
 $yellow = "`e[33m"
 $reset = "`e[0m"
@@ -13,7 +12,6 @@ Write-Host "${green}Iniciando servicios de Multisoft${reset}"
 Write-Host "${green}========================================${reset}"
 Write-Host ""
 
-# Variables
 $rootPath = Split-Path -Parent $MyInvocation.MyCommand.Path
 $venvPath = Join-Path $rootPath "venv\Scripts\Activate.ps1"
 $frontendPath = Join-Path $rootPath "frontend-next"
@@ -26,7 +24,6 @@ $frontendNodeVersion = "20.19.0"
 $legacyNodeExe = if ($nvmHome) { Join-Path $nvmHome "v$legacyNodeVersion\node.exe" } else { $null }
 $frontendNpmCmd = if ($nvmHome) { Join-Path $nvmHome "v$frontendNodeVersion\npm.cmd" } else { $null }
 
-# Verificar que existan los directorios
 if (-not (Test-Path $venvPath)) {
     Write-Host "${yellow}ERROR: No se encontro venv en $venvPath${reset}"
     exit 1
@@ -54,7 +51,6 @@ $nextCommand = "Set-Location '$frontendPath'; & '$frontendNpmCmd' run dev"
 $nodeCommand = "Set-Location '$serverPath'; & '$legacyNodeExe' .\bin\www"
 $trackedProcesses = @()
 
-# 1. Iniciar Django en una nueva ventana PowerShell
 Write-Host "${yellow}[1/3] Iniciando Django (Puerto 8000)...${reset}"
 $djangoProcess = Start-Process powershell -PassThru -ArgumentList @(
     "-NoExit",
@@ -63,7 +59,6 @@ $djangoProcess = Start-Process powershell -PassThru -ArgumentList @(
 ) -WorkingDirectory $rootPath -WindowStyle Normal
 $trackedProcesses += [pscustomobject]@{ name = "django"; pid = $djangoProcess.Id }
 
-# 2. Iniciar Next.js en una nueva ventana PowerShell
 Write-Host "${yellow}[2/3] Iniciando Next.js (Puerto 3001)...${reset}"
 $nextProcess = Start-Process powershell -PassThru -ArgumentList @(
     "-NoExit",
@@ -72,7 +67,6 @@ $nextProcess = Start-Process powershell -PassThru -ArgumentList @(
 ) -WorkingDirectory $frontendPath -WindowStyle Normal
 $trackedProcesses += [pscustomobject]@{ name = "next"; pid = $nextProcess.Id }
 
-# 3. Iniciar Node.js API en una nueva ventana PowerShell
 Write-Host "${yellow}[3/3] Iniciando Node.js API (Puerto 3000)...${reset}"
 $nodeProcess = Start-Process powershell -PassThru -ArgumentList @(
     "-NoExit",
