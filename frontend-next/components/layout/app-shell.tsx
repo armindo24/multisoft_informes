@@ -262,6 +262,9 @@ export function AppShell({
         <aside className="hidden border-r border-slate-800 bg-slate-950 text-slate-100 lg:block">
           <div className="sticky top-0 flex h-screen flex-col overflow-y-auto px-3 py-4">
             <div className="px-2 pb-4">
+              <div className="mb-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
+                <SoftwareOwnerMark compact light />
+              </div>
               <BrandSignature light empresa={effectiveEmpresa} />
               <h1 className="mt-2.5 text-[1.7rem] font-black leading-tight text-white">Panel ejecutivo</h1>
               <p className="mt-2 max-w-[17rem] text-[0.92rem] leading-5 text-slate-400">
@@ -370,10 +373,6 @@ export function AppShell({
                   : 'No hay grupos asignados para este usuario.'}
               </p>
             </div>
-
-            <div className="mt-3 border-t border-slate-800 px-2 pt-4">
-              <SoftwareOwnerMark compact light />
-            </div>
           </div>
         </aside>
 
@@ -388,6 +387,9 @@ export function AppShell({
             <aside className="relative z-10 flex h-full w-[min(86vw,340px)] flex-col overflow-y-auto border-r border-slate-800 bg-slate-950 px-3 py-4 text-slate-100 shadow-2xl">
               <div className="flex items-start justify-between gap-3 px-2 pb-4">
                 <div>
+                  <div className="mb-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
+                    <SoftwareOwnerMark compact light />
+                  </div>
                   <BrandSignature light empresa={effectiveEmpresa} />
                   <p className="mt-2 text-sm text-slate-400">Panel ejecutivo</p>
                 </div>
@@ -497,9 +499,6 @@ export function AppShell({
                   );
                 })}
               </nav>
-              <div className="mt-4 border-t border-slate-800 px-2 pt-4">
-                <SoftwareOwnerMark compact light />
-              </div>
             </aside>
           </div>
         ) : null}
