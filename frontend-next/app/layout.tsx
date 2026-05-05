@@ -12,9 +12,9 @@ export const metadata: Metadata = {
   title: `${branding.appName} | ${branding.tagline}`,
   description: `Plataforma corporativa de reportes para ${branding.clientName}.`,
   icons: {
-    icon: branding.faviconUrl || '/brand-fallback.svg',
-    shortcut: branding.faviconUrl || '/brand-fallback.svg',
-    apple: branding.faviconUrl || '/brand-fallback.svg',
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
   },
 };
 
