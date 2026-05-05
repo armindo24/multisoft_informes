@@ -3,7 +3,8 @@
 import { FileDown, FileSpreadsheet } from 'lucide-react';
 import { useState } from 'react';
 
-import { exportRowsToExcel, exportRowsToPdf } from '@/components/ui/export-utils';
+import { exportRowsToExcel, exportRowsToPdf, type ExportBrandingOverride } from '@/components/ui/export-utils';
+import { EmptyState } from '@/components/ui/empty-state';
 
 type AuxAccount = {
   auxCode: string;
@@ -199,6 +200,7 @@ export function MayorCuentaAuxPanel({
   fechah,
   tipoasiento,
   moneda,
+  exportBranding,
 }: {
   groups: AuxGroup[];
   empresa: string;
@@ -207,6 +209,7 @@ export function MayorCuentaAuxPanel({
   fechah: string;
   tipoasiento: string;
   moneda: string;
+  exportBranding?: ExportBrandingOverride;
 }) {
   const [states, setStates] = useState<Record<string, DetailState>>({});
   const [openAux, setOpenAux] = useState<string | null>(null);
@@ -282,6 +285,7 @@ export function MayorCuentaAuxPanel({
       filename: 'libro-mayor-auxiliares',
       headers: exportData.headers,
       rows: exportData.rows,
+      branding: exportBranding,
     });
   }
 
@@ -291,6 +295,7 @@ export function MayorCuentaAuxPanel({
       subtitle: 'Incluye los auxiliares ya abiertos en pantalla.',
       headers: exportData.headers,
       rows: exportData.rows,
+      branding: exportBranding,
     });
   }
 
@@ -316,7 +321,9 @@ export function MayorCuentaAuxPanel({
       </div>
 
       {!groups.length ? (
-        <div className="card px-5 py-10 text-sm text-slate-500">No hay auxiliares disponibles para este mayor.</div>
+        <div className="card p-4">
+          <EmptyState title="Sin auxiliares" description="No hay auxiliares disponibles para este mayor." />
+        </div>
       ) : (
         groups.map((group) => (
           <div key={group.accountCode} className="card overflow-hidden">

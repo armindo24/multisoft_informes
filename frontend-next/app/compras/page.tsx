@@ -232,7 +232,7 @@ export default async function ComprasPage({
 
       {isComprasResumenSection ? (
         <>
-          <section id="compras-resumen" className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <section id="compras-resumen" className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <KpiCard item={{ title: 'Comprado visible', value: totalComprado.toLocaleString('es-PY'), change: `${compras.length} facturas`, trend: 'up' }} />
             <KpiCard item={{ title: 'IVA compras', value: totalIva.toLocaleString('es-PY'), change: moneda, trend: 'neutral' }} />
             <KpiCard item={{ title: 'Ordenes abiertas', value: ordenesAbiertas.toLocaleString('es-PY'), change: `${ordenes.length} visibles`, trend: ordenesAbiertas > 0 ? 'neutral' : 'up' }} />
@@ -259,7 +259,7 @@ export default async function ComprasPage({
           />
         </>
       ) : (
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <KpiCard item={{ title: 'Migracion visual', value: 'Lista', change: 'Menu lateral activo', trend: 'up' }} />
           <KpiCard item={{ title: 'Acceso interno', value: 'Unificado', change: 'Sin ventana externa', trend: 'up' }} />
           <KpiCard item={{ title: 'Siguiente paso', value: 'Formulario', change: 'Pendiente de migracion', trend: 'neutral' }} />

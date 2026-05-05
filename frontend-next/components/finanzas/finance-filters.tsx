@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { useEffect, useMemo, useState, useTransition } from 'react';
+import { Info } from 'lucide-react';
 import { getEmpresaMeta } from '@/lib/api';
 import { AccountPlanOption, AuxiliarOption, SelectOption } from '@/types/finanzas';
 
@@ -47,12 +48,14 @@ export function FinanceFilters({
   tipoAsientos = [],
   accountOptions = [],
   auxOptions = [],
+  sucursalOptions = [],
 }: {
   empresas: SelectOption[];
   current: Record<string, string>;
   tipoAsientos?: SelectOption[];
   accountOptions?: AccountPlanOption[];
   auxOptions?: AuxiliarOption[];
+  sucursalOptions?: SelectOption[];
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -79,15 +82,17 @@ export function FinanceFilters({
   const [auxPickerSearch, setAuxPickerSearch] = useState('');
   const [tipoAsientoOpen, setTipoAsientoOpen] = useState(false);
   const [tipoAsientoSearch, setTipoAsientoSearch] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const showBalanceAdvanced = current.section === 'balance-general';
   const showPucAdvanced = current.section === 'balance-general-puc';
   const showComprobadoAdvanced = current.section === 'balance-general-comprobado';
   const showDiarioAdvanced = current.section === 'libro-diario';
   const showMayorCuentaAdvanced = current.section === 'mayor-cuenta';
   const showMayorCuentaAuxAdvanced = current.section === 'mayor-cuenta-aux';
+  const showRg90Advanced = current.section === 'rg90';
   const showAccountRange = showBalanceAdvanced || showPucAdvanced;
-  const showMonthRange = !showComprobadoAdvanced && !showDiarioAdvanced && !showMayorCuentaAdvanced && !showMayorCuentaAuxAdvanced;
-  const showSingleMonth = showComprobadoAdvanced;
+  const showMonthRange = !showComprobadoAdvanced && !showDiarioAdvanced && !showMayorCuentaAdvanced && !showMayorCuentaAuxAdvanced && !showRg90Advanced;
+  const showSingleMonth = showComprobadoAdvanced || showRg90Advanced;
 
   const filteredAccounts = useMemo(() => {
     const term = pickerSearch.trim().toLowerCase();
@@ -230,8 +235,20 @@ export function FinanceFilters({
 
   return (
     <>
+      <button
+        type="button"
+        onClick={() => setFiltersOpen((currentValue) => !currentValue)}
+        className="mb-3 flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm md:hidden"
+      >
+        {filtersOpen ? 'Ocultar filtros' : 'Filtros'}
+      </button>
       <form
-        className="card grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6"
+        className={[
+          filtersOpen ? 'grid' : 'hidden',
+          showRg90Advanced
+            ? 'card gap-3 p-3 md:grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[minmax(220px,1.2fr)_8.5rem_minmax(160px,0.8fr)_minmax(220px,1fr)_minmax(190px,0.9fr)_auto]'
+            : 'card gap-3 p-4 md:grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6',
+        ].join(' ')}
         onSubmit={(event) => {
           event.preventDefault();
           setProgressValue(18);
@@ -305,17 +322,50 @@ export function FinanceFilters({
               </select>
               <input type="hidden" name="mesh" value={current.mesd} />
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Nivel</label>
-              <input
-                name="nivel"
-                defaultValue={current.nivel || '0'}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
-              />
-            </div>
+            {!showRg90Advanced ? (
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Nivel</label>
+                <input
+                  name="nivel"
+                  defaultValue={current.nivel || '0'}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                />
+              </div>
+            ) : (
+              <input type="hidden" name="sucursal" value="" />
+            )}
           </>
         ) : null}
-        {!showDiarioAdvanced ? (
+        {showRg90Advanced ? (
+          <>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Tipo Informacion</label>
+              <select name="tipoInformacion" defaultValue={current.tipoInformacion || 'VENTA'} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm">
+                <option value="VENTA">1: LIBRO DE VENTAS</option>
+                <option value="COMPRA">2: LIBRO DE COMPRAS</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 flex items-center gap-1.5 text-sm font-medium text-slate-700">
+                Descargar Reg. Declarado
+                <span className="group relative inline-flex" title="Registros declarado en la DNIT">
+                  <Info className="size-3.5 text-slate-400" aria-hidden="true" />
+                  <span className="pointer-events-none absolute left-1/2 top-5 z-20 hidden w-max -translate-x-1/2 rounded-md bg-slate-900 px-2 py-1 text-xs font-medium text-white shadow-lg group-hover:block">
+                    Registros declarado en la DNIT
+                  </span>
+                </span>
+              </label>
+              <select
+                name="descargarRegistrosExportados"
+                defaultValue={current.descargarRegistrosExportados || 'NO'}
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+              >
+                <option value="NO">No</option>
+                <option value="SI">Si</option>
+              </select>
+            </div>
+          </>
+        ) : !showDiarioAdvanced ? (
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">Moneda</label>
             <select name="moneda" defaultValue={current.moneda} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm">
@@ -337,7 +387,7 @@ export function FinanceFilters({
         <div className="flex items-end gap-2">
           <button
             disabled={isSubmitting || isPending}
-            className="flex-1 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-wait disabled:opacity-80"
+            className="flex-1 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-wait disabled:opacity-80 xl:min-w-36"
           >
             {isSubmitting || isPending ? 'Aplicando...' : 'Aplicar'}
           </button>

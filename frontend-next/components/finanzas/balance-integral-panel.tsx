@@ -2,7 +2,7 @@
 
 import { FileDown, FileSpreadsheet } from 'lucide-react';
 
-import { exportRowsToExcel, exportRowsToPdf } from '@/components/ui/export-utils';
+import { exportRowsToExcel, exportRowsToPdf, type ExportBrandingOverride } from '@/components/ui/export-utils';
 import { BalanceAuxRow, BalanceRow } from '@/types/finanzas';
 
 function num(value: unknown) {
@@ -203,6 +203,7 @@ export function BalanceIntegralPanel({
   clientes,
   proveedores,
   monthlyResults,
+  exportBranding,
 }: {
   moneda: string;
   empresaLabel: string;
@@ -214,6 +215,7 @@ export function BalanceIntegralPanel({
   clientes: BalanceAuxRow[];
   proveedores: BalanceAuxRow[];
   monthlyResults: Array<{ month: string; ingresos: number; egresos: number; resultado: number }>;
+  exportBranding?: ExportBrandingOverride;
 }) {
   const localSummary = summary(localRows);
   const foreignSummary = summary(foreignRows);
@@ -248,6 +250,7 @@ export function BalanceIntegralPanel({
       filename: 'balance-integral',
       headers: exportData.headers,
       rows: exportData.rows,
+      branding: exportBranding,
     });
   }
 
@@ -257,6 +260,7 @@ export function BalanceIntegralPanel({
       subtitle: `${empresaLabel || '-'} · Periodo ${periodo} · ${desdeLabel} a ${hastaLabel}`,
       headers: exportData.headers,
       rows: exportData.rows,
+      branding: exportBranding,
     });
   }
 

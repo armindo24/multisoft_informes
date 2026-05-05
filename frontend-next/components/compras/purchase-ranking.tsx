@@ -1,4 +1,5 @@
 import { RankingCompraItem } from '@/types/compras';
+import { EmptyState } from '@/components/ui/empty-state';
 
 function money(value: unknown) {
   const n = Number(value ?? 0);
@@ -40,7 +41,7 @@ export function PurchaseRanking({
               </div>
             </div>
           );
-        }) : <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">Sin datos para el filtro actual.</div>}
+        }) : <EmptyState title="Sin ranking" description="Sin datos para el filtro actual." />}
       </div>
     </div>
   );

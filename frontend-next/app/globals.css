@@ -10,6 +10,12 @@ body {
   @apply bg-slate-50 text-slate-900;
 }
 
+@media (min-width: 1536px) {
+  html {
+    font-size: 15px;
+  }
+}
+
 * {
   box-sizing: border-box;
 }

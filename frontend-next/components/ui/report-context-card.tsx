@@ -18,13 +18,13 @@ export function ReportContextCard({ empresa, periodo, rango, moneda, usuario }: 
   ];
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-soft">
+    <section className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-soft">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-700">Contexto del informe</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">Contexto del informe</p>
           <p className="mt-1 text-sm text-slate-500">Generado: {generatedAt}</p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           {items.map((item) => {
             const Icon = item.icon;
             return (

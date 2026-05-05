@@ -7,6 +7,7 @@ import type { ExportBrandingOverride, ExportMetaItem } from '@/components/ui/exp
 import { ReportNoticeButton } from '@/components/ui/report-notice-button';
 import { ReportScheduleButton } from '@/components/ui/report-schedule-button';
 import { ReportTaskButton } from '@/components/ui/report-task-button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { BalanceRow } from '@/types/finanzas';
 
 function num(value: unknown) {
@@ -246,7 +247,9 @@ export function BalanceTable({
         </div>
 
         {normalizedRows.length === 0 ? (
-          <div className="px-5 py-10 text-sm text-slate-500">No hay datos disponibles para este balance.</div>
+          <div className="px-4 py-5">
+            <EmptyState title="Sin datos de balance" description="No hay datos disponibles para este balance." />
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full border-collapse text-sm">

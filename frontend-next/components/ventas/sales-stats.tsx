@@ -19,6 +19,7 @@ import { exportRowsToExcel, exportRowsToPdf } from '@/components/ui/export-utils
 import type { ExportBrandingOverride } from '@/components/ui/export-utils';
 import { ReportNoticeButton } from '@/components/ui/report-notice-button';
 import { ReportTaskButton } from '@/components/ui/report-task-button';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const palette = ['#155eef', '#0ea5e9', '#14b8a6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#64748b', '#06b6d4', '#2563eb'];
 
@@ -151,7 +152,9 @@ export function SalesStats({
       </div>
 
       {!rows.length ? (
-        <div className="px-5 py-10 text-sm text-slate-500">No hay datos estadisticos para este filtro.</div>
+        <div className="px-4 py-5">
+          <EmptyState title="Sin datos estadisticos" description="No hay datos estadisticos para este filtro." />
+        </div>
       ) : (
         <div className="space-y-4 px-5 py-4">
           <section className="grid gap-3 md:grid-cols-3">

@@ -1,4 +1,5 @@
 import { RankingItem } from '@/types/ventas';
+import { EmptyState } from '@/components/ui/empty-state';
 
 function money(value: number) {
   return new Intl.NumberFormat('es-PY', { maximumFractionDigits: 0 }).format(value || 0);
@@ -20,7 +21,7 @@ export function RankingList({ title, subtitle, items }: { title: string; subtitl
               <p className="text-sm font-semibold text-slate-900">{money(item.total)}</p>
             </div>
           </div>
-        )) : <div className="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">No hay datos para este ranking.</div>}
+        )) : <EmptyState title="Sin ranking" description="No hay datos para este ranking." />}
       </div>
     </div>
   );

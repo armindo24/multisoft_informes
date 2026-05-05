@@ -49,6 +49,7 @@ var Departamento_Sueldo = require('../models/departamento_sueldo');
 var Anticipos = require('../models/anticipos_sueldo');
 var Aguinaldos = require('../models/aguinaldos_sueldo');
 var Recibos = require('../models/recibos_sueldo');
+var Rg90 = require('../models/rg90');
 var dbSueldo = require('../db_sueldo');
 var dbIntegrado = require('../db_integrado');
 
@@ -830,6 +831,29 @@ router.get('/compras_articulo/ranking', function (req, res, next) {
 router.get('/compras_proveedor/ranking', function (req, res, next) {
     Compras.ranking_proveedor(req.query, function (result) {
         res.json({data: result});
+    });
+});
+
+router.get('/finanzas/rg90/preview', function (req, res, next) {
+    Rg90.preview(req.query || {}, function (error, result) {
+        if (error) {
+            return next(error);
+        }
+        res.json({
+            data: (result && result.rows) ? result.rows : [],
+            debug: result && result.debug ? result.debug : null,
+            summary: result && result.summary ? result.summary : null,
+            warning: result && result.warning ? result.warning : null
+        });
+    });
+});
+
+router.get('/finanzas/rg90/export', function (req, res, next) {
+    Rg90.export(req.query || {}, function (error, result) {
+        if (error) {
+            return next(error);
+        }
+        res.json({data: result || {}});
     });
 });
 

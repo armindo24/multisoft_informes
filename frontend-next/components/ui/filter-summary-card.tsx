@@ -15,10 +15,10 @@ export function FilterSummaryCard({
   if (!visibleItems.length) return null;
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-soft">
+    <section className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-soft">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-700">{title}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">{title}</p>
           <p className="mt-1 text-sm text-slate-500">Resumen rapido de los criterios usados para generar este informe.</p>
         </div>
         <div className="flex flex-wrap gap-2">

@@ -6,11 +6,12 @@ import { DiarioComprobadoPanel } from '@/components/finanzas/diario-comprobado-p
 import { BalanceIntegralPanel } from '@/components/finanzas/balance-integral-panel';
 import { MayorCuentaPanel } from '@/components/finanzas/mayor-cuenta-panel';
 import { MayorCuentaAuxPanel } from '@/components/finanzas/mayor-cuenta-aux-panel';
+import { Rg90Panel } from '@/components/finanzas/rg90-panel';
 import { BalanceTable } from '@/components/finanzas/balance-table';
 import { CashflowSummaryAsync } from '@/components/finanzas/cashflow-summary-async';
 import { FinanceFilters } from '@/components/finanzas/finance-filters';
 import { PayablesKpiAsync, PayablesTableAsync } from '@/components/finanzas/payables-async';
-import { getBalanceComprobado, getBalanceGeneral, getBalanceGeneralPuc, getBalanceIntegralAuxiliares, getCuentaAuxSelect, getCuentaPlancta, getDiarioComprobado, getEmpresaMeta, getMayorCuentaAuxCab, getMayorCuentaCab, getTipoAsientoOptions } from '@/lib/api';
+import { getBalanceComprobado, getBalanceGeneral, getBalanceGeneralPuc, getBalanceIntegralAuxiliares, getCuentaAuxSelect, getCuentaPlancta, getDiarioComprobado, getEmpresaMeta, getFinanzasRg90Preview, getMayorCuentaAuxCab, getMayorCuentaCab, getSucursales, getTipoAsientoOptions } from '@/lib/api';
 import { getScopedEmpresas } from '@/lib/empresas-server';
 import { getSessionUser } from '@/lib/auth-server';
 import { loadBrandingConfig } from '@/lib/admin-config';
@@ -51,8 +52,8 @@ function formatKpiAmount(value: number) {
 }
 
 function normalizeOption(item: Record<string, string>): SelectOption {
-  const value = item.cod_empresa || item.Cod_Empresa || item.codigo || item.Codigo || item.value || '';
-  const label = item.des_empresa || item.Des_Empresa || item.descripcion || item.Descripcion || item.label || value;
+  const value = item.cod_empresa || item.Cod_Empresa || item.cod_sucursal || item.Cod_Sucursal || item.codigo || item.Codigo || item.value || '';
+  const label = item.des_empresa || item.Des_Empresa || item.des_sucursal || item.Des_Sucursal || item.descripcion || item.Descripcion || item.label || value;
   return { value, label: value && label && value !== label ? `${value} · ${label}` : label || value };
 }
 
@@ -339,6 +340,10 @@ export default async function FinanzasPage({
   const cuentaad = String(params.cuentaad || '');
   const cuentaah = String(params.cuentaah || '');
   const tipoAsiento = String(params.tipoAsiento || 'NINGUNO');
+  const tipoInformacion = String(params.tipoInformacion || 'VENTA').trim().toUpperCase() === 'COMPRA' ? 'COMPRA' : 'VENTA';
+  const sucursal = String(params.sucursal || '').trim();
+  const descargarRegistrosExportados = String(params.descargarRegistrosExportados || 'NO').trim().toUpperCase() === 'SI';
+  const debugRg90 = String(params.debugRg90 || '').trim().toUpperCase() === 'SI';
   const autorizado = String(params.autorizado || 'TO');
   const fechad = String(params.fechad || startOfMonth(periodo, mesd));
   const fechah = String(params.fechah || endOfMonth(periodo, mesh));
@@ -352,6 +357,7 @@ export default async function FinanzasPage({
   const shouldLoadLibroDiario = hasSubmittedFilters && section === 'libro-diario';
   const shouldLoadMayorCuenta = hasSubmittedFilters && section === 'mayor-cuenta';
   const shouldLoadMayorCuentaAux = hasSubmittedFilters && section === 'mayor-cuenta-aux';
+  const shouldLoadRg90 = hasSubmittedFilters && section === 'rg90';
   const shouldLoadPayables = hasSubmittedFilters && (!section || section === 'cuentas-pagar' || section === 'resumen-financiero');
   const shouldLoadFlowcash = hasSubmittedFilters && (!section || section === 'flujo-fondo' || section === 'resumen-financiero');
   const empresasPromise = getScopedEmpresas();
@@ -369,6 +375,9 @@ export default async function FinanzasPage({
         empresa: requestedEmpresa,
         periodo,
       })
+    : Promise.resolve(null);
+  const sucursalesPromise = section === 'rg90' && requestedEmpresa
+    ? getSucursales(requestedEmpresa)
     : Promise.resolve(null);
   const requestedEmpresaMetaResponse = shouldLoadBalancePuc && requestedEmpresa
     ? await getEmpresaMeta(requestedEmpresa)
@@ -408,9 +417,15 @@ export default async function FinanzasPage({
   const tipoAsientoResponse = await tipoAsientoPromise;
   const cuentaOptionsResponse = await cuentaOptionsPromise;
   const auxiliarOptionsResponse = await auxiliarOptionsPromise;
+  const sucursalesResponse = await sucursalesPromise;
   const empresas = sanitizeOptions((empresasResponse?.data || []) as Array<Record<string, string>>);
   const tipoAsientos = sanitizeTipoAsientos((tipoAsientoResponse?.data || []) as Array<Record<string, string>>);
   const empresa = String(requestedEmpresa || empresas[0]?.value || '');
+  const sucursalOptions = requestedEmpresa
+    ? sanitizeOptions((sucursalesResponse?.data || []) as Array<Record<string, string>>)
+    : section === 'rg90' && empresa
+      ? sanitizeOptions((((await getSucursales(empresa))?.data || []) as Array<Record<string, string>>))
+      : [];
   const cuentaOptionsRaw = (cuentaOptionsResponse?.data || []) as Array<Record<string, string>>;
   const cuentaOptions = requestedEmpresa
     ? sanitizeCuentaPlanOptions(cuentaOptionsRaw)
@@ -533,7 +548,7 @@ export default async function FinanzasPage({
       }
     : undefined;
 
-  const current = { empresa, periodo, mesd, mesh, moneda, cuentad, cuentah, nivel, aux, saldo, section };
+  const current = { empresa, periodo, mesd, mesh, moneda, cuentad, cuentah, nivel, aux, saldo, section, sucursal, tipoInformacion, descargarRegistrosExportados: descargarRegistrosExportados ? 'SI' : 'NO' };
   const currentWithSection = {
     empresa,
     periodo,
@@ -552,6 +567,9 @@ export default async function FinanzasPage({
     balance_cuentas_puc: balanceCuentasPuc,
     incluir,
     tipoAsiento,
+    tipoInformacion,
+    sucursal,
+    descargarRegistrosExportados: descargarRegistrosExportados ? 'SI' : 'NO',
     autorizado,
     fechad,
     fechah,
@@ -759,16 +777,38 @@ export default async function FinanzasPage({
       auxiliares: mayorAuxMap.get(accountCode) || [],
     };
   }).filter((group) => group.auxiliares.length > 0);
+  const rg90PreviewResponse = shouldLoadRg90 && empresa
+    ? await getFinanzasRg90Preview({
+        empresa,
+        periodo,
+        desde: startOfMonth(periodo, mesd),
+        hasta: endOfMonth(periodo, mesd),
+        sucursal,
+        tipoInformacion,
+        descargarRegistrosExportados,
+        debug: debugRg90,
+      })
+    : null;
+  const rg90Rows = ((rg90PreviewResponse?.data || []) as Array<Record<string, unknown>>);
+  const rg90Debug = (rg90PreviewResponse && 'debug' in rg90PreviewResponse)
+    ? ((rg90PreviewResponse.debug || null) as Record<string, unknown> | null)
+    : null;
+  const rg90Summary = (rg90PreviewResponse && 'summary' in rg90PreviewResponse)
+    ? ((rg90PreviewResponse.summary || null) as { note_credit_total?: number; visible_total?: number; exento_total?: number } | null)
+    : null;
+  const rg90Warning = (rg90PreviewResponse && 'warning' in rg90PreviewResponse)
+    ? (typeof rg90PreviewResponse.warning === 'string' ? rg90PreviewResponse.warning : null)
+    : null;
 
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow="Informes gerenciales"
-        title="Finanzas"
-        description="Consulta balances, flujo financiero, libros contables y saldos de proveedores con filtros ejecutivos y exportacion de resultados."
+        eyebrow={section === 'rg90' ? 'Libro fiscal' : 'Informes gerenciales'}
+        title={section === 'rg90' ? 'RG90' : 'Finanzas'}
+        description={section === 'rg90' ? '' : 'Consulta balances, flujo financiero, libros contables y saldos de proveedores con filtros ejecutivos y exportacion de resultados.'}
       />
 
-      <FinanceFilters empresas={empresas} current={currentWithSection} tipoAsientos={tipoAsientos} accountOptions={cuentaOptions} auxOptions={auxiliarOptions} />
+      <FinanceFilters empresas={empresas} current={currentWithSection} tipoAsientos={tipoAsientos} accountOptions={cuentaOptions} auxOptions={auxiliarOptions} sucursalOptions={sucursalOptions} />
 
       {empresa ? (
         <>
@@ -801,7 +841,7 @@ export default async function FinanzasPage({
       ) : null}
 
       {!isFocusedSection || section === 'resumen-financiero' ? (
-        <section id="resumen-financiero" className="scroll-mt-28 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+        <section id="resumen-financiero" className="scroll-mt-28 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
           <KpiCard item={{ title: 'Activo visible', value: formatKpiAmount(totalActivo), change: periodo, trend: 'up' }} />
           <KpiCard item={{ title: 'Pasivo visible', value: formatKpiAmount(totalPasivo), change: 'Balance actual', trend: totalPasivo > 0 ? 'neutral' : 'up' }} />
           <KpiCard item={{ title: 'Patrimonio', value: formatKpiAmount(patrimonio), change: moneda, trend: 'up' }} />
@@ -915,12 +955,12 @@ export default async function FinanzasPage({
           {comprobadoWarning ? (
             <div className="rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">{comprobadoWarning}</div>
           ) : null}
-          <BalanceComprobadoTable rows={comprobadoRows} moneda={moneda} />
+          <BalanceComprobadoTable rows={comprobadoRows} moneda={moneda} exportBranding={exportBranding} />
         </div>
       ) : null}
 
       {shouldLoadLibroDiario ? (
-        <DiarioComprobadoPanel rows={diarioRows} moneda={moneda} />
+        <DiarioComprobadoPanel rows={diarioRows} moneda={moneda} exportBranding={exportBranding} />
       ) : null}
 
       {shouldLoadMayorCuenta ? (
@@ -932,6 +972,7 @@ export default async function FinanzasPage({
           fechah={fechah}
           tipoasiento={tipoAsiento}
           moneda={moneda}
+          exportBranding={exportBranding}
         />
       ) : null}
 
@@ -944,7 +985,23 @@ export default async function FinanzasPage({
           fechah={fechah}
           tipoasiento={tipoAsiento}
           moneda={moneda}
+          exportBranding={exportBranding}
         />
+      ) : null}
+
+      {shouldLoadRg90 ? (
+        <Rg90Panel
+          empresa={empresa}
+          periodo={periodo}
+          mes={mesd}
+          sucursal={sucursal}
+                descargarRegistrosExportados={descargarRegistrosExportados}
+                tipoInformacion={tipoInformacion}
+                rows={rg90Rows}
+                debug={rg90Debug}
+                summary={rg90Summary}
+                warning={rg90Warning}
+              />
       ) : null}
 
       {section === 'balance-integral' ? (
@@ -959,6 +1016,7 @@ export default async function FinanzasPage({
           clientes={integralClientes}
           proveedores={integralProveedores}
           monthlyResults={integralMonthlyRows}
+          exportBranding={exportBranding}
         />
       ) : null}
     </div>

@@ -8,6 +8,7 @@ import type { ExportBrandingOverride } from '@/components/ui/export-utils';
 import { ReportNoticeButton } from '@/components/ui/report-notice-button';
 import { ReportScheduleButton } from '@/components/ui/report-schedule-button';
 import { ReportTaskButton } from '@/components/ui/report-task-button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { VentaDetalle, VentaResumen } from '@/types/ventas';
 
 function num(value: unknown) {
@@ -257,7 +258,9 @@ export function SalesTable({
         </div>
 
         {rows.length === 0 ? (
-          <div className="px-5 py-10 text-sm text-slate-500">No hay ventas para mostrar con los filtros actuales.</div>
+          <div className="px-4 py-5">
+            <EmptyState title="Sin ventas" description="No hay ventas para mostrar con los filtros actuales." />
+          </div>
         ) : (
           <div className="space-y-5 px-5 py-5">
             {groupedRows.map(([group, items]) => (

@@ -9,6 +9,7 @@ import type { ExportPdfOptions } from '@/components/ui/export-utils';
 import { ReportNoticeButton } from '@/components/ui/report-notice-button';
 import { ReportScheduleButton } from '@/components/ui/report-schedule-button';
 import { ReportTaskButton } from '@/components/ui/report-task-button';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export type DataColumn<T extends Record<string, unknown>> = {
   key: keyof T | string;
@@ -163,14 +164,14 @@ export function DataTable<T extends Record<string, unknown>>({
 
   return (
     <section className="card overflow-hidden">
-      <div className="border-b border-slate-200 px-5 py-4">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+      <div className="border-b border-slate-200 px-4 py-3">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
             {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <label className="relative block min-w-[240px]">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
               <input
@@ -184,7 +185,7 @@ export function DataTable<T extends Record<string, unknown>>({
               />
             </label>
 
-            <div className="flex items-center gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
               <ReportNoticeButton reportTitle={title} detailHint={subtitle} />
               <ReportTaskButton reportTitle={title} taskModule={taskModule} detailHint={subtitle} />
               {scheduleConfig ? (
@@ -196,10 +197,10 @@ export function DataTable<T extends Record<string, unknown>>({
                   reportParams={scheduleConfig.reportParams}
                 />
               ) : null}
-              <button type="button" onClick={exportExcel} className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-100">
+              <button type="button" onClick={exportExcel} className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-100">
                 <FileSpreadsheet className="size-4" /> Excel
               </button>
-              <button type="button" onClick={exportPdf} className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-800 transition hover:bg-rose-100">
+              <button type="button" onClick={exportPdf} className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-800 transition hover:bg-rose-100">
                 <FileDown className="size-4" /> PDF
               </button>
             </div>
@@ -208,7 +209,9 @@ export function DataTable<T extends Record<string, unknown>>({
       </div>
 
       {rows.length === 0 ? (
-        <div className="px-5 py-10 text-sm text-slate-500">{emptyMessage}</div>
+        <div className="px-4 py-5">
+          <EmptyState title="Sin resultados" description={emptyMessage} />
+        </div>
       ) : (
         <>
           <div className="max-h-[72vh] overflow-auto">
@@ -218,7 +221,7 @@ export function DataTable<T extends Record<string, unknown>>({
                   {normalizedColumns.map((column) => (
                     <th
                       key={String(column.key)}
-                      className={`px-4 py-3 font-semibold ${column.align === 'right' ? 'text-right' : column.align === 'center' ? 'text-center' : 'text-left'} ${column.className || ''}`}
+                      className={`px-3 py-2.5 font-semibold ${column.align === 'right' ? 'text-right' : column.align === 'center' ? 'text-center' : 'text-left'} ${column.className || ''}`}
                     >
                       <button
                         type="button"
@@ -267,7 +270,7 @@ export function DataTable<T extends Record<string, unknown>>({
             </table>
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-slate-200 px-5 py-4 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
             <div>
               Mostrando <span className="font-semibold text-slate-900">{paginatedRows.length ? (safePage - 1) * pageSize + 1 : 0}-{Math.min(safePage * pageSize, sortedRows.length)}</span> de <span className="font-semibold text-slate-900">{sortedRows.length}</span> registros
             </div>

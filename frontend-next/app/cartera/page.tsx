@@ -250,8 +250,15 @@ export default async function CarteraPage({
         ) : null}
       />
 
-      <section className="card px-5 py-5">
-        <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+      <section>
+        <input id="cartera-filters-toggle" type="checkbox" className="peer sr-only md:hidden" />
+        <label
+          htmlFor="cartera-filters-toggle"
+          className="mb-3 flex cursor-pointer items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm md:hidden"
+        >
+          Filtros
+        </label>
+        <form className="card hidden gap-3 px-5 py-5 peer-checked:grid md:grid md:grid-cols-2 xl:grid-cols-6">
           <label className="text-sm font-medium text-slate-700">
             Empresa
             <select name="empresa" defaultValue={empresa} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400">
@@ -315,7 +322,7 @@ export default async function CarteraPage({
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{warning}</div>
       ) : null}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         <KpiCard item={{ title: 'Saldo por cobrar', value: formatAmount(totalCobrarSaldo), change: `${receivablesRows.length} documentos`, trend: totalCobrarSaldo > 0 ? 'neutral' : 'up' }} />
         <KpiCard item={{ title: 'Importe por cobrar', value: formatAmount(totalCobrarImporte), change: 'Ventas pendientes', trend: 'up' }} />
         <KpiCard item={{ title: 'Saldo por pagar', value: formatAmount(totalPagarSaldo), change: `${payablesRows.length} proveedores`, trend: totalPagarSaldo > 0 ? 'neutral' : 'up' }} />

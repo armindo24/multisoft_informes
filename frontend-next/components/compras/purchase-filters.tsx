@@ -26,6 +26,7 @@ export function PurchaseFilters({
   const [isPending, startTransition] = useTransition();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [progressValue, setProgressValue] = useState(18);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     if (!isSubmitting && !isPending) return;
@@ -49,8 +50,15 @@ export function PurchaseFilters({
 
   return (
     <>
+      <button
+        type="button"
+        onClick={() => setFiltersOpen((currentValue) => !currentValue)}
+        className="mb-3 inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm md:hidden"
+      >
+        {filtersOpen ? 'Ocultar filtros' : 'Filtros'}
+      </button>
       <form
-        className="card grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-4"
+        className={`${filtersOpen ? 'grid' : 'hidden'} card gap-3 p-3 md:grid md:grid-cols-2 xl:grid-cols-4`}
         onSubmit={(event) => {
           event.preventDefault();
           setProgressValue(18);
@@ -163,7 +171,7 @@ export function PurchaseFilters({
                   <div className="mt-3 h-4 w-full max-w-3xl animate-pulse rounded bg-slate-200" />
                 </div>
 
-                <div className="card grid gap-3 p-4 xl:grid-cols-8">
+                <div className="card grid gap-3 p-3 xl:grid-cols-8">
                   {Array.from({ length: 12 }).map((_, index) => (
                     <div key={index}>
                       <div className="mb-2 h-4 w-20 animate-pulse rounded bg-slate-200" />
@@ -172,7 +180,7 @@ export function PurchaseFilters({
                   ))}
                 </div>
 
-                <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                   {Array.from({ length: 4 }).map((_, index) => (
                     <div key={index} className="card p-5">
                       <div className="h-4 w-24 animate-pulse rounded bg-slate-200" />

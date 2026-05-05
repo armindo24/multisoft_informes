@@ -44,6 +44,7 @@ export const navigation: NavigationItem[] = [
           { label: 'Libro Mayor de Cuenta', href: '/finanzas?section=mayor-cuenta#mayor-cuenta' },
           { label: 'Libro Mayor de Auxiliares', href: '/finanzas?section=mayor-cuenta-aux#mayor-cuenta-aux' },
           { label: 'Libro Diario', href: '/finanzas?section=libro-diario#libro-diario' },
+          { label: 'RG90', href: '/finanzas?section=rg90#rg90' },
         ],
       },
       {

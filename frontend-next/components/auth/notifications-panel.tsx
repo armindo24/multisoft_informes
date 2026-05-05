@@ -1031,9 +1031,9 @@ export function NotificationsPanel({
         </form>
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
-          <div className="flex items-center gap-2">
+      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+        <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-soft sm:p-6">
+          <div className="flex min-w-0 items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-cyan-700" />
             <h3 className="text-lg font-semibold text-slate-900">Eventos relevantes</h3>
           </div>
@@ -1042,17 +1042,17 @@ export function NotificationsPanel({
             {events.length ? (
               events.map((event) => (
                 <article key={event.id} className={['rounded-2xl border p-4', toneClasses(event.tone)].join(' ')}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
+                  <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                    <div className="min-w-0">
                       <h4 className="font-semibold">{event.title}</h4>
-                      <p className="mt-2 text-sm leading-6">{event.description}</p>
+                      <p className="mt-2 break-words text-sm leading-6">{event.description}</p>
                       {event.href ? (
                         <a href={event.href} className="mt-3 inline-flex text-sm font-medium text-cyan-800 hover:text-cyan-600">
                           Abrir enlace relacionado
                         </a>
                       ) : null}
                     </div>
-                    <span className="whitespace-nowrap text-xs font-medium opacity-80">{fmtDate(event.timestamp)}</span>
+                    <span className="text-xs font-medium opacity-80 sm:whitespace-nowrap">{fmtDate(event.timestamp)}</span>
                   </div>
                 </article>
               ))
@@ -1064,19 +1064,19 @@ export function NotificationsPanel({
           </div>
         </section>
 
-        <aside className="space-y-4">
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
-            <div className="flex items-center justify-between gap-3 text-slate-900">
-              <div className="flex items-center gap-2">
+        <aside className="min-w-0 space-y-4">
+          <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-soft sm:p-5">
+            <div className="flex min-w-0 flex-col gap-3 text-slate-900 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-2">
                 <Bell className="h-4 w-4 text-cyan-700" />
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-700">Bandeja interna</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-3 sm:flex sm:items-center">
                 <button
                   type="button"
                   onClick={() => void cleanupSuccessNotifications()}
                   disabled={cleaningSuccessNotifications || notifications.length === 0}
-                  className="inline-flex items-center gap-2 rounded-xl border border-amber-200 px-3 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-50 disabled:opacity-50"
+                  className="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl border border-amber-200 px-3 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-50 disabled:opacity-50"
                 >
                   <Trash2 className="h-4 w-4" />
                   {cleaningSuccessNotifications ? 'Limpiando...' : 'Limpiar exitos'}
@@ -1085,7 +1085,7 @@ export function NotificationsPanel({
                   type="button"
                   onClick={() => void cleanupNotifications()}
                   disabled={cleaningNotifications || notifications.length === 0}
-                  className="inline-flex items-center gap-2 rounded-xl border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 disabled:opacity-50"
+                  className="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 disabled:opacity-50"
                 >
                   <Trash2 className="h-4 w-4" />
                   {cleaningNotifications ? 'Limpiando...' : 'Limpiar bandeja'}
@@ -1094,7 +1094,7 @@ export function NotificationsPanel({
                   type="button"
                   onClick={() => void markAllRead()}
                   disabled={markingAll || currentUnread === 0}
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                  className="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
                 >
                   <CheckCheck className="h-4 w-4" />
                   {markingAll ? 'Marcando...' : 'Marcar todo leido'}
@@ -1111,10 +1111,10 @@ export function NotificationsPanel({
                       notification.isRead ? 'border-slate-200 bg-slate-50 text-slate-700' : 'border-cyan-200 bg-cyan-50 text-cyan-950',
                     ].join(' ')}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
+                    <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
                         <p className="font-semibold">{notification.title}</p>
-                        <p className="mt-1 leading-6">{notification.message}</p>
+                        <p className="mt-1 break-words leading-6">{notification.message}</p>
                         <p className="mt-2 text-xs opacity-80">Por: {notification.actorName || 'Sistema'}</p>
                         {notification.href ? (
                           <button
@@ -1126,7 +1126,7 @@ export function NotificationsPanel({
                           </button>
                         ) : null}
                       </div>
-                      <span className="text-[11px] font-medium opacity-80">{fmtDate(notification.createdAt)}</span>
+                      <span className="text-[11px] font-medium opacity-80 sm:whitespace-nowrap">{fmtDate(notification.createdAt)}</span>
                     </div>
                   </article>
                 ))
@@ -1138,8 +1138,8 @@ export function NotificationsPanel({
             </div>
           </section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
-            <div className="flex items-center gap-2 text-slate-900">
+          <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-soft sm:p-5">
+            <div className="flex min-w-0 items-center gap-2 text-slate-900">
               <MonitorSmartphone className="h-4 w-4 text-cyan-700" />
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-700">Dispositivo reciente</p>
             </div>
@@ -1155,8 +1155,8 @@ export function NotificationsPanel({
             </div>
           </section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
-            <div className="flex items-center gap-2 text-slate-900">
+          <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-soft sm:p-5">
+            <div className="flex min-w-0 items-center gap-2 text-slate-900">
               <Clock3 className="h-4 w-4 text-cyan-700" />
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-700">Recomendacion</p>
             </div>

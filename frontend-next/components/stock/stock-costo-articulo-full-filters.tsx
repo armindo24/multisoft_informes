@@ -20,6 +20,7 @@ export function StockCostoArticuloFullFilters({
   const [isPending, startTransition] = useTransition();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [progressValue, setProgressValue] = useState(18);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     if (!isSubmitting && !isPending) return;
@@ -41,9 +42,16 @@ export function StockCostoArticuloFullFilters({
 
   return (
     <>
+      <button
+        type="button"
+        onClick={() => setFiltersOpen((currentValue) => !currentValue)}
+        className="mb-3 inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm md:hidden"
+      >
+        {filtersOpen ? 'Ocultar filtros' : 'Filtros'}
+      </button>
       <form
         id="costo-articulo-full"
-        className="card grid gap-3 p-4 xl:grid-cols-8"
+        className={`${filtersOpen ? 'grid' : 'hidden'} card gap-3 p-3 md:grid xl:grid-cols-8`}
         onSubmit={(event) => {
           event.preventDefault();
           setProgressValue(18);

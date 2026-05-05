@@ -229,7 +229,7 @@ export default async function StockPage({
         />
       ) : (
         <>
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <KpiCard item={{ title: 'Articulos con stock', value: articulosConStock.toLocaleString('es-PY'), change: `${valorizadoRows.length} visibles`, trend: 'up' }} />
         <KpiCard item={{ title: 'Existencia acumulada', value: totalExistencia.toLocaleString('es-PY'), change: 'Filtro actual', trend: 'neutral' }} />
         <KpiCard item={{ title: 'Inventario valorizado', value: `${valorInventario.toLocaleString('es-PY')} ${currencyLabel}`, change: 'Costeo promedio', trend: 'up' }} />

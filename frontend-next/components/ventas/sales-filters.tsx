@@ -39,6 +39,7 @@ export function SalesFilters({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [progressValue, setProgressValue] = useState(18);
   const [agrupacion, setAgrupacion] = useState(current.agrupacion || 'clientes');
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     if (!isSubmitting && !isPending) return;
@@ -62,8 +63,18 @@ export function SalesFilters({
 
   return (
     <>
+      <button
+        type="button"
+        onClick={() => setFiltersOpen((currentValue) => !currentValue)}
+        className="mb-3 inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm md:hidden"
+      >
+        {filtersOpen ? 'Ocultar filtros' : 'Filtros'}
+      </button>
       <form
-        className={`card grid gap-3 ${showStatsFields || showReceivablesFields ? 'p-4 lg:grid-cols-5 xl:grid-cols-8' : 'p-4 lg:grid-cols-4 xl:grid-cols-8'}`}
+        className={[
+          filtersOpen ? 'grid' : 'hidden',
+          `card gap-3 p-3 md:grid ${showStatsFields || showReceivablesFields ? 'lg:grid-cols-5 xl:grid-cols-8' : 'lg:grid-cols-4 xl:grid-cols-8'}`,
+        ].join(' ')}
         onSubmit={(event) => {
           event.preventDefault();
           setProgressValue(18);
@@ -289,7 +300,7 @@ export function SalesFilters({
                   <div className="mt-3 h-4 w-full max-w-3xl animate-pulse rounded bg-slate-200" />
                 </div>
 
-                <div className="card grid gap-3 p-4 lg:grid-cols-4 xl:grid-cols-8">
+                <div className="card grid gap-3 p-3 lg:grid-cols-4 xl:grid-cols-8">
                   {Array.from({ length: 10 }).map((_, index) => (
                     <div key={index}>
                       <div className="mb-2 h-4 w-20 animate-pulse rounded bg-slate-200" />
@@ -298,7 +309,7 @@ export function SalesFilters({
                   ))}
                 </div>
 
-                <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                   {Array.from({ length: 4 }).map((_, index) => (
                     <div key={index} className="card p-5">
                       <div className="h-4 w-24 animate-pulse rounded bg-slate-200" />

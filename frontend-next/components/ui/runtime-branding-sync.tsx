@@ -28,15 +28,15 @@ function applyFavicon(href: string) {
   ensureIconLink('apple-touch-icon', href);
 }
 
-export function RuntimeBrandingSync() {
+export function RuntimeBrandingSync({ empresa }: { empresa?: string }) {
   const searchParams = useSearchParams();
 
   useEffect(() => {
     const globalBranding = getBranding();
     const globalFavicon = globalBranding.faviconUrl || '/brand-fallback.svg';
-    const empresa = String(searchParams.get('empresa') || '').trim();
+    const empresaParam = String(searchParams.get('empresa') || empresa || '').trim();
 
-    if (!empresa) {
+    if (!empresaParam) {
       applyFavicon(globalFavicon);
       return;
     }
@@ -44,7 +44,7 @@ export function RuntimeBrandingSync() {
     let cancelled = false;
 
     async function loadBranding() {
-      const response = await fetch(`/api/config/branding?empresa=${encodeURIComponent(empresa)}`, {
+      const response = await fetch(`/api/config/branding?empresa=${encodeURIComponent(empresaParam)}`, {
         cache: 'no-store',
       }).catch(() => null);
 
@@ -60,9 +60,7 @@ export function RuntimeBrandingSync() {
 
       if (cancelled) return;
 
-      const favicon = payload.ok && payload.data?.faviconUrl
-        ? payload.data.faviconUrl
-        : globalFavicon;
+      const favicon = payload.ok && payload.data?.faviconUrl ? payload.data.faviconUrl : globalFavicon;
 
       applyFavicon(favicon);
     }
@@ -72,7 +70,7 @@ export function RuntimeBrandingSync() {
     return () => {
       cancelled = true;
     };
-  }, [searchParams]);
+  }, [empresa, searchParams]);
 
   return null;
 }

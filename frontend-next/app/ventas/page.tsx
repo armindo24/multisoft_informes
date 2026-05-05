@@ -348,7 +348,7 @@ export default async function VentasPage({
         </div>
       ) : (
         <>
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <KpiCard item={{ title: 'Facturacion visible', value: totalFacturado.toLocaleString('es-PY'), change: `${ventas.length} comprobantes`, trend: 'up' }} />
             <KpiCard item={{ title: 'IVA acumulado', value: totalIva.toLocaleString('es-PY'), change: moneda, trend: 'neutral' }} />
             <KpiCard item={{ title: 'Descuentos', value: totalDescuentos.toLocaleString('es-PY'), change: 'Periodo filtrado', trend: 'down' }} />

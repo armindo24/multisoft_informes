@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import { Bell, ChevronRight, Search } from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Bell, ChevronRight, Menu, Search, X } from 'lucide-react';
 
 import { LogoutButton } from '@/components/ui/logout-button';
 import { BrandSignature } from '@/components/ui/brand-signature';
@@ -67,14 +67,21 @@ function isStandaloneAllowedPath(pathname: string) {
 export function AppShell({
   children,
   user,
+  empresa,
 }: {
   children: React.ReactNode;
   user: SessionUser | null;
+  empresa?: string;
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const [notificationSummary, setNotificationSummary] = useState<NotificationSummary | null>(null);
+  const [resolvedEmpresa, setResolvedEmpresa] = useState('');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const routeEmpresa = String(searchParams.get('empresa') || '').trim().toUpperCase();
+  const effectiveEmpresa = routeEmpresa || String(empresa || resolvedEmpresa || '').trim().toUpperCase() || undefined;
 
   const visibleNavigation = useMemo(
     () => navigation.filter((item) => canAccessItem(item, user)),
@@ -139,6 +146,35 @@ export function AppShell({
   }, [notificationCount, notificationSummary]);
 
   useEffect(() => {
+    if (routeEmpresa || empresa || resolvedEmpresa) return;
+
+    let cancelled = false;
+
+    async function loadEmpresa() {
+      const response = await fetch('/api/auth/empresa', { cache: 'no-store' }).catch(() => null);
+      if (!response || cancelled) return;
+
+      const payload = (await response.json().catch(() => ({}))) as {
+        ok?: boolean;
+        data?: { empresa?: string | null };
+      };
+
+      if (cancelled || !payload.ok) return;
+
+      const nextEmpresa = String(payload.data?.empresa || '').trim().toUpperCase();
+      if (nextEmpresa) {
+        setResolvedEmpresa(nextEmpresa);
+      }
+    }
+
+    void loadEmpresa();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [empresa, resolvedEmpresa, routeEmpresa]);
+
+  useEffect(() => {
     const activeItem = visibleNavigation.find((item) => isActivePath(pathname, item.href));
     if (!activeItem?.sections?.length) return;
 
@@ -162,6 +198,10 @@ export function AppShell({
       router.replace('/dashboard');
     }
   }, [pathname, router, visibleNavigation]);
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (!user) return;
@@ -211,7 +251,7 @@ export function AppShell({
         <aside className="hidden border-r border-slate-800 bg-slate-950 text-slate-100 lg:block">
           <div className="sticky top-0 flex h-screen flex-col overflow-y-auto px-3 py-4">
             <div className="px-2 pb-4">
-              <BrandSignature light />
+              <BrandSignature light empresa={effectiveEmpresa} />
               <h1 className="mt-2.5 text-[1.7rem] font-black leading-tight text-white">Panel ejecutivo</h1>
               <p className="mt-2 max-w-[17rem] text-[0.92rem] leading-5 text-slate-400">
                 Acceso ejecutivo a informes, indicadores y consultas operativas.
@@ -322,37 +362,151 @@ export function AppShell({
           </div>
         </aside>
 
-        <div className="flex min-h-screen flex-col">
-          <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur-xl">
-            <div className="flex flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center justify-between gap-3 lg:hidden">
-                <BrandSignature compact />
-                <LogoutButton />
+        {mobileNavOpen ? (
+          <div className="fixed inset-0 z-40 lg:hidden">
+            <button
+              type="button"
+              aria-label="Cerrar menu"
+              className="absolute inset-0 bg-slate-950/50 backdrop-blur-[2px]"
+              onClick={() => setMobileNavOpen(false)}
+            />
+            <aside className="relative z-10 flex h-full w-[min(86vw,340px)] flex-col overflow-y-auto border-r border-slate-800 bg-slate-950 px-3 py-4 text-slate-100 shadow-2xl">
+              <div className="flex items-start justify-between gap-3 px-2 pb-4">
+                <div>
+                  <BrandSignature light empresa={effectiveEmpresa} />
+                  <p className="mt-2 text-sm text-slate-400">Panel ejecutivo</p>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Cerrar menu"
+                  onClick={() => setMobileNavOpen(false)}
+                  className="rounded-xl border border-slate-800 bg-slate-900 p-2 text-slate-300"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
 
-              <div className="flex gap-2 overflow-x-auto pb-1 lg:hidden">
+              <nav className="flex-1 space-y-2">
                 {visibleNavigation.map((item) => {
                   const active = isActivePath(pathname, item.href);
                   const Icon = item.icon;
+
                   return (
-                    <a
+                    <div
                       key={item.href}
-                      href={item.href}
                       className={[
-                        'inline-flex shrink-0 items-center gap-2 rounded-2xl border px-3 py-2 text-sm font-semibold transition',
-                        active ? 'border-cyan-200 bg-cyan-600 text-white' : 'border-slate-200 bg-white text-slate-700',
+                        'overflow-hidden rounded-[1.4rem] border transition',
+                        active ? 'border-cyan-500/30 bg-slate-900 shadow-[0_0_0_1px_rgba(34,211,238,0.08)]' : 'border-transparent bg-transparent',
                       ].join(' ')}
                     >
-                      <Icon className="h-4 w-4" />
-                      {item.label}
-                    </a>
+                      <a
+                        href={item.href}
+                        onClick={() => {
+                          if (!item.sections?.length) setMobileNavOpen(false);
+                        }}
+                        className={[
+                          'group flex items-center gap-3 rounded-[1.2rem] px-4 py-2.5 text-sm font-semibold transition',
+                          active ? 'bg-cyan-600 text-white' : 'text-slate-300 hover:bg-slate-900 hover:text-white',
+                        ].join(' ')}
+                      >
+                        <span
+                          className={[
+                            'flex h-9 w-9 items-center justify-center rounded-xl border transition',
+                            active ? 'border-white/15 bg-white/10' : 'border-slate-800 bg-slate-900 text-slate-300 group-hover:border-slate-700',
+                          ].join(' ')}
+                        >
+                          <Icon className="h-4 w-4" />
+                        </span>
+                        <span className="flex-1">{item.label}</span>
+                        {item.sections?.length ? (
+                          <ChevronRight className={['h-4 w-4 transition', active ? 'rotate-90 text-white' : 'text-slate-500'].join(' ')} />
+                        ) : null}
+                      </a>
+
+                      {active && item.sections?.length ? (
+                        <div className="space-y-3 px-3 pb-3 pt-3">
+                          {item.sections.map((section) => {
+                            const sectionKey = getSectionKey(item.href, section.label);
+                            const isOpen = Boolean(openSections[sectionKey]);
+                            const hasSectionLabel = Boolean(section.label.trim());
+
+                            return (
+                              <div key={section.label} className="rounded-2xl border border-slate-800 bg-slate-900/70">
+                                {hasSectionLabel ? (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setOpenSections((current) => ({
+                                        ...current,
+                                        [sectionKey]: !current[sectionKey],
+                                      }))
+                                    }
+                                    className="flex w-full items-center justify-between px-4 py-2.5 text-left"
+                                  >
+                                    <p className="text-sm font-semibold text-slate-100">{section.label}</p>
+                                    <ChevronRight className={['h-4 w-4 text-cyan-300 transition', isOpen ? 'rotate-90' : 'rotate-0'].join(' ')} />
+                                  </button>
+                                ) : null}
+                                {isOpen ? (
+                                  <div className={hasSectionLabel ? 'border-t border-slate-800 py-1' : 'py-1'}>
+                                    {section.items.map((subItem) => (
+                                      subItem.disabled ? (
+                                        <div
+                                          key={`${section.label}-${subItem.label}`}
+                                          className="flex items-center justify-between gap-3 px-4 py-2 text-sm text-slate-500"
+                                        >
+                                          <span>{subItem.label}</span>
+                                          <span className="rounded-full border border-slate-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                                            Proximo
+                                          </span>
+                                        </div>
+                                      ) : (
+                                        <a
+                                          key={`${section.label}-${subItem.label}`}
+                                          href={subItem.href}
+                                          onClick={() => setMobileNavOpen(false)}
+                                          className="flex items-center justify-between gap-3 px-4 py-2 text-sm text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
+                                        >
+                                          <span>{subItem.label}</span>
+                                        </a>
+                                      )
+                                    ))}
+                                  </div>
+                                ) : null}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : null}
+                    </div>
                   );
                 })}
+              </nav>
+            </aside>
+          </div>
+        ) : null}
+
+        <div className="flex min-h-screen min-w-0 flex-col">
+          <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur-xl">
+            <div className="mx-auto flex w-full max-w-[1536px] flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+              <div className="flex items-center justify-between gap-3 lg:hidden">
+                <button
+                  type="button"
+                  onClick={() => setMobileNavOpen(true)}
+                  aria-label="Abrir menu"
+                  className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-700 shadow-sm"
+                >
+                  <Menu className="h-4 w-4" />
+                </button>
+                <div className="min-w-0 flex-1">
+                  <BrandSignature compact empresa={effectiveEmpresa} />
+                </div>
+                <LogoutButton />
               </div>
 
               <div className="flex items-center gap-3 rounded-[1.3rem] border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-500 lg:min-w-[340px]">
                 <div className="hidden shrink-0 lg:block">
-                  <BrandSignature compact />
+                  <BrandSignature compact empresa={effectiveEmpresa} />
                 </div>
                 <Search className="h-4 w-4 shrink-0" />
                 <span className="truncate">Buscar cliente, articulo, comprobante o proveedor</span>
@@ -381,7 +535,9 @@ export function AppShell({
             </div>
           </header>
 
-          <main className="flex-1 px-4 py-5 sm:px-6 lg:px-8">{children}</main>
+          <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8">
+            <div className="mx-auto w-full max-w-[1536px]">{children}</div>
+          </main>
         </div>
       </div>
     </div>

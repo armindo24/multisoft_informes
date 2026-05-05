@@ -2,7 +2,8 @@
 
 import { FileDown, FileSpreadsheet } from 'lucide-react';
 
-import { exportRowsToExcel, exportRowsToPdf } from '@/components/ui/export-utils';
+import { exportRowsToExcel, exportRowsToPdf, type ExportBrandingOverride } from '@/components/ui/export-utils';
+import { EmptyState } from '@/components/ui/empty-state';
 import { DiarioRow } from '@/types/finanzas';
 
 function num(value: unknown) {
@@ -181,9 +182,11 @@ function buildExportData(rows: DiarioRow[], moneda: string) {
 export function DiarioComprobadoPanel({
   rows,
   moneda,
+  exportBranding,
 }: {
   rows: DiarioRow[];
   moneda: string;
+  exportBranding?: ExportBrandingOverride;
 }) {
   const grouped = new Map<string, { header: DiarioRow; rows: DiarioRow[]; totals: Totals }>();
   let totalGeneral = emptyTotals();
@@ -216,6 +219,7 @@ export function DiarioComprobadoPanel({
       filename: 'libro-diario',
       headers: exportData.headers,
       rows: exportData.rows,
+      branding: exportBranding,
     });
   }
 
@@ -225,6 +229,7 @@ export function DiarioComprobadoPanel({
       subtitle: 'Asientos agrupados por transaccion.',
       headers: exportData.headers,
       rows: exportData.rows,
+      branding: exportBranding,
     });
   }
 
@@ -250,7 +255,9 @@ export function DiarioComprobadoPanel({
       </div>
 
       {ordered.length === 0 ? (
-        <div className="card px-5 py-10 text-sm text-slate-500">No hay datos disponibles para este libro diario.</div>
+        <div className="card p-4">
+          <EmptyState title="Sin datos de libro diario" description="No hay datos disponibles para este libro diario." />
+        </div>
       ) : (
         <>
           <div className="card overflow-hidden">

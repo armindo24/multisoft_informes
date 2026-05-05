@@ -988,7 +988,7 @@ export async function loadUserCompanyAssignments(userId: number): Promise<UserCo
       SELECT empresa, db
       FROM custom_permissions_usuarioempresa
       WHERE user_id = $1
-      ORDER BY db, empresa
+      ORDER BY id
     `,
     [userId],
   );
@@ -997,6 +997,17 @@ export async function loadUserCompanyAssignments(userId: number): Promise<UserCo
     empresa: String(row.empresa || ''),
     db: (String(row.db || 'Integrado') === 'Sueldo' ? 'Sueldo' : 'Integrado') as 'Integrado' | 'Sueldo',
   }));
+}
+
+export async function loadPrimaryUserEmpresa(
+  userId: number,
+  preferredDb: 'Integrado' | 'Sueldo' = 'Integrado',
+): Promise<string | null> {
+  const assignments = await loadUserCompanyAssignments(userId);
+  const preferred = assignments.find((item) => item.db === preferredDb);
+  const fallback = preferred || assignments[0];
+  const empresa = String(fallback?.empresa || '').trim().toUpperCase();
+  return empresa || null;
 }
 
 export async function loadCompanyAccessOptions(): Promise<CompanyAccessOption[]> {

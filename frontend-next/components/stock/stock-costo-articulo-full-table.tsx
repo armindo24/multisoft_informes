@@ -4,6 +4,7 @@ import { FileDown, FileSpreadsheet } from 'lucide-react';
 import { exportRowsToExcel, exportRowsToPdf } from '@/components/ui/export-utils';
 import type { ExportBrandingOverride, ExportMetaItem } from '@/components/ui/export-utils';
 import { ReportScheduleButton } from '@/components/ui/report-schedule-button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { StockCostoArticuloFullRow } from '@/types/stock';
 
 function formatNumber(value: unknown, decimals = 0) {
@@ -240,8 +241,8 @@ export function StockCostoArticuloFullTable({
               ))
             ) : (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-10 text-center text-slate-500">
-                  No hay datos disponibles para este informe.
+                <td colSpan={columns.length} className="px-4 py-5">
+                  <EmptyState title="Sin datos de costo" description="No hay datos disponibles para este informe." />
                 </td>
               </tr>
             )}

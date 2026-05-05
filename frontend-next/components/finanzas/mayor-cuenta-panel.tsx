@@ -3,7 +3,8 @@
 import { FileDown, FileSpreadsheet } from 'lucide-react';
 import { useState } from 'react';
 
-import { exportRowsToExcel, exportRowsToPdf } from '@/components/ui/export-utils';
+import { exportRowsToExcel, exportRowsToPdf, type ExportBrandingOverride } from '@/components/ui/export-utils';
+import { EmptyState } from '@/components/ui/empty-state';
 
 type MayorCabAccount = {
   code: string;
@@ -198,6 +199,7 @@ export function MayorCuentaPanel({
   fechah,
   tipoasiento,
   moneda,
+  exportBranding,
 }: {
   groups: MayorCabGroup[];
   empresa: string;
@@ -206,6 +208,7 @@ export function MayorCuentaPanel({
   fechah: string;
   tipoasiento: string;
   moneda: string;
+  exportBranding?: ExportBrandingOverride;
 }) {
   const [states, setStates] = useState<Record<string, DetailState>>({});
   const [openAccount, setOpenAccount] = useState<string | null>(null);
@@ -280,6 +283,7 @@ export function MayorCuentaPanel({
       filename: 'libro-mayor-cuenta',
       headers: exportData.headers,
       rows: exportData.rows,
+      branding: exportBranding,
     });
   }
 
@@ -289,6 +293,7 @@ export function MayorCuentaPanel({
       subtitle: 'Incluye las cuentas ya abiertas en pantalla.',
       headers: exportData.headers,
       rows: exportData.rows,
+      branding: exportBranding,
     });
   }
 
@@ -314,7 +319,9 @@ export function MayorCuentaPanel({
       </div>
 
       {!groups.length ? (
-        <div className="card px-5 py-10 text-sm text-slate-500">No hay cuentas disponibles para este mayor.</div>
+        <div className="card p-4">
+          <EmptyState title="Sin cuentas" description="No hay cuentas disponibles para este mayor." />
+        </div>
       ) : (
         groups.map((group) => (
           <div key={group.parentCode} className="card overflow-hidden">

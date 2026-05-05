@@ -1,5 +1,8 @@
+'use client';
+
 import { FileDown, FileSpreadsheet } from 'lucide-react';
-import { exportRowsToExcel, exportRowsToPdf } from '@/components/ui/export-utils';
+import { exportRowsToExcel, exportRowsToPdf, type ExportBrandingOverride } from '@/components/ui/export-utils';
+import { EmptyState } from '@/components/ui/empty-state';
 import { BalanceRow } from '@/types/finanzas';
 
 function num(value: unknown) {
@@ -46,9 +49,11 @@ function indent(level: number) {
 export function BalanceComprobadoTable({
   rows,
   moneda,
+  exportBranding,
 }: {
   rows: BalanceRow[];
   moneda: string;
+  exportBranding?: ExportBrandingOverride;
 }) {
   const normalized = rows.map((row) => {
     const rowCode = code(row);
@@ -94,6 +99,7 @@ export function BalanceComprobadoTable({
       filename: 'balance-general-comprobado',
       headers: data.headers,
       rows: data.rows,
+      branding: exportBranding,
     });
   }
 
@@ -104,6 +110,7 @@ export function BalanceComprobadoTable({
       subtitle: 'Compara saldo anterior, debito del mes, credito del mes y saldo actual como en el informe historico.',
       headers: data.headers,
       rows: data.rows,
+      branding: exportBranding,
     });
   }
 
@@ -127,7 +134,9 @@ export function BalanceComprobadoTable({
       </div>
 
       {normalized.length === 0 ? (
-        <div className="px-5 py-10 text-sm text-slate-500">No hay datos disponibles para este balance comprobado.</div>
+        <div className="px-4 py-5">
+          <EmptyState title="Sin datos de balance comprobado" description="No hay datos disponibles para este balance comprobado." />
+        </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { PayablesTable } from '@/components/finanzas/payables-table';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { EmptyState } from '@/components/ui/empty-state';
 import type { CuentaPagarRow } from '@/types/finanzas';
 
 const payablesCache = new Map<string, CuentaPagarRow[]>();
@@ -231,16 +232,14 @@ export function PayablesTableAsync({
 
   if (status === 'idle') {
     return (
-      <div className="card p-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">Cuentas por pagar</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              {preloadState === 'loading'
-                ? 'Preparando proveedores en segundo plano para que la apertura sea mas rapida.'
-                : 'Este bloque queda bajo demanda para acelerar el dashboard de finanzas.'}
-            </p>
-          </div>
+      <div className="card p-4">
+        <EmptyState
+          title="Cuentas por pagar"
+          description={preloadState === 'loading'
+            ? 'Preparando proveedores en segundo plano para que la apertura sea mas rapida.'
+            : 'Este bloque queda bajo demanda para acelerar el dashboard de finanzas.'}
+          tone="info"
+          action={
           <button
             type="button"
             onClick={() => setEnabled(true)}
@@ -248,7 +247,8 @@ export function PayablesTableAsync({
           >
             {preloadState === 'ready' ? 'Ver proveedores' : preloadState === 'loading' ? 'Abrir al finalizar carga' : 'Cargar proveedores'}
           </button>
-        </div>
+          }
+        />
       </div>
     );
   }
@@ -269,9 +269,12 @@ export function PayablesTableAsync({
 
   if (status === 'error') {
     return (
-      <div className="card p-5">
-        <h2 className="text-lg font-semibold text-slate-900">Cuentas por pagar</h2>
-        <p className="mt-1 text-sm text-slate-500">No se pudo cargar este bloque con el filtro actual.</p>
+      <div className="card p-4">
+        <EmptyState
+          title="No se pudo cargar cuentas por pagar"
+          description="Revisa el filtro actual o intenta abrir el bloque nuevamente."
+          tone="error"
+        />
       </div>
     );
   }

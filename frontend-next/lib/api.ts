@@ -519,6 +519,39 @@ export async function getComprasArticuloRanking(params: {
   return safeFetch<ApiEnvelope<Array<Record<string, unknown>>>>(`/compras_articulo/ranking${query}`);
 }
 
+export async function getFinanzasRg90Preview(params: {
+  empresa: string;
+  periodo?: string;
+  desde: string;
+  hasta: string;
+  sucursal?: string;
+  tipoInformacion?: string;
+  descargarRegistrosExportados?: boolean;
+  debug?: boolean;
+}) {
+  const query = toQuery({
+    empresa: params.empresa,
+    periodo: params.periodo,
+    desde: params.desde,
+    hasta: params.hasta,
+    sucursal: params.sucursal,
+    tipoInformacion: params.tipoInformacion || 'VENTA',
+    descargarRegistrosExportados: params.descargarRegistrosExportados ? 'true' : undefined,
+    debug: params.debug ? 'true' : undefined,
+  });
+  return safeFetch<
+    ApiEnvelope<Array<Record<string, unknown>>> & {
+      debug?: Record<string, unknown> | null;
+      summary?: {
+        note_credit_total?: number;
+        visible_total?: number;
+        exento_total?: number;
+      } | null;
+      warning?: string | null;
+    }
+  >(`/finanzas/rg90/preview${query}`);
+}
+
 export async function getBalanceGeneral(params: {
   empresa: string;
   periodo: string;

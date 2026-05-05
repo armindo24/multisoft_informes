@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { CashflowSummary } from '@/components/finanzas/cashflow-summary';
+import { EmptyState } from '@/components/ui/empty-state';
 
 type FlowSection = Array<Record<string, Array<Record<string, unknown>>>>;
 
@@ -113,12 +114,12 @@ export function CashflowSummaryAsync({
 
   if (status === 'idle') {
     return (
-      <div className="card p-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">Flujo de caja mensual</h2>
-            <p className="mt-1 text-sm text-slate-500">Este bloque queda bajo demanda para acelerar el dashboard de finanzas.</p>
-          </div>
+      <div className="card p-4">
+        <EmptyState
+          title="Flujo de caja mensual"
+          description="Este bloque queda bajo demanda para acelerar el dashboard de finanzas."
+          tone="info"
+          action={
           <button
             type="button"
             onClick={() => setEnabled(true)}
@@ -126,7 +127,8 @@ export function CashflowSummaryAsync({
           >
             Cargar flujo
           </button>
-        </div>
+          }
+        />
       </div>
     );
   }
@@ -151,9 +153,12 @@ export function CashflowSummaryAsync({
 
   if (status === 'error') {
     return (
-      <div className="card p-5">
-        <h2 className="text-lg font-semibold text-slate-900">Flujo de caja mensual</h2>
-        <p className="mt-1 text-sm text-slate-500">No se pudo cargar el resumen de flowcash para este filtro.</p>
+      <div className="card p-4">
+        <EmptyState
+          title="No se pudo cargar flujo de caja"
+          description="Revisa el filtro actual o intenta cargar el bloque nuevamente."
+          tone="error"
+        />
       </div>
     );
   }

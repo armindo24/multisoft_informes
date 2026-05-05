@@ -24,7 +24,7 @@ function attachGetEmpresa(userRow) {
     if (!userRow) return null;
     userRow.getEmpresa = function () {
         return q(
-            "SELECT empresa, db FROM custom_permissions_usuarioempresa WHERE user_id = $1",
+            "SELECT empresa, db FROM custom_permissions_usuarioempresa WHERE user_id = $1 ORDER BY id",
             [userRow.id]
         );
     };
@@ -58,11 +58,10 @@ models.User = {
 models.UsuarioEmpresa = {
     findAllByUser: function (userId) {
         return q(
-            "SELECT empresa, db FROM custom_permissions_usuarioempresa WHERE user_id = $1",
+            "SELECT empresa, db FROM custom_permissions_usuarioempresa WHERE user_id = $1 ORDER BY id",
             [userId]
         );
     }
 };
 
 module.exports = models;
-
