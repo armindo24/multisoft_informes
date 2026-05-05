@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     const ipAddress = forwardedFor.split(',')[0]?.trim() || request.headers.get('x-real-ip') || '';
     const userAgent = request.headers.get('user-agent') || '';
 
-    await registerNextSession({
+    const sessionStatus = await registerNextSession({
       sessionKey,
       userId: authenticatedUser.id,
       ipAddress,
@@ -41,7 +41,17 @@ export async function POST(request: Request) {
       maxAge,
     });
 
-    return NextResponse.json({ ok: true, user: sessionUser });
+    const limitNotice = sessionStatus.closedSessions > 0
+      ? `Se cerraron ${sessionStatus.closedSessions} sesion(es) anterior(es) porque alcanzaste el limite permitido de ${sessionStatus.maxSessionsPerUser}.`
+      : '';
+
+    return NextResponse.json({
+      ok: true,
+      user: sessionUser,
+      limitNotice,
+      closedSessions: sessionStatus.closedSessions,
+      maxSessionsPerUser: sessionStatus.maxSessionsPerUser,
+    });
   } catch (error) {
     console.error('Login PostgreSQL error:', error);
     return NextResponse.json(

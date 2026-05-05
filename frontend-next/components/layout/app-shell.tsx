@@ -78,6 +78,7 @@ export function AppShell({
   const searchParams = useSearchParams();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const [notificationSummary, setNotificationSummary] = useState<NotificationSummary | null>(null);
+  const [loginNotice, setLoginNotice] = useState('');
   const [resolvedEmpresa, setResolvedEmpresa] = useState('');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const routeEmpresa = String(searchParams.get('empresa') || '').trim().toUpperCase();
@@ -201,6 +202,15 @@ export function AppShell({
 
   useEffect(() => {
     setMobileNavOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (pathname === '/login' || pathname.startsWith('/password-reset')) return;
+    const notice = window.sessionStorage.getItem('multisoft:login-notice') || '';
+    if (!notice) return;
+
+    setLoginNotice(notice);
+    window.sessionStorage.removeItem('multisoft:login-notice');
   }, [pathname]);
 
   useEffect(() => {
@@ -536,7 +546,22 @@ export function AppShell({
           </header>
 
           <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8">
-            <div className="mx-auto w-full max-w-[1536px]">{children}</div>
+            <div className="mx-auto w-full max-w-[1536px]">
+              {loginNotice ? (
+                <div className="mb-4 flex items-start justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
+                  <p className="leading-6">{loginNotice}</p>
+                  <button
+                    type="button"
+                    onClick={() => setLoginNotice('')}
+                    className="rounded-lg p-1 text-amber-800 transition hover:bg-amber-100"
+                    aria-label="Cerrar aviso"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : null}
+              {children}
+            </div>
           </main>
         </div>
       </div>

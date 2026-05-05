@@ -30,11 +30,16 @@ export function LoginForm() {
         body: JSON.stringify({ username, password }),
       });
 
+      const data = await response.json().catch(() => ({}));
+
       if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
         setError(data?.message || 'No se pudo iniciar sesión.');
         setLoading(false);
         return;
+      }
+
+      if (data?.limitNotice) {
+        window.sessionStorage.setItem('multisoft:login-notice', String(data.limitNotice));
       }
 
       router.push(nextPath as Route);

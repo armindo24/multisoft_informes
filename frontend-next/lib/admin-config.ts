@@ -598,38 +598,47 @@ export async function registerNextSession(input: NextSessionInput) {
     ],
   );
 
-  await enforceNextSessionLimit(input.userId, input.sessionKey, maxSessionsPerUser);
+  const closedSessions = await enforceNextSessionLimit(input.userId, input.sessionKey, maxSessionsPerUser);
+
+  return {
+    maxSessionsPerUser,
+    closedSessions,
+  };
 }
 
 async function enforceNextSessionLimit(userId: number, keepSessionKey?: string, explicitLimit?: number) {
   const normalizedUserId = Number(userId || 0);
-  if (!normalizedUserId) return;
+  if (!normalizedUserId) return 0;
   const maxSessions = normalizeSessionLimit(explicitLimit);
 
   await ensureNextSessionTable();
 
   await pool.query('DELETE FROM custom_permissions_nextsession WHERE expires_at <= NOW()');
-  await pool.query(
+  const result = await pool.query<{ deleted_count: string }>(
     `
-      DELETE FROM custom_permissions_nextsession
-      WHERE session_key IN (
-        SELECT session_key
-        FROM (
-          SELECT
-            session_key,
-            ROW_NUMBER() OVER (
-              ORDER BY
-                CASE WHEN session_key = $2 THEN 0 ELSE 1 END,
-                last_activity DESC,
-                created_at DESC,
-                session_key DESC
-            ) AS rn
-          FROM custom_permissions_nextsession
-          WHERE user_id = $1
-            AND expires_at > NOW()
-        ) ranked
-        WHERE rn > $3
+      WITH deleted AS (
+        DELETE FROM custom_permissions_nextsession
+        WHERE session_key IN (
+          SELECT session_key
+          FROM (
+            SELECT
+              session_key,
+              ROW_NUMBER() OVER (
+                ORDER BY
+                  CASE WHEN session_key = $2 THEN 0 ELSE 1 END,
+                  last_activity DESC,
+                  created_at DESC,
+                  session_key DESC
+              ) AS rn
+            FROM custom_permissions_nextsession
+            WHERE user_id = $1
+              AND expires_at > NOW()
+          ) ranked
+          WHERE rn > $3
+        )
+        RETURNING session_key
       )
+      SELECT COUNT(*)::text AS deleted_count FROM deleted
     `,
     [
       normalizedUserId,
@@ -637,6 +646,8 @@ async function enforceNextSessionLimit(userId: number, keepSessionKey?: string, 
       maxSessions,
     ],
   );
+
+  return Number(result.rows[0]?.deleted_count || 0);
 }
 
 async function enforceAllNextSessionLimits() {
