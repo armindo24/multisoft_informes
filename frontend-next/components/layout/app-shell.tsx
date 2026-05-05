@@ -148,6 +148,8 @@ export function AppShell({
   }, [notificationCount, notificationSummary]);
 
   useEffect(() => {
+    if (pathname === '/login' || pathname.startsWith('/password-reset')) return;
+    if (!user?.id) return;
     if (routeEmpresa || empresa || resolvedEmpresa) return;
 
     let cancelled = false;
@@ -174,7 +176,7 @@ export function AppShell({
     return () => {
       cancelled = true;
     };
-  }, [empresa, resolvedEmpresa, routeEmpresa]);
+  }, [empresa, pathname, resolvedEmpresa, routeEmpresa, user?.id]);
 
   useEffect(() => {
     const activeItem = visibleNavigation.find((item) => isActivePath(pathname, item.href));
