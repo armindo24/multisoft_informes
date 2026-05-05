@@ -10,6 +10,7 @@ type ActiveSessionRecord = {
   fullName: string;
   email: string;
   sessions: number;
+  maxSessionsPerUser: number;
   expires: string | null;
   lastActivity: string;
   ipAddress: string;
@@ -31,10 +32,8 @@ function fmtDate(value: string | null) {
 
 export function ActiveSessionsPanel() {
   const [data, setData] = useState<Payload | null>(null);
-  const [maxSessionsValue, setMaxSessionsValue] = useState(3);
   const [loading, setLoading] = useState(true);
   const [closingSessionKey, setClosingSessionKey] = useState<string | null>(null);
-  const [savingLimit, setSavingLimit] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
@@ -50,7 +49,6 @@ export function ActiveSessionsPanel() {
       }
 
       setData(payload.data);
-      setMaxSessionsValue(payload.data.maxSessionsPerUser);
       setLoading(false);
     }
 
@@ -80,30 +78,6 @@ export function ActiveSessionsPanel() {
     setClosingSessionKey(null);
   }
 
-  async function saveLimit() {
-    setSavingLimit(true);
-    setMessage(null);
-
-    const response = await fetch('/api/config/active-sessions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ maxSessionsPerUser: maxSessionsValue }),
-    });
-
-    const payload = (await response.json().catch(() => ({}))) as { ok?: boolean; data?: Payload; message?: string };
-
-    if (!response.ok || !payload.ok || !payload.data) {
-      setMessage({ type: 'error', text: payload.message || 'No se pudo guardar el limite de sesiones.' });
-      setSavingLimit(false);
-      return;
-    }
-
-    setData(payload.data);
-    setMaxSessionsValue(payload.data.maxSessionsPerUser);
-    setMessage({ type: 'success', text: 'Limite de sesiones guardado correctamente.' });
-    setSavingLimit(false);
-  }
-
   return (
     <div className="space-y-4">
       {message ? (
@@ -116,7 +90,7 @@ export function ActiveSessionsPanel() {
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-500">Cargando sesiones activas...</div>
       ) : (
         <>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-sm text-slate-500">Usuarios con sesion</p>
               <p className="mt-3 text-2xl font-bold text-slate-900">{data.totalUsers}</p>
@@ -125,49 +99,16 @@ export function ActiveSessionsPanel() {
               <p className="text-sm text-slate-500">Sesiones activas</p>
               <p className="mt-3 text-2xl font-bold text-slate-900">{data.totalSessions}</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-sm text-slate-500">Limite por usuario</p>
-              <p className="mt-3 text-2xl font-bold text-slate-900">{data.maxSessionsPerUser}</p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_10rem_auto] md:items-end">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">Cantidad permitida por usuario</p>
-                <p className="mt-1 text-sm leading-6 text-slate-500">
-                  Define cuantas conexiones simultaneas puede tener el mismo usuario. Al guardar, se conservan las mas recientes.
-                </p>
-              </div>
-              <label className="text-sm font-medium text-slate-700">
-                Sesiones
-                <input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={maxSessionsValue}
-                  onChange={(event) => setMaxSessionsValue(Number(event.target.value || 1))}
-                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
-                />
-              </label>
-              <button
-                type="button"
-                onClick={() => void saveLimit()}
-                disabled={savingLimit}
-                className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
-              >
-                {savingLimit ? 'Guardando...' : 'Guardar limite'}
-              </button>
-            </div>
           </div>
 
           <div className="overflow-x-auto rounded-2xl border border-slate-200">
-            <table className="min-w-[1180px] divide-y divide-slate-200 text-sm">
+            <table className="min-w-[1240px] divide-y divide-slate-200 text-sm">
               <thead className="bg-slate-50 text-left text-slate-600">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Usuario</th>
                   <th className="px-4 py-3 font-semibold">Nombre</th>
                   <th className="px-4 py-3 font-semibold">Email</th>
+                  <th className="px-4 py-3 font-semibold">Limite</th>
                   <th className="px-4 py-3 font-semibold">Ult. actividad</th>
                   <th className="px-4 py-3 font-semibold">IP</th>
                   <th className="px-4 py-3 font-semibold">Agente</th>
@@ -179,7 +120,7 @@ export function ActiveSessionsPanel() {
               <tbody className="divide-y divide-slate-100 bg-white">
                 {data.rows.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-8 text-slate-500">No hay usuarios con sesion activa.</td>
+                    <td colSpan={10} className="px-4 py-8 text-slate-500">No hay usuarios con sesion activa.</td>
                   </tr>
                 ) : (
                   data.rows.map((row) => (
@@ -187,6 +128,7 @@ export function ActiveSessionsPanel() {
                       <td className="px-4 py-3 font-medium text-slate-900">{row.username}</td>
                       <td className="px-4 py-3 text-slate-700">{row.fullName || '-'}</td>
                       <td className="px-4 py-3 text-slate-700">{row.email || '-'}</td>
+                      <td className="px-4 py-3 text-slate-700">{row.maxSessionsPerUser}</td>
                       <td className="px-4 py-3 text-slate-700">{fmtDate(row.lastActivity)}</td>
                       <td className="px-4 py-3 text-slate-700">{row.ipAddress || '-'}</td>
                       <td className="max-w-[280px] truncate px-4 py-3 text-slate-700" title={row.userAgent}>{row.userAgent || '-'}</td>

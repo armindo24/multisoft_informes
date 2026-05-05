@@ -20,6 +20,7 @@ type AdminUserDetail = {
   isStaff: boolean;
   dateJoined: string | null;
   groups: number[];
+  maxSessionsPerUser: number;
 };
 
 type Payload = {
@@ -43,6 +44,7 @@ type FormState = {
   isSuperuser: boolean;
   groups: number[];
   password: string;
+  maxSessionsPerUser: number;
 };
 
 const emptyForm: FormState = {
@@ -54,6 +56,7 @@ const emptyForm: FormState = {
   isSuperuser: false,
   groups: [],
   password: '',
+  maxSessionsPerUser: 3,
 };
 
 type UsersPanelProps = {
@@ -134,6 +137,7 @@ export function UsersPanel({ currentUser }: UsersPanelProps) {
       isSuperuser: user.isSuperuser,
       groups: user.groups.filter((groupId) => availableGroups.some((group) => group.id === groupId)),
       password: '',
+      maxSessionsPerUser: user.maxSessionsPerUser || 3,
     });
   }
 
@@ -409,6 +413,18 @@ export function UsersPanel({ currentUser }: UsersPanelProps) {
           <label className="text-sm text-slate-700 md:col-span-2">
             <span className="mb-2 block font-medium">{selectedUser ? 'Cambiar contrasena' : 'Contrasena inicial'}</span>
             <input type="password" value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} placeholder={selectedUser ? 'Dejar vacio para mantener actual' : 'Si queda vacio se usara admin'} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2" />
+          </label>
+          <label className="text-sm text-slate-700">
+            <span className="mb-2 block font-medium">Sesiones permitidas</span>
+            <input
+              type="number"
+              min={1}
+              max={20}
+              value={form.maxSessionsPerUser}
+              disabled={!permissions.canEditPermissions}
+              onChange={(event) => setForm((current) => ({ ...current, maxSessionsPerUser: Number(event.target.value || 1) }))}
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2"
+            />
           </label>
         </div>
 

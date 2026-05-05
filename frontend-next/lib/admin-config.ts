@@ -113,6 +113,7 @@ export type ActiveSessionRecord = {
   fullName: string;
   email: string;
   sessions: number;
+  maxSessionsPerUser: number;
   expires: string | null;
   lastActivity: string;
   ipAddress: string;
@@ -246,6 +247,7 @@ export type AdminUserDetail = {
   isStaff: boolean;
   dateJoined: string | null;
   groups: number[];
+  maxSessionsPerUser: number;
 };
 
 export type NextSessionInput = {
@@ -457,6 +459,16 @@ async function ensureSystemConfigTable() {
   `);
 }
 
+async function ensureUserSessionConfigTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS custom_permissions_usersessionconfig (
+      user_id INTEGER PRIMARY KEY REFERENCES auth_user(id) ON DELETE CASCADE,
+      max_sessions INTEGER NOT NULL DEFAULT ${DEFAULT_MAX_ACTIVE_SESSIONS_PER_USER},
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+}
+
 function normalizeSessionLimit(value: unknown) {
   const numeric = Number(value || DEFAULT_MAX_ACTIVE_SESSIONS_PER_USER);
   if (!Number.isFinite(numeric)) return DEFAULT_MAX_ACTIVE_SESSIONS_PER_USER;
@@ -498,8 +510,64 @@ export async function saveActiveSessionSettings(input: ActiveSessionSettings): P
     [JSON.stringify(settings)],
   );
 
-  await enforceAllNextSessionLimits(settings.maxSessionsPerUser);
+  await enforceAllNextSessionLimits();
   return loadActiveSessionSettings();
+}
+
+async function loadDefaultSessionLimit() {
+  const settings = await loadActiveSessionSettings().catch(() => ({ maxSessionsPerUser: DEFAULT_MAX_ACTIVE_SESSIONS_PER_USER }));
+  return normalizeSessionLimit(settings.maxSessionsPerUser);
+}
+
+async function loadUserSessionLimitMap(userIds: number[]) {
+  const uniqueIds = Array.from(new Set(userIds.map((item) => Number(item || 0)).filter(Boolean)));
+  const defaultLimit = await loadDefaultSessionLimit();
+  const limits = new Map<number, number>();
+  for (const userId of uniqueIds) {
+    limits.set(userId, defaultLimit);
+  }
+
+  if (uniqueIds.length === 0) {
+    return limits;
+  }
+
+  await ensureUserSessionConfigTable();
+  const result = await pool.query<Record<string, unknown>>(
+    `
+      SELECT user_id, max_sessions
+      FROM custom_permissions_usersessionconfig
+      WHERE user_id = ANY($1::int[])
+    `,
+    [uniqueIds],
+  );
+
+  for (const row of result.rows) {
+    limits.set(Number(row.user_id), normalizeSessionLimit(row.max_sessions));
+  }
+
+  return limits;
+}
+
+async function loadUserSessionLimit(userId: number) {
+  const limits = await loadUserSessionLimitMap([userId]);
+  return limits.get(Number(userId)) || normalizeSessionLimit(undefined);
+}
+
+async function saveUserSessionLimit(userId: number, maxSessionsPerUser: unknown) {
+  const normalizedUserId = Number(userId || 0);
+  if (!normalizedUserId) return;
+
+  await ensureUserSessionConfigTable();
+  await pool.query(
+    `
+      INSERT INTO custom_permissions_usersessionconfig (user_id, max_sessions, updated_at)
+      VALUES ($1, $2, NOW())
+      ON CONFLICT (user_id) DO UPDATE
+      SET max_sessions = EXCLUDED.max_sessions,
+          updated_at = NOW()
+    `,
+    [normalizedUserId, normalizeSessionLimit(maxSessionsPerUser)],
+  );
 }
 
 export function createNextSessionKey() {
@@ -508,7 +576,7 @@ export function createNextSessionKey() {
 
 export async function registerNextSession(input: NextSessionInput) {
   await ensureNextSessionTable();
-  const settings = await loadActiveSessionSettings();
+  const maxSessionsPerUser = await loadUserSessionLimit(input.userId);
 
   await pool.query(
     `
@@ -530,7 +598,7 @@ export async function registerNextSession(input: NextSessionInput) {
     ],
   );
 
-  await enforceNextSessionLimit(input.userId, input.sessionKey, settings.maxSessionsPerUser);
+  await enforceNextSessionLimit(input.userId, input.sessionKey, maxSessionsPerUser);
 }
 
 async function enforceNextSessionLimit(userId: number, keepSessionKey?: string, explicitLimit?: number) {
@@ -571,31 +639,53 @@ async function enforceNextSessionLimit(userId: number, keepSessionKey?: string, 
   );
 }
 
-async function enforceAllNextSessionLimits(explicitLimit?: number) {
+async function enforceAllNextSessionLimits() {
   await ensureNextSessionTable();
-  const maxSessions = normalizeSessionLimit(explicitLimit);
 
   await pool.query('DELETE FROM custom_permissions_nextsession WHERE expires_at <= NOW()');
-  await pool.query(
+  const activeResult = await pool.query<Record<string, unknown>>(
     `
-      DELETE FROM custom_permissions_nextsession
-      WHERE session_key IN (
-        SELECT session_key
-        FROM (
-          SELECT
-            session_key,
-            ROW_NUMBER() OVER (
-              PARTITION BY user_id
-              ORDER BY last_activity DESC, created_at DESC, session_key DESC
-            ) AS rn
-          FROM custom_permissions_nextsession
-          WHERE expires_at > NOW()
-        ) ranked
-        WHERE rn > $1
-      )
+      SELECT user_id
+      FROM custom_permissions_nextsession
+      WHERE expires_at > NOW()
+      GROUP BY user_id
     `,
-    [maxSessions],
   );
+  const userIds = activeResult.rows.map((row) => Number(row.user_id || 0)).filter(Boolean);
+  const limits = await loadUserSessionLimitMap(userIds);
+
+  for (const userId of userIds) {
+    await enforceNextSessionLimit(userId, undefined, limits.get(userId));
+  }
+}
+
+async function enforceDjangoSessionLimits(candidates: Array<{ key: string; userId: number; expires: unknown; lastActivity: unknown }>) {
+  const limits = await loadUserSessionLimitMap(candidates.map((candidate) => candidate.userId));
+  const djangoKeysToDelete: string[] = [];
+  const djangoByUser = new Map<number, typeof candidates>();
+
+  for (const candidate of candidates) {
+    const current = djangoByUser.get(candidate.userId) || [];
+    current.push(candidate);
+    djangoByUser.set(candidate.userId, current);
+  }
+
+  for (const [userId, userCandidates] of djangoByUser) {
+    const maxSessions = limits.get(userId) || normalizeSessionLimit(undefined);
+    userCandidates
+      .sort((left, right) => sessionSortValue(right.lastActivity, right.expires) - sessionSortValue(left.lastActivity, left.expires))
+      .forEach((candidate, index) => {
+        if (index >= maxSessions && candidate.key) {
+          djangoKeysToDelete.push(candidate.key);
+        }
+      });
+  }
+
+  if (djangoKeysToDelete.length > 0) {
+    await pool.query('DELETE FROM django_session WHERE session_key = ANY($1::text[])', [djangoKeysToDelete]);
+  }
+
+  return new Set(djangoKeysToDelete);
 }
 
 export async function touchNextSession(sessionKey?: string) {
@@ -1193,8 +1283,7 @@ function decodeDjangoSession(value: string): Record<string, unknown> {
 
 export async function loadActiveSessions(): Promise<{ rows: ActiveSessionRecord[]; totalUsers: number; totalSessions: number; maxSessionsPerUser: number }> {
   await ensureNextSessionTable();
-  const settings = await loadActiveSessionSettings();
-  const maxSessionsPerUser = settings.maxSessionsPerUser;
+  const maxSessionsPerUser = await loadDefaultSessionLimit();
 
   const sessionRows: ActiveSessionRecord[] = [];
   const userIds = new Set<number>();
@@ -1220,6 +1309,7 @@ export async function loadActiveSessions(): Promise<{ rows: ActiveSessionRecord[
       fullName: '',
       email: '',
       sessions: 1,
+      maxSessionsPerUser,
       expires: null,
       lastActivity: '',
       ipAddress: '',
@@ -1269,32 +1359,13 @@ export async function loadActiveSessions(): Promise<{ rows: ActiveSessionRecord[
     }
   }
 
-  const djangoKeysToDelete: string[] = [];
-  const djangoByUser = new Map<number, typeof djangoCandidates>();
-  for (const candidate of djangoCandidates) {
-    const current = djangoByUser.get(candidate.userId) || [];
-    current.push(candidate);
-    djangoByUser.set(candidate.userId, current);
-  }
-  for (const candidates of djangoByUser.values()) {
-    candidates
-      .sort((left, right) => sessionSortValue(right.lastActivity, right.expires) - sessionSortValue(left.lastActivity, left.expires))
-      .forEach((candidate, index) => {
-        if (index >= maxSessionsPerUser && candidate.key) {
-          djangoKeysToDelete.push(candidate.key);
-        }
-      });
-  }
-  if (djangoKeysToDelete.length > 0) {
-    await pool.query('DELETE FROM django_session WHERE session_key = ANY($1::text[])', [djangoKeysToDelete]);
-  }
-  const deletedDjangoKeys = new Set(djangoKeysToDelete);
+  const deletedDjangoKeys = await enforceDjangoSessionLimits(djangoCandidates);
   for (const candidate of djangoCandidates) {
     if (deletedDjangoKeys.has(candidate.key)) continue;
     addSession({ ...candidate, source: 'django' });
   }
 
-  await enforceAllNextSessionLimits(maxSessionsPerUser);
+  await enforceAllNextSessionLimits();
 
   const nextResult = await pool.query<Record<string, unknown>>(
     `
@@ -1321,6 +1392,7 @@ export async function loadActiveSessions(): Promise<{ rows: ActiveSessionRecord[
   if (userIdList.length === 0) {
     return { rows: [], totalUsers: 0, totalSessions: 0, maxSessionsPerUser };
   }
+  const userLimits = await loadUserSessionLimitMap(userIdList);
 
   const usersResult = await pool.query<Record<string, unknown>>(
     `
@@ -1343,6 +1415,7 @@ export async function loadActiveSessions(): Promise<{ rows: ActiveSessionRecord[
     session.username = String(user.username || '');
     session.fullName = [user.first_name, user.last_name].map((item) => String(item || '').trim()).filter(Boolean).join(' ');
     session.email = String(user.email || '');
+    session.maxSessionsPerUser = userLimits.get(session.id) || maxSessionsPerUser;
   }
 
   const rows = sessionRows.sort((a, b) => {
@@ -5178,6 +5251,8 @@ export async function loadGroupsDetailed(): Promise<AdminGroupDetail[]> {
 }
 
 export async function loadUsersDetailed(): Promise<AdminUserDetail[]> {
+  await ensureUserSessionConfigTable();
+  const defaultLimit = await loadDefaultSessionLimit();
   const result = await pool.query<Record<string, unknown>>(
     `
       SELECT
@@ -5190,12 +5265,16 @@ export async function loadUsersDetailed(): Promise<AdminUserDetail[]> {
         u.is_superuser,
         u.is_staff,
         u.date_joined,
+        COALESCE(usc.max_sessions, $1) AS max_sessions,
         array_remove(array_agg(ug.group_id), null) AS groups
       FROM auth_user u
       LEFT JOIN auth_user_groups ug ON ug.user_id = u.id
+      LEFT JOIN custom_permissions_usersessionconfig usc ON usc.user_id = u.id
       GROUP BY u.id
+        , usc.max_sessions
       ORDER BY u.username
     `,
+    [defaultLimit],
   );
 
   return result.rows.map((row) => ({
@@ -5209,10 +5288,13 @@ export async function loadUsersDetailed(): Promise<AdminUserDetail[]> {
     isStaff: Boolean(row.is_staff),
     dateJoined: row.date_joined ? String(row.date_joined) : null,
     groups: Array.isArray(row.groups) ? row.groups.map((item) => Number(item)).filter(Boolean) : [],
+    maxSessionsPerUser: normalizeSessionLimit(row.max_sessions),
   }));
 }
 
 export async function loadUserDetailedById(userId: number): Promise<AdminUserDetail | null> {
+  await ensureUserSessionConfigTable();
+  const defaultLimit = await loadDefaultSessionLimit();
   const result = await pool.query<Record<string, unknown>>(
     `
       SELECT
@@ -5225,14 +5307,17 @@ export async function loadUserDetailedById(userId: number): Promise<AdminUserDet
         u.is_superuser,
         u.is_staff,
         u.date_joined,
+        COALESCE(usc.max_sessions, $2) AS max_sessions,
         array_remove(array_agg(ug.group_id), null) AS groups
       FROM auth_user u
       LEFT JOIN auth_user_groups ug ON ug.user_id = u.id
+      LEFT JOIN custom_permissions_usersessionconfig usc ON usc.user_id = u.id
       WHERE u.id = $1
       GROUP BY u.id
+        , usc.max_sessions
       LIMIT 1
     `,
-    [userId],
+    [userId, defaultLimit],
   );
 
   const row = result.rows[0];
@@ -5251,6 +5336,7 @@ export async function loadUserDetailedById(userId: number): Promise<AdminUserDet
     isStaff: Boolean(row.is_staff),
     dateJoined: row.date_joined ? String(row.date_joined) : null,
     groups: Array.isArray(row.groups) ? row.groups.map((item) => Number(item)).filter(Boolean) : [],
+    maxSessionsPerUser: normalizeSessionLimit(row.max_sessions),
   };
 }
 
@@ -5264,6 +5350,7 @@ export async function saveAdminUser(input: {
   isSuperuser: boolean;
   groups: number[];
   password?: string;
+  maxSessionsPerUser?: number;
 }) {
   const username = String(input.username || '').trim();
   if (!username) {
@@ -5348,6 +5435,9 @@ export async function saveAdminUser(input: {
       [userId, groupId],
     );
   }
+
+  await saveUserSessionLimit(userId, input.maxSessionsPerUser);
+  await enforceNextSessionLimit(userId, undefined, input.maxSessionsPerUser);
 
   const users = await loadUsersDetailed();
   return users.find((user) => user.id === userId) || null;

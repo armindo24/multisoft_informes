@@ -75,6 +75,7 @@ export async function POST(request: Request) {
         isSuperuser: Boolean(body.isSuperuser),
         groups: Array.isArray(body.groups) ? body.groups.map((item) => Number(item)).filter(Boolean) : [],
         password: String(body.password || ''),
+        maxSessionsPerUser: Number(body.maxSessionsPerUser || 0),
       });
 
       const [users, groups] = await Promise.all([loadUsersDetailed(), loadGroupsForAdmin()]);

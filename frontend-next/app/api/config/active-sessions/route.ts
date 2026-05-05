@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { closeActiveSession, closeUserSessions, loadActiveSessions, saveActiveSessionSettings } from '@/lib/admin-config';
+import { closeActiveSession, closeUserSessions, loadActiveSessions } from '@/lib/admin-config';
 import { getSessionUser } from '@/lib/auth-server';
 
 export const runtime = 'nodejs';
@@ -27,14 +27,6 @@ export async function POST(request: Request) {
     }
 
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
-    if (body.maxSessionsPerUser != null) {
-      await saveActiveSessionSettings({
-        maxSessionsPerUser: Number(body.maxSessionsPerUser || 0),
-      });
-      const data = await loadActiveSessions();
-      return NextResponse.json({ ok: true, data });
-    }
-
     const sessionKey = String(body.sessionKey || '').trim();
     if (sessionKey) {
       const data = await closeActiveSession(body.source, sessionKey);
