@@ -265,7 +265,6 @@ export function AppShell({
               <div className="mb-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
                 <SoftwareOwnerMark compact light />
               </div>
-              <BrandSignature light empresa={effectiveEmpresa} />
               <h1 className="mt-2.5 text-[1.7rem] font-black leading-tight text-white">Panel ejecutivo</h1>
               <p className="mt-2 max-w-[17rem] text-[0.92rem] leading-5 text-slate-400">
                 Acceso ejecutivo a informes, indicadores y consultas operativas.
@@ -390,7 +389,6 @@ export function AppShell({
                   <div className="mb-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
                     <SoftwareOwnerMark compact light />
                   </div>
-                  <BrandSignature light empresa={effectiveEmpresa} />
                   <p className="mt-2 text-sm text-slate-400">Panel ejecutivo</p>
                 </div>
                 <button
