@@ -27,7 +27,8 @@ const pool = new Pool({
 });
 
 const NODE_API_BASE = process.env.NEXT_PUBLIC_NODE_API_URL || 'http://localhost:3000/api/v1';
-const MAX_ACTIVE_SESSIONS_PER_USER = Math.max(1, Number(process.env.MAX_ACTIVE_SESSIONS_PER_USER || 3));
+const DEFAULT_MAX_ACTIVE_SESSIONS_PER_USER = Math.max(1, Number(process.env.MAX_ACTIVE_SESSIONS_PER_USER || 3));
+const MAX_SESSION_LIMIT = 20;
 const DEFAULT_GROUPS = ['Admin', 'Finanzas', 'Ventas', 'Compras', 'Stock', 'Migraciones', 'Configuracion'];
 
 export type DbType = 'postgres' | 'integrado' | 'sueldo';
@@ -116,6 +117,10 @@ export type ActiveSessionRecord = {
   lastActivity: string;
   ipAddress: string;
   userAgent: string;
+};
+
+export type ActiveSessionSettings = {
+  maxSessionsPerUser: number;
 };
 
 export type TaskStatus = 'pendiente' | 'en_proceso' | 'resuelta';
@@ -442,12 +447,68 @@ async function ensureReportTemplateTables() {
   `);
 }
 
+async function ensureSystemConfigTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS custom_permissions_systemconfig (
+      key VARCHAR(120) PRIMARY KEY,
+      value JSONB NOT NULL DEFAULT '{}'::jsonb,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+}
+
+function normalizeSessionLimit(value: unknown) {
+  const numeric = Number(value || DEFAULT_MAX_ACTIVE_SESSIONS_PER_USER);
+  if (!Number.isFinite(numeric)) return DEFAULT_MAX_ACTIVE_SESSIONS_PER_USER;
+  return Math.min(MAX_SESSION_LIMIT, Math.max(1, Math.trunc(numeric)));
+}
+
+export async function loadActiveSessionSettings(): Promise<ActiveSessionSettings> {
+  await ensureSystemConfigTable();
+
+  const result = await pool.query<Record<string, unknown>>(
+    `
+      SELECT value
+      FROM custom_permissions_systemconfig
+      WHERE key = 'active_sessions'
+    `,
+  );
+
+  const rawValue = (result.rows[0]?.value || {}) as Record<string, unknown>;
+  return {
+    maxSessionsPerUser: normalizeSessionLimit(rawValue.maxSessionsPerUser),
+  };
+}
+
+export async function saveActiveSessionSettings(input: ActiveSessionSettings): Promise<ActiveSessionSettings> {
+  await ensureSystemConfigTable();
+
+  const settings = {
+    maxSessionsPerUser: normalizeSessionLimit(input.maxSessionsPerUser),
+  };
+
+  await pool.query(
+    `
+      INSERT INTO custom_permissions_systemconfig (key, value, updated_at)
+      VALUES ('active_sessions', $1::jsonb, NOW())
+      ON CONFLICT (key) DO UPDATE
+      SET value = EXCLUDED.value,
+          updated_at = NOW()
+    `,
+    [JSON.stringify(settings)],
+  );
+
+  await enforceAllNextSessionLimits(settings.maxSessionsPerUser);
+  return loadActiveSessionSettings();
+}
+
 export function createNextSessionKey() {
   return randomBytes(32).toString('hex');
 }
 
 export async function registerNextSession(input: NextSessionInput) {
   await ensureNextSessionTable();
+  const settings = await loadActiveSessionSettings();
 
   await pool.query(
     `
@@ -469,12 +530,13 @@ export async function registerNextSession(input: NextSessionInput) {
     ],
   );
 
-  await enforceNextSessionLimit(input.userId, input.sessionKey);
+  await enforceNextSessionLimit(input.userId, input.sessionKey, settings.maxSessionsPerUser);
 }
 
-async function enforceNextSessionLimit(userId: number, keepSessionKey?: string) {
+async function enforceNextSessionLimit(userId: number, keepSessionKey?: string, explicitLimit?: number) {
   const normalizedUserId = Number(userId || 0);
   if (!normalizedUserId) return;
+  const maxSessions = normalizeSessionLimit(explicitLimit);
 
   await ensureNextSessionTable();
 
@@ -504,8 +566,35 @@ async function enforceNextSessionLimit(userId: number, keepSessionKey?: string) 
     [
       normalizedUserId,
       String(keepSessionKey || ''),
-      MAX_ACTIVE_SESSIONS_PER_USER,
+      maxSessions,
     ],
+  );
+}
+
+async function enforceAllNextSessionLimits(explicitLimit?: number) {
+  await ensureNextSessionTable();
+  const maxSessions = normalizeSessionLimit(explicitLimit);
+
+  await pool.query('DELETE FROM custom_permissions_nextsession WHERE expires_at <= NOW()');
+  await pool.query(
+    `
+      DELETE FROM custom_permissions_nextsession
+      WHERE session_key IN (
+        SELECT session_key
+        FROM (
+          SELECT
+            session_key,
+            ROW_NUMBER() OVER (
+              PARTITION BY user_id
+              ORDER BY last_activity DESC, created_at DESC, session_key DESC
+            ) AS rn
+          FROM custom_permissions_nextsession
+          WHERE expires_at > NOW()
+        ) ranked
+        WHERE rn > $1
+      )
+    `,
+    [maxSessions],
   );
 }
 
@@ -1104,6 +1193,8 @@ function decodeDjangoSession(value: string): Record<string, unknown> {
 
 export async function loadActiveSessions(): Promise<{ rows: ActiveSessionRecord[]; totalUsers: number; totalSessions: number; maxSessionsPerUser: number }> {
   await ensureNextSessionTable();
+  const settings = await loadActiveSessionSettings();
+  const maxSessionsPerUser = settings.maxSessionsPerUser;
 
   const sessionRows: ActiveSessionRecord[] = [];
   const userIds = new Set<number>();
@@ -1189,7 +1280,7 @@ export async function loadActiveSessions(): Promise<{ rows: ActiveSessionRecord[
     candidates
       .sort((left, right) => sessionSortValue(right.lastActivity, right.expires) - sessionSortValue(left.lastActivity, left.expires))
       .forEach((candidate, index) => {
-        if (index >= MAX_ACTIVE_SESSIONS_PER_USER && candidate.key) {
+        if (index >= maxSessionsPerUser && candidate.key) {
           djangoKeysToDelete.push(candidate.key);
         }
       });
@@ -1203,23 +1294,7 @@ export async function loadActiveSessions(): Promise<{ rows: ActiveSessionRecord[
     addSession({ ...candidate, source: 'django' });
   }
 
-  await pool.query('DELETE FROM custom_permissions_nextsession WHERE expires_at <= NOW()');
-  await pool.query(`
-    WITH ranked AS (
-      SELECT
-        session_key,
-        ROW_NUMBER() OVER (
-          PARTITION BY user_id
-          ORDER BY last_activity DESC, created_at DESC, session_key DESC
-        ) AS rn
-      FROM custom_permissions_nextsession
-      WHERE expires_at > NOW()
-    )
-    DELETE FROM custom_permissions_nextsession
-    WHERE session_key IN (
-      SELECT session_key FROM ranked WHERE rn > ${MAX_ACTIVE_SESSIONS_PER_USER}
-    )
-  `);
+  await enforceAllNextSessionLimits(maxSessionsPerUser);
 
   const nextResult = await pool.query<Record<string, unknown>>(
     `
@@ -1244,7 +1319,7 @@ export async function loadActiveSessions(): Promise<{ rows: ActiveSessionRecord[
 
   const userIdList = Array.from(userIds);
   if (userIdList.length === 0) {
-    return { rows: [], totalUsers: 0, totalSessions: 0, maxSessionsPerUser: MAX_ACTIVE_SESSIONS_PER_USER };
+    return { rows: [], totalUsers: 0, totalSessions: 0, maxSessionsPerUser };
   }
 
   const usersResult = await pool.query<Record<string, unknown>>(
@@ -1279,7 +1354,7 @@ export async function loadActiveSessions(): Promise<{ rows: ActiveSessionRecord[
     rows,
     totalUsers: new Set(rows.map((row) => row.id)).size,
     totalSessions: rows.length,
-    maxSessionsPerUser: MAX_ACTIVE_SESSIONS_PER_USER,
+    maxSessionsPerUser,
   };
 }
 
