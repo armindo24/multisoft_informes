@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { getEmpresasByUser } from '@/lib/api';
-import { loadUserCompanyAssignments } from '@/lib/admin-config';
+import { loadBrandingConfigs, loadUserCompanyAssignments } from '@/lib/admin-config';
 import { getSessionUser } from '@/lib/auth-server';
 
 type EmpresaEnvelope = {
@@ -81,7 +81,13 @@ export async function getPrimaryScopedEmpresa(base: 'Integrado' | 'Sueldo' = 'In
   const sessionUser = await getSessionUser();
   if (sessionUser?.id) {
     const assignments = await loadUserCompanyAssignments(sessionUser.id).catch(() => []);
-    const firstAssigned = assignments.find((item) => item.db === base && String(item.empresa || '').trim());
+    const baseAssignments = assignments.filter((item) => item.db === base && String(item.empresa || '').trim());
+    const brandedCompanies = await loadBrandingConfigs()
+      .then((items) => new Set(items.filter((item) => item.logoUrl).map((item) => item.empresa)))
+      .catch(() => new Set<string>());
+
+    const firstAssigned = baseAssignments.find((item) => brandedCompanies.has(String(item.empresa || '').trim().toUpperCase()))
+      || baseAssignments[0];
     const assignedEmpresa = firstAssigned ? String(firstAssigned.empresa || '').trim().toUpperCase() : '';
     if (assignedEmpresa) return assignedEmpresa;
   }
