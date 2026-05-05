@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { BrandSignature } from '@/components/ui/brand-signature';
+import { SoftwareOwnerMark } from '@/components/ui/software-owner-mark';
 
 export function AuthShell({
   children,
@@ -26,7 +26,7 @@ export function AuthShell({
 
       <div className="relative mx-auto grid min-h-screen w-full max-w-[1240px] gap-14 px-6 py-10 lg:grid-cols-[1.12fr_0.88fr] lg:items-center lg:px-10">
         <section className="max-w-[590px] text-white">
-          <BrandSignature light />
+          <SoftwareOwnerMark light />
 
           <h1 className="mt-8 text-5xl font-semibold leading-[1.06] tracking-[-0.05em] text-white md:text-6xl lg:text-[4.35rem]">
             {title}

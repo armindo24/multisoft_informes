@@ -7,6 +7,7 @@ import { Bell, ChevronRight, Menu, Search, X } from 'lucide-react';
 
 import { LogoutButton } from '@/components/ui/logout-button';
 import { BrandSignature } from '@/components/ui/brand-signature';
+import { SoftwareOwnerMark } from '@/components/ui/software-owner-mark';
 import type { SessionUser } from '@/lib/auth';
 import { navigation, type NavigationItem } from '@/lib/navigation';
 
@@ -369,6 +370,10 @@ export function AppShell({
                   : 'No hay grupos asignados para este usuario.'}
               </p>
             </div>
+
+            <div className="mt-3 border-t border-slate-800 px-2 pt-4">
+              <SoftwareOwnerMark compact light />
+            </div>
           </div>
         </aside>
 
@@ -492,6 +497,9 @@ export function AppShell({
                   );
                 })}
               </nav>
+              <div className="mt-4 border-t border-slate-800 px-2 pt-4">
+                <SoftwareOwnerMark compact light />
+              </div>
             </aside>
           </div>
         ) : null}
