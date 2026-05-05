@@ -40,7 +40,8 @@ export async function GET() {
       return NextResponse.json({ ok: false, message: 'No se encontro el usuario actual.' }, { status: 404 });
     }
 
-    const ownSession = activeSessions.rows.find((row) => row.id === sessionUser.id) || null;
+    const ownSessions = activeSessions.rows.filter((row) => row.id === sessionUser.id);
+    const ownSession = ownSessions[0] || null;
     const overdueTasks = tasks.assigned.filter((item) => item.status !== 'resuelta' && (dueDiffDays(item.dueDate) ?? 999) < 0);
     const dueTodayTasks = tasks.assigned.filter((item) => item.status !== 'resuelta' && dueDiffDays(item.dueDate) === 0);
     const accountEvents = [
@@ -48,7 +49,7 @@ export async function GET() {
         id: 'session',
         title: ownSession ? 'Sesion activa detectada' : 'Sin sesion Django registrada',
         description: ownSession
-          ? `Tienes ${ownSession.sessions} sesion(es) activa(s) en el sistema.`
+          ? `Tienes ${ownSessions.length} sesion(es) activa(s) en el sistema.`
           : 'No se encontraron sesiones activas adicionales asociadas a tu usuario.',
         tone: ownSession ? 'info' : 'neutral',
         timestamp: ownSession?.lastActivity || user.dateJoined || null,
@@ -106,7 +107,7 @@ export async function GET() {
       ok: true,
       data: {
         summary: {
-          activeSessions: ownSession?.sessions || 0,
+          activeSessions: ownSessions.length,
           lastActivity: ownSession?.lastActivity || null,
           ipAddress: ownSession?.ipAddress || '',
           userAgent: ownSession?.userAgent || '',

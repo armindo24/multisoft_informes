@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 
 type ActiveSessionRecord = {
+  key: string;
+  source: 'django' | 'next';
   id: number;
   username: string;
   fullName: string;
@@ -18,6 +20,7 @@ type Payload = {
   rows: ActiveSessionRecord[];
   totalUsers: number;
   totalSessions: number;
+  maxSessionsPerUser: number;
 };
 
 function fmtDate(value: string | null) {
@@ -29,7 +32,7 @@ function fmtDate(value: string | null) {
 export function ActiveSessionsPanel() {
   const [data, setData] = useState<Payload | null>(null);
   const [loading, setLoading] = useState(true);
-  const [closingUserId, setClosingUserId] = useState<number | null>(null);
+  const [closingSessionKey, setClosingSessionKey] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
@@ -51,27 +54,27 @@ export function ActiveSessionsPanel() {
     void load();
   }, []);
 
-  async function closeUser(userId: number) {
-    setClosingUserId(userId);
+  async function closeSession(row: ActiveSessionRecord) {
+    setClosingSessionKey(row.key);
     setMessage(null);
 
     const response = await fetch('/api/config/active-sessions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId }),
+      body: JSON.stringify({ sessionKey: row.key, source: row.source }),
     });
 
     const payload = (await response.json().catch(() => ({}))) as { ok?: boolean; data?: Payload; message?: string };
 
     if (!response.ok || !payload.ok || !payload.data) {
       setMessage({ type: 'error', text: payload.message || 'No se pudo cerrar la sesion del usuario.' });
-      setClosingUserId(null);
+      setClosingSessionKey(null);
       return;
     }
 
     setData(payload.data);
     setMessage({ type: 'success', text: 'Sesion cerrada correctamente.' });
-    setClosingUserId(null);
+    setClosingSessionKey(null);
   }
 
   return (
@@ -95,20 +98,24 @@ export function ActiveSessionsPanel() {
               <p className="text-sm text-slate-500">Sesiones activas</p>
               <p className="mt-3 text-2xl font-bold text-slate-900">{data.totalSessions}</p>
             </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm text-slate-500">Limite por usuario</p>
+              <p className="mt-3 text-2xl font-bold text-slate-900">{data.maxSessionsPerUser}</p>
+            </div>
           </div>
 
           <div className="overflow-x-auto rounded-2xl border border-slate-200">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <table className="min-w-[1180px] divide-y divide-slate-200 text-sm">
               <thead className="bg-slate-50 text-left text-slate-600">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Usuario</th>
                   <th className="px-4 py-3 font-semibold">Nombre</th>
                   <th className="px-4 py-3 font-semibold">Email</th>
-                  <th className="px-4 py-3 font-semibold text-right">Sesiones</th>
                   <th className="px-4 py-3 font-semibold">Ult. actividad</th>
                   <th className="px-4 py-3 font-semibold">IP</th>
                   <th className="px-4 py-3 font-semibold">Agente</th>
                   <th className="px-4 py-3 font-semibold">Expira</th>
+                  <th className="px-4 py-3 font-semibold">Origen</th>
                   <th className="px-4 py-3 font-semibold text-right">Accion</th>
                 </tr>
               </thead>
@@ -119,23 +126,23 @@ export function ActiveSessionsPanel() {
                   </tr>
                 ) : (
                   data.rows.map((row) => (
-                    <tr key={row.id}>
+                    <tr key={`${row.source}-${row.key}`}>
                       <td className="px-4 py-3 font-medium text-slate-900">{row.username}</td>
                       <td className="px-4 py-3 text-slate-700">{row.fullName || '-'}</td>
                       <td className="px-4 py-3 text-slate-700">{row.email || '-'}</td>
-                      <td className="px-4 py-3 text-right text-slate-700">{row.sessions}</td>
                       <td className="px-4 py-3 text-slate-700">{fmtDate(row.lastActivity)}</td>
                       <td className="px-4 py-3 text-slate-700">{row.ipAddress || '-'}</td>
                       <td className="max-w-[280px] truncate px-4 py-3 text-slate-700" title={row.userAgent}>{row.userAgent || '-'}</td>
                       <td className="px-4 py-3 text-slate-700">{fmtDate(row.expires)}</td>
+                      <td className="px-4 py-3 text-slate-700">{row.source === 'django' ? 'Django' : 'Next'}</td>
                       <td className="px-4 py-3 text-right">
                         <button
                           type="button"
-                          onClick={() => void closeUser(row.id)}
-                          disabled={closingUserId === row.id}
+                          onClick={() => void closeSession(row)}
+                          disabled={closingSessionKey === row.key}
                           className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 disabled:opacity-60"
                         >
-                          {closingUserId === row.id ? 'Cerrando...' : 'Cerrar'}
+                          {closingSessionKey === row.key ? 'Cerrando...' : 'Cerrar'}
                         </button>
                       </td>
                     </tr>

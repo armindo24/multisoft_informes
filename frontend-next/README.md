@@ -24,6 +24,7 @@ Abre:
 ```env
 NEXT_PUBLIC_NODE_API_URL=http://localhost:3000/api/v1
 NEXT_PUBLIC_APP_NAME=Multisoft Informes
+MAX_ACTIVE_SESSIONS_PER_USER=3
 ```
 
 ## Estrategia de migración recomendada
