@@ -6,12 +6,30 @@ import { brandShortName, getBranding, getLogoBackgroundClasses, resolveBrandAsse
 
 type BrandingApiRecord = {
   empresa: string;
+  scope?: string;
   clientName: string;
   tagline: string;
   logoUrl: string;
   faviconUrl: string;
   logoBackground: 'auto' | 'light' | 'dark';
 };
+
+function toBrandingConfig(record: BrandingApiRecord | null | undefined, fallback: BrandingConfig): BrandingConfig {
+  return {
+    appName: fallback.appName,
+    clientName: record?.clientName || fallback.clientName,
+    tagline: record?.tagline || fallback.tagline,
+    logoUrl: record?.logoUrl || fallback.logoUrl,
+    faviconUrl: record?.faviconUrl || fallback.faviconUrl,
+    logoBackground: record?.logoBackground || fallback.logoBackground,
+  };
+}
+
+function pickDefaultBranding(records: BrandingApiRecord[]) {
+  const globalRecord = records.find((item) => String(item.empresa || '').toUpperCase() === 'GLOBAL');
+  if (globalRecord?.logoUrl) return globalRecord;
+  return records.find((item) => item.logoUrl) || globalRecord || records[0] || null;
+}
 
 export function BrandSignature({
   compact = false,
@@ -29,15 +47,13 @@ export function BrandSignature({
   const empresaParam = String(empresa || searchParams.get('empresa') || '').trim().toUpperCase();
 
   useEffect(() => {
-    if (!empresaParam) {
-      setBranding(globalBranding);
-      return;
-    }
-
     let cancelled = false;
 
     async function loadBranding() {
-      const response = await fetch(`/api/config/branding?empresa=${encodeURIComponent(empresaParam)}`, {
+      const url = empresaParam
+        ? `/api/config/branding?empresa=${encodeURIComponent(empresaParam)}`
+        : '/api/config/branding';
+      const response = await fetch(url, {
         cache: 'no-store',
       }).catch(() => null);
 
@@ -48,7 +64,7 @@ export function BrandSignature({
 
       const payload = (await response.json().catch(() => ({}))) as {
         ok?: boolean;
-        data?: BrandingApiRecord | null;
+        data?: BrandingApiRecord | BrandingApiRecord[] | null;
       };
 
       if (cancelled) return;
@@ -58,14 +74,10 @@ export function BrandSignature({
         return;
       }
 
-      setBranding({
-        appName: globalBranding.appName,
-        clientName: payload.data.clientName || globalBranding.clientName,
-        tagline: payload.data.tagline || globalBranding.tagline,
-        logoUrl: payload.data.logoUrl || globalBranding.logoUrl,
-        faviconUrl: payload.data.faviconUrl || globalBranding.faviconUrl,
-        logoBackground: payload.data.logoBackground || globalBranding.logoBackground,
-      });
+      const record = Array.isArray(payload.data)
+        ? pickDefaultBranding(payload.data)
+        : payload.data;
+      setBranding(toBrandingConfig(record, globalBranding));
     }
 
     void loadBranding();
