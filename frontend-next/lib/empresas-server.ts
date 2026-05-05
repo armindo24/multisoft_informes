@@ -78,6 +78,14 @@ export async function getScopedEmpresas(base: 'Integrado' | 'Sueldo' = 'Integrad
 }
 
 export async function getPrimaryScopedEmpresa(base: 'Integrado' | 'Sueldo' = 'Integrado') {
+  const sessionUser = await getSessionUser();
+  if (sessionUser?.id) {
+    const assignments = await loadUserCompanyAssignments(sessionUser.id).catch(() => []);
+    const firstAssigned = assignments.find((item) => item.db === base && String(item.empresa || '').trim());
+    const assignedEmpresa = firstAssigned ? String(firstAssigned.empresa || '').trim().toUpperCase() : '';
+    if (assignedEmpresa) return assignedEmpresa;
+  }
+
   const response = await getScopedEmpresas(base);
   const first = response?.data?.[0];
   const empresa = first ? getEmpresaCode(first) : '';
