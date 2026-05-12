@@ -439,7 +439,7 @@ export async function getComprasList(params: {
   moneda?: string;
   compras_start: string;
   compras_end: string;
-  departamento: string;
+  departamento?: string;
   proveedor?: string;
   tipooc?: string;
   agrupar?: string;

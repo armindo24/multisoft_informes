@@ -93,13 +93,27 @@ export default async function DashboardPage() {
   const periodo = String(new Date().getFullYear());
   const mesActual = String(new Date().getMonth() + 1).padStart(2, '0');
 
-  const [ventasResponse, cobrarResponse, valorizadoResponse, balanceResponse, comprasResponse] = empresa
+  const comprasPromise = empresa && sucursales.length
+    ? Promise.all(
+        sucursales.map((item) =>
+          getComprasList({
+            empresa,
+            sucursal: item.value,
+            moneda: 'GS',
+            compras_start: desde,
+            compras_end: hasta,
+          }),
+        ),
+      )
+    : Promise.resolve([]);
+
+  const [ventasResponse, cobrarResponse, valorizadoResponse, balanceResponse, comprasResponses] = empresa
     ? await Promise.all([
         getVentasResumido({ empresa, moneda: 'GS', desde, hasta, order: 'cod_cliente' }),
         getCuentasCobrar({ empresa, start: desde, end: hasta, vencimiento: true }),
         getStockValorizado({ empresa, sucursal, estado: 'A', existencia: 'mayor', moneda: 'L', costeo: 'P', summary: 'S' }),
         getBalanceGeneral({ periodo, empresa, mesd: '01', mesh: mesActual, moneda: 'local', cuentad: '1', cuentah: '9', nivel: 9, aux: 'NO', saldo: 'NO' }),
-        sucursal ? getComprasList({ empresa, sucursal, moneda: 'GS', compras_start: desde, compras_end: hasta, departamento: '1' }) : Promise.resolve(null),
+        comprasPromise,
       ])
     : [null, null, null, null, null];
 
@@ -108,7 +122,9 @@ export default async function DashboardPage() {
   const stock = (valorizadoResponse?.data || []) as Array<Record<string, unknown>>;
   const stockSummary = stock[0] || {};
   const balance = (balanceResponse?.data || []) as Array<Record<string, unknown>>;
-  const compras = (comprasResponse?.data || []) as Array<Record<string, unknown>>;
+  const compras = Array.isArray(comprasResponses)
+    ? comprasResponses.flatMap((response) => (response?.data || []) as Array<Record<string, unknown>>)
+    : [];
 
   const facturacion = ventas.reduce((acc, row) => acc + ventaTotal(row), 0);
   const saldoCobrar = cobrar.reduce((acc, row) => acc + rowValue(row, ['saldo', 'Saldo', 'SALDO']), 0);
@@ -128,7 +144,7 @@ export default async function DashboardPage() {
     { name: 'Ventas', href: '/ventas', status: ventasResponse ? 'Conectado' as const : 'Sin datos' as const, detail: `${ventas.length} registros visibles del período.` },
     { name: 'Stock', href: '/stock', status: valorizadoResponse ? 'Conectado' as const : 'Sin datos' as const, detail: `${toNumber(stockSummary.articulos).toLocaleString('es-PY')} articulos resumidos.` },
     { name: 'Finanzas', href: '/finanzas', status: balanceResponse ? 'Conectado' as const : 'Sin datos' as const, detail: `${balance.length} líneas de balance general.` },
-    { name: 'Compras', href: '/compras', status: comprasResponse ? 'Conectado' as const : 'Sin datos' as const, detail: `${compras.length} movimientos visibles del período.` },
+    { name: 'Compras', href: '/compras', status: comprasResponses ? 'Conectado' as const : 'Sin datos' as const, detail: `${compras.length} movimientos visibles del período.` },
   ];
 
   return (
