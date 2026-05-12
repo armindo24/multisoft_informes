@@ -1,9 +1,9 @@
 import { PageHeader } from '@/components/ui/page-header';
 import { DiferenciaCambioPanel } from '@/components/registraciones/diferencia-cambio-panel';
 import { getSessionUser } from '@/lib/auth-server';
-import { getTipoAsientoOptions } from '@/lib/api';
+import { getCuentaAuxSelect, getCuentaPlancta, getTipoAsientoOptions } from '@/lib/api';
 import { getScopedEmpresas } from '@/lib/empresas-server';
-import type { SelectOption } from '@/types/finanzas';
+import type { AccountPlanOption, AuxiliarOption, SelectOption } from '@/types/finanzas';
 import { redirect } from 'next/navigation';
 
 const actions = [
@@ -56,6 +56,65 @@ function sanitizeOptions(items: Array<Record<string, string>> | undefined | null
   return result;
 }
 
+function normalizeCuentaPlanOption(item: Record<string, string>): AccountPlanOption {
+  const value = String(item.CodPlanCta || item.codplancta || item.codigo || item.value || '').trim();
+  const nivel = String(item.nivel || item.Nivel || '').trim();
+  const name = String(item.Nombre || item.nombre || item.descripcion || '').trim() || value;
+  return {
+    value,
+    label: value && name ? `${value} - ${name}` : value,
+    name,
+    imputable: String(item.imputable || item.Imputable || '').trim(),
+    auxiliar: String(item.auxiliar || item.Auxiliar || '').trim(),
+    moneda: String(item.codmoneda || item.CodMoneda || '').trim(),
+    nivel,
+  };
+}
+
+function sanitizeCuentaPlanOptions(items: Array<Record<string, string>> | undefined | null): AccountPlanOption[] {
+  const seen = new Set<string>();
+  const result: AccountPlanOption[] = [];
+
+  for (const item of items || []) {
+    const option = normalizeCuentaPlanOption(item);
+    if (!option.value || seen.has(option.value)) continue;
+    seen.add(option.value);
+    result.push(option);
+  }
+
+  return result;
+}
+
+function normalizeAuxiliarOption(item: Record<string, string>): AuxiliarOption {
+  const rawValue = item.CodPlanAux || item.codplanaux || item.codigo || item.value || '';
+  const accountCode = String(rawValue).includes('-') ? String(rawValue).split('-').slice(1).join('-').trim() : String(item.CodPlanCta || item.codplancta || '');
+  const auxCode = String(rawValue).includes('-') ? String(rawValue).split('-')[0].trim() : String(rawValue || '').trim();
+  const rawLabel = item.Nombre || item.nombre || item.descripcion || item.label || auxCode;
+  const cleaned = String(rawLabel || '').replace(/^.+?\s*-\s*/, '').trim();
+  return {
+    value: auxCode,
+    label: cleaned ? `${auxCode} - ${cleaned}` : auxCode,
+    auxCode,
+    accountCode,
+    name: cleaned || auxCode,
+  };
+}
+
+function sanitizeAuxiliarOptions(items: Array<Record<string, string>> | undefined | null): AuxiliarOption[] {
+  const seen = new Set<string>();
+  const result: AuxiliarOption[] = [];
+
+  for (const item of items || []) {
+    const option = normalizeAuxiliarOption(item);
+    const key = `${option.auxCode}:${option.accountCode}`;
+    if (!option.value || seen.has(key)) continue;
+    seen.add(key);
+    result.push(option);
+  }
+
+  return result;
+}
+
 export default async function RegistracionesPage({
   searchParams,
 }: {
@@ -79,6 +138,14 @@ export default async function RegistracionesPage({
   const tipoAsientos = sanitizeOptions((tipoAsientosResponse?.data || []) as Array<Record<string, string>>);
   const currentYear = String(new Date().getFullYear());
   const defaultEmpresa = empresas[0]?.value || '';
+  const [cuentaOptionsResponse, auxiliarOptionsResponse] = selectedSection === 'diferencia-cambio' && defaultEmpresa
+    ? await Promise.all([
+        getCuentaPlancta({ empresa: defaultEmpresa, periodo: currentYear }),
+        getCuentaAuxSelect({ empresa: defaultEmpresa, periodo: currentYear }),
+      ])
+    : [null, null];
+  const accountOptions = sanitizeCuentaPlanOptions((cuentaOptionsResponse?.data || []) as Array<Record<string, string>>);
+  const auxOptions = sanitizeAuxiliarOptions((auxiliarOptionsResponse?.data || []) as Array<Record<string, string>>);
 
   return (
     <div className="space-y-5">
@@ -114,6 +181,8 @@ export default async function RegistracionesPage({
         <DiferenciaCambioPanel
           empresas={empresas}
           tipoAsientos={tipoAsientos}
+          accountOptions={accountOptions}
+          auxOptions={auxOptions}
           defaultEmpresa={defaultEmpresa}
           defaultPeriodo={currentYear}
         />

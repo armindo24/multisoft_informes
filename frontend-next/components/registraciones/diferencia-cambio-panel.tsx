@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Calculator, CalendarDays, CheckCircle2, FileText, Info, Search, X } from 'lucide-react';
-import type { SelectOption } from '@/types/finanzas';
+import type { AccountPlanOption, AuxiliarOption, SelectOption } from '@/types/finanzas';
 
 type DifferenceRow = {
   codplancta: string;
@@ -51,14 +51,48 @@ function toNumber(value: string) {
   return Number.isFinite(number) ? number : 0;
 }
 
+function normalizeAccountOption(item: Record<string, string>): AccountPlanOption {
+  const value = String(item.CodPlanCta || item.codplancta || item.codigo || item.value || '').trim();
+  const nivel = String(item.nivel || item.Nivel || '').trim();
+  const name = String(item.Nombre || item.nombre || item.descripcion || '').trim() || value;
+  return {
+    value,
+    label: value && name ? `${value} - ${name}` : value,
+    name,
+    imputable: String(item.imputable || item.Imputable || '').trim(),
+    auxiliar: String(item.auxiliar || item.Auxiliar || '').trim(),
+    moneda: String(item.codmoneda || item.CodMoneda || '').trim(),
+    nivel,
+  };
+}
+
+function normalizeAuxOption(item: Record<string, string>): AuxiliarOption {
+  const rawValue = item.CodPlanAux || item.codplanaux || item.codigo || item.value || '';
+  const accountCode = String(rawValue).includes('-') ? String(rawValue).split('-').slice(1).join('-').trim() : String(item.CodPlanCta || item.codplancta || '');
+  const auxCode = String(rawValue).includes('-') ? String(rawValue).split('-')[0].trim() : String(rawValue || '').trim();
+  const rawLabel = item.Nombre || item.nombre || item.descripcion || item.label || auxCode;
+  const cleaned = String(rawLabel || '').replace(/^.+?\s*-\s*/, '').trim();
+  return {
+    value: auxCode,
+    label: cleaned ? `${auxCode} - ${cleaned}` : auxCode,
+    auxCode,
+    accountCode,
+    name: cleaned || auxCode,
+  };
+}
+
 export function DiferenciaCambioPanel({
   empresas,
   tipoAsientos,
+  accountOptions,
+  auxOptions,
   defaultEmpresa,
   defaultPeriodo,
 }: {
   empresas: SelectOption[];
   tipoAsientos: SelectOption[];
+  accountOptions: AccountPlanOption[];
+  auxOptions: AuxiliarOption[];
   defaultEmpresa: string;
   defaultPeriodo: string;
 }) {
@@ -85,8 +119,62 @@ export function DiferenciaCambioPanel({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [localAccountOptions, setLocalAccountOptions] = useState<AccountPlanOption[]>(accountOptions);
+  const [localAuxOptions, setLocalAuxOptions] = useState<AuxiliarOption[]>(auxOptions);
+  const [accountPickerOpen, setAccountPickerOpen] = useState(false);
+  const [accountPickerSearch, setAccountPickerSearch] = useState('');
+  const [auxPickerOpen, setAuxPickerOpen] = useState(false);
+  const [auxPickerSearch, setAuxPickerSearch] = useState('');
 
   const factor = toNumber(factorCambio) || 1;
+
+  const filteredAccounts = useMemo(() => {
+    const term = accountPickerSearch.trim().toLowerCase();
+    if (!term) return localAccountOptions;
+    return localAccountOptions.filter((option) =>
+      option.value.toLowerCase().includes(term) ||
+      option.label.toLowerCase().includes(term) ||
+      option.name.toLowerCase().includes(term) ||
+      option.moneda.toLowerCase().includes(term),
+    );
+  }, [localAccountOptions, accountPickerSearch]);
+
+  const filteredAuxOptions = useMemo(() => {
+    const accountCode = cuenta.trim();
+    const term = auxPickerSearch.trim().toLowerCase();
+    const scoped = localAuxOptions.filter((option) => !accountCode || option.accountCode === accountCode);
+    if (!term) return scoped;
+    return scoped.filter((option) =>
+      option.auxCode.toLowerCase().includes(term) ||
+      option.name.toLowerCase().includes(term) ||
+      option.label.toLowerCase().includes(term),
+    );
+  }, [localAuxOptions, auxPickerSearch, cuenta]);
+
+  function openAccountPicker() {
+    setAccountPickerSearch('');
+    setAccountPickerOpen(true);
+  }
+
+  function selectAccount(option: AccountPlanOption) {
+    setCuenta(option.value);
+    setAuxiliar('');
+    setAccountPickerOpen(false);
+  }
+
+  function openAuxPicker() {
+    if (!cuenta.trim()) {
+      setMessage('Debe cargar primeramente la Cuenta Contable.');
+      return;
+    }
+    setAuxPickerSearch('');
+    setAuxPickerOpen(true);
+  }
+
+  function selectAux(option: AuxiliarOption) {
+    setAuxiliar(option.auxCode);
+    setAuxPickerOpen(false);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -124,6 +212,45 @@ export function DiferenciaCambioPanel({
       cancelled = true;
     };
   }, [empresa, periodo, tipoAsientos]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPickers() {
+      if (!empresa || !periodo) return;
+
+      const [accountsPayload, auxPayload] = await Promise.all([
+        fetch(`/proxy/cuenta/plancta/${encodeURIComponent(empresa)}/${encodeURIComponent(periodo)}`, { cache: 'no-store' }).then((response) => response.json()).catch(() => ({ data: [] })),
+        fetch(`/proxy/cuentaauxi/select/${encodeURIComponent(empresa)}/${encodeURIComponent(periodo)}`, { cache: 'no-store' }).then((response) => response.json()).catch(() => ({ data: [] })),
+      ]);
+
+      if (cancelled) return;
+
+      const accountRows = Array.isArray(accountsPayload?.data) ? accountsPayload.data as Array<Record<string, string>> : [];
+      const auxRows = Array.isArray(auxPayload?.data) ? auxPayload.data as Array<Record<string, string>> : [];
+      const seenAccounts = new Set<string>();
+      const seenAux = new Set<string>();
+
+      setLocalAccountOptions(accountRows.map(normalizeAccountOption).filter((option) => {
+        if (!option.value || seenAccounts.has(option.value)) return false;
+        seenAccounts.add(option.value);
+        return true;
+      }));
+
+      setLocalAuxOptions(auxRows.map(normalizeAuxOption).filter((option) => {
+        const key = `${option.auxCode}:${option.accountCode}`;
+        if (!option.value || seenAux.has(key)) return false;
+        seenAux.add(key);
+        return true;
+      }));
+    }
+
+    void loadPickers();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [empresa, periodo]);
 
   const rowsWithDifference = useMemo(
     () =>
@@ -237,11 +364,21 @@ export function DiferenciaCambioPanel({
             </label>
             <label className="text-sm">
               <span className="mb-1 block font-medium text-slate-700">Codigo de cuentas</span>
-              <input value={cuenta} onChange={(event) => setCuenta(event.target.value)} placeholder="Ej: 112201" className="w-full rounded-lg border border-slate-200 px-3 py-2" />
+              <div className="flex gap-2">
+                <input value={cuenta} onChange={(event) => setCuenta(event.target.value)} placeholder="Ej: 112201" className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2" />
+                <button type="button" onClick={openAccountPicker} className="inline-flex items-center justify-center rounded-lg border border-cyan-200 bg-white px-3 text-cyan-800 transition hover:bg-cyan-50" title="Buscar cuenta contable">
+                  <Search className="h-4 w-4" />
+                </button>
+              </div>
             </label>
             <label className="text-sm">
               <span className="mb-1 block font-medium text-slate-700">Auxiliar</span>
-              <input value={auxiliar} onChange={(event) => setAuxiliar(event.target.value)} placeholder="Ej: 0002" className="w-full rounded-lg border border-slate-200 px-3 py-2" />
+              <div className="flex gap-2">
+                <input value={auxiliar} onChange={(event) => setAuxiliar(event.target.value)} placeholder="Ej: 0002" className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2" />
+                <button type="button" onClick={openAuxPicker} className="inline-flex items-center justify-center rounded-lg border border-cyan-200 bg-white px-3 text-cyan-800 transition hover:bg-cyan-50" title="Buscar auxiliar">
+                  <Search className="h-4 w-4" />
+                </button>
+              </div>
             </label>
             <label className="text-sm">
               <span className="mb-1 block font-medium text-slate-700">Desde</span>
@@ -421,6 +558,120 @@ export function DiferenciaCambioPanel({
           {fechaAsiento}
         </div>
       </div>
+
+      {accountPickerOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
+          <div className="w-full max-w-4xl rounded-3xl border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Elegir cuenta contable</h3>
+                <p className="mt-1 text-sm text-slate-500">Busca por codigo o nombre de la cuenta.</p>
+              </div>
+              <button type="button" onClick={() => setAccountPickerOpen(false)} className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-600">
+                Cerrar
+              </button>
+            </div>
+            <div className="space-y-4 px-5 py-4">
+              <input
+                autoFocus
+                value={accountPickerSearch}
+                onChange={(event) => setAccountPickerSearch(event.target.value)}
+                placeholder="Buscar por codigo o nombre..."
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+              />
+              <div className="max-h-[26rem] overflow-auto rounded-2xl border border-slate-200">
+                <table className="min-w-full text-sm">
+                  <thead className="sticky top-0 bg-slate-50 text-slate-700">
+                    <tr className="border-b border-slate-200">
+                      <th className="px-4 py-3 text-left">Codigo</th>
+                      <th className="px-4 py-3 text-left">Nombre</th>
+                      <th className="px-4 py-3 text-center">Imp</th>
+                      <th className="px-4 py-3 text-center">Aux</th>
+                      <th className="px-4 py-3 text-center">Mon</th>
+                      <th className="px-4 py-3 text-center">Nivel</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAccounts.length ? filteredAccounts.map((option) => (
+                      <tr
+                        key={option.value}
+                        className="cursor-pointer border-b border-slate-100 hover:bg-cyan-50"
+                        onClick={() => selectAccount(option)}
+                        onDoubleClick={() => selectAccount(option)}
+                      >
+                        <td className="px-4 py-3 font-medium text-slate-900">{option.value}</td>
+                        <td className="px-4 py-3 text-slate-700">{option.name}</td>
+                        <td className="px-4 py-3 text-center text-slate-700">{option.imputable || '-'}</td>
+                        <td className="px-4 py-3 text-center text-slate-700">{option.auxiliar || '-'}</td>
+                        <td className="px-4 py-3 text-center text-slate-700">{option.moneda || '-'}</td>
+                        <td className="px-4 py-3 text-center text-slate-700">{option.nivel || '-'}</td>
+                      </tr>
+                    )) : (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-8 text-center text-slate-500">Sin cuentas para mostrar.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {auxPickerOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
+          <div className="w-full max-w-4xl rounded-3xl border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Elegir auxiliar</h3>
+                <p className="mt-1 text-sm text-slate-500">Auxiliares disponibles para la cuenta {cuenta}.</p>
+              </div>
+              <button type="button" onClick={() => setAuxPickerOpen(false)} className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-600">
+                Cerrar
+              </button>
+            </div>
+            <div className="space-y-4 px-5 py-4">
+              <input
+                autoFocus
+                value={auxPickerSearch}
+                onChange={(event) => setAuxPickerSearch(event.target.value)}
+                placeholder="Buscar por codigo o nombre..."
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+              />
+              <div className="max-h-[26rem] overflow-auto rounded-2xl border border-slate-200">
+                <table className="min-w-full text-sm">
+                  <thead className="sticky top-0 bg-slate-50 text-slate-700">
+                    <tr className="border-b border-slate-200">
+                      <th className="px-4 py-3 text-left">Auxiliar</th>
+                      <th className="px-4 py-3 text-left">Nombre</th>
+                      <th className="px-4 py-3 text-left">Cuenta</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAuxOptions.length ? filteredAuxOptions.map((option) => (
+                      <tr
+                        key={`${option.auxCode}:${option.accountCode}`}
+                        className="cursor-pointer border-b border-slate-100 hover:bg-cyan-50"
+                        onClick={() => selectAux(option)}
+                        onDoubleClick={() => selectAux(option)}
+                      >
+                        <td className="px-4 py-3 font-medium text-slate-900">{option.auxCode}</td>
+                        <td className="px-4 py-3 text-slate-700">{option.name}</td>
+                        <td className="px-4 py-3 text-slate-700">{option.accountCode}</td>
+                      </tr>
+                    )) : (
+                      <tr>
+                        <td colSpan={3} className="px-4 py-8 text-center text-slate-500">Sin auxiliares para esta cuenta.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
