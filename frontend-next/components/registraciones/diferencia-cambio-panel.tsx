@@ -577,21 +577,21 @@ export function DiferenciaCambioPanel({
   }
 
   return (
-    <section id="diferencia-cambio" className="space-y-4 scroll-mt-28">
-      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-soft">
-        <h2 className="text-lg font-semibold text-slate-900">Diferencias de cambio - Generacion de asientos contables</h2>
+    <section id="diferencia-cambio" className="space-y-2 scroll-mt-20 text-[13px]">
+      <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-soft">
+        <h2 className="text-base font-semibold text-slate-900">Diferencias de cambio - Generacion de asientos contables</h2>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(320px,1fr)_minmax(320px,1.1fr)]">
-        <div className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
-          <div className="mb-4 flex items-center gap-2 border-b border-slate-200 pb-2 text-sm font-semibold text-blue-800">
+      <div className="grid gap-2 xl:grid-cols-[minmax(320px,0.95fr)_minmax(320px,1.05fr)]">
+        <div className="rounded-xl border border-slate-300 bg-white p-3 shadow-sm">
+          <div className="mb-2 flex items-center gap-2 border-b border-slate-200 pb-1.5 text-sm font-semibold text-blue-800">
             <Search className="h-4 w-4" />
             1. Parametros de busqueda
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             <label className="text-sm">
               <span className="mb-1 block font-medium text-slate-700">Empresa</span>
-              <select value={empresa} onChange={(event) => setEmpresa(event.target.value)} className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2">
+              <select value={empresa} onChange={(event) => setEmpresa(event.target.value)} className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5">
                 {empresas.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
@@ -599,13 +599,13 @@ export function DiferenciaCambioPanel({
             </label>
             <label className="text-sm">
               <span className="mb-1 block font-medium text-slate-700">Periodo</span>
-              <input value={periodo} onChange={(event) => setPeriodo(event.target.value)} className="w-full rounded-lg border border-slate-200 px-3 py-2" />
+              <input value={periodo} onChange={(event) => setPeriodo(event.target.value)} className="h-9 w-full rounded-lg border border-slate-200 px-2.5 py-1.5" />
             </label>
             <label className="text-sm">
               <span className="mb-1 block font-medium text-slate-700">Codigo de cuentas</span>
               <div className="flex gap-2">
-                <input value={cuenta} onChange={(event) => setCuenta(event.target.value)} placeholder="Ej: 112201" className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2" />
-                <button type="button" onClick={openAccountPicker} className="inline-flex items-center justify-center rounded-lg border border-cyan-200 bg-white px-3 text-cyan-800 transition hover:bg-cyan-50" title="Buscar cuenta contable">
+                <input value={cuenta} onChange={(event) => setCuenta(event.target.value)} placeholder="Ej: 112201" className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 px-2.5 py-1.5" />
+                <button type="button" onClick={openAccountPicker} className="inline-flex h-9 items-center justify-center rounded-lg border border-cyan-200 bg-white px-2.5 text-cyan-800 transition hover:bg-cyan-50" title="Buscar cuenta contable">
                   <Search className="h-4 w-4" />
                 </button>
               </div>
@@ -613,23 +613,23 @@ export function DiferenciaCambioPanel({
             <label className="text-sm">
               <span className="mb-1 block font-medium text-slate-700">Auxiliar</span>
               <div className="flex gap-2">
-                <input value={auxiliar} onChange={(event) => setAuxiliar(event.target.value)} placeholder="Ej: 0002" className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2" />
-                <button type="button" onClick={openAuxPicker} className="inline-flex items-center justify-center rounded-lg border border-cyan-200 bg-white px-3 text-cyan-800 transition hover:bg-cyan-50" title="Buscar auxiliar">
+                <input value={auxiliar} onChange={(event) => setAuxiliar(event.target.value)} placeholder="Ej: 0002" className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 px-2.5 py-1.5" />
+                <button type="button" onClick={openAuxPicker} className="inline-flex h-9 items-center justify-center rounded-lg border border-cyan-200 bg-white px-2.5 text-cyan-800 transition hover:bg-cyan-50" title="Buscar auxiliar">
                   <Search className="h-4 w-4" />
                 </button>
               </div>
             </label>
             <label className="text-sm">
               <span className="mb-1 block font-medium text-slate-700">Desde</span>
-              <input type="date" value={fechaDesde} onChange={(event) => setFechaDesde(event.target.value)} className="w-full rounded-lg border border-slate-200 px-3 py-2" />
+              <input type="date" value={fechaDesde} onChange={(event) => setFechaDesde(event.target.value)} className="h-9 w-full rounded-lg border border-slate-200 px-2.5 py-1.5" />
             </label>
             <label className="text-sm">
               <span className="mb-1 block font-medium text-slate-700">Hasta</span>
-              <input type="date" value={fechaHasta} onChange={(event) => setFechaHasta(event.target.value)} className="w-full rounded-lg border border-slate-200 px-3 py-2" />
+              <input type="date" value={fechaHasta} onChange={(event) => setFechaHasta(event.target.value)} className="h-9 w-full rounded-lg border border-slate-200 px-2.5 py-1.5" />
             </label>
             <label className="text-sm">
               <span className="mb-1 block font-medium text-slate-700">Tipo de cambio</span>
-              <select value={tipoCambio} onChange={(event) => setTipoCambio(event.target.value)} className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2">
+              <select value={tipoCambio} onChange={(event) => setTipoCambio(event.target.value)} className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5">
                 <option value="">Seleccione...</option>
                 <option value="COMPRA">Compra</option>
                 <option value="VENTA">Venta</option>
@@ -638,26 +638,26 @@ export function DiferenciaCambioPanel({
             </label>
             <label className="text-sm">
               <span className="mb-1 block font-medium text-slate-700">Factor de cambio</span>
-              <input value={factorCambio} onChange={(event) => setFactorCambio(event.target.value)} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-right" />
+              <input value={factorCambio} onChange={(event) => setFactorCambio(event.target.value)} className="h-9 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-right" />
             </label>
           </div>
-          <label className="mt-3 flex items-center gap-2 text-sm text-slate-700">
+          <label className="mt-2 flex items-center gap-2 text-sm text-slate-700">
             <input type="checkbox" checked={recalcular} onChange={(event) => setRecalcular(event.target.checked)} className="h-4 w-4 rounded border-slate-300" />
             Recalcular importes antes de consultar
           </label>
         </div>
 
-        <div className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
-          <div className="mb-4 flex items-center gap-2 border-b border-slate-200 pb-2 text-sm font-semibold text-blue-800">
+        <div className="rounded-xl border border-slate-300 bg-white p-3 shadow-sm">
+          <div className="mb-2 flex items-center gap-2 border-b border-slate-200 pb-1.5 text-sm font-semibold text-blue-800">
             <Calculator className="h-4 w-4" />
             2. Configuracion de diferencia de cambio
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             <label className="text-sm">
               <span className="mb-1 block font-medium text-slate-700">Cuenta diferencia de cambio</span>
               <div className="flex gap-2">
-                <input value={cuentaDif} onChange={(event) => setCuentaDif(event.target.value)} placeholder="Ej: 552001" className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2" />
-                <button type="button" onClick={openDiffAccountPicker} className="inline-flex items-center justify-center rounded-lg border border-cyan-200 bg-white px-3 text-cyan-800 transition hover:bg-cyan-50" title="Buscar cuenta diferencia de cambio">
+                <input value={cuentaDif} onChange={(event) => setCuentaDif(event.target.value)} placeholder="Ej: 552001" className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 px-2.5 py-1.5" />
+                <button type="button" onClick={openDiffAccountPicker} className="inline-flex h-9 items-center justify-center rounded-lg border border-cyan-200 bg-white px-2.5 text-cyan-800 transition hover:bg-cyan-50" title="Buscar cuenta diferencia de cambio">
                   <Search className="h-4 w-4" />
                 </button>
               </div>
@@ -665,19 +665,19 @@ export function DiferenciaCambioPanel({
             <label className="text-sm">
               <span className="mb-1 block font-medium text-slate-700">Auxiliar</span>
               <div className="flex gap-2">
-                <input value={auxiliarDif} onChange={(event) => setAuxiliarDif(event.target.value)} className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2" />
-                <button type="button" onClick={openDiffAuxPicker} className="inline-flex items-center justify-center rounded-lg border border-cyan-200 bg-white px-3 text-cyan-800 transition hover:bg-cyan-50" title="Buscar auxiliar de diferencia">
+                <input value={auxiliarDif} onChange={(event) => setAuxiliarDif(event.target.value)} className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 px-2.5 py-1.5" />
+                <button type="button" onClick={openDiffAuxPicker} className="inline-flex h-9 items-center justify-center rounded-lg border border-cyan-200 bg-white px-2.5 text-cyan-800 transition hover:bg-cyan-50" title="Buscar auxiliar de diferencia">
                   <Search className="h-4 w-4" />
                 </button>
               </div>
             </label>
             <label className="text-sm sm:col-span-2">
               <span className="mb-1 block font-medium text-slate-700">Concepto</span>
-              <input value={concepto} onChange={(event) => setConcepto(event.target.value)} className="w-full rounded-lg border border-slate-200 px-3 py-2" />
+              <input value={concepto} onChange={(event) => setConcepto(event.target.value)} className="h-9 w-full rounded-lg border border-slate-200 px-2.5 py-1.5" />
             </label>
             <label className="text-sm">
               <span className="mb-1 block font-medium text-slate-700">Tipo de asiento</span>
-              <select value={tipoAsiento} onChange={(event) => setTipoAsiento(event.target.value)} className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2">
+              <select value={tipoAsiento} onChange={(event) => setTipoAsiento(event.target.value)} className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5">
                 <option value="">Seleccione...</option>
                 {tipoAsientoOptions.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
@@ -686,10 +686,10 @@ export function DiferenciaCambioPanel({
             </label>
             <label className="text-sm">
               <span className="mb-1 block font-medium text-slate-700">Fecha</span>
-              <input type="date" value={fechaAsiento} onChange={(event) => setFechaAsiento(event.target.value)} className="w-full rounded-lg border border-slate-200 px-3 py-2" />
+              <input type="date" value={fechaAsiento} onChange={(event) => setFechaAsiento(event.target.value)} className="h-9 w-full rounded-lg border border-slate-200 px-2.5 py-1.5" />
             </label>
           </div>
-          <div className="mt-4 flex items-center justify-end gap-2 text-xs text-blue-700">
+          <div className="mt-3 flex items-center justify-end gap-2 text-xs text-blue-700">
             <Info className="h-4 w-4" />
             Campos obligatorios
           </div>
@@ -697,11 +697,11 @@ export function DiferenciaCambioPanel({
       </div>
 
       {message ? (
-        <div className="rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">{message}</div>
+        <div className="rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm text-cyan-900">{message}</div>
       ) : null}
 
       <div className="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
-        <div className="flex items-center justify-between gap-3 border-b border-slate-300 bg-slate-50 px-4 py-2.5">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-300 bg-slate-50 px-3 py-2">
           <div className="flex items-center gap-2 text-sm font-semibold text-blue-800">
             <FileText className="h-4 w-4" />
             3. Cuentas con diferencia a generar
@@ -709,45 +709,45 @@ export function DiferenciaCambioPanel({
           <span className="text-xs font-medium text-slate-500">Resultados encontrados: {rows.length}</span>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse text-sm">
+          <table className="min-w-full border-collapse text-[13px]">
             <thead className="bg-gradient-to-b from-slate-100 to-slate-200 text-slate-800">
               <tr>
-                <th className="border border-slate-300 px-3 py-2 text-center">Sel.</th>
-                <th className="border border-slate-300 px-3 py-2 text-left">Codigo</th>
-                <th className="border border-slate-300 px-3 py-2 text-left">Auxiliar</th>
-                <th className="border border-slate-300 px-3 py-2 text-left">Nombre</th>
-                <th className="border border-slate-300 px-3 py-2 text-left">Moneda base</th>
-                <th className="border border-slate-300 px-3 py-2 text-right">Saldo GS</th>
-                <th className="border border-slate-300 px-3 py-2 text-right">Saldo ME</th>
-                <th className="border border-slate-300 px-3 py-2 text-right">Diferencia</th>
+                <th className="border border-slate-300 px-2 py-1.5 text-center">Sel.</th>
+                <th className="border border-slate-300 px-2 py-1.5 text-left">Codigo</th>
+                <th className="border border-slate-300 px-2 py-1.5 text-left">Auxiliar</th>
+                <th className="border border-slate-300 px-2 py-1.5 text-left">Nombre</th>
+                <th className="border border-slate-300 px-2 py-1.5 text-left">Moneda base</th>
+                <th className="border border-slate-300 px-2 py-1.5 text-right">Saldo GS</th>
+                <th className="border border-slate-300 px-2 py-1.5 text-right">Saldo ME</th>
+                <th className="border border-slate-300 px-2 py-1.5 text-right">Diferencia</th>
               </tr>
             </thead>
             <tbody>
               {rowsWithDifference.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50">
-                  <td className="border border-slate-200 px-3 py-2 text-center">
+                  <td className="border border-slate-200 px-2 py-1.5 text-center">
                     <input type="checkbox" checked={selected.has(row.id)} onChange={() => toggleRow(row.id)} className="h-4 w-4 rounded border-slate-300" />
                   </td>
-                  <td className="border border-slate-200 px-3 py-2 font-medium text-slate-900">{row.codplancta}</td>
-                  <td className="border border-slate-200 px-3 py-2">{row.codplanaux || '-'}</td>
-                  <td className="border border-slate-200 px-3 py-2">{row.nombre}</td>
-                  <td className="border border-slate-200 px-3 py-2">{row.monedabase || '-'}</td>
-                  <td className="border border-slate-200 px-3 py-2 text-right">{formatNumber(row.saldogs, monedaLocalDecimals)}</td>
-                  <td className="border border-slate-200 px-3 py-2 text-right">{formatNumber(row.saldome, monedaExtranjeraDecimals)}</td>
-                  <td className="border border-slate-200 px-3 py-2 text-right font-semibold">{formatNumber(row.diferencia, row.processMode === 'ML' ? monedaExtranjeraDecimals : monedaLocalDecimals)}</td>
+                  <td className="border border-slate-200 px-2 py-1.5 font-medium text-slate-900">{row.codplancta}</td>
+                  <td className="border border-slate-200 px-2 py-1.5">{row.codplanaux || '-'}</td>
+                  <td className="border border-slate-200 px-2 py-1.5">{row.nombre}</td>
+                  <td className="border border-slate-200 px-2 py-1.5">{row.monedabase || '-'}</td>
+                  <td className="border border-slate-200 px-2 py-1.5 text-right">{formatNumber(row.saldogs, monedaLocalDecimals)}</td>
+                  <td className="border border-slate-200 px-2 py-1.5 text-right">{formatNumber(row.saldome, monedaExtranjeraDecimals)}</td>
+                  <td className="border border-slate-200 px-2 py-1.5 text-right font-semibold">{formatNumber(row.diferencia, row.processMode === 'ML' ? monedaExtranjeraDecimals : monedaLocalDecimals)}</td>
                 </tr>
               ))}
               {!rows.length ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-slate-500">Consulta saldos para ver las cuentas con diferencia.</td>
+                  <td colSpan={8} className="px-3 py-5 text-center text-slate-500">Consulta saldos para ver las cuentas con diferencia.</td>
                 </tr>
               ) : null}
             </tbody>
             {rows.length ? (
               <tfoot className="bg-slate-100 font-semibold text-slate-900">
                 <tr>
-                  <td colSpan={7} className="border border-slate-300 px-3 py-2 text-right">Total diferencias</td>
-                  <td className="border border-slate-300 px-3 py-2 text-right">{formatNumber(totalDiferencias)}</td>
+                  <td colSpan={7} className="border border-slate-300 px-2 py-1.5 text-right">Total diferencias</td>
+                  <td className="border border-slate-300 px-2 py-1.5 text-right">{formatNumber(totalDiferencias)}</td>
                 </tr>
               </tfoot>
             ) : null}
@@ -756,22 +756,22 @@ export function DiferenciaCambioPanel({
       </div>
 
       <div className="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
-        <div className="flex items-center gap-2 border-b border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-blue-800">
+        <div className="flex items-center gap-2 border-b border-slate-300 bg-slate-50 px-3 py-2 text-sm font-semibold text-blue-800">
           <FileText className="h-4 w-4" />
           4. Vista previa del asiento contable
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse text-sm">
+          <table className="min-w-full border-collapse text-[13px]">
             <thead className="bg-gradient-to-b from-slate-100 to-slate-200 text-slate-800">
               <tr>
-                <th className="border border-slate-300 px-3 py-2 text-center">Linea</th>
-                <th className="border border-slate-300 px-3 py-2 text-left">Cuenta</th>
-                <th className="border border-slate-300 px-3 py-2 text-left">Auxiliar</th>
-                <th className="border border-slate-300 px-3 py-2 text-left">Concepto</th>
-                <th className="border border-slate-300 px-3 py-2 text-right">Debe ML</th>
-                <th className="border border-slate-300 px-3 py-2 text-right">Haber ML</th>
-                <th className="border border-slate-300 px-3 py-2 text-right">Debe ME</th>
-                <th className="border border-slate-300 px-3 py-2 text-right">Haber ME</th>
+                <th className="border border-slate-300 px-2 py-1.5 text-center">Linea</th>
+                <th className="border border-slate-300 px-2 py-1.5 text-left">Cuenta</th>
+                <th className="border border-slate-300 px-2 py-1.5 text-left">Auxiliar</th>
+                <th className="border border-slate-300 px-2 py-1.5 text-left">Concepto</th>
+                <th className="border border-slate-300 px-2 py-1.5 text-right">Debe ML</th>
+                <th className="border border-slate-300 px-2 py-1.5 text-right">Haber ML</th>
+                <th className="border border-slate-300 px-2 py-1.5 text-right">Debe ME</th>
+                <th className="border border-slate-300 px-2 py-1.5 text-right">Haber ME</th>
               </tr>
             </thead>
             <tbody>
@@ -779,31 +779,31 @@ export function DiferenciaCambioPanel({
                 const values = debitCredit(row);
                 return (
                   <tr key={row.linea}>
-                    <td className="border border-slate-200 px-3 py-2 text-center">{row.linea}</td>
-                    <td className="border border-slate-200 px-3 py-2 font-medium text-slate-900">{row.codplancta}</td>
-                    <td className="border border-slate-200 px-3 py-2">{row.codplanaux || '-'}</td>
-                    <td className="border border-slate-200 px-3 py-2">{row.concepto}</td>
-                    <td className="border border-slate-200 px-3 py-2 text-right">{formatNumber(values.debeMl, monedaLocalDecimals)}</td>
-                    <td className="border border-slate-200 px-3 py-2 text-right">{formatNumber(values.haberMl, monedaLocalDecimals)}</td>
-                    <td className="border border-slate-200 px-3 py-2 text-right">{formatNumber(values.debeMe, monedaExtranjeraDecimals)}</td>
-                    <td className="border border-slate-200 px-3 py-2 text-right">{formatNumber(values.haberMe, monedaExtranjeraDecimals)}</td>
+                    <td className="border border-slate-200 px-2 py-1.5 text-center">{row.linea}</td>
+                    <td className="border border-slate-200 px-2 py-1.5 font-medium text-slate-900">{row.codplancta}</td>
+                    <td className="border border-slate-200 px-2 py-1.5">{row.codplanaux || '-'}</td>
+                    <td className="border border-slate-200 px-2 py-1.5">{row.concepto}</td>
+                    <td className="border border-slate-200 px-2 py-1.5 text-right">{formatNumber(values.debeMl, monedaLocalDecimals)}</td>
+                    <td className="border border-slate-200 px-2 py-1.5 text-right">{formatNumber(values.haberMl, monedaLocalDecimals)}</td>
+                    <td className="border border-slate-200 px-2 py-1.5 text-right">{formatNumber(values.debeMe, monedaExtranjeraDecimals)}</td>
+                    <td className="border border-slate-200 px-2 py-1.5 text-right">{formatNumber(values.haberMe, monedaExtranjeraDecimals)}</td>
                   </tr>
                 );
               })}
               {!sheetRows.length ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-slate-500">Selecciona cuentas y presiona Generar asiento para armar las lineas.</td>
+                  <td colSpan={8} className="px-3 py-5 text-center text-slate-500">Selecciona cuentas y presiona Generar asiento para armar las lineas.</td>
                 </tr>
               ) : null}
             </tbody>
             {sheetRows.length ? (
               <tfoot className="bg-slate-100 font-semibold text-slate-900">
                 <tr>
-                  <td colSpan={4} className="border border-slate-300 px-3 py-2 text-right">Totales</td>
-                  <td className="border border-slate-300 px-3 py-2 text-right">{formatNumber(sheetTotals.debeMl, monedaLocalDecimals)}</td>
-                  <td className="border border-slate-300 px-3 py-2 text-right">{formatNumber(sheetTotals.haberMl, monedaLocalDecimals)}</td>
-                  <td className="border border-slate-300 px-3 py-2 text-right">{formatNumber(sheetTotals.debeMe, monedaExtranjeraDecimals)}</td>
-                  <td className="border border-slate-300 px-3 py-2 text-right">{formatNumber(sheetTotals.haberMe, monedaExtranjeraDecimals)}</td>
+                  <td colSpan={4} className="border border-slate-300 px-2 py-1.5 text-right">Totales</td>
+                  <td className="border border-slate-300 px-2 py-1.5 text-right">{formatNumber(sheetTotals.debeMl, monedaLocalDecimals)}</td>
+                  <td className="border border-slate-300 px-2 py-1.5 text-right">{formatNumber(sheetTotals.haberMl, monedaLocalDecimals)}</td>
+                  <td className="border border-slate-300 px-2 py-1.5 text-right">{formatNumber(sheetTotals.debeMe, monedaExtranjeraDecimals)}</td>
+                  <td className="border border-slate-300 px-2 py-1.5 text-right">{formatNumber(sheetTotals.haberMe, monedaExtranjeraDecimals)}</td>
                 </tr>
               </tfoot>
             ) : null}
@@ -811,20 +811,24 @@ export function DiferenciaCambioPanel({
         </div>
       </div>
 
-      <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 bg-slate-50/95 px-4 py-3 backdrop-blur">
-        <button type="button" onClick={() => void consultar()} disabled={loading || !empresa || !periodo || !fechaDesde || !fechaHasta} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-sm transition hover:bg-slate-50 disabled:opacity-60">
+      <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 bg-slate-50/95 px-3 py-2 backdrop-blur">
+        <button type="button" onClick={() => void consultar()} disabled={loading || !empresa || !periodo || !fechaDesde || !fechaHasta} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800 shadow-sm transition hover:bg-slate-50 disabled:opacity-60">
           <Search className="h-4 w-4" />
           {loading ? 'Consultando...' : 'Consultar saldos'}
         </button>
-        <button type="button" onClick={generarAsiento} disabled={!selectedRows.length} className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm disabled:opacity-50">
+        <button type="button" onClick={generarAsiento} disabled={!selectedRows.length} className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-3 py-2 text-sm font-medium text-white shadow-sm disabled:opacity-50">
           <CheckCircle2 className="h-4 w-4" />
           Generar asiento
         </button>
-        <button type="button" onClick={() => void previsualizarAsiento()} disabled={!sheetRows.length} className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-medium text-blue-800 shadow-sm disabled:opacity-50">
+        <button type="button" onClick={() => void previsualizarAsiento()} disabled={!sheetRows.length} className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-blue-800 shadow-sm disabled:opacity-50">
           <FileText className="h-4 w-4" />
           Previsualizar asiento
         </button>
-        <a href="/registraciones" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50">
+        <button type="button" onClick={() => void aceptarAsiento()} disabled={savingEntry || !sheetRows.length} className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-3 py-2 text-sm font-medium text-white shadow-sm disabled:opacity-50">
+          <CheckCircle2 className="h-4 w-4" />
+          {savingEntry ? 'Grabando...' : 'Aceptar'}
+        </button>
+        <a href="/registraciones" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50">
           <X className="h-4 w-4" />
           Cancelar
         </a>
@@ -895,15 +899,15 @@ export function DiferenciaCambioPanel({
       ) : null}
 
       {previewOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
-          <div className="w-full max-w-6xl rounded-3xl border border-slate-200 bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4 py-3">
+          <div className="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 py-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-700">Pre-visualizacion de Asientos</p>
-                <h3 className="mt-1 text-lg font-semibold text-slate-900">
+                <h3 className="mt-1 text-base font-semibold text-slate-900">
                   {empresa} - Transaccion {previewTransac ?? '-'}
                 </h3>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-xs text-slate-500">
                   Periodo {periodo} · Tipo {tipoAsiento} · Fecha {fechaAsiento}
                 </p>
               </div>
@@ -911,41 +915,41 @@ export function DiferenciaCambioPanel({
                 Cerrar
               </button>
             </div>
-            <div className="max-h-[70vh] overflow-auto px-5 py-4">
-              <table className="min-w-full text-sm">
+            <div className="flex-1 overflow-auto px-4 py-3">
+              <table className="min-w-full text-[13px]">
                 <thead className="sticky top-0 bg-slate-50 text-slate-700">
                   <tr className="border-b border-slate-200">
-                    <th className="px-3 py-3 text-left">Cod Empresa</th>
-                    <th className="px-3 py-3 text-left">Periodo</th>
-                    <th className="px-3 py-3 text-right">NroTransac</th>
-                    <th className="px-3 py-3 text-right">Linea</th>
-                    <th className="px-3 py-3 text-left">CodPlanCta</th>
-                    <th className="px-3 py-3 text-left">CodPlanAux</th>
-                    <th className="px-3 py-3 text-left">Concepto</th>
-                    <th className="px-3 py-3 text-center">DBCR</th>
-                    <th className="px-3 py-3 text-right">Importe</th>
-                    <th className="px-3 py-3 text-right">Importe ME</th>
+                    <th className="px-2 py-2 text-left">Cod Empresa</th>
+                    <th className="px-2 py-2 text-left">Periodo</th>
+                    <th className="px-2 py-2 text-right">NroTransac</th>
+                    <th className="px-2 py-2 text-right">Linea</th>
+                    <th className="px-2 py-2 text-left">CodPlanCta</th>
+                    <th className="px-2 py-2 text-left">CodPlanAux</th>
+                    <th className="px-2 py-2 text-left">Concepto</th>
+                    <th className="px-2 py-2 text-center">DBCR</th>
+                    <th className="px-2 py-2 text-right">Importe</th>
+                    <th className="px-2 py-2 text-right">Importe ME</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {sheetRows.map((row) => (
                     <tr key={row.linea}>
-                      <td className="px-3 py-2">{empresa}</td>
-                      <td className="px-3 py-2">{periodo}</td>
-                      <td className="px-3 py-2 text-right">{previewTransac ?? '-'}</td>
-                      <td className="px-3 py-2 text-right">{row.linea}</td>
-                      <td className="px-3 py-2 font-medium text-slate-900">{row.codplancta}</td>
-                      <td className="px-3 py-2">{row.codplanaux || '-'}</td>
-                      <td className="px-3 py-2">{row.concepto}</td>
-                      <td className="px-3 py-2 text-center font-semibold">{row.dbcr}</td>
-                      <td className="px-3 py-2 text-right">{formatNumber(row.importe, monedaLocalDecimals)}</td>
-                      <td className="px-3 py-2 text-right">{formatNumber(row.importeme, monedaExtranjeraDecimals)}</td>
+                      <td className="px-2 py-1.5">{empresa}</td>
+                      <td className="px-2 py-1.5">{periodo}</td>
+                      <td className="px-2 py-1.5 text-right">{previewTransac ?? '-'}</td>
+                      <td className="px-2 py-1.5 text-right">{row.linea}</td>
+                      <td className="px-2 py-1.5 font-medium text-slate-900">{row.codplancta}</td>
+                      <td className="px-2 py-1.5">{row.codplanaux || '-'}</td>
+                      <td className="px-2 py-1.5">{row.concepto}</td>
+                      <td className="px-2 py-1.5 text-center font-semibold">{row.dbcr}</td>
+                      <td className="px-2 py-1.5 text-right">{formatNumber(row.importe, monedaLocalDecimals)}</td>
+                      <td className="px-2 py-1.5 text-right">{formatNumber(row.importeme, monedaExtranjeraDecimals)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <div className="flex justify-end gap-3 border-t border-slate-200 px-5 py-4">
+            <div className="flex shrink-0 justify-end gap-3 border-t border-slate-200 bg-white px-4 py-3">
               <button
                 type="button"
                 onClick={() => setPreviewOpen(false)}
