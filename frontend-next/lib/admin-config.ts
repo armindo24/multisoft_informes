@@ -30,6 +30,20 @@ const NODE_API_BASE = process.env.NEXT_PUBLIC_NODE_API_URL || 'http://localhost:
 const DEFAULT_MAX_ACTIVE_SESSIONS_PER_USER = Math.max(1, Number(process.env.MAX_ACTIVE_SESSIONS_PER_USER || 3));
 const MAX_SESSION_LIMIT = 20;
 const DEFAULT_GROUPS = ['Admin', 'Finanzas', 'Ventas', 'Compras', 'Stock', 'Registraciones', 'Migraciones', 'Configuracion'];
+const GROUP_ORDER_SQL = `
+  CASE LOWER(name)
+    WHEN 'admin' THEN 1
+    WHEN 'finanzas' THEN 2
+    WHEN 'ventas' THEN 3
+    WHEN 'compras' THEN 4
+    WHEN 'stock' THEN 5
+    WHEN 'registraciones' THEN 6
+    WHEN 'migraciones' THEN 7
+    WHEN 'configuracion' THEN 8
+    ELSE 100
+  END,
+  name
+`;
 
 export type DbType = 'postgres' | 'integrado' | 'sueldo';
 export type DbEngine = 'postgres' | 'sqlanywhere';
@@ -5225,7 +5239,7 @@ export async function loadGroupsForAdmin(): Promise<AdminGroupRecord[]> {
     `
       SELECT id, name
       FROM auth_group
-      ORDER BY name
+      ORDER BY ${GROUP_ORDER_SQL}
     `,
   );
 
@@ -5249,7 +5263,19 @@ export async function loadGroupsDetailed(): Promise<AdminGroupDetail[]> {
       LEFT JOIN auth_user_groups ug ON ug.group_id = g.id
       LEFT JOIN auth_group_permissions gp ON gp.group_id = g.id
       GROUP BY g.id
-      ORDER BY g.name
+      ORDER BY
+        CASE LOWER(g.name)
+          WHEN 'admin' THEN 1
+          WHEN 'finanzas' THEN 2
+          WHEN 'ventas' THEN 3
+          WHEN 'compras' THEN 4
+          WHEN 'stock' THEN 5
+          WHEN 'registraciones' THEN 6
+          WHEN 'migraciones' THEN 7
+          WHEN 'configuracion' THEN 8
+          ELSE 100
+        END,
+        g.name
     `,
   );
 
