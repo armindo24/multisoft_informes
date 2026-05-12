@@ -20,7 +20,7 @@ export function KpiCard({ item }: { item: KPI }) {
         <div className="flex min-w-0 items-center gap-1.5">
           <p className="min-w-0 text-[13px] leading-5 text-slate-500">{item.title}</p>
           {item.tooltip ? (
-            <span className="group relative inline-flex shrink-0" title={item.tooltip}>
+            <span className="group relative inline-flex shrink-0">
               <Info className="size-3.5 text-slate-400" aria-hidden="true" />
               <span className="pointer-events-none absolute left-1/2 top-5 z-20 hidden w-56 -translate-x-1/2 rounded-md bg-slate-900 px-2 py-1.5 text-xs font-medium leading-5 text-white shadow-lg group-hover:block">
                 {item.tooltip}
