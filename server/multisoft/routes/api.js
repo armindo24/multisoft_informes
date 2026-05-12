@@ -33,6 +33,7 @@ var Usuarios = require('../models/usuarios');
 var Compras = require('../models/compras');
 var Migraciones = require('../models/migraciones');
 var Presupuesto = require('../models/presupuesto');
+var DiferenciaCambio = require('../models/diferencia_cambio');
 var Cuentas_pagar = require('../models/cuentas_pagar');
 var Fondo_Fijo = require('../models/fondo_fijo');
 var Gastos_Rendir = require('../models/gastos');
@@ -425,6 +426,13 @@ router.get('/balancecomprobado/list/:empresa/:periodo/:periodoant/:mes/:mesant/:
 //tipo asiento select option
 router.get('/tipoasiento/select/', function (req, res, next) {
     TipoAsiento.all(function (result) {
+        res.json({data: result});
+    });
+});
+
+router.get('/registraciones/diferencia-cambio/consultar', function (req, res, next) {
+    DiferenciaCambio.consultar(req.query || {}, function (err, result) {
+        if (err) return next(err);
         res.json({data: result});
     });
 });
