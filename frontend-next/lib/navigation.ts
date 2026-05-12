@@ -1,6 +1,6 @@
 import type { Route } from 'next';
 import type { ComponentType } from 'react';
-import { BarChart3, Boxes, CreditCard, FileStack, HandCoins, LayoutDashboard, RefreshCw, Settings, ShoppingCart } from 'lucide-react';
+import { BarChart3, Boxes, ClipboardPenLine, CreditCard, FileStack, HandCoins, LayoutDashboard, RefreshCw, Settings, ShoppingCart } from 'lucide-react';
 
 export type NavigationSubItem = {
   label: string;
@@ -113,6 +113,22 @@ export const navigation: NavigationItem[] = [
           { label: 'Valorizado', href: '/stock', disabled: true },
           { label: 'Costo por Articulo', href: '/stock', disabled: true },
           { label: 'Costo Articulo Full', href: '/stock?section=costo-articulo-full#costo-articulo-full' },
+        ],
+      },
+    ],
+  },
+  {
+    label: 'Registraciones',
+    href: '/registraciones',
+    icon: ClipboardPenLine,
+    sections: [
+      {
+        label: 'Registraciones',
+        items: [
+          { label: 'Ventas - Cargar venta', href: '/registraciones?section=cargar-venta#cargar-venta' },
+          { label: 'Compras - Cargar compra', href: '/registraciones?section=cargar-compra#cargar-compra' },
+          { label: 'Finanzas - Cargar asiento', href: '/registraciones?section=cargar-asiento#cargar-asiento' },
+          { label: 'Finanzas - Asientos de Diferencia de Cambio', href: '/registraciones?section=diferencia-cambio#diferencia-cambio' },
         ],
       },
     ],
