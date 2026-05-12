@@ -90,6 +90,16 @@ function getEmpresaCodigoEntidad(meta: Record<string, string>) {
   ).trim();
 }
 
+function isTruthyFlag(value: unknown) {
+  const normalized = String(value || '').trim().toUpperCase();
+  return ['S', 'SI', 'Y', 'YES', '1', 'TRUE'].includes(normalized);
+}
+
+function canUseBalancePuc(meta: Record<string, string>) {
+  return isTruthyFlag(meta.es_casa_de_bolsa || meta.Es_Casa_De_Bolsa || meta.esCasaDeBolsa)
+    && Boolean(getEmpresaCodigoEntidad(meta));
+}
+
 function getCode(row: BalanceRow) {
   return String(row.CodPlanCta || row.codplancta || '');
 }
@@ -379,12 +389,15 @@ export default async function FinanzasPage({
   const sucursalesPromise = section === 'rg90' && requestedEmpresa
     ? getSucursales(requestedEmpresa)
     : Promise.resolve(null);
-  const requestedEmpresaMetaResponse = shouldLoadBalancePuc && requestedEmpresa
+  const requestedEmpresaMetaResponse = (shouldLoadBalancePuc || shouldUseFullBalance) && requestedEmpresa
     ? await getEmpresaMeta(requestedEmpresa)
     : null;
-  const requestedEmpresaCodigoEntidad = codigoEntidad || getEmpresaCodigoEntidad((requestedEmpresaMetaResponse?.data || {}) as Record<string, string>);
+  const requestedEmpresaMeta = (requestedEmpresaMetaResponse?.data || {}) as Record<string, string>;
+  const requestedEmpresaCodigoEntidad = codigoEntidad || getEmpresaCodigoEntidad(requestedEmpresaMeta);
+  const requestedEmpresaCanUsePuc = canUseBalancePuc(requestedEmpresaMeta);
+  const shouldUseRequestedPucForBalance = shouldUseFullBalance && requestedEmpresaCanUsePuc;
   const initialBalancePromise = requestedEmpresa && hasSubmittedFilters && shouldLoadBalance
-    ? (shouldUseFullBalance ? getBalanceGeneralPuc({
+    ? (shouldUseRequestedPucForBalance ? getBalanceGeneralPuc({
         empresa: requestedEmpresa,
         periodo,
         mesd,
@@ -421,6 +434,13 @@ export default async function FinanzasPage({
   const empresas = sanitizeOptions((empresasResponse?.data || []) as Array<Record<string, string>>);
   const tipoAsientos = sanitizeTipoAsientos((tipoAsientoResponse?.data || []) as Array<Record<string, string>>);
   const empresa = String(requestedEmpresa || empresas[0]?.value || '');
+  const empresaMetaResponse = empresa && (section === 'balance-general' || section === 'balance-general-puc')
+    ? (requestedEmpresa && requestedEmpresa === empresa ? requestedEmpresaMetaResponse : await getEmpresaMeta(empresa))
+    : null;
+  const empresaMeta = (empresaMetaResponse?.data || requestedEmpresaMeta || {}) as Record<string, string>;
+  const empresaCodigoEntidadFromMeta = codigoEntidad || getEmpresaCodigoEntidad(empresaMeta);
+  const empresaCanUsePuc = canUseBalancePuc(empresaMeta);
+  const shouldUsePucForBalance = shouldUseFullBalance && empresaCanUsePuc;
   const sucursalOptions = requestedEmpresa
     ? sanitizeOptions((sucursalesResponse?.data || []) as Array<Record<string, string>>)
     : section === 'rg90' && empresa
@@ -441,7 +461,7 @@ export default async function FinanzasPage({
   const balanceResponse = requestedEmpresa
     ? await initialBalancePromise
     : empresa && hasSubmittedFilters && shouldLoadBalance
-      ? await (shouldUseFullBalance
+      ? await (shouldUsePucForBalance
         ? getBalanceGeneralPuc({
             empresa,
             periodo,
@@ -455,14 +475,14 @@ export default async function FinanzasPage({
             saldo,
             practicado_al: practicadoAl,
             recalcular_saldos: recalcularSaldos,
-            codigo_entidad: requestedEmpresaCodigoEntidad,
+            codigo_entidad: empresaCodigoEntidadFromMeta,
             balance_cuentas_puc: balanceCuentasPuc,
           })
         : getBalanceGeneral({ empresa, periodo, mesd, mesh, moneda, cuentad, cuentah, nivel, aux, saldo }))
       : null;
   const balanceResponseWithResult = balanceResponse as BalanceResponseLike;
 
-  const shouldFallbackToLegacyBalance = shouldUseFullBalance
+  const shouldFallbackToLegacyBalance = shouldUsePucForBalance
     && empresa
     && hasSubmittedFilters
     && (
@@ -531,13 +551,7 @@ export default async function FinanzasPage({
     { label: 'Moneda', value: monedaLabel },
     { label: 'Usuario', value: sessionUser?.displayName || sessionUser?.username || 'Usuario' },
   ];
-  const empresaMetaResponse = shouldLoadBalancePuc && empresa
-    ? requestedEmpresa && empresa === requestedEmpresa
-      ? requestedEmpresaMetaResponse
-      : await getEmpresaMeta(empresa)
-    : null;
-  const empresaMeta = (empresaMetaResponse?.data || {}) as Record<string, string>;
-  const empresaCodigoEntidad = codigoEntidad || getEmpresaCodigoEntidad(empresaMeta);
+  const empresaCodigoEntidad = empresaCodigoEntidadFromMeta;
   const brandingConfig = empresa ? await loadBrandingConfig(empresa) : null;
   const exportBranding = brandingConfig
     ? {
@@ -642,7 +656,7 @@ export default async function FinanzasPage({
   const integralClientes = ((integralAuxResponse?.clientes || []) as BalanceAuxRow[]);
   const integralProveedores = ((integralAuxResponse?.proveedores || []) as BalanceAuxRow[]);
   const integralWarning = integralAuxResponse?.warning || '';
-  const pucPrimaryResponse = shouldLoadBalancePuc && empresa
+  const pucPrimaryResponse = shouldLoadBalancePuc && empresa && empresaCanUsePuc
     ? await getBalanceGeneralPuc({
         empresa,
         periodo,
@@ -660,7 +674,7 @@ export default async function FinanzasPage({
         balance_cuentas_puc: balanceCuentasPuc,
       })
     : null;
-  const shouldFallbackPuc = shouldLoadBalancePuc && (
+  const shouldFallbackPuc = shouldLoadBalancePuc && empresaCanUsePuc && (
     !Array.isArray(pucPrimaryResponse?.data) || pucPrimaryResponse.data.length === 0
   );
   const pucClassicLocal = shouldFallbackPuc
@@ -677,7 +691,9 @@ export default async function FinanzasPage({
         )
       : ((pucClassicLocal?.data || []) as BalanceRow[])
     : ((pucPrimaryResponse?.data || []) as BalanceRow[]);
-  const pucWarning = shouldFallbackPuc
+  const pucWarning = shouldLoadBalancePuc && !empresaCanUsePuc
+    ? 'Esta empresa usa balance clasico. La opcion PUC se habilita solo cuando dba.empresa tiene es_casa_de_bolsa activo y codigo_entidad.'
+    : shouldFallbackPuc
     ? (pucPrimaryResponse?.warning || 'La estructura PUC no pudo generarse con esta base. Se muestra el balance clasico como respaldo.')
     : (pucPrimaryResponse?.warning || '');
   const pucResult = shouldFallbackPuc

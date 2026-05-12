@@ -21,7 +21,7 @@ function esc(v) {
 
 function normalizeEmpresaRows(rows) {
     if (!Array.isArray(rows)) return [];
-    return rows.map(function (r) {
+    return normalizeEmpresaMeta(rows).map(function (r) {
         if (!r || typeof r !== 'object') return r;
         var cod = (typeof r.Cod_Empresa !== 'undefined') ? r.Cod_Empresa : r.cod_empresa;
         var des = (typeof r.Des_Empresa !== 'undefined') ? r.Des_Empresa : r.des_empresa;
@@ -134,13 +134,25 @@ var toSqlList = function (value) {
 };
 
 Empresa.all = function (query, cb) {
-    var sqlDba = "select Cod_Empresa,Des_Empresa from dba.EMPRESA";
-    var sqlNoDba = "select Cod_Empresa,Des_Empresa from EMPRESA";
+    var sqlDba = "select Cod_Empresa,Des_Empresa,codigo_entidad,es_casa_de_bolsa from dba.EMPRESA";
+    var sqlNoDba = "select Cod_Empresa,Des_Empresa,codigo_entidad,es_casa_de_bolsa from EMPRESA";
+    var fallbackSqlDba = "select Cod_Empresa,Des_Empresa from dba.EMPRESA";
+    var fallbackSqlNoDba = "select Cod_Empresa,Des_Empresa from EMPRESA";
     if (query.empresa) {
         sqlDba += " WHERE Des_Empresa LIKE '" + query.empresa + "%'";
         sqlNoDba += " WHERE Des_Empresa LIKE '" + query.empresa + "%'";
+        fallbackSqlDba += " WHERE Des_Empresa LIKE '" + query.empresa + "%'";
+        fallbackSqlNoDba += " WHERE Des_Empresa LIKE '" + query.empresa + "%'";
     }
-    return execWithEmpresaFallback(sqlDba, sqlNoDba).then(normalizeEmpresaRows);
+    return execWithEmpresaFallback(sqlDba, sqlNoDba)
+        .catch(function (err) {
+            var msg = String((err && (err.message || err.Msg || err.sqlMessage)) || err || '').toLowerCase();
+            if (msg.indexOf('codigo_entidad') >= 0 || msg.indexOf('es_casa_de_bolsa') >= 0 || msg.indexOf('column') >= 0 || msg.indexOf('columna') >= 0) {
+                return execWithEmpresaFallback(fallbackSqlDba, fallbackSqlNoDba);
+            }
+            throw err;
+        })
+        .then(normalizeEmpresaRows);
 };
 
 Empresa.notin = function (body, cb) {
@@ -174,10 +186,20 @@ Empresa.list = function (list) {
     if (!safeList.length) return Promise.resolve([]);
 
     var inClause = utils.in(safeList);
-    var sqlDba = "Select Cod_Empresa, Des_Empresa from dba.EMPRESA where Cod_Empresa in " + inClause;
-    var sqlNoDba = "Select Cod_Empresa, Des_Empresa from EMPRESA where Cod_Empresa in " + inClause;
+    var sqlDba = "Select Cod_Empresa, Des_Empresa, codigo_entidad, es_casa_de_bolsa from dba.EMPRESA where Cod_Empresa in " + inClause;
+    var sqlNoDba = "Select Cod_Empresa, Des_Empresa, codigo_entidad, es_casa_de_bolsa from EMPRESA where Cod_Empresa in " + inClause;
+    var fallbackSqlDba = "Select Cod_Empresa, Des_Empresa from dba.EMPRESA where Cod_Empresa in " + inClause;
+    var fallbackSqlNoDba = "Select Cod_Empresa, Des_Empresa from EMPRESA where Cod_Empresa in " + inClause;
     console.log(sqlDba);
-    return execWithEmpresaFallback(sqlDba, sqlNoDba).then(normalizeEmpresaRows);
+    return execWithEmpresaFallback(sqlDba, sqlNoDba)
+        .catch(function (err) {
+            var msg = String((err && (err.message || err.Msg || err.sqlMessage)) || err || '').toLowerCase();
+            if (msg.indexOf('codigo_entidad') >= 0 || msg.indexOf('es_casa_de_bolsa') >= 0 || msg.indexOf('column') >= 0 || msg.indexOf('columna') >= 0) {
+                return execWithEmpresaFallback(fallbackSqlDba, fallbackSqlNoDba);
+            }
+            throw err;
+        })
+        .then(normalizeEmpresaRows);
 };
 
 Empresa.meta = function (empresa) {

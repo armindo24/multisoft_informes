@@ -1,6 +1,8 @@
 export type SelectOption = {
   value: string;
   label: string;
+  codigo_entidad?: string;
+  es_casa_de_bolsa?: string;
 };
 
 export type AccountPlanOption = {

@@ -82,13 +82,26 @@ export function AppShell({
   const [loginNotice, setLoginNotice] = useState('');
   const [resolvedEmpresa, setResolvedEmpresa] = useState('');
   const [selectedEmpresaOverride, setSelectedEmpresaOverride] = useState('');
+  const [canShowBalancePuc, setCanShowBalancePuc] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const routeEmpresa = String(searchParams.get('empresa') || '').trim().toUpperCase();
   const effectiveEmpresa = selectedEmpresaOverride || routeEmpresa || String(resolvedEmpresa || empresa || '').trim().toUpperCase() || undefined;
 
   const visibleNavigation = useMemo(
-    () => navigation.filter((item) => canAccessItem(item, user)),
-    [user],
+    () => navigation
+      .filter((item) => canAccessItem(item, user))
+      .map((item) => {
+        if (item.href !== '/finanzas' || canShowBalancePuc) return item;
+
+        return {
+          ...item,
+          sections: item.sections?.map((section) => ({
+            ...section,
+            items: section.items.filter((subItem) => subItem.href.indexOf('section=balance-general-puc') < 0),
+          })),
+        };
+      }),
+    [canShowBalancePuc, user],
   );
 
   const notificationCount = useMemo(() => {
@@ -178,6 +191,33 @@ export function AppShell({
       cancelled = true;
     };
   }, [pathname, routeEmpresa, user?.id]);
+
+  useEffect(() => {
+    if (!effectiveEmpresa || pathname === '/login' || pathname.startsWith('/password-reset')) {
+      setCanShowBalancePuc(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadEmpresaMeta() {
+      const response = await fetch(`/proxy/empresa/meta/${encodeURIComponent(effectiveEmpresa || '')}`, { cache: 'no-store' }).catch(() => null);
+      const payload = response && response.ok
+        ? await response.json().catch(() => null) as { data?: Record<string, unknown> } | null
+        : null;
+      if (cancelled) return;
+
+      const data = payload?.data || {};
+      const flag = String(data.es_casa_de_bolsa || data.Es_Casa_De_Bolsa || data.esCasaDeBolsa || '').trim().toUpperCase();
+      const codigoEntidad = String(data.codigo_entidad || data.Codigo_Entidad || data.codigo_identidad || data.Codigo_Identidad || '').trim();
+      setCanShowBalancePuc(['S', 'SI', 'Y', 'YES', '1', 'TRUE'].includes(flag) && Boolean(codigoEntidad));
+    }
+
+    void loadEmpresaMeta();
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveEmpresa, pathname]);
 
   useEffect(() => {
     const activeItem = visibleNavigation.find((item) => isActivePath(pathname, item.href));
