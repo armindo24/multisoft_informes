@@ -111,7 +111,7 @@ export default async function DashboardPage() {
     ? await Promise.all([
         getVentasResumido({ empresa, moneda: 'GS', desde, hasta, order: 'cod_cliente' }),
         getCuentasCobrar({ empresa, start: desde, end: hasta, vencimiento: true }),
-        getStockValorizado({ empresa, sucursal, estado: 'A', existencia: 'mayor', moneda: 'L', costeo: 'P', summary: 'S' }),
+        getStockValorizado({ empresa, estado: 'A', existencia: 'mayor', moneda: 'L', costeo: 'P', summary: 'S' }),
         getBalanceGeneral({ periodo, empresa, mesd: '01', mesh: mesActual, moneda: 'local', cuentad: '1', cuentah: '9', nivel: 9, aux: 'NO', saldo: 'NO' }),
         comprasPromise,
       ])
