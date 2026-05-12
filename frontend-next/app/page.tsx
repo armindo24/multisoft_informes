@@ -18,6 +18,11 @@ function monthStart() {
   return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
 }
 
+function yearStart() {
+  const now = new Date();
+  return new Date(now.getFullYear(), 0, 1).toISOString().slice(0, 10);
+}
+
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -51,11 +56,29 @@ function normalizeOption(item: Record<string, string>) {
 }
 
 function getBalanceCode(row: Record<string, unknown>) {
-  return String(row.CODIGO || row.codigo || row.cod_cuenta || '');
+  return String(row.CodPlanCta || row.codplancta || row.CODIGO || row.codigo || row.cod_cuenta || '');
 }
 
 function getBalanceSaldo(row: Record<string, unknown>) {
-  return toNumber(row.saldo || row.Saldo || row.total || row.Total);
+  return toNumber(row.SALDO || row.saldo || row.Saldo || row.total || row.Total);
+}
+
+function rowValue(row: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = row[key];
+    if (value !== undefined && value !== null && String(value).trim() !== '') {
+      return toNumber(value);
+    }
+  }
+  return 0;
+}
+
+function ventaTotal(row: Record<string, unknown>) {
+  const explicitTotal = rowValue(row, ['total', 'Total', 'TOTAL', 'total_factura', 'TotalFactura']);
+  if (explicitTotal) return explicitTotal;
+  return rowValue(row, ['to_exento', 'To_Exento', 'TO_EXENTO', 'total_exento', 'TotalExento'])
+    + rowValue(row, ['to_gravado', 'To_Gravado', 'TO_GRAVADO', 'total_gravado', 'TotalGravado'])
+    + rowValue(row, ['total_iva', 'Total_IVA', 'TOTAL_IVA', 'iva', 'IVA']);
 }
 
 export default async function DashboardPage() {
@@ -65,17 +88,17 @@ export default async function DashboardPage() {
   const sucursalesResponse = empresa ? await getSucursales(empresa) : null;
   const sucursales = (sucursalesResponse?.data || []).map((item) => normalizeOption(item as Record<string, string>));
   const sucursal = sucursales[0]?.value || '';
-  const desde = monthStart();
+  const desde = yearStart();
   const hasta = today();
   const periodo = String(new Date().getFullYear());
   const mesActual = String(new Date().getMonth() + 1).padStart(2, '0');
 
   const [ventasResponse, cobrarResponse, valorizadoResponse, balanceResponse, comprasResponse] = empresa
     ? await Promise.all([
-        getVentasResumido({ empresa, sucursal, moneda: 'GS', desde, hasta, order: 'cod_cliente' }),
-        getCuentasCobrar({ empresa, sucursal, start: desde, end: hasta, vencimiento: true }),
+        getVentasResumido({ empresa, moneda: 'GS', desde, hasta, order: 'cod_cliente' }),
+        getCuentasCobrar({ empresa, start: desde, end: hasta, vencimiento: true }),
         getStockValorizado({ empresa, sucursal, estado: 'A', existencia: 'mayor', moneda: 'L', costeo: 'P', summary: 'S' }),
-        getBalanceGeneral({ periodo, empresa, mesd: mesActual, mesh: mesActual, moneda: 'G' }),
+        getBalanceGeneral({ periodo, empresa, mesd: '01', mesh: mesActual, moneda: 'local', cuentad: '1', cuentah: '9', nivel: 9, aux: 'NO', saldo: 'NO' }),
         sucursal ? getComprasList({ empresa, sucursal, moneda: 'GS', compras_start: desde, compras_end: hasta, departamento: '1' }) : Promise.resolve(null),
       ])
     : [null, null, null, null, null];
@@ -87,9 +110,9 @@ export default async function DashboardPage() {
   const balance = (balanceResponse?.data || []) as Array<Record<string, unknown>>;
   const compras = (comprasResponse?.data || []) as Array<Record<string, unknown>>;
 
-  const facturacion = ventas.reduce((acc, row) => acc + toNumber(row.to_gravado) + toNumber(row.total_iva), 0);
-  const saldoCobrar = cobrar.reduce((acc, row) => acc + toNumber(row.saldo), 0);
-  const inventario = toNumber(stockSummary.valor_inventario);
+  const facturacion = ventas.reduce((acc, row) => acc + ventaTotal(row), 0);
+  const saldoCobrar = cobrar.reduce((acc, row) => acc + rowValue(row, ['saldo', 'Saldo', 'SALDO']), 0);
+  const inventario = rowValue(stockSummary, ['valor_inventario', 'ValorInventario', 'VALOR_INVENTARIO', 'total', 'Total']);
   const activo = balance.filter((row) => getBalanceCode(row).startsWith('1')).reduce((acc, row) => acc + getBalanceSaldo(row), 0);
   const totalCompras = compras.reduce((acc, row) => acc + toNumber(row.total), 0);
 

@@ -37,6 +37,37 @@ function toNumber(value: unknown) {
   return Number.isFinite(n) ? n : 0;
 }
 
+function ventaValue(item: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = item[key];
+    if (value !== undefined && value !== null && String(value).trim() !== '') {
+      return toNumber(value);
+    }
+  }
+  return 0;
+}
+
+function ventaGravado(item: Record<string, unknown>) {
+  return ventaValue(item, ['to_gravado', 'To_Gravado', 'TO_GRAVADO', 'total_gravado', 'TotalGravado']);
+}
+
+function ventaIva(item: Record<string, unknown>) {
+  return ventaValue(item, ['total_iva', 'Total_IVA', 'TOTAL_IVA', 'iva', 'IVA']);
+}
+
+function ventaExento(item: Record<string, unknown>) {
+  return ventaValue(item, ['to_exento', 'To_Exento', 'TO_EXENTO', 'total_exento', 'TotalExento']);
+}
+
+function ventaDescuento(item: Record<string, unknown>) {
+  return ventaValue(item, ['totaldescuento', 'TotalDescuento', 'TOTALDESCUENTO', 'descuento', 'Descuento']);
+}
+
+function ventaTotal(item: Record<string, unknown>) {
+  const explicitTotal = ventaValue(item, ['total', 'Total', 'TOTAL', 'total_factura', 'TotalFactura']);
+  return explicitTotal || ventaExento(item) + ventaGravado(item) + ventaIva(item);
+}
+
 function normalizeOption(item: Record<string, string>): SelectOption {
   const value =
     item.cod_empresa ||
@@ -284,9 +315,11 @@ export default async function VentasPage({
 
   const ventas = (ventasResponse?.data || []) as VentaResumen[];
   const cuentasCobrar = (cobrarResponse?.data || []) as CuentaCobrar[];
-  const totalFacturado = ventas.reduce((acc, item) => acc + toNumber(item.to_gravado) + toNumber(item.total_iva), 0);
-  const totalDescuentos = ventas.reduce((acc, item) => acc + toNumber(item.totaldescuento), 0);
-  const totalIva = ventas.reduce((acc, item) => acc + toNumber(item.total_iva), 0);
+  const totalComprobantes = ventas.length;
+  const totalGravado = ventas.reduce((acc, item) => acc + ventaGravado(item as Record<string, unknown>), 0);
+  const totalFacturado = ventas.reduce((acc, item) => acc + ventaTotal(item as Record<string, unknown>), 0);
+  const totalDescuentos = ventas.reduce((acc, item) => acc + ventaDescuento(item as Record<string, unknown>), 0);
+  const totalIva = ventas.reduce((acc, item) => acc + ventaIva(item as Record<string, unknown>), 0);
   const saldoPendiente = cuentasCobrar.reduce((acc, item) => acc + toNumber(item.saldo), 0);
 
   const estadisticasRows =
@@ -348,10 +381,11 @@ export default async function VentasPage({
         </div>
       ) : (
         <>
-          <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <KpiCard item={{ title: 'Facturacion visible', value: totalFacturado.toLocaleString('es-PY'), change: `${ventas.length} comprobantes`, trend: 'up' }} />
-            <KpiCard item={{ title: 'IVA acumulado', value: totalIva.toLocaleString('es-PY'), change: moneda, trend: 'neutral' }} />
-            <KpiCard item={{ title: 'Descuentos', value: totalDescuentos.toLocaleString('es-PY'), change: 'Periodo filtrado', trend: 'down' }} />
+          <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            <KpiCard item={{ title: 'Comprobantes', value: totalComprobantes.toLocaleString('es-PY'), change: 'Ventas', trend: 'up' }} />
+            <KpiCard item={{ title: 'Gravado', value: totalGravado.toLocaleString('es-PY'), change: moneda, trend: 'up' }} />
+            <KpiCard item={{ title: 'IVA', value: totalIva.toLocaleString('es-PY'), change: moneda, trend: 'neutral' }} />
+            <KpiCard item={{ title: 'Total', value: totalFacturado.toLocaleString('es-PY'), change: 'Facturacion', trend: 'up' }} />
             <KpiCard item={{ title: 'Saldo por cobrar', value: saldoPendiente.toLocaleString('es-PY'), change: `${cuentasCobrar.length} documentos`, trend: saldoPendiente > 0 ? 'neutral' : 'up' }} />
           </section>
 

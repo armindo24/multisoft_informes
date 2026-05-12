@@ -20,6 +20,37 @@ function money(value: unknown) {
   return new Intl.NumberFormat('es-PY', { maximumFractionDigits: 0 }).format(num(value));
 }
 
+function rowValue(row: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = row[key];
+    if (value !== undefined && value !== null && String(value).trim() !== '') {
+      return num(value);
+    }
+  }
+  return 0;
+}
+
+function rowGravado(row: VentaResumen) {
+  return rowValue(row as Record<string, unknown>, ['to_gravado', 'To_Gravado', 'TO_GRAVADO', 'total_gravado', 'TotalGravado']);
+}
+
+function rowIva(row: VentaResumen) {
+  return rowValue(row as Record<string, unknown>, ['total_iva', 'Total_IVA', 'TOTAL_IVA', 'iva', 'IVA']);
+}
+
+function rowExento(row: VentaResumen) {
+  return rowValue(row as Record<string, unknown>, ['to_exento', 'To_Exento', 'TO_EXENTO', 'total_exento', 'TotalExento']);
+}
+
+function rowDescuento(row: VentaResumen) {
+  return rowValue(row as Record<string, unknown>, ['totaldescuento', 'TotalDescuento', 'TOTALDESCUENTO', 'descuento', 'Descuento']);
+}
+
+function rowTotal(row: VentaResumen) {
+  const explicitTotal = rowValue(row as Record<string, unknown>, ['total', 'Total', 'TOTAL', 'total_factura', 'TotalFactura']);
+  return explicitTotal || rowExento(row) + rowGravado(row) + rowIva(row);
+}
+
 function groupLabel(groupBy: string) {
   if (groupBy === 'cod_tp_comp') return 'Comprobante';
   if (groupBy === 'cod_vendedor') return 'Vendedor';
@@ -75,15 +106,23 @@ export function SalesTable({
   }, [groupBy, rows]);
 
   const summary = useMemo(
-    () => rows.reduce(
+    () => rows.reduce<{
+      comprobantes: number;
+      gravado: number;
+      iva: number;
+      exento: number;
+      descuento: number;
+      total: number;
+    }>(
       (acc, row) => ({
         comprobantes: acc.comprobantes + 1,
-        gravado: acc.gravado + num(row.to_gravado),
-        iva: acc.iva + num(row.total_iva),
-        descuento: acc.descuento + num(row.totaldescuento),
-        total: acc.total + num(row.to_gravado) + num(row.total_iva),
+        gravado: acc.gravado + rowGravado(row),
+        iva: acc.iva + rowIva(row),
+        exento: acc.exento + rowExento(row),
+        descuento: acc.descuento + rowDescuento(row),
+        total: acc.total + rowTotal(row),
       }),
-      { comprobantes: 0, gravado: 0, iva: 0, descuento: 0, total: 0 },
+      { comprobantes: 0, gravado: 0, iva: 0, exento: 0, descuento: 0, total: 0 },
     ),
     [rows],
   );
@@ -124,10 +163,10 @@ export function SalesTable({
           String(row.razon_social || row.cliente || '-'),
           String(row.ruc || '-'),
           String(row.fecha || '').slice(0, 10) || '-',
-          money(row.total_iva),
-          money(row.to_gravado),
-          money(row.totaldescuento),
-          money(num(row.to_gravado) + num(row.total_iva)),
+          money(rowIva(row)),
+          money(rowGravado(row)),
+          money(rowDescuento(row)),
+          money(rowTotal(row)),
         ]),
       ),
       branding: exportBranding,
@@ -146,10 +185,10 @@ export function SalesTable({
           String(row.razon_social || row.cliente || '-'),
           String(row.ruc || '-'),
           String(row.fecha || '').slice(0, 10) || '-',
-          money(row.total_iva),
-          money(row.to_gravado),
-          money(row.totaldescuento),
-          money(num(row.to_gravado) + num(row.total_iva)),
+          money(rowIva(row)),
+          money(rowGravado(row)),
+          money(rowDescuento(row)),
+          money(rowTotal(row)),
         ]),
       ),
       branding: exportBranding,
@@ -208,21 +247,21 @@ export function SalesTable({
                 Agrupado por {groupLabel(groupBy).toLowerCase()} y con acceso al detalle completo por comprobante, como en la pantalla anterior.
               </p>
             </div>
-            <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-4">
+            <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-[8.25rem_8.25rem_8.25rem_8.25rem]">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Comprobantes</p>
+                <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Comprobantes</p>
                 <p className="mt-1 text-lg font-semibold text-slate-900">{summary.comprobantes}</p>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Gravado</p>
+                <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Gravado</p>
                 <p className="mt-1 text-lg font-semibold text-slate-900">{money(summary.gravado)}</p>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">IVA</p>
+                <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">IVA</p>
                 <p className="mt-1 text-lg font-semibold text-slate-900">{money(summary.iva)}</p>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Total</p>
+                <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Total</p>
                 <p className="mt-1 text-lg font-semibold text-slate-900">{money(summary.total)}</p>
               </div>
             </div>

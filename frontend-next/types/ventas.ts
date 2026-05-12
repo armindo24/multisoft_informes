@@ -4,6 +4,7 @@ export type SelectOption = {
 };
 
 export type VentaResumen = {
+  [key: string]: unknown;
   cod_empresa?: string;
   cod_tp_comp?: string;
   comp_numero?: string;
