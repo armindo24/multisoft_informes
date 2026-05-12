@@ -44,6 +44,63 @@ function normalizeNumber(value) {
     return isFinite(n) ? n : 0;
 }
 
+function sqlValue(value) {
+    if (value === null || typeof value === 'undefined' || String(value).trim() === '') return 'NULL';
+    return "'" + esc(value) + "'";
+}
+
+function numValue(value, decimals) {
+    var n = Number(value || 0);
+    if (!isFinite(n)) n = 0;
+    if (typeof decimals === 'number') return n.toFixed(decimals);
+    return String(n);
+}
+
+function beginSql() {
+    return isPostgres() ? 'BEGIN' : 'BEGIN TRANSACTION';
+}
+
+function execOnly(sql, cb) {
+    conn.exec(sql, function (err) {
+        cb(err || null);
+    });
+}
+
+function rollbackWith(err, cb) {
+    execOnly('ROLLBACK', function () {
+        cb(err || new Error('No se pudo grabar la operacion.'));
+    });
+}
+
+function insertDetailSql(empresa, periodo, nrotransac, row, line, concepto) {
+    var dbcr = String(row.dbcr || '').trim().toUpperCase() === 'C' ? 'C' : 'D';
+    var importe = normalizeNumber(row.importe);
+    var importeme = normalizeNumber(row.importeme);
+    var debito = dbcr === 'D' ? importe : 0;
+    var credito = dbcr === 'C' ? importe : 0;
+    var debitome = dbcr === 'D' ? importeme : 0;
+    var creditome = dbcr === 'C' ? importeme : 0;
+
+    return "INSERT INTO DBA.AsientosDet (" +
+        "Cod_Empresa, NroTransac, Linea, Periodo, CodPlanCta, CodPlanAux, DBCR, Importe, ImporteME, Concepto, Debito, Credito, DebitoME, CreditoME" +
+        ") VALUES (" +
+        sqlValue(empresa) + ", " +
+        numValue(nrotransac) + ", " +
+        numValue(line) + ", " +
+        sqlValue(periodo) + ", " +
+        sqlValue(row.codplancta) + ", " +
+        sqlValue(row.codplanaux) + ", " +
+        sqlValue(dbcr) + ", " +
+        numValue(importe, 4) + ", " +
+        numValue(importeme, 4) + ", " +
+        sqlValue(concepto || row.concepto) + ", " +
+        numValue(debito, 4) + ", " +
+        numValue(credito, 4) + ", " +
+        numValue(debitome, 4) + ", " +
+        numValue(creditome, 4) +
+        ")";
+}
+
 function runRecalculo(empresa, periodo, done) {
     var sql = "UPDATE dba.asientosdet " +
         "SET importe = CASE WHEN dbcr = 'D' THEN round(debito, 0) WHEN dbcr = 'C' THEN round(credito, 0) ELSE round(importe, 0) END, " +
@@ -217,6 +274,70 @@ DiferenciaCambio.nextTransac = function (query, cb) {
         var row = (rows || [])[0] || {};
         var current = normalizeNumber(row.nrotransac || row.NroTransac || row.NROTRANSAC || 0);
         cb(null, { nrotransac: current + 1 });
+    });
+};
+
+DiferenciaCambio.guardar = function (body, cb) {
+    body = body || {};
+    var empresa = esc(body.empresa);
+    var periodo = esc(body.periodo);
+    var tipoAsiento = esc(body.tipoasiento);
+    var fecha = esc(body.fecha);
+    var concepto = esc(body.concepto || 'Diferencia de cambio');
+    var monedaLocal = esc(body.moneda_local || body.codmoneda || '');
+    var rows = Array.isArray(body.rows) ? body.rows : [];
+
+    if (!empresa || !periodo || !tipoAsiento || !fecha || !rows.length) {
+        return cb(null, { ok: false, message: 'Faltan datos para grabar el asiento.' });
+    }
+
+    execOnly(beginSql(), function (beginErr) {
+        if (beginErr) return cb(beginErr);
+
+        var nextSql = "SELECT MAX(NroTransac) AS nrotransac FROM DBA.AsientosCab WHERE Cod_Empresa = '" + empresa + "'";
+        conn.exec(nextSql, function (nextErr, nextRows) {
+            if (nextErr) return rollbackWith(nextErr, cb);
+
+            var maxRow = (nextRows || [])[0] || {};
+            var nrotransac = normalizeNumber(maxRow.nrotransac || maxRow.NroTransac || maxRow.NROTRANSAC || 0) + 1;
+            var updateControlSql = "UPDATE DBA.Control SET CtasToCont = " + numValue(nrotransac) + " WHERE Cod_Empresa = " + sqlValue(empresa);
+
+            conn.exec(updateControlSql, function (controlErr) {
+                if (controlErr) return rollbackWith(controlErr, cb);
+
+                var cabSql = "INSERT INTO DBA.AsientosCab (Cod_Empresa, NroTransac, Periodo, TipoAsiento, NroCompr, Fecha, Transf, Origen, NroAsiento, CodMoneda) VALUES (" +
+                    sqlValue(empresa) + ", " +
+                    numValue(nrotransac) + ", " +
+                    sqlValue(periodo) + ", " +
+                    sqlValue(tipoAsiento) + ", NULL, " +
+                    sqlValue(fecha) + ", 'N', 'CON', NULL, " +
+                    sqlValue(monedaLocal) +
+                    ")";
+
+                conn.exec(cabSql, function (cabErr) {
+                    if (cabErr) return rollbackWith(cabErr, cb);
+
+                    var idx = 0;
+                    function nextDetail() {
+                        if (idx >= rows.length) {
+                            return execOnly('COMMIT', function (commitErr) {
+                                if (commitErr) return cb(commitErr);
+                                cb(null, { ok: true, nrotransac: nrotransac });
+                            });
+                        }
+
+                        var detailSql = insertDetailSql(empresa, periodo, nrotransac, rows[idx], idx + 1, concepto);
+                        idx += 1;
+                        conn.exec(detailSql, function (detErr) {
+                            if (detErr) return rollbackWith(detErr, cb);
+                            nextDetail();
+                        });
+                    }
+
+                    nextDetail();
+                });
+            });
+        });
     });
 };
 

@@ -139,6 +139,7 @@ export function DiferenciaCambioPanel({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewTransac, setPreviewTransac] = useState<number | null>(null);
   const [sheetRows, setSheetRows] = useState<PreviewRow[]>([]);
+  const [savingEntry, setSavingEntry] = useState(false);
 
   const factor = toNumber(factorCambio) || 1;
 
@@ -496,6 +497,59 @@ export function DiferenciaCambioPanel({
     setPreviewOpen(true);
   }
 
+  async function aceptarAsiento() {
+    setMessage(null);
+
+    if (!fechaAsiento || fechaAsiento <= '1900-01-01') {
+      setMessage('La Fecha del Asiento no es valida. Verifique.');
+      return;
+    }
+
+    if (!tipoAsiento.trim()) {
+      setMessage('El Tipo de Asiento no es valido. Verifique.');
+      return;
+    }
+
+    if (!sheetRows.length) {
+      setMessage('No existen datos para procesar. Verifique.');
+      return;
+    }
+
+    setSavingEntry(true);
+    const response = await fetch('/api/registraciones/diferencia-cambio/guardar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        empresa,
+        periodo,
+        tipoasiento: tipoAsiento,
+        fecha: fechaAsiento,
+        concepto: concepto || 'Diferencia de cambio',
+        moneda_local: monedaLocalCode,
+        rows: sheetRows,
+      }),
+    });
+    const payload = (await response.json().catch(() => ({}))) as {
+      ok?: boolean;
+      data?: { nrotransac?: number };
+      message?: string;
+    };
+    setSavingEntry(false);
+
+    if (!response.ok || !payload.ok) {
+      setMessage(payload.message || 'Se produjo un error al intentar grabar los datos.');
+      return;
+    }
+
+    const nrotransac = Number(payload.data?.nrotransac || 0);
+    setRows([]);
+    setSelected(new Set());
+    setSheetRows([]);
+    setPreviewOpen(false);
+    setPreviewTransac(null);
+    setMessage(`El proceso ha finalizado con exito. El Nro. de Transaccion es ${nrotransac}`);
+  }
+
   return (
     <section id="diferencia-cambio" className="space-y-4 scroll-mt-28">
       <div className="grid gap-4 xl:grid-cols-[minmax(320px,1fr)_minmax(320px,1.1fr)]">
@@ -834,6 +888,23 @@ export function DiferenciaCambioPanel({
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div className="flex justify-end gap-3 border-t border-slate-200 px-5 py-4">
+              <button
+                type="button"
+                onClick={() => setPreviewOpen(false)}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => void aceptarAsiento()}
+                disabled={savingEntry || !sheetRows.length}
+                className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-medium text-white shadow-sm disabled:opacity-50"
+              >
+                {savingEntry ? 'Grabando...' : 'Aceptar'}
+              </button>
             </div>
           </div>
         </div>

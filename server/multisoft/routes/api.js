@@ -451,6 +451,16 @@ router.get('/registraciones/diferencia-cambio/next-transac', function (req, res,
     });
 });
 
+router.post('/registraciones/diferencia-cambio/guardar', function (req, res, next) {
+    DiferenciaCambio.guardar(req.body || {}, function (err, result) {
+        if (err) return next(err);
+        if (!result || result.ok === false) {
+            return res.status(400).json(result || { ok: false, message: 'No se pudo grabar el asiento.' });
+        }
+        res.json({data: result});
+    });
+});
+
 router.get('/control/cierre/:empresa/:periodo', function (req, res, next) {
     Control.cierre(req.params, function (result) {
         res.json({data: result});
