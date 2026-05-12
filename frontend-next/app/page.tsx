@@ -32,6 +32,12 @@ function toNumber(value: unknown) {
   return Number.isFinite(n) ? n : 0;
 }
 
+function formatInteger(value: number) {
+  return Math.round(value).toLocaleString('es-PY', {
+    maximumFractionDigits: 0,
+  });
+}
+
 function normalizeOption(item: Record<string, string>) {
   const value =
     item.cod_empresa ||
@@ -156,11 +162,11 @@ export default async function DashboardPage() {
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <KpiCard item={{ title: 'Facturación visible', value: facturacion.toLocaleString('es-PY'), change: 'Ventas', trend: 'up' }} />
-        <KpiCard item={{ title: 'Cuentas por cobrar', value: saldoCobrar.toLocaleString('es-PY'), change: 'CxC', trend: saldoCobrar > 0 ? 'neutral' : 'up' }} />
-        <KpiCard item={{ title: 'Inventario valorizado', value: inventario.toLocaleString('es-PY'), change: 'Stock', trend: 'neutral' }} />
-        <KpiCard item={{ title: 'Activo visible', value: activo.toLocaleString('es-PY'), change: 'Finanzas', trend: 'up' }} />
-        <KpiCard item={{ title: 'Comprado visible', value: totalCompras.toLocaleString('es-PY'), change: 'Compras', trend: 'down' }} />
+        <KpiCard item={{ title: 'Facturación visible', value: formatInteger(facturacion), change: 'Ventas', trend: 'up' }} />
+        <KpiCard item={{ title: 'Cuentas por cobrar', value: formatInteger(saldoCobrar), change: 'CxC', trend: saldoCobrar > 0 ? 'neutral' : 'up' }} />
+        <KpiCard item={{ title: 'Inventario valorizado', value: formatInteger(inventario), change: 'Stock', trend: 'neutral' }} />
+        <KpiCard item={{ title: 'Activo visible', value: formatInteger(activo), change: 'Finanzas', trend: 'up' }} />
+        <KpiCard item={{ title: 'Comprado visible', value: formatInteger(totalCompras), change: 'Compras', trend: 'down' }} />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
