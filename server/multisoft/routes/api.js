@@ -437,6 +437,13 @@ router.get('/registraciones/diferencia-cambio/consultar', function (req, res, ne
     });
 });
 
+router.get('/registraciones/diferencia-cambio/init', function (req, res, next) {
+    DiferenciaCambio.init(req.query || {}, function (err, result) {
+        if (err) return next(err);
+        res.json({data: result});
+    });
+});
+
 router.get('/control/cierre/:empresa/:periodo', function (req, res, next) {
     Control.cierre(req.params, function (result) {
         res.json({data: result});

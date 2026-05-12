@@ -143,4 +143,63 @@ DiferenciaCambio.consultar = function (query, cb) {
     });
 };
 
+DiferenciaCambio.init = function (query, cb) {
+    var empresa = esc(query.empresa);
+    var periodo = esc(query.periodo);
+
+    if (!empresa || !periodo) {
+        return cb(null, {
+            moneda_local: { descrip: 'Moneda Local', cantdecimal: 0 },
+            moneda_extranjera: { descrip: 'Moneda Extranjera', cantdecimal: 2 },
+            tipo_asientos: []
+        });
+    }
+
+    var localSql = "SELECT M.Descrip AS descrip, C.CantDecimalGS AS cantdecimal " +
+        "FROM DBA.Control C, DBA.Moneda M " +
+        "WHERE C.Cod_Empresa = '" + empresa + "' " +
+        "AND C.Periodo = '" + periodo + "' " +
+        "AND C.MonedaLocal = M.CodMoneda";
+
+    var extranjeraSql = "SELECT M.Descrip AS descrip, C.CantDecimalME AS cantdecimal " +
+        "FROM DBA.Control C, DBA.Moneda M " +
+        "WHERE C.Cod_Empresa = '" + empresa + "' " +
+        "AND C.Periodo = '" + periodo + "' " +
+        "AND C.MonedaExtranjera = M.CodMoneda";
+
+    var tipoSql = "SELECT tipoasiento, descrip FROM dba.tipoasiento ORDER BY 1 ASC";
+
+    conn.exec(localSql, function (localErr, localRows) {
+        if (localErr) return cb(localErr);
+
+        conn.exec(extranjeraSql, function (extranjeraErr, extranjeraRows) {
+            if (extranjeraErr) return cb(extranjeraErr);
+
+            conn.exec(tipoSql, function (tipoErr, tipoRows) {
+                if (tipoErr) return cb(tipoErr);
+
+                var local = (localRows || [])[0] || {};
+                var extranjera = (extranjeraRows || [])[0] || {};
+
+                cb(null, {
+                    moneda_local: {
+                        descrip: local.descrip || local.Descrip || local.DESCRIP || 'Moneda Local',
+                        cantdecimal: normalizeNumber(local.cantdecimal || local.CantDecimalGS || local.CANTDECIMAL || 0)
+                    },
+                    moneda_extranjera: {
+                        descrip: extranjera.descrip || extranjera.Descrip || extranjera.DESCRIP || 'Moneda Extranjera',
+                        cantdecimal: normalizeNumber(extranjera.cantdecimal || extranjera.CantDecimalME || extranjera.CANTDECIMAL || 2)
+                    },
+                    tipo_asientos: (tipoRows || []).map(function (row) {
+                        return {
+                            tipoasiento: row.tipoasiento || row.TipoAsiento || row.TIPOASIENTO || '',
+                            descrip: row.descrip || row.Descrip || row.DESCRIP || ''
+                        };
+                    }).concat([{ tipoasiento: '', descrip: '' }])
+                });
+            });
+        });
+    });
+};
+
 module.exports = DiferenciaCambio;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Calculator, CalendarDays, CheckCircle2, FileText, Info, Search, X } from 'lucide-react';
 import type { SelectOption } from '@/types/finanzas';
 
@@ -21,6 +21,12 @@ type PreviewRow = {
   importe: number;
   importeme: number;
   concepto: string;
+};
+
+type InitPayload = {
+  moneda_local?: { descrip?: string; cantdecimal?: number };
+  moneda_extranjera?: { descrip?: string; cantdecimal?: number };
+  tipo_asientos?: Array<{ tipoasiento?: string; descrip?: string }>;
 };
 
 function today() {
@@ -70,12 +76,54 @@ export function DiferenciaCambioPanel({
   const [concepto, setConcepto] = useState('Diferencia de cambio');
   const [tipoAsiento, setTipoAsiento] = useState('');
   const [fechaAsiento, setFechaAsiento] = useState(today());
+  const [monedaLocalLabel, setMonedaLocalLabel] = useState('Moneda Local');
+  const [monedaExtranjeraLabel, setMonedaExtranjeraLabel] = useState('Moneda Extranjera');
+  const [monedaLocalDecimals, setMonedaLocalDecimals] = useState(0);
+  const [monedaExtranjeraDecimals, setMonedaExtranjeraDecimals] = useState(2);
+  const [tipoAsientoOptions, setTipoAsientoOptions] = useState<SelectOption[]>(tipoAsientos);
   const [rows, setRows] = useState<DifferenceRow[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const factor = toNumber(factorCambio) || 1;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadInit() {
+      if (!empresa || !periodo) return;
+
+      const params = new URLSearchParams({ empresa, periodo });
+      const response = await fetch(`/api/registraciones/diferencia-cambio/init?${params.toString()}`, {
+        cache: 'no-store',
+      });
+      const payload = (await response.json().catch(() => ({}))) as { ok?: boolean; data?: InitPayload };
+
+      if (cancelled || !response.ok || !payload.ok) return;
+
+      const local = payload.data?.moneda_local || {};
+      const extranjera = payload.data?.moneda_extranjera || {};
+      const nextTipos = (payload.data?.tipo_asientos || [])
+        .map((item) => {
+          const value = String(item.tipoasiento || '').trim();
+          const label = String(item.descrip || value).trim();
+          return { value, label: value && label && value !== label ? `${value} - ${label}` : label || value };
+        });
+
+      setMonedaLocalLabel(String(local.descrip || 'Moneda Local'));
+      setMonedaExtranjeraLabel(String(extranjera.descrip || 'Moneda Extranjera'));
+      setMonedaLocalDecimals(Number(local.cantdecimal ?? 0));
+      setMonedaExtranjeraDecimals(Number(extranjera.cantdecimal ?? 2));
+      setTipoAsientoOptions(nextTipos.length ? nextTipos : tipoAsientos);
+    }
+
+    void loadInit();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [empresa, periodo, tipoAsientos]);
 
   const rowsWithDifference = useMemo(
     () =>
@@ -245,7 +293,7 @@ export function DiferenciaCambioPanel({
               <span className="mb-1 block font-medium text-slate-700">Tipo de asiento</span>
               <select value={tipoAsiento} onChange={(event) => setTipoAsiento(event.target.value)} className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2">
                 <option value="">Seleccione...</option>
-                {tipoAsientos.map((item) => (
+                {tipoAsientoOptions.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
               </select>
@@ -283,8 +331,8 @@ export function DiferenciaCambioPanel({
                 <th className="px-3 py-2 text-left">Cod. Auxiliar</th>
                 <th className="px-3 py-2 text-left">Nombre</th>
                 <th className="px-3 py-2 text-left">Base</th>
-                <th className="px-3 py-2 text-right">Moneda Local</th>
-                <th className="px-3 py-2 text-right">Moneda Extranjera</th>
+                <th className="px-3 py-2 text-right">{monedaLocalLabel}</th>
+                <th className="px-3 py-2 text-right">{monedaExtranjeraLabel}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -297,8 +345,8 @@ export function DiferenciaCambioPanel({
                   <td className="px-3 py-2">{row.codplanaux || '-'}</td>
                   <td className="px-3 py-2">{row.nombre}</td>
                   <td className="px-3 py-2">{row.monedabase || '-'}</td>
-                  <td className="px-3 py-2 text-right">{formatNumber(row.saldogs)}</td>
-                  <td className="px-3 py-2 text-right">{formatNumber(row.saldome, 2)}</td>
+                  <td className="px-3 py-2 text-right">{formatNumber(row.saldogs, monedaLocalDecimals)}</td>
+                  <td className="px-3 py-2 text-right">{formatNumber(row.saldome, monedaExtranjeraDecimals)}</td>
                 </tr>
               ))}
               {!rows.length ? (
@@ -337,7 +385,7 @@ export function DiferenciaCambioPanel({
                   <td className="px-3 py-2">{row.codplanaux || '-'}</td>
                   <td className="px-3 py-2 text-center font-semibold">{row.dbcr}</td>
                   <td className="px-3 py-2 text-right">{formatNumber(row.importe)}</td>
-                  <td className="px-3 py-2 text-right">{formatNumber(row.importeme, 2)}</td>
+                  <td className="px-3 py-2 text-right">{formatNumber(row.importeme, monedaExtranjeraDecimals)}</td>
                   <td className="px-3 py-2">{row.concepto}</td>
                 </tr>
               ))}
