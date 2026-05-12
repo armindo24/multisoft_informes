@@ -679,7 +679,11 @@ export function DiferenciaCambioPanel({
               <span className="mb-0.5 block font-medium text-slate-700">Concepto</span>
               <input value={concepto} onChange={(event) => setConcepto(event.target.value)} className="h-9 w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-[13px]" />
             </label>
-            <label className="text-[13px]">
+            <label className="text-[13px] sm:col-span-2">
+              <span className="mb-0.5 block font-medium text-slate-700">Fecha <span className="text-red-500">*</span></span>
+              <input required aria-required="true" type="date" value={fechaAsiento} onChange={(event) => setFechaAsiento(event.target.value)} className="h-9 w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-[13px]" />
+            </label>
+            <label className="text-[13px] sm:col-span-2">
               <span className="mb-0.5 block font-medium text-slate-700">Tipo de asiento <span className="text-red-500">*</span></span>
               <select required aria-required="true" value={tipoAsiento} onChange={(event) => setTipoAsiento(event.target.value)} className="h-9 w-full rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-[13px]">
                 <option value="">Seleccione...</option>
@@ -687,10 +691,6 @@ export function DiferenciaCambioPanel({
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
               </select>
-            </label>
-            <label className="text-[13px]">
-              <span className="mb-0.5 block font-medium text-slate-700">Fecha <span className="text-red-500">*</span></span>
-              <input required aria-required="true" type="date" value={fechaAsiento} onChange={(event) => setFechaAsiento(event.target.value)} className="h-9 w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-[13px]" />
             </label>
           </div>
           <div className="mt-2 flex items-center justify-end gap-1.5 text-xs text-blue-700">
