@@ -409,9 +409,24 @@ export function DiferenciaCambioPanel({
     { debeMl: 0, haberMl: 0, debeMe: 0, haberMe: 0 },
   );
 
+  function validateRequiredFields() {
+    if (!tipoCambio.trim()) return 'Debe indicar el Tipo de cambio.';
+    if (!Number.isFinite(factor) || factor <= 0) return 'Debe indicar un Factor de cambio valido y mayor a cero.';
+    if (!cuentaDif.trim()) return 'Debe indicar la Cuenta diferencia de cambio.';
+    if (!tipoAsiento.trim()) return 'Debe indicar el Tipo de asiento.';
+    if (!fechaAsiento || fechaAsiento <= '1900-01-01') return 'Debe indicar una Fecha valida.';
+    return '';
+  }
+
   async function consultar() {
-    setLoading(true);
     setMessage(null);
+    const requiredMessage = validateRequiredFields();
+    if (requiredMessage) {
+      setMessage(requiredMessage);
+      return;
+    }
+
+    setLoading(true);
 
     const params = new URLSearchParams({
       empresa,
@@ -462,18 +477,14 @@ export function DiferenciaCambioPanel({
     setPreviewOpen(false);
     setPreviewTransac(null);
 
+    const requiredMessage = validateRequiredFields();
+    if (requiredMessage) {
+      setMessage(requiredMessage);
+      return;
+    }
+
     if (selectedRows.length <= 0) {
       setMessage('No existen datos para procesar. Verifique.');
-      return;
-    }
-
-    if (!cuentaDif.trim()) {
-      setMessage('Debe indicar la cuenta de diferencia de cambio.');
-      return;
-    }
-
-    if (!Number.isFinite(factor) || factor <= 0) {
-      setMessage('Debe indicar un factor de cambio valido y mayor a cero.');
       return;
     }
 
@@ -488,14 +499,9 @@ export function DiferenciaCambioPanel({
 
   async function previsualizarAsiento() {
     setMessage(null);
-
-    if (!fechaAsiento || fechaAsiento <= '1900-01-01') {
-      setMessage('La Fecha del Asiento no es valida. Verifique.');
-      return;
-    }
-
-    if (!tipoAsiento.trim()) {
-      setMessage('El Tipo de Asiento no es valido. Verifique.');
+    const requiredMessage = validateRequiredFields();
+    if (requiredMessage) {
+      setMessage(requiredMessage);
       return;
     }
 
@@ -525,14 +531,9 @@ export function DiferenciaCambioPanel({
 
   async function aceptarAsiento() {
     setMessage(null);
-
-    if (!fechaAsiento || fechaAsiento <= '1900-01-01') {
-      setMessage('La Fecha del Asiento no es valida. Verifique.');
-      return;
-    }
-
-    if (!tipoAsiento.trim()) {
-      setMessage('El Tipo de Asiento no es valido. Verifique.');
+    const requiredMessage = validateRequiredFields();
+    if (requiredMessage) {
+      setMessage(requiredMessage);
       return;
     }
 
@@ -577,127 +578,127 @@ export function DiferenciaCambioPanel({
   }
 
   return (
-    <section id="diferencia-cambio" className="space-y-1.5 scroll-mt-16 text-xs">
-      <div className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 shadow-soft">
-        <h2 className="text-sm font-semibold text-slate-900">Diferencias de cambio - Generacion de asientos contables</h2>
+    <section id="diferencia-cambio" className="space-y-2 scroll-mt-16 text-[13px]">
+      <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-soft">
+        <h2 className="text-base font-semibold text-slate-900">Diferencias de cambio - Generacion de asientos contables</h2>
       </div>
 
-      <div className="grid gap-1.5 xl:grid-cols-[minmax(320px,0.95fr)_minmax(320px,1.05fr)]">
-        <div className="rounded-lg border border-slate-300 bg-white p-2 shadow-sm">
-          <div className="mb-1.5 flex items-center gap-1.5 border-b border-slate-200 pb-1 text-xs font-semibold text-blue-800">
-            <Search className="h-3.5 w-3.5" />
+      <div className="grid gap-2 xl:grid-cols-[minmax(320px,0.95fr)_minmax(320px,1.05fr)]">
+        <div className="rounded-lg border border-slate-300 bg-white p-2.5 shadow-sm">
+          <div className="mb-2 flex items-center gap-1.5 border-b border-slate-200 pb-1.5 text-[13px] font-semibold text-blue-800">
+            <Search className="h-4 w-4" />
             1. Parametros de busqueda
           </div>
-          <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
-            <label className="text-xs lg:col-span-2">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <label className="text-[13px] lg:col-span-2">
               <span className="mb-0.5 block font-medium text-slate-700">Empresa</span>
-              <select value={empresa} onChange={(event) => setEmpresa(event.target.value)} className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs">
+              <select value={empresa} onChange={(event) => setEmpresa(event.target.value)} className="h-9 w-full rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-[13px]">
                 {empresas.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
               </select>
             </label>
-            <label className="text-xs">
+            <label className="text-[13px]">
               <span className="mb-0.5 block font-medium text-slate-700">Periodo</span>
-              <input value={periodo} onChange={(event) => setPeriodo(event.target.value)} className="h-8 w-full rounded-md border border-slate-200 px-2 py-1 text-xs" />
+              <input value={periodo} onChange={(event) => setPeriodo(event.target.value)} className="h-9 w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-[13px]" />
             </label>
-            <label className="text-xs">
+            <label className="text-[13px]">
               <span className="mb-0.5 block font-medium text-slate-700">Codigo de cuentas</span>
               <div className="flex gap-1.5">
-                <input value={cuenta} onChange={(event) => setCuenta(event.target.value)} placeholder="Ej: 112201" className="h-8 min-w-0 flex-1 rounded-md border border-slate-200 px-2 py-1 text-xs" />
-                <button type="button" onClick={openAccountPicker} className="inline-flex h-8 items-center justify-center rounded-md border border-cyan-200 bg-white px-2 text-cyan-800 transition hover:bg-cyan-50" title="Buscar cuenta contable">
-                  <Search className="h-3.5 w-3.5" />
+                <input value={cuenta} onChange={(event) => setCuenta(event.target.value)} placeholder="Ej: 112201" className="h-9 min-w-0 flex-1 rounded-md border border-slate-200 px-2.5 py-1.5 text-[13px]" />
+                <button type="button" onClick={openAccountPicker} className="inline-flex h-9 items-center justify-center rounded-md border border-cyan-200 bg-white px-2.5 text-cyan-800 transition hover:bg-cyan-50" title="Buscar cuenta contable">
+                  <Search className="h-4 w-4" />
                 </button>
               </div>
             </label>
-            <label className="text-xs">
+            <label className="text-[13px]">
               <span className="mb-0.5 block font-medium text-slate-700">Auxiliar</span>
               <div className="flex gap-1.5">
-                <input value={auxiliar} onChange={(event) => setAuxiliar(event.target.value)} placeholder="Ej: 0002" className="h-8 min-w-0 flex-1 rounded-md border border-slate-200 px-2 py-1 text-xs" />
-                <button type="button" onClick={openAuxPicker} className="inline-flex h-8 items-center justify-center rounded-md border border-cyan-200 bg-white px-2 text-cyan-800 transition hover:bg-cyan-50" title="Buscar auxiliar">
-                  <Search className="h-3.5 w-3.5" />
+                <input value={auxiliar} onChange={(event) => setAuxiliar(event.target.value)} placeholder="Ej: 0002" className="h-9 min-w-0 flex-1 rounded-md border border-slate-200 px-2.5 py-1.5 text-[13px]" />
+                <button type="button" onClick={openAuxPicker} className="inline-flex h-9 items-center justify-center rounded-md border border-cyan-200 bg-white px-2.5 text-cyan-800 transition hover:bg-cyan-50" title="Buscar auxiliar">
+                  <Search className="h-4 w-4" />
                 </button>
               </div>
             </label>
-            <label className="text-xs">
+            <label className="text-[13px]">
               <span className="mb-0.5 block font-medium text-slate-700">Desde</span>
-              <input type="date" value={fechaDesde} onChange={(event) => setFechaDesde(event.target.value)} className="h-8 w-full rounded-md border border-slate-200 px-2 py-1 text-xs" />
+              <input type="date" value={fechaDesde} onChange={(event) => setFechaDesde(event.target.value)} className="h-9 w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-[13px]" />
             </label>
-            <label className="text-xs">
+            <label className="text-[13px]">
               <span className="mb-0.5 block font-medium text-slate-700">Hasta</span>
-              <input type="date" value={fechaHasta} onChange={(event) => setFechaHasta(event.target.value)} className="h-8 w-full rounded-md border border-slate-200 px-2 py-1 text-xs" />
+              <input type="date" value={fechaHasta} onChange={(event) => setFechaHasta(event.target.value)} className="h-9 w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-[13px]" />
             </label>
-            <label className="text-xs">
-              <span className="mb-0.5 block font-medium text-slate-700">Tipo de cambio</span>
-              <select value={tipoCambio} onChange={(event) => setTipoCambio(event.target.value)} className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs">
+            <label className="text-[13px]">
+              <span className="mb-0.5 block font-medium text-slate-700">Tipo de cambio <span className="text-red-500">*</span></span>
+              <select required aria-required="true" value={tipoCambio} onChange={(event) => setTipoCambio(event.target.value)} className="h-9 w-full rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-[13px] required:border-red-300">
                 <option value="">Seleccione...</option>
                 <option value="COMPRA">Compra</option>
                 <option value="VENTA">Venta</option>
                 <option value="CIERRE">Cierre</option>
               </select>
             </label>
-            <label className="text-xs">
-              <span className="mb-0.5 block font-medium text-slate-700">Factor de cambio</span>
-              <input value={factorCambio} onChange={(event) => setFactorCambio(event.target.value)} className="h-8 w-full rounded-md border border-slate-200 px-2 py-1 text-right text-xs" />
+            <label className="text-[13px]">
+              <span className="mb-0.5 block font-medium text-slate-700">Factor de cambio <span className="text-red-500">*</span></span>
+              <input required aria-required="true" value={factorCambio} onChange={(event) => setFactorCambio(event.target.value)} className="h-9 w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-right text-[13px]" />
             </label>
           </div>
-          <label className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-700">
-            <input type="checkbox" checked={recalcular} onChange={(event) => setRecalcular(event.target.checked)} className="h-3.5 w-3.5 rounded border-slate-300" />
+          <label className="mt-2 flex items-center gap-1.5 text-[13px] text-slate-700">
+            <input type="checkbox" checked={recalcular} onChange={(event) => setRecalcular(event.target.checked)} className="h-4 w-4 rounded border-slate-300" />
             Recalcular importes antes de consultar
           </label>
         </div>
 
-        <div className="rounded-lg border border-slate-300 bg-white p-2 shadow-sm">
-          <div className="mb-1.5 flex items-center gap-1.5 border-b border-slate-200 pb-1 text-xs font-semibold text-blue-800">
-            <Calculator className="h-3.5 w-3.5" />
+        <div className="rounded-lg border border-slate-300 bg-white p-2.5 shadow-sm">
+          <div className="mb-2 flex items-center gap-1.5 border-b border-slate-200 pb-1.5 text-[13px] font-semibold text-blue-800">
+            <Calculator className="h-4 w-4" />
             2. Configuracion de diferencia de cambio
           </div>
-          <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-4">
-            <label className="text-xs lg:col-span-2">
-              <span className="mb-0.5 block font-medium text-slate-700">Cuenta diferencia de cambio</span>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <label className="text-[13px] lg:col-span-2">
+              <span className="mb-0.5 block font-medium text-slate-700">Cuenta diferencia de cambio <span className="text-red-500">*</span></span>
               <div className="flex gap-1.5">
-                <input value={cuentaDif} onChange={(event) => setCuentaDif(event.target.value)} placeholder="Ej: 552001" className="h-8 min-w-0 flex-1 rounded-md border border-slate-200 px-2 py-1 text-xs" />
-                <button type="button" onClick={openDiffAccountPicker} className="inline-flex h-8 items-center justify-center rounded-md border border-cyan-200 bg-white px-2 text-cyan-800 transition hover:bg-cyan-50" title="Buscar cuenta diferencia de cambio">
-                  <Search className="h-3.5 w-3.5" />
+                <input required aria-required="true" value={cuentaDif} onChange={(event) => setCuentaDif(event.target.value)} placeholder="Ej: 552001" className="h-9 min-w-0 flex-1 rounded-md border border-slate-200 px-2.5 py-1.5 text-[13px]" />
+                <button type="button" onClick={openDiffAccountPicker} className="inline-flex h-9 items-center justify-center rounded-md border border-cyan-200 bg-white px-2.5 text-cyan-800 transition hover:bg-cyan-50" title="Buscar cuenta diferencia de cambio">
+                  <Search className="h-4 w-4" />
                 </button>
               </div>
             </label>
-            <label className="text-xs lg:col-span-2">
+            <label className="text-[13px] lg:col-span-2">
               <span className="mb-0.5 block font-medium text-slate-700">Auxiliar</span>
               <div className="flex gap-1.5">
-                <input value={auxiliarDif} onChange={(event) => setAuxiliarDif(event.target.value)} className="h-8 min-w-0 flex-1 rounded-md border border-slate-200 px-2 py-1 text-xs" />
-                <button type="button" onClick={openDiffAuxPicker} className="inline-flex h-8 items-center justify-center rounded-md border border-cyan-200 bg-white px-2 text-cyan-800 transition hover:bg-cyan-50" title="Buscar auxiliar de diferencia">
-                  <Search className="h-3.5 w-3.5" />
+                <input value={auxiliarDif} onChange={(event) => setAuxiliarDif(event.target.value)} className="h-9 min-w-0 flex-1 rounded-md border border-slate-200 px-2.5 py-1.5 text-[13px]" />
+                <button type="button" onClick={openDiffAuxPicker} className="inline-flex h-9 items-center justify-center rounded-md border border-cyan-200 bg-white px-2.5 text-cyan-800 transition hover:bg-cyan-50" title="Buscar auxiliar de diferencia">
+                  <Search className="h-4 w-4" />
                 </button>
               </div>
             </label>
-            <label className="text-xs sm:col-span-2">
+            <label className="text-[13px] sm:col-span-2">
               <span className="mb-0.5 block font-medium text-slate-700">Concepto</span>
-              <input value={concepto} onChange={(event) => setConcepto(event.target.value)} className="h-8 w-full rounded-md border border-slate-200 px-2 py-1 text-xs" />
+              <input value={concepto} onChange={(event) => setConcepto(event.target.value)} className="h-9 w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-[13px]" />
             </label>
-            <label className="text-xs">
-              <span className="mb-0.5 block font-medium text-slate-700">Tipo de asiento</span>
-              <select value={tipoAsiento} onChange={(event) => setTipoAsiento(event.target.value)} className="h-8 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs">
+            <label className="text-[13px]">
+              <span className="mb-0.5 block font-medium text-slate-700">Tipo de asiento <span className="text-red-500">*</span></span>
+              <select required aria-required="true" value={tipoAsiento} onChange={(event) => setTipoAsiento(event.target.value)} className="h-9 w-full rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-[13px]">
                 <option value="">Seleccione...</option>
                 {tipoAsientoOptions.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
               </select>
             </label>
-            <label className="text-xs">
-              <span className="mb-0.5 block font-medium text-slate-700">Fecha</span>
-              <input type="date" value={fechaAsiento} onChange={(event) => setFechaAsiento(event.target.value)} className="h-8 w-full rounded-md border border-slate-200 px-2 py-1 text-xs" />
+            <label className="text-[13px]">
+              <span className="mb-0.5 block font-medium text-slate-700">Fecha <span className="text-red-500">*</span></span>
+              <input required aria-required="true" type="date" value={fechaAsiento} onChange={(event) => setFechaAsiento(event.target.value)} className="h-9 w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-[13px]" />
             </label>
           </div>
-          <div className="mt-1.5 flex items-center justify-end gap-1.5 text-[11px] text-blue-700">
-            <Info className="h-3.5 w-3.5" />
-            Campos obligatorios
+          <div className="mt-2 flex items-center justify-end gap-1.5 text-xs text-blue-700">
+            <Info className="h-4 w-4" />
+            <span><span className="text-red-500">*</span> Campos obligatorios</span>
           </div>
         </div>
       </div>
 
       {message ? (
-        <div className="rounded-lg border border-cyan-200 bg-cyan-50 px-2.5 py-1.5 text-xs text-cyan-900">{message}</div>
+        <div className="rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-[13px] text-cyan-900">{message}</div>
       ) : null}
 
       <div className="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm">
