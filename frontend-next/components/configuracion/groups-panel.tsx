@@ -296,10 +296,6 @@ export function GroupsPanel() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-          Este panel ya trabaja dentro de Next.js. La edicion del nombre del grupo es inmediata y el conteo te muestra el alcance actual antes de seguir con permisos detallados.
-        </div>
-
         <div className="flex flex-wrap gap-3">
           <button
             type="button"
