@@ -155,13 +155,13 @@ DiferenciaCambio.init = function (query, cb) {
         });
     }
 
-    var localSql = "SELECT M.Descrip AS descrip, C.CantDecimalGS AS cantdecimal " +
+    var localSql = "SELECT M.CodMoneda AS codmoneda, M.Descrip AS descrip, C.CantDecimalGS AS cantdecimal " +
         "FROM DBA.Control C, DBA.Moneda M " +
         "WHERE C.Cod_Empresa = '" + empresa + "' " +
         "AND C.Periodo = '" + periodo + "' " +
         "AND C.MonedaLocal = M.CodMoneda";
 
-    var extranjeraSql = "SELECT M.Descrip AS descrip, C.CantDecimalME AS cantdecimal " +
+    var extranjeraSql = "SELECT M.CodMoneda AS codmoneda, M.Descrip AS descrip, C.CantDecimalME AS cantdecimal " +
         "FROM DBA.Control C, DBA.Moneda M " +
         "WHERE C.Cod_Empresa = '" + empresa + "' " +
         "AND C.Periodo = '" + periodo + "' " +
@@ -183,10 +183,12 @@ DiferenciaCambio.init = function (query, cb) {
 
                 cb(null, {
                     moneda_local: {
+                        codmoneda: local.codmoneda || local.CodMoneda || local.CODMONEDA || '',
                         descrip: local.descrip || local.Descrip || local.DESCRIP || 'Moneda Local',
                         cantdecimal: normalizeNumber(local.cantdecimal || local.CantDecimalGS || local.CANTDECIMAL || 0)
                     },
                     moneda_extranjera: {
+                        codmoneda: extranjera.codmoneda || extranjera.CodMoneda || extranjera.CODMONEDA || '',
                         descrip: extranjera.descrip || extranjera.Descrip || extranjera.DESCRIP || 'Moneda Extranjera',
                         cantdecimal: normalizeNumber(extranjera.cantdecimal || extranjera.CantDecimalME || extranjera.CANTDECIMAL || 2)
                     },

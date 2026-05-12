@@ -24,8 +24,8 @@ type PreviewRow = {
 };
 
 type InitPayload = {
-  moneda_local?: { descrip?: string; cantdecimal?: number };
-  moneda_extranjera?: { descrip?: string; cantdecimal?: number };
+  moneda_local?: { codmoneda?: string; descrip?: string; cantdecimal?: number };
+  moneda_extranjera?: { codmoneda?: string; descrip?: string; cantdecimal?: number };
   tipo_asientos?: Array<{ tipoasiento?: string; descrip?: string }>;
 };
 
@@ -49,6 +49,11 @@ function toNumber(value: string) {
   const normalized = String(value || '').replace(/\./g, '').replace(',', '.');
   const number = Number(normalized);
   return Number.isFinite(number) ? number : 0;
+}
+
+function roundTo(value: number, decimals: number) {
+  const factor = 10 ** Math.max(0, decimals);
+  return Math.round((Number(value || 0) + Number.EPSILON) * factor) / factor;
 }
 
 function normalizeAccountOption(item: Record<string, string>): AccountPlanOption {
@@ -112,6 +117,8 @@ export function DiferenciaCambioPanel({
   const [fechaAsiento, setFechaAsiento] = useState(today());
   const [monedaLocalLabel, setMonedaLocalLabel] = useState('Moneda Local');
   const [monedaExtranjeraLabel, setMonedaExtranjeraLabel] = useState('Moneda Extranjera');
+  const [monedaLocalCode, setMonedaLocalCode] = useState('');
+  const [monedaExtranjeraCode, setMonedaExtranjeraCode] = useState('');
   const [monedaLocalDecimals, setMonedaLocalDecimals] = useState(0);
   const [monedaExtranjeraDecimals, setMonedaExtranjeraDecimals] = useState(2);
   const [tipoAsientoOptions, setTipoAsientoOptions] = useState<SelectOption[]>(tipoAsientos);
@@ -253,6 +260,8 @@ export function DiferenciaCambioPanel({
 
       setMonedaLocalLabel(String(local.descrip || 'Moneda Local'));
       setMonedaExtranjeraLabel(String(extranjera.descrip || 'Moneda Extranjera'));
+      setMonedaLocalCode(String(local.codmoneda || ''));
+      setMonedaExtranjeraCode(String(extranjera.codmoneda || ''));
       setMonedaLocalDecimals(Number(local.cantdecimal ?? 0));
       setMonedaExtranjeraDecimals(Number(extranjera.cantdecimal ?? 2));
       setTipoAsientoOptions(nextTipos.length ? nextTipos : tipoAsientos);
@@ -306,45 +315,63 @@ export function DiferenciaCambioPanel({
 
   const rowsWithDifference = useMemo(
     () =>
-      rows.map((row) => ({
-        ...row,
-        id: `${row.codplancta}|${row.codplanaux || ''}`,
-        diferencia: Math.round(row.saldome * factor - row.saldogs),
-      })),
-    [rows, factor],
+      rows.map((row) => {
+        const base = String(row.monedabase || '').trim().toUpperCase();
+        const localCode = monedaLocalCode.trim().toUpperCase();
+        const foreignCode = monedaExtranjeraCode.trim().toUpperCase();
+        const processMl = localCode ? base === localCode : false;
+        const processMe = foreignCode ? base === foreignCode : !processMl;
+        const diferencia = processMl
+          ? roundTo(roundTo(row.saldogs / factor, monedaExtranjeraDecimals) - row.saldome, monedaExtranjeraDecimals)
+          : roundTo(roundTo(row.saldome * factor, monedaLocalDecimals) - row.saldogs, monedaLocalDecimals);
+
+        return {
+          ...row,
+          id: `${row.codplancta}|${row.codplanaux || ''}`,
+          processMode: processMe ? 'ME' : 'ML',
+          diferencia,
+        };
+      }),
+    [rows, factor, monedaExtranjeraCode, monedaExtranjeraDecimals, monedaLocalCode, monedaLocalDecimals],
   );
 
   const selectedRows = rowsWithDifference.filter((row) => selected.has(row.id) && row.diferencia !== 0);
-  const totalDifference = selectedRows.reduce((sum, row) => sum + row.diferencia, 0);
 
   const previewRows = useMemo<PreviewRow[]>(() => {
-    const detail = selectedRows.map((row, index) => {
+    if (!cuentaDif.trim()) return [];
+
+    const detail: PreviewRow[] = [];
+
+    for (const row of selectedRows) {
       const amount = Math.abs(row.diferencia);
-      return {
-        linea: index + 1,
+      const dbcrContable = row.diferencia > 0 ? 'D' as const : 'C' as const;
+      const dbcrDif = row.diferencia > 0 ? 'C' as const : 'D' as const;
+      const importe = row.processMode === 'ME' ? amount : 0;
+      const importeme = row.processMode === 'ML' ? amount : 0;
+
+      detail.push({
+        linea: detail.length + 1,
         codplancta: row.codplancta,
         codplanaux: row.codplanaux || '',
-        dbcr: row.diferencia > 0 ? 'D' as const : 'C' as const,
-        importe: amount,
-        importeme: 0,
+        dbcr: dbcrContable,
+        importe,
+        importeme,
         concepto: `${concepto || 'Diferencia de cambio'} - ${row.nombre}`,
-      };
-    });
+      });
 
-    if (totalDifference !== 0 && cuentaDif) {
       detail.push({
         linea: detail.length + 1,
         codplancta: cuentaDif,
         codplanaux: auxiliarDif,
-        dbcr: totalDifference > 0 ? 'C' : 'D',
-        importe: Math.abs(totalDifference),
-        importeme: 0,
-        concepto: `${concepto || 'Diferencia de cambio'} - Resultado por diferencia`,
+        dbcr: dbcrDif,
+        importe,
+        importeme,
+        concepto: `${concepto || 'Diferencia de cambio'} - ${row.nombre}`,
       });
     }
 
     return detail;
-  }, [selectedRows, totalDifference, cuentaDif, auxiliarDif, concepto]);
+  }, [selectedRows, cuentaDif, auxiliarDif, concepto]);
 
   async function consultar() {
     setLoading(true);
