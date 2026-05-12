@@ -138,7 +138,7 @@ export function GroupsPanel() {
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+    <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,920px)] xl:justify-start">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-700">Grupos</h3>
@@ -233,40 +233,19 @@ export function GroupsPanel() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={prepareNewGroup}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-white px-4 py-2.5 text-sm font-medium text-cyan-800 transition hover:bg-cyan-50"
-          >
-            <Plus className="h-4 w-4" />
-            Nuevo grupo
-          </button>
-
-          <button
-            type="button"
-            onClick={() => void save()}
-            disabled={saving}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-cyan-700 disabled:opacity-60"
-          >
-            <Save className="h-4 w-4" />
-            {saving ? 'Guardando...' : selectedGroup ? 'Guardar cambios' : 'Crear grupo'}
-          </button>
-
-          {selectedGroup ? (
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => void deleteSelectedGroup()}
-              disabled={deleting || saving || selectedGroup.userCount > 0}
-              title={selectedGroup.userCount > 0 ? 'Quita primero los usuarios asignados a este grupo.' : 'Eliminar grupo'}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-800 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={prepareNewGroup}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-white px-4 py-2.5 text-sm font-medium text-cyan-800 transition hover:bg-cyan-50"
             >
-              <Trash2 className="h-4 w-4" />
-              {deleting ? 'Eliminando...' : 'Eliminar grupo'}
+              <Plus className="h-4 w-4" />
+              Nuevo grupo
             </button>
-          ) : null}
+          </div>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+        <div className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 xl:grid-cols-[minmax(360px,1fr)_240px]">
           <label className="text-sm text-slate-700">
             <span className="mb-2 block font-medium">Nombre del grupo</span>
             <input
@@ -275,9 +254,32 @@ export function GroupsPanel() {
               placeholder="Ejemplo: Gerencia"
               className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2"
             />
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => void save()}
+                disabled={saving}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+              >
+                <Save className="h-4 w-4" />
+                {saving ? 'Guardando...' : selectedGroup ? 'Guardar cambios' : 'Crear grupo'}
+              </button>
+              {selectedGroup ? (
+                <button
+                  type="button"
+                  onClick={() => void deleteSelectedGroup()}
+                  disabled={deleting || saving || selectedGroup.userCount > 0}
+                  title={selectedGroup.userCount > 0 ? 'Quita primero los usuarios asignados a este grupo.' : 'Eliminar grupo'}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {deleting ? 'Eliminando...' : 'Eliminar grupo'}
+                </button>
+              ) : null}
+            </div>
           </label>
 
-          <div className="grid gap-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
               <div className="flex items-center gap-2 text-slate-900">
                 <Users className="h-4 w-4" />
@@ -294,28 +296,6 @@ export function GroupsPanel() {
               <p className="mt-2 text-2xl font-semibold text-slate-900">{selectedGroup?.permissionsCount ?? 0}</p>
             </div>
           </div>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() => void save()}
-            disabled={saving}
-            className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
-          >
-            {saving ? 'Guardando...' : selectedGroup ? 'Guardar cambios' : 'Crear grupo'}
-          </button>
-          {selectedGroup ? (
-            <button
-              type="button"
-              onClick={() => void deleteSelectedGroup()}
-              disabled={deleting || saving || selectedGroup.userCount > 0}
-              title={selectedGroup.userCount > 0 ? 'Quita primero los usuarios asignados a este grupo.' : 'Eliminar grupo'}
-              className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-800 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {deleting ? 'Eliminando...' : 'Eliminar grupo'}
-            </button>
-          ) : null}
         </div>
       </div>
     </div>
