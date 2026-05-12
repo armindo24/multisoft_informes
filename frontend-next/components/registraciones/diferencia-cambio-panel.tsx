@@ -14,14 +14,13 @@ type DifferenceRow = {
 };
 
 type PreviewRow = {
-  line: number;
-  cuenta: string;
-  auxiliar: string;
+  linea: number;
+  codplancta: string;
+  codplanaux: string;
+  dbcr: 'D' | 'C';
+  importe: number;
+  importeme: number;
   concepto: string;
-  debeMl: number;
-  haberMl: number;
-  debeMe: number;
-  haberMe: number;
 };
 
 function today() {
@@ -95,27 +94,25 @@ export function DiferenciaCambioPanel({
     const detail = selectedRows.map((row, index) => {
       const amount = Math.abs(row.diferencia);
       return {
-        line: index + 1,
-        cuenta: row.codplancta,
-        auxiliar: row.codplanaux || '',
+        linea: index + 1,
+        codplancta: row.codplancta,
+        codplanaux: row.codplanaux || '',
+        dbcr: row.diferencia > 0 ? 'D' as const : 'C' as const,
+        importe: amount,
+        importeme: 0,
         concepto: `${concepto || 'Diferencia de cambio'} - ${row.nombre}`,
-        debeMl: row.diferencia > 0 ? amount : 0,
-        haberMl: row.diferencia < 0 ? amount : 0,
-        debeMe: 0,
-        haberMe: 0,
       };
     });
 
     if (totalDifference !== 0 && cuentaDif) {
       detail.push({
-        line: detail.length + 1,
-        cuenta: cuentaDif,
-        auxiliar: auxiliarDif,
+        linea: detail.length + 1,
+        codplancta: cuentaDif,
+        codplanaux: auxiliarDif,
+        dbcr: totalDifference > 0 ? 'C' : 'D',
+        importe: Math.abs(totalDifference),
+        importeme: 0,
         concepto: `${concepto || 'Diferencia de cambio'} - Resultado por diferencia`,
-        debeMl: totalDifference < 0 ? Math.abs(totalDifference) : 0,
-        haberMl: totalDifference > 0 ? totalDifference : 0,
-        debeMe: 0,
-        haberMe: 0,
       });
     }
 
@@ -324,31 +321,29 @@ export function DiferenciaCambioPanel({
             <thead className="bg-slate-50 text-xs uppercase tracking-[0.12em] text-slate-500">
               <tr>
                 <th className="px-3 py-2 text-left">Linea</th>
-                <th className="px-3 py-2 text-left">Cuenta</th>
-                <th className="px-3 py-2 text-left">Auxiliar</th>
+                <th className="px-3 py-2 text-left">CodPlanCta</th>
+                <th className="px-3 py-2 text-left">CodPlanAux</th>
+                <th className="px-3 py-2 text-center">DBCR</th>
+                <th className="px-3 py-2 text-right">Importe</th>
+                <th className="px-3 py-2 text-right">Importe ME</th>
                 <th className="px-3 py-2 text-left">Concepto</th>
-                <th className="px-3 py-2 text-right">Debe ML</th>
-                <th className="px-3 py-2 text-right">Haber ML</th>
-                <th className="px-3 py-2 text-right">Debe ME</th>
-                <th className="px-3 py-2 text-right">Haber ME</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {previewRows.map((row) => (
-                <tr key={row.line}>
-                  <td className="px-3 py-2">{row.line}</td>
-                  <td className="px-3 py-2 font-medium text-slate-900">{row.cuenta}</td>
-                  <td className="px-3 py-2">{row.auxiliar || '-'}</td>
+                <tr key={row.linea}>
+                  <td className="px-3 py-2">{row.linea}</td>
+                  <td className="px-3 py-2 font-medium text-slate-900">{row.codplancta}</td>
+                  <td className="px-3 py-2">{row.codplanaux || '-'}</td>
+                  <td className="px-3 py-2 text-center font-semibold">{row.dbcr}</td>
+                  <td className="px-3 py-2 text-right">{formatNumber(row.importe)}</td>
+                  <td className="px-3 py-2 text-right">{formatNumber(row.importeme, 2)}</td>
                   <td className="px-3 py-2">{row.concepto}</td>
-                  <td className="px-3 py-2 text-right">{formatNumber(row.debeMl)}</td>
-                  <td className="px-3 py-2 text-right">{formatNumber(row.haberMl)}</td>
-                  <td className="px-3 py-2 text-right">{formatNumber(row.debeMe, 2)}</td>
-                  <td className="px-3 py-2 text-right">{formatNumber(row.haberMe, 2)}</td>
                 </tr>
               ))}
               {!previewRows.length ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-slate-500">Selecciona cuentas y completa la cuenta de diferencia para previsualizar el asiento.</td>
+                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500">Selecciona cuentas y completa la cuenta de diferencia para previsualizar el asiento.</td>
                 </tr>
               ) : null}
             </tbody>
