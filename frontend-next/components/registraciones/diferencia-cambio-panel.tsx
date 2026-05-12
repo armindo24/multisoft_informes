@@ -125,6 +125,10 @@ export function DiferenciaCambioPanel({
   const [accountPickerSearch, setAccountPickerSearch] = useState('');
   const [auxPickerOpen, setAuxPickerOpen] = useState(false);
   const [auxPickerSearch, setAuxPickerSearch] = useState('');
+  const [diffAccountPickerOpen, setDiffAccountPickerOpen] = useState(false);
+  const [diffAccountPickerSearch, setDiffAccountPickerSearch] = useState('');
+  const [diffAuxPickerOpen, setDiffAuxPickerOpen] = useState(false);
+  const [diffAuxPickerSearch, setDiffAuxPickerSearch] = useState('');
 
   const factor = toNumber(factorCambio) || 1;
 
@@ -151,6 +155,29 @@ export function DiferenciaCambioPanel({
     );
   }, [localAuxOptions, auxPickerSearch, cuenta]);
 
+  const filteredDiffAccounts = useMemo(() => {
+    const term = diffAccountPickerSearch.trim().toLowerCase();
+    if (!term) return localAccountOptions;
+    return localAccountOptions.filter((option) =>
+      option.value.toLowerCase().includes(term) ||
+      option.label.toLowerCase().includes(term) ||
+      option.name.toLowerCase().includes(term) ||
+      option.moneda.toLowerCase().includes(term),
+    );
+  }, [localAccountOptions, diffAccountPickerSearch]);
+
+  const filteredDiffAuxOptions = useMemo(() => {
+    const accountCode = cuentaDif.trim();
+    const term = diffAuxPickerSearch.trim().toLowerCase();
+    const scoped = localAuxOptions.filter((option) => !accountCode || option.accountCode === accountCode);
+    if (!term) return scoped;
+    return scoped.filter((option) =>
+      option.auxCode.toLowerCase().includes(term) ||
+      option.name.toLowerCase().includes(term) ||
+      option.label.toLowerCase().includes(term),
+    );
+  }, [localAuxOptions, diffAuxPickerSearch, cuentaDif]);
+
   function openAccountPicker() {
     setAccountPickerSearch('');
     setAccountPickerOpen(true);
@@ -174,6 +201,31 @@ export function DiferenciaCambioPanel({
   function selectAux(option: AuxiliarOption) {
     setAuxiliar(option.auxCode);
     setAuxPickerOpen(false);
+  }
+
+  function openDiffAccountPicker() {
+    setDiffAccountPickerSearch('');
+    setDiffAccountPickerOpen(true);
+  }
+
+  function selectDiffAccount(option: AccountPlanOption) {
+    setCuentaDif(option.value);
+    setAuxiliarDif('');
+    setDiffAccountPickerOpen(false);
+  }
+
+  function openDiffAuxPicker() {
+    if (!cuentaDif.trim()) {
+      setMessage('Debe cargar primeramente la Cuenta Contable de diferencia.');
+      return;
+    }
+    setDiffAuxPickerSearch('');
+    setDiffAuxPickerOpen(true);
+  }
+
+  function selectDiffAux(option: AuxiliarOption) {
+    setAuxiliarDif(option.auxCode);
+    setDiffAuxPickerOpen(false);
   }
 
   useEffect(() => {
@@ -416,11 +468,21 @@ export function DiferenciaCambioPanel({
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="text-sm">
               <span className="mb-1 block font-medium text-slate-700">Cuenta diferencia de cambio</span>
-              <input value={cuentaDif} onChange={(event) => setCuentaDif(event.target.value)} placeholder="Ej: 552001" className="w-full rounded-lg border border-slate-200 px-3 py-2" />
+              <div className="flex gap-2">
+                <input value={cuentaDif} onChange={(event) => setCuentaDif(event.target.value)} placeholder="Ej: 552001" className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2" />
+                <button type="button" onClick={openDiffAccountPicker} className="inline-flex items-center justify-center rounded-lg border border-cyan-200 bg-white px-3 text-cyan-800 transition hover:bg-cyan-50" title="Buscar cuenta diferencia de cambio">
+                  <Search className="h-4 w-4" />
+                </button>
+              </div>
             </label>
             <label className="text-sm">
               <span className="mb-1 block font-medium text-slate-700">Auxiliar</span>
-              <input value={auxiliarDif} onChange={(event) => setAuxiliarDif(event.target.value)} className="w-full rounded-lg border border-slate-200 px-3 py-2" />
+              <div className="flex gap-2">
+                <input value={auxiliarDif} onChange={(event) => setAuxiliarDif(event.target.value)} className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2" />
+                <button type="button" onClick={openDiffAuxPicker} className="inline-flex items-center justify-center rounded-lg border border-cyan-200 bg-white px-3 text-cyan-800 transition hover:bg-cyan-50" title="Buscar auxiliar de diferencia">
+                  <Search className="h-4 w-4" />
+                </button>
+              </div>
             </label>
             <label className="text-sm sm:col-span-2">
               <span className="mb-1 block font-medium text-slate-700">Concepto</span>
@@ -655,6 +717,120 @@ export function DiferenciaCambioPanel({
                         className="cursor-pointer border-b border-slate-100 hover:bg-cyan-50"
                         onClick={() => selectAux(option)}
                         onDoubleClick={() => selectAux(option)}
+                      >
+                        <td className="px-4 py-3 font-medium text-slate-900">{option.auxCode}</td>
+                        <td className="px-4 py-3 text-slate-700">{option.name}</td>
+                        <td className="px-4 py-3 text-slate-700">{option.accountCode}</td>
+                      </tr>
+                    )) : (
+                      <tr>
+                        <td colSpan={3} className="px-4 py-8 text-center text-slate-500">Sin auxiliares para esta cuenta.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {diffAccountPickerOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
+          <div className="w-full max-w-4xl rounded-3xl border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Elegir cuenta diferencia de cambio</h3>
+                <p className="mt-1 text-sm text-slate-500">Busca por codigo o nombre de la cuenta.</p>
+              </div>
+              <button type="button" onClick={() => setDiffAccountPickerOpen(false)} className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-600">
+                Cerrar
+              </button>
+            </div>
+            <div className="space-y-4 px-5 py-4">
+              <input
+                autoFocus
+                value={diffAccountPickerSearch}
+                onChange={(event) => setDiffAccountPickerSearch(event.target.value)}
+                placeholder="Buscar por codigo o nombre..."
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+              />
+              <div className="max-h-[26rem] overflow-auto rounded-2xl border border-slate-200">
+                <table className="min-w-full text-sm">
+                  <thead className="sticky top-0 bg-slate-50 text-slate-700">
+                    <tr className="border-b border-slate-200">
+                      <th className="px-4 py-3 text-left">Codigo</th>
+                      <th className="px-4 py-3 text-left">Nombre</th>
+                      <th className="px-4 py-3 text-center">Imp</th>
+                      <th className="px-4 py-3 text-center">Aux</th>
+                      <th className="px-4 py-3 text-center">Mon</th>
+                      <th className="px-4 py-3 text-center">Nivel</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredDiffAccounts.length ? filteredDiffAccounts.map((option) => (
+                      <tr
+                        key={option.value}
+                        className="cursor-pointer border-b border-slate-100 hover:bg-cyan-50"
+                        onClick={() => selectDiffAccount(option)}
+                        onDoubleClick={() => selectDiffAccount(option)}
+                      >
+                        <td className="px-4 py-3 font-medium text-slate-900">{option.value}</td>
+                        <td className="px-4 py-3 text-slate-700">{option.name}</td>
+                        <td className="px-4 py-3 text-center text-slate-700">{option.imputable || '-'}</td>
+                        <td className="px-4 py-3 text-center text-slate-700">{option.auxiliar || '-'}</td>
+                        <td className="px-4 py-3 text-center text-slate-700">{option.moneda || '-'}</td>
+                        <td className="px-4 py-3 text-center text-slate-700">{option.nivel || '-'}</td>
+                      </tr>
+                    )) : (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-8 text-center text-slate-500">Sin cuentas para mostrar.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {diffAuxPickerOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
+          <div className="w-full max-w-4xl rounded-3xl border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Elegir auxiliar de diferencia</h3>
+                <p className="mt-1 text-sm text-slate-500">Auxiliares disponibles para la cuenta {cuentaDif}.</p>
+              </div>
+              <button type="button" onClick={() => setDiffAuxPickerOpen(false)} className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-600">
+                Cerrar
+              </button>
+            </div>
+            <div className="space-y-4 px-5 py-4">
+              <input
+                autoFocus
+                value={diffAuxPickerSearch}
+                onChange={(event) => setDiffAuxPickerSearch(event.target.value)}
+                placeholder="Buscar por codigo o nombre..."
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+              />
+              <div className="max-h-[26rem] overflow-auto rounded-2xl border border-slate-200">
+                <table className="min-w-full text-sm">
+                  <thead className="sticky top-0 bg-slate-50 text-slate-700">
+                    <tr className="border-b border-slate-200">
+                      <th className="px-4 py-3 text-left">Auxiliar</th>
+                      <th className="px-4 py-3 text-left">Nombre</th>
+                      <th className="px-4 py-3 text-left">Cuenta</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredDiffAuxOptions.length ? filteredDiffAuxOptions.map((option) => (
+                      <tr
+                        key={`${option.auxCode}:${option.accountCode}`}
+                        className="cursor-pointer border-b border-slate-100 hover:bg-cyan-50"
+                        onClick={() => selectDiffAux(option)}
+                        onDoubleClick={() => selectDiffAux(option)}
                       >
                         <td className="px-4 py-3 font-medium text-slate-900">{option.auxCode}</td>
                         <td className="px-4 py-3 text-slate-700">{option.name}</td>
