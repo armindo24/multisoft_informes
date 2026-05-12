@@ -29,7 +29,7 @@ const pool = new Pool({
 const NODE_API_BASE = process.env.NEXT_PUBLIC_NODE_API_URL || 'http://localhost:3000/api/v1';
 const DEFAULT_MAX_ACTIVE_SESSIONS_PER_USER = Math.max(1, Number(process.env.MAX_ACTIVE_SESSIONS_PER_USER || 3));
 const MAX_SESSION_LIMIT = 20;
-const DEFAULT_GROUPS = ['Admin', 'Finanzas', 'Ventas', 'Compras', 'Stock', 'Migraciones', 'Configuracion'];
+const DEFAULT_GROUPS = ['Admin', 'Finanzas', 'Ventas', 'Compras', 'Stock', 'Registraciones', 'Migraciones', 'Configuracion'];
 
 export type DbType = 'postgres' | 'integrado' | 'sueldo';
 export type DbEngine = 'postgres' | 'sqlanywhere';
