@@ -86,8 +86,9 @@ export async function getPrimaryScopedEmpresa(base: 'Integrado' | 'Sueldo' = 'In
       .then((items) => new Set(items.filter((item) => item.logoUrl).map((item) => item.empresa)))
       .catch(() => new Set<string>());
 
-    const firstAssigned = baseAssignments.find((item) => brandedCompanies.has(String(item.empresa || '').trim().toUpperCase()))
-      || baseAssignments[0];
+    const latestAssignments = [...baseAssignments].reverse();
+    const firstAssigned = latestAssignments.find((item) => brandedCompanies.has(String(item.empresa || '').trim().toUpperCase()))
+      || latestAssignments[0];
     const assignedEmpresa = firstAssigned ? String(firstAssigned.empresa || '').trim().toUpperCase() : '';
     if (assignedEmpresa) return assignedEmpresa;
   }
