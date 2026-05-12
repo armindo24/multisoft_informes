@@ -281,20 +281,19 @@ export function DiferenciaCambioPanel({
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-[0.12em] text-slate-500">
               <tr>
-                <th className="px-3 py-2 text-left">Sel.</th>
+                <th className="px-3 py-2 text-center">Generar</th>
                 <th className="px-3 py-2 text-left">Codigo</th>
-                <th className="px-3 py-2 text-left">Auxiliar</th>
+                <th className="px-3 py-2 text-left">Cod. Auxiliar</th>
                 <th className="px-3 py-2 text-left">Nombre</th>
-                <th className="px-3 py-2 text-left">Moneda base</th>
-                <th className="px-3 py-2 text-right">Saldo GS</th>
-                <th className="px-3 py-2 text-right">Saldo ME</th>
-                <th className="px-3 py-2 text-right">Diferencia</th>
+                <th className="px-3 py-2 text-left">Base</th>
+                <th className="px-3 py-2 text-right">Moneda Local</th>
+                <th className="px-3 py-2 text-right">Moneda Extranjera</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {rowsWithDifference.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50">
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 text-center">
                     <input type="checkbox" checked={selected.has(row.id)} onChange={() => toggleRow(row.id)} className="h-4 w-4 rounded border-slate-300" />
                   </td>
                   <td className="px-3 py-2 font-medium text-slate-900">{row.codplancta}</td>
@@ -303,23 +302,14 @@ export function DiferenciaCambioPanel({
                   <td className="px-3 py-2">{row.monedabase || '-'}</td>
                   <td className="px-3 py-2 text-right">{formatNumber(row.saldogs)}</td>
                   <td className="px-3 py-2 text-right">{formatNumber(row.saldome, 2)}</td>
-                  <td className="px-3 py-2 text-right font-semibold">{formatNumber(row.diferencia)}</td>
                 </tr>
               ))}
               {!rows.length ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-slate-500">Consulta saldos para ver las cuentas con diferencia.</td>
+                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500">Consulta saldos para ver las cuentas con diferencia.</td>
                 </tr>
               ) : null}
             </tbody>
-            {rows.length ? (
-              <tfoot className="bg-slate-50 font-semibold">
-                <tr>
-                  <td colSpan={7} className="px-3 py-2 text-right">Total diferencias</td>
-                  <td className="px-3 py-2 text-right">{formatNumber(totalDifference)}</td>
-                </tr>
-              </tfoot>
-            ) : null}
           </table>
         </div>
       </div>
