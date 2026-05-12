@@ -56,6 +56,15 @@ function roundTo(value: number, decimals: number) {
   return Math.round((Number(value || 0) + Number.EPSILON) * factor) / factor;
 }
 
+function debitCredit(row: PreviewRow) {
+  return {
+    debeMl: row.dbcr === 'D' ? row.importe : 0,
+    haberMl: row.dbcr === 'C' ? row.importe : 0,
+    debeMe: row.dbcr === 'D' ? row.importeme : 0,
+    haberMe: row.dbcr === 'C' ? row.importeme : 0,
+  };
+}
+
 function normalizeAccountOption(item: Record<string, string>): AccountPlanOption {
   const value = String(item.CodPlanCta || item.codplancta || item.codigo || item.value || '').trim();
   const nivel = String(item.nivel || item.Nivel || '').trim();
@@ -383,6 +392,23 @@ export function DiferenciaCambioPanel({
     setPreviewTransac(null);
   }, [selected, rows, cuentaDif, auxiliarDif, concepto, factorCambio, monedaLocalCode, monedaExtranjeraCode]);
 
+  const totalDiferencias = rowsWithDifference
+    .filter((row) => selected.has(row.id))
+    .reduce((sum, row) => sum + row.diferencia, 0);
+
+  const sheetTotals = sheetRows.reduce(
+    (totals, row) => {
+      const values = debitCredit(row);
+      return {
+        debeMl: totals.debeMl + values.debeMl,
+        haberMl: totals.haberMl + values.haberMl,
+        debeMe: totals.debeMe + values.debeMe,
+        haberMe: totals.haberMe + values.haberMe,
+      };
+    },
+    { debeMl: 0, haberMl: 0, debeMe: 0, haberMe: 0 },
+  );
+
   async function consultar() {
     setLoading(true);
     setMessage(null);
@@ -552,9 +578,13 @@ export function DiferenciaCambioPanel({
 
   return (
     <section id="diferencia-cambio" className="space-y-4 scroll-mt-28">
+      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-soft">
+        <h2 className="text-lg font-semibold text-slate-900">Diferencias de cambio - Generacion de asientos contables</h2>
+      </div>
+
       <div className="grid gap-4 xl:grid-cols-[minmax(320px,1fr)_minmax(320px,1.1fr)]">
-        <div className="card p-4">
-          <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-blue-800">
+        <div className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+          <div className="mb-4 flex items-center gap-2 border-b border-slate-200 pb-2 text-sm font-semibold text-blue-800">
             <Search className="h-4 w-4" />
             1. Parametros de busqueda
           </div>
@@ -617,8 +647,8 @@ export function DiferenciaCambioPanel({
           </label>
         </div>
 
-        <div className="card p-4">
-          <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-blue-800">
+        <div className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+          <div className="mb-4 flex items-center gap-2 border-b border-slate-200 pb-2 text-sm font-semibold text-blue-800">
             <Calculator className="h-4 w-4" />
             2. Configuracion de diferencia de cambio
           </div>
@@ -670,8 +700,8 @@ export function DiferenciaCambioPanel({
         <div className="rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">{message}</div>
       ) : null}
 
-      <div className="card overflow-hidden">
-        <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+      <div className="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-300 bg-slate-50 px-4 py-2.5">
           <div className="flex items-center gap-2 text-sm font-semibold text-blue-800">
             <FileText className="h-4 w-4" />
             3. Cuentas con diferencia a generar
@@ -679,78 +709,104 @@ export function DiferenciaCambioPanel({
           <span className="text-xs font-medium text-slate-500">Resultados encontrados: {rows.length}</span>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-[0.12em] text-slate-500">
+          <table className="min-w-full border-collapse text-sm">
+            <thead className="bg-gradient-to-b from-slate-100 to-slate-200 text-slate-800">
               <tr>
-                <th className="px-3 py-2 text-center">Generar</th>
-                <th className="px-3 py-2 text-left">Codigo</th>
-                <th className="px-3 py-2 text-left">Cod. Auxiliar</th>
-                <th className="px-3 py-2 text-left">Nombre</th>
-                <th className="px-3 py-2 text-left">Base</th>
-                <th className="px-3 py-2 text-right">{monedaLocalLabel}</th>
-                <th className="px-3 py-2 text-right">{monedaExtranjeraLabel}</th>
+                <th className="border border-slate-300 px-3 py-2 text-center">Sel.</th>
+                <th className="border border-slate-300 px-3 py-2 text-left">Codigo</th>
+                <th className="border border-slate-300 px-3 py-2 text-left">Auxiliar</th>
+                <th className="border border-slate-300 px-3 py-2 text-left">Nombre</th>
+                <th className="border border-slate-300 px-3 py-2 text-left">Moneda base</th>
+                <th className="border border-slate-300 px-3 py-2 text-right">Saldo GS</th>
+                <th className="border border-slate-300 px-3 py-2 text-right">Saldo ME</th>
+                <th className="border border-slate-300 px-3 py-2 text-right">Diferencia</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {rowsWithDifference.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50">
-                  <td className="px-3 py-2 text-center">
+                  <td className="border border-slate-200 px-3 py-2 text-center">
                     <input type="checkbox" checked={selected.has(row.id)} onChange={() => toggleRow(row.id)} className="h-4 w-4 rounded border-slate-300" />
                   </td>
-                  <td className="px-3 py-2 font-medium text-slate-900">{row.codplancta}</td>
-                  <td className="px-3 py-2">{row.codplanaux || '-'}</td>
-                  <td className="px-3 py-2">{row.nombre}</td>
-                  <td className="px-3 py-2">{row.monedabase || '-'}</td>
-                  <td className="px-3 py-2 text-right">{formatNumber(row.saldogs, monedaLocalDecimals)}</td>
-                  <td className="px-3 py-2 text-right">{formatNumber(row.saldome, monedaExtranjeraDecimals)}</td>
+                  <td className="border border-slate-200 px-3 py-2 font-medium text-slate-900">{row.codplancta}</td>
+                  <td className="border border-slate-200 px-3 py-2">{row.codplanaux || '-'}</td>
+                  <td className="border border-slate-200 px-3 py-2">{row.nombre}</td>
+                  <td className="border border-slate-200 px-3 py-2">{row.monedabase || '-'}</td>
+                  <td className="border border-slate-200 px-3 py-2 text-right">{formatNumber(row.saldogs, monedaLocalDecimals)}</td>
+                  <td className="border border-slate-200 px-3 py-2 text-right">{formatNumber(row.saldome, monedaExtranjeraDecimals)}</td>
+                  <td className="border border-slate-200 px-3 py-2 text-right font-semibold">{formatNumber(row.diferencia, row.processMode === 'ML' ? monedaExtranjeraDecimals : monedaLocalDecimals)}</td>
                 </tr>
               ))}
               {!rows.length ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500">Consulta saldos para ver las cuentas con diferencia.</td>
+                  <td colSpan={8} className="px-4 py-8 text-center text-slate-500">Consulta saldos para ver las cuentas con diferencia.</td>
                 </tr>
               ) : null}
             </tbody>
+            {rows.length ? (
+              <tfoot className="bg-slate-100 font-semibold text-slate-900">
+                <tr>
+                  <td colSpan={7} className="border border-slate-300 px-3 py-2 text-right">Total diferencias</td>
+                  <td className="border border-slate-300 px-3 py-2 text-right">{formatNumber(totalDiferencias)}</td>
+                </tr>
+              </tfoot>
+            ) : null}
           </table>
         </div>
       </div>
 
-      <div className="card overflow-hidden">
-        <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-3 text-sm font-semibold text-blue-800">
+      <div className="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
+        <div className="flex items-center gap-2 border-b border-slate-300 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-blue-800">
           <FileText className="h-4 w-4" />
           4. Vista previa del asiento contable
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-[0.12em] text-slate-500">
+          <table className="min-w-full border-collapse text-sm">
+            <thead className="bg-gradient-to-b from-slate-100 to-slate-200 text-slate-800">
               <tr>
-                <th className="px-3 py-2 text-left">Linea</th>
-                <th className="px-3 py-2 text-left">CodPlanCta</th>
-                <th className="px-3 py-2 text-left">CodPlanAux</th>
-                <th className="px-3 py-2 text-center">DBCR</th>
-                <th className="px-3 py-2 text-right">Importe</th>
-                <th className="px-3 py-2 text-right">Importe ME</th>
-                <th className="px-3 py-2 text-left">Concepto</th>
+                <th className="border border-slate-300 px-3 py-2 text-center">Linea</th>
+                <th className="border border-slate-300 px-3 py-2 text-left">Cuenta</th>
+                <th className="border border-slate-300 px-3 py-2 text-left">Auxiliar</th>
+                <th className="border border-slate-300 px-3 py-2 text-left">Concepto</th>
+                <th className="border border-slate-300 px-3 py-2 text-right">Debe ML</th>
+                <th className="border border-slate-300 px-3 py-2 text-right">Haber ML</th>
+                <th className="border border-slate-300 px-3 py-2 text-right">Debe ME</th>
+                <th className="border border-slate-300 px-3 py-2 text-right">Haber ME</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {sheetRows.map((row) => (
-                <tr key={row.linea}>
-                  <td className="px-3 py-2">{row.linea}</td>
-                  <td className="px-3 py-2 font-medium text-slate-900">{row.codplancta}</td>
-                  <td className="px-3 py-2">{row.codplanaux || '-'}</td>
-                  <td className="px-3 py-2 text-center font-semibold">{row.dbcr}</td>
-                  <td className="px-3 py-2 text-right">{formatNumber(row.importe)}</td>
-                  <td className="px-3 py-2 text-right">{formatNumber(row.importeme, monedaExtranjeraDecimals)}</td>
-                  <td className="px-3 py-2">{row.concepto}</td>
-                </tr>
-              ))}
+            <tbody>
+              {sheetRows.map((row) => {
+                const values = debitCredit(row);
+                return (
+                  <tr key={row.linea}>
+                    <td className="border border-slate-200 px-3 py-2 text-center">{row.linea}</td>
+                    <td className="border border-slate-200 px-3 py-2 font-medium text-slate-900">{row.codplancta}</td>
+                    <td className="border border-slate-200 px-3 py-2">{row.codplanaux || '-'}</td>
+                    <td className="border border-slate-200 px-3 py-2">{row.concepto}</td>
+                    <td className="border border-slate-200 px-3 py-2 text-right">{formatNumber(values.debeMl, monedaLocalDecimals)}</td>
+                    <td className="border border-slate-200 px-3 py-2 text-right">{formatNumber(values.haberMl, monedaLocalDecimals)}</td>
+                    <td className="border border-slate-200 px-3 py-2 text-right">{formatNumber(values.debeMe, monedaExtranjeraDecimals)}</td>
+                    <td className="border border-slate-200 px-3 py-2 text-right">{formatNumber(values.haberMe, monedaExtranjeraDecimals)}</td>
+                  </tr>
+                );
+              })}
               {!sheetRows.length ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500">Selecciona cuentas y presiona Generar asiento para armar las lineas.</td>
+                  <td colSpan={8} className="px-4 py-8 text-center text-slate-500">Selecciona cuentas y presiona Generar asiento para armar las lineas.</td>
                 </tr>
               ) : null}
             </tbody>
+            {sheetRows.length ? (
+              <tfoot className="bg-slate-100 font-semibold text-slate-900">
+                <tr>
+                  <td colSpan={4} className="border border-slate-300 px-3 py-2 text-right">Totales</td>
+                  <td className="border border-slate-300 px-3 py-2 text-right">{formatNumber(sheetTotals.debeMl, monedaLocalDecimals)}</td>
+                  <td className="border border-slate-300 px-3 py-2 text-right">{formatNumber(sheetTotals.haberMl, monedaLocalDecimals)}</td>
+                  <td className="border border-slate-300 px-3 py-2 text-right">{formatNumber(sheetTotals.debeMe, monedaExtranjeraDecimals)}</td>
+                  <td className="border border-slate-300 px-3 py-2 text-right">{formatNumber(sheetTotals.haberMe, monedaExtranjeraDecimals)}</td>
+                </tr>
+              </tfoot>
+            ) : null}
           </table>
         </div>
       </div>
