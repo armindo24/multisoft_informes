@@ -83,7 +83,7 @@ export function AppShell({
   const [resolvedEmpresa, setResolvedEmpresa] = useState('');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const routeEmpresa = String(searchParams.get('empresa') || '').trim().toUpperCase();
-  const effectiveEmpresa = routeEmpresa || String(empresa || resolvedEmpresa || '').trim().toUpperCase() || undefined;
+  const effectiveEmpresa = routeEmpresa || String(resolvedEmpresa || empresa || '').trim().toUpperCase() || undefined;
 
   const visibleNavigation = useMemo(
     () => navigation.filter((item) => canAccessItem(item, user)),
@@ -150,7 +150,7 @@ export function AppShell({
   useEffect(() => {
     if (pathname === '/login' || pathname.startsWith('/password-reset')) return;
     if (!user?.id) return;
-    if (routeEmpresa || empresa || resolvedEmpresa) return;
+    if (routeEmpresa) return;
 
     let cancelled = false;
 
@@ -166,7 +166,7 @@ export function AppShell({
       if (cancelled || !payload.ok) return;
 
       const nextEmpresa = String(payload.data?.empresa || '').trim().toUpperCase();
-      if (nextEmpresa) {
+      if (nextEmpresa && !cancelled) {
         setResolvedEmpresa(nextEmpresa);
       }
     }
@@ -176,7 +176,7 @@ export function AppShell({
     return () => {
       cancelled = true;
     };
-  }, [empresa, pathname, resolvedEmpresa, routeEmpresa, user?.id]);
+  }, [pathname, routeEmpresa, user?.id]);
 
   useEffect(() => {
     const activeItem = visibleNavigation.find((item) => isActivePath(pathname, item.href));
