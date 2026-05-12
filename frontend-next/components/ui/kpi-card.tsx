@@ -1,3 +1,4 @@
+import { Info } from 'lucide-react';
 import type { KPI } from '@/types/dashboard';
 
 const trendClasses: Record<KPI['trend'], string> = {
@@ -16,7 +17,17 @@ export function KpiCard({ item }: { item: KPI }) {
   return (
     <div className="card p-3.5 sm:p-4">
       <div className="flex items-start justify-between gap-2.5">
-        <p className="min-w-0 text-[13px] leading-5 text-slate-500">{item.title}</p>
+        <div className="flex min-w-0 items-center gap-1.5">
+          <p className="min-w-0 text-[13px] leading-5 text-slate-500">{item.title}</p>
+          {item.tooltip ? (
+            <span className="group relative inline-flex shrink-0" title={item.tooltip}>
+              <Info className="size-3.5 text-slate-400" aria-hidden="true" />
+              <span className="pointer-events-none absolute left-1/2 top-5 z-20 hidden w-56 -translate-x-1/2 rounded-md bg-slate-900 px-2 py-1.5 text-xs font-medium leading-5 text-white shadow-lg group-hover:block">
+                {item.tooltip}
+              </span>
+            </span>
+          ) : null}
+        </div>
         <span className={`badge max-w-[96px] shrink-0 whitespace-normal break-words px-2 py-1 text-right text-xs leading-tight ${trendClasses[item.trend]}`}>
           {item.change}
         </span>

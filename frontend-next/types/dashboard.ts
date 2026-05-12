@@ -5,6 +5,7 @@ export type KPI = {
   value: string;
   change: string;
   trend: 'up' | 'down' | 'neutral';
+  tooltip?: string;
 };
 
 export type ChartPoint = {
