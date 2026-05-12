@@ -152,6 +152,13 @@ export function DiferenciaCambioPanel({
 
   const factor = toNumber(factorCambio) || 1;
 
+  useEffect(() => {
+    const yearFromDate = fechaDesde.slice(0, 4);
+    if (/^\d{4}$/.test(yearFromDate) && yearFromDate !== periodo) {
+      setPeriodo(yearFromDate);
+    }
+  }, [fechaDesde, periodo]);
+
   const filteredAccounts = useMemo(() => {
     const term = accountPickerSearch.trim().toLowerCase();
     if (!term) return localAccountOptions;
@@ -597,10 +604,6 @@ export function DiferenciaCambioPanel({
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
               </select>
-            </label>
-            <label className="text-[13px]">
-              <span className="mb-0.5 block font-medium text-slate-700">Periodo</span>
-              <input value={periodo} onChange={(event) => setPeriodo(event.target.value)} className="h-9 w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-[13px]" />
             </label>
             <label className="text-[13px]">
               <span className="mb-0.5 block font-medium text-slate-700">Codigo de cuentas</span>
