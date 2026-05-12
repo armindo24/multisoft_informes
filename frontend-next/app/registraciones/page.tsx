@@ -1,4 +1,6 @@
 import { PageHeader } from '@/components/ui/page-header';
+import { getSessionUser } from '@/lib/auth-server';
+import { redirect } from 'next/navigation';
 
 const actions = [
   {
@@ -32,6 +34,14 @@ export default async function RegistracionesPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const sessionUser = await getSessionUser();
+  const groups = new Set((sessionUser?.groups || []).map((item) => String(item || '').trim().toLowerCase()));
+  const canAccess = Boolean(sessionUser?.isSuperuser) || groups.has('registraciones');
+
+  if (!canAccess) {
+    redirect('/dashboard');
+  }
+
   const params = (await searchParams) || {};
   const selectedSection = String(params.section || '');
 

@@ -48,6 +48,7 @@ function canAccessItem(item: NavigationItem, user: SessionUser | null) {
   if (path.startsWith('/ventas')) return groups.has('ventas');
   if (path.startsWith('/compras')) return groups.has('compras');
   if (path.startsWith('/stock')) return groups.has('stock');
+  if (path.startsWith('/registraciones')) return groups.has('registraciones');
   if (path.startsWith('/migraciones')) return groups.has('migraciones');
   if (path.startsWith('/configuracion')) return groups.has('admin') || groups.has('configuracion');
 
