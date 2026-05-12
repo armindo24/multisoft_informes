@@ -204,4 +204,20 @@ DiferenciaCambio.init = function (query, cb) {
     });
 };
 
+DiferenciaCambio.nextTransac = function (query, cb) {
+    var empresa = esc(query.empresa);
+
+    if (!empresa) {
+        return cb(null, { nrotransac: 1 });
+    }
+
+    var sql = "SELECT MAX(NroTransac) AS nrotransac FROM DBA.AsientosCab WHERE Cod_Empresa = '" + empresa + "'";
+    conn.exec(sql, function (err, rows) {
+        if (err) return cb(err);
+        var row = (rows || [])[0] || {};
+        var current = normalizeNumber(row.nrotransac || row.NroTransac || row.NROTRANSAC || 0);
+        cb(null, { nrotransac: current + 1 });
+    });
+};
+
 module.exports = DiferenciaCambio;

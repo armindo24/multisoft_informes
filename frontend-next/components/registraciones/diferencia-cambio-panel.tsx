@@ -136,6 +136,8 @@ export function DiferenciaCambioPanel({
   const [diffAccountPickerSearch, setDiffAccountPickerSearch] = useState('');
   const [diffAuxPickerOpen, setDiffAuxPickerOpen] = useState(false);
   const [diffAuxPickerSearch, setDiffAuxPickerSearch] = useState('');
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewTransac, setPreviewTransac] = useState<number | null>(null);
 
   const factor = toNumber(factorCambio) || 1;
 
@@ -356,7 +358,7 @@ export function DiferenciaCambioPanel({
         dbcr: dbcrContable,
         importe,
         importeme,
-        concepto: `${concepto || 'Diferencia de cambio'} - ${row.nombre}`,
+        concepto: concepto || 'Diferencia de cambio',
       });
 
       detail.push({
@@ -366,7 +368,7 @@ export function DiferenciaCambioPanel({
         dbcr: dbcrDif,
         importe,
         importeme,
-        concepto: `${concepto || 'Diferencia de cambio'} - ${row.nombre}`,
+        concepto: concepto || 'Diferencia de cambio',
       });
     }
 
@@ -418,6 +420,43 @@ export function DiferenciaCambioPanel({
       else next.add(id);
       return next;
     });
+  }
+
+  async function previsualizarAsiento() {
+    setMessage(null);
+
+    if (!fechaAsiento || fechaAsiento <= '1900-01-01') {
+      setMessage('La Fecha del Asiento no es valida. Verifique.');
+      return;
+    }
+
+    if (!tipoAsiento.trim()) {
+      setMessage('El Tipo de Asiento no es valido. Verifique.');
+      return;
+    }
+
+    if (!previewRows.length) {
+      setMessage('No existen datos para procesar. Verifique.');
+      return;
+    }
+
+    const params = new URLSearchParams({ empresa });
+    const response = await fetch(`/api/registraciones/diferencia-cambio/next-transac?${params.toString()}`, {
+      cache: 'no-store',
+    });
+    const payload = (await response.json().catch(() => ({}))) as {
+      ok?: boolean;
+      data?: { nrotransac?: number };
+      message?: string;
+    };
+
+    if (!response.ok || !payload.ok) {
+      setMessage(payload.message || 'No se pudo obtener el numero de transaccion.');
+      return;
+    }
+
+    setPreviewTransac(Number(payload.data?.nrotransac || 1));
+    setPreviewOpen(true);
   }
 
   return (
@@ -630,7 +669,7 @@ export function DiferenciaCambioPanel({
           <Search className="h-4 w-4" />
           {loading ? 'Consultando...' : 'Consultar saldos'}
         </button>
-        <button type="button" disabled={!previewRows.length} className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-medium text-blue-800 shadow-sm disabled:opacity-50">
+        <button type="button" onClick={() => void previsualizarAsiento()} disabled={!previewRows.length} className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-medium text-blue-800 shadow-sm disabled:opacity-50">
           <FileText className="h-4 w-4" />
           Previsualizar asiento
         </button>
@@ -703,6 +742,61 @@ export function DiferenciaCambioPanel({
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {previewOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
+          <div className="w-full max-w-6xl rounded-3xl border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-700">Pre-visualizacion de Asientos</p>
+                <h3 className="mt-1 text-lg font-semibold text-slate-900">
+                  {empresa} - Transaccion {previewTransac ?? '-'}
+                </h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  Periodo {periodo} · Tipo {tipoAsiento} · Fecha {fechaAsiento}
+                </p>
+              </div>
+              <button type="button" onClick={() => setPreviewOpen(false)} className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-600">
+                Cerrar
+              </button>
+            </div>
+            <div className="max-h-[70vh] overflow-auto px-5 py-4">
+              <table className="min-w-full text-sm">
+                <thead className="sticky top-0 bg-slate-50 text-slate-700">
+                  <tr className="border-b border-slate-200">
+                    <th className="px-3 py-3 text-left">Cod Empresa</th>
+                    <th className="px-3 py-3 text-left">Periodo</th>
+                    <th className="px-3 py-3 text-right">NroTransac</th>
+                    <th className="px-3 py-3 text-right">Linea</th>
+                    <th className="px-3 py-3 text-left">CodPlanCta</th>
+                    <th className="px-3 py-3 text-left">CodPlanAux</th>
+                    <th className="px-3 py-3 text-left">Concepto</th>
+                    <th className="px-3 py-3 text-center">DBCR</th>
+                    <th className="px-3 py-3 text-right">Importe</th>
+                    <th className="px-3 py-3 text-right">Importe ME</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {previewRows.map((row) => (
+                    <tr key={row.linea}>
+                      <td className="px-3 py-2">{empresa}</td>
+                      <td className="px-3 py-2">{periodo}</td>
+                      <td className="px-3 py-2 text-right">{previewTransac ?? '-'}</td>
+                      <td className="px-3 py-2 text-right">{row.linea}</td>
+                      <td className="px-3 py-2 font-medium text-slate-900">{row.codplancta}</td>
+                      <td className="px-3 py-2">{row.codplanaux || '-'}</td>
+                      <td className="px-3 py-2">{row.concepto}</td>
+                      <td className="px-3 py-2 text-center font-semibold">{row.dbcr}</td>
+                      <td className="px-3 py-2 text-right">{formatNumber(row.importe, monedaLocalDecimals)}</td>
+                      <td className="px-3 py-2 text-right">{formatNumber(row.importeme, monedaExtranjeraDecimals)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
