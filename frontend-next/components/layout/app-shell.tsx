@@ -81,9 +81,10 @@ export function AppShell({
   const [notificationSummary, setNotificationSummary] = useState<NotificationSummary | null>(null);
   const [loginNotice, setLoginNotice] = useState('');
   const [resolvedEmpresa, setResolvedEmpresa] = useState('');
+  const [selectedEmpresaOverride, setSelectedEmpresaOverride] = useState('');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const routeEmpresa = String(searchParams.get('empresa') || '').trim().toUpperCase();
-  const effectiveEmpresa = routeEmpresa || String(resolvedEmpresa || empresa || '').trim().toUpperCase() || undefined;
+  const effectiveEmpresa = selectedEmpresaOverride || routeEmpresa || String(resolvedEmpresa || empresa || '').trim().toUpperCase() || undefined;
 
   const visibleNavigation = useMemo(
     () => navigation.filter((item) => canAccessItem(item, user)),
@@ -205,6 +206,24 @@ export function AppShell({
 
   useEffect(() => {
     setMobileNavOpen(false);
+    setSelectedEmpresaOverride('');
+  }, [pathname]);
+
+  useEffect(() => {
+    if (pathname === '/login' || pathname.startsWith('/password-reset')) return;
+
+    function handleEmpresaChange(event: Event) {
+      const target = event.target as HTMLInputElement | HTMLSelectElement | null;
+      if (!target || target.name !== 'empresa') return;
+
+      const nextEmpresa = String(target.value || '').trim().toUpperCase();
+      if (nextEmpresa) {
+        setSelectedEmpresaOverride(nextEmpresa);
+      }
+    }
+
+    document.addEventListener('change', handleEmpresaChange, true);
+    return () => document.removeEventListener('change', handleEmpresaChange, true);
   }, [pathname]);
 
   useEffect(() => {
