@@ -162,7 +162,7 @@ export default async function DashboardPage() {
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <KpiCard item={{ title: 'Facturación visible', value: formatInteger(facturacion), change: 'Ventas', trend: 'up' }} />
+        <KpiCard item={{ title: 'Facturación visible', value: formatInteger(facturacion), change: 'Ventas', trend: 'up', tooltip: 'Ventas del periodo actual hasta la fecha.' }} />
         <KpiCard item={{ title: 'Cuentas por cobrar', value: formatInteger(saldoCobrar), change: 'CxC', trend: saldoCobrar > 0 ? 'neutral' : 'up' }} />
         <KpiCard item={{ title: 'Inventario valorizado', value: formatInteger(inventario), change: 'Stock', trend: 'neutral', tooltip: 'Existencia de stock multiplicada por el costo promedio en moneda local.' }} />
         <KpiCard item={{ title: 'Activo visible', value: formatInteger(activo), change: 'Finanzas', trend: 'up' }} />
