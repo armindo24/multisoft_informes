@@ -138,6 +138,7 @@ export function DiferenciaCambioPanel({
   const [diffAuxPickerSearch, setDiffAuxPickerSearch] = useState('');
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewTransac, setPreviewTransac] = useState<number | null>(null);
+  const [sheetRows, setSheetRows] = useState<PreviewRow[]>([]);
 
   const factor = toNumber(factorCambio) || 1;
 
@@ -339,7 +340,7 @@ export function DiferenciaCambioPanel({
 
   const selectedRows = rowsWithDifference.filter((row) => selected.has(row.id) && row.diferencia !== 0);
 
-  const previewRows = useMemo<PreviewRow[]>(() => {
+  const generatedRows = useMemo<PreviewRow[]>(() => {
     if (!cuentaDif.trim()) return [];
 
     const detail: PreviewRow[] = [];
@@ -374,6 +375,12 @@ export function DiferenciaCambioPanel({
 
     return detail;
   }, [selectedRows, cuentaDif, auxiliarDif, concepto]);
+
+  useEffect(() => {
+    setSheetRows([]);
+    setPreviewOpen(false);
+    setPreviewTransac(null);
+  }, [selected, rows, cuentaDif, auxiliarDif, concepto, factorCambio, monedaLocalCode, monedaExtranjeraCode]);
 
   async function consultar() {
     setLoading(true);
@@ -422,6 +429,36 @@ export function DiferenciaCambioPanel({
     });
   }
 
+  function generarAsiento() {
+    setMessage(null);
+    setSheetRows([]);
+    setPreviewOpen(false);
+    setPreviewTransac(null);
+
+    if (selectedRows.length <= 0) {
+      setMessage('No existen datos para procesar. Verifique.');
+      return;
+    }
+
+    if (!cuentaDif.trim()) {
+      setMessage('Debe indicar la cuenta de diferencia de cambio.');
+      return;
+    }
+
+    if (!Number.isFinite(factor) || factor <= 0) {
+      setMessage('Debe indicar un factor de cambio valido y mayor a cero.');
+      return;
+    }
+
+    if (!generatedRows.length) {
+      setMessage('No existen diferencias para generar asiento.');
+      return;
+    }
+
+    setSheetRows(generatedRows);
+    setMessage(`Se generaron ${generatedRows.length} linea(s) para previsualizar el asiento.`);
+  }
+
   async function previsualizarAsiento() {
     setMessage(null);
 
@@ -435,7 +472,7 @@ export function DiferenciaCambioPanel({
       return;
     }
 
-    if (!previewRows.length) {
+    if (!sheetRows.length) {
       setMessage('No existen datos para procesar. Verifique.');
       return;
     }
@@ -643,7 +680,7 @@ export function DiferenciaCambioPanel({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {previewRows.map((row) => (
+              {sheetRows.map((row) => (
                 <tr key={row.linea}>
                   <td className="px-3 py-2">{row.linea}</td>
                   <td className="px-3 py-2 font-medium text-slate-900">{row.codplancta}</td>
@@ -654,9 +691,9 @@ export function DiferenciaCambioPanel({
                   <td className="px-3 py-2">{row.concepto}</td>
                 </tr>
               ))}
-              {!previewRows.length ? (
+              {!sheetRows.length ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500">Selecciona cuentas y completa la cuenta de diferencia para previsualizar el asiento.</td>
+                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500">Selecciona cuentas y presiona Generar asiento para armar las lineas.</td>
                 </tr>
               ) : null}
             </tbody>
@@ -669,13 +706,13 @@ export function DiferenciaCambioPanel({
           <Search className="h-4 w-4" />
           {loading ? 'Consultando...' : 'Consultar saldos'}
         </button>
-        <button type="button" onClick={() => void previsualizarAsiento()} disabled={!previewRows.length} className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-medium text-blue-800 shadow-sm disabled:opacity-50">
-          <FileText className="h-4 w-4" />
-          Previsualizar asiento
-        </button>
-        <button type="button" disabled={!previewRows.length || !tipoAsiento || !fechaAsiento} className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm disabled:opacity-50">
+        <button type="button" onClick={generarAsiento} disabled={!selectedRows.length} className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm disabled:opacity-50">
           <CheckCircle2 className="h-4 w-4" />
           Generar asiento
+        </button>
+        <button type="button" onClick={() => void previsualizarAsiento()} disabled={!sheetRows.length} className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-medium text-blue-800 shadow-sm disabled:opacity-50">
+          <FileText className="h-4 w-4" />
+          Previsualizar asiento
         </button>
         <a href="/registraciones" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50">
           <X className="h-4 w-4" />
@@ -781,7 +818,7 @@ export function DiferenciaCambioPanel({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {previewRows.map((row) => (
+                  {sheetRows.map((row) => (
                     <tr key={row.linea}>
                       <td className="px-3 py-2">{empresa}</td>
                       <td className="px-3 py-2">{periodo}</td>
