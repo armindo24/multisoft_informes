@@ -150,7 +150,8 @@ export function DiferenciaCambioPanel({
   const [sheetRows, setSheetRows] = useState<PreviewRow[]>([]);
   const [savingEntry, setSavingEntry] = useState(false);
 
-  const factor = toNumber(factorCambio) || 1;
+  const parsedFactor = toNumber(factorCambio);
+  const factor = parsedFactor > 0 ? parsedFactor : 1;
 
   useEffect(() => {
     const yearFromDate = fechaDesde.slice(0, 4);
@@ -204,6 +205,19 @@ export function DiferenciaCambioPanel({
       option.label.toLowerCase().includes(term),
     );
   }, [localAuxOptions, diffAuxPickerSearch, cuentaDif]);
+
+  const selectedAccount = useMemo(() => {
+    const accountCode = cuenta.trim();
+    if (!accountCode) return null;
+    return localAccountOptions.find((option) => option.value === accountCode) || null;
+  }, [cuenta, localAccountOptions]);
+
+  const selectedAccountRequiresAux = useMemo(() => {
+    if (!selectedAccount) return false;
+    const imputable = String(selectedAccount.imputable || '').trim().toUpperCase();
+    const auxiliary = String(selectedAccount.auxiliar || '').trim().toUpperCase();
+    return imputable === 'N' || auxiliary === 'S' || auxiliary === 'SI';
+  }, [selectedAccount]);
 
   function openAccountPicker() {
     setAccountPickerSearch('');
@@ -418,18 +432,30 @@ export function DiferenciaCambioPanel({
 
   function validateRequiredFields() {
     if (!tipoCambio.trim()) return 'Debe indicar el Tipo de cambio.';
-    if (!Number.isFinite(factor) || factor <= 0) return 'Debe indicar un Factor de cambio valido y mayor a cero.';
+    if (!Number.isFinite(parsedFactor) || parsedFactor <= 0) return 'Debe indicar un Factor de cambio valido y mayor a cero.';
     if (!cuentaDif.trim()) return 'Debe indicar la Cuenta diferencia de cambio.';
     if (!tipoAsiento.trim()) return 'Debe indicar el Tipo de asiento.';
     if (!fechaAsiento || fechaAsiento <= '1900-01-01') return 'Debe indicar una Fecha valida.';
     return '';
   }
 
+  function validateConsultaFields() {
+    if (!tipoCambio.trim()) return 'Debe indicar el Tipo de cambio antes de consultar saldos.';
+    if (!Number.isFinite(parsedFactor) || parsedFactor <= 0) return 'Debe indicar un Factor de cambio valido y mayor a cero antes de consultar saldos.';
+    if (!fechaDesde || fechaDesde <= '1900-01-01') return 'Debe indicar la Fecha desde antes de consultar saldos.';
+    if (!fechaHasta || fechaHasta <= '1900-01-01') return 'Debe indicar la Fecha hasta antes de consultar saldos.';
+    if (fechaHasta < fechaDesde) return 'La Fecha hasta no puede ser menor que la Fecha desde.';
+    if (cuenta.trim() && selectedAccountRequiresAux && !auxiliar.trim()) {
+      return 'La cuenta contable seleccionada requiere Auxiliar. Debe indicar un auxiliar antes de consultar saldos.';
+    }
+    return '';
+  }
+
   async function consultar() {
     setMessage(null);
-    const requiredMessage = validateRequiredFields();
-    if (requiredMessage) {
-      setMessage(requiredMessage);
+    const consultaMessage = validateConsultaFields();
+    if (consultaMessage) {
+      setMessage(consultaMessage);
       return;
     }
 
@@ -615,7 +641,7 @@ export function DiferenciaCambioPanel({
               </div>
             </label>
             <label className="text-[13px]">
-              <span className="mb-0.5 block font-medium text-slate-700">Auxiliar</span>
+              <span className="mb-0.5 block font-medium text-slate-700">Auxiliar {selectedAccountRequiresAux ? <span className="text-red-500">*</span> : null}</span>
               <div className="flex gap-1.5">
                 <input value={auxiliar} onChange={(event) => setAuxiliar(event.target.value)} placeholder="Ej: 0002" className="h-9 min-w-0 flex-1 rounded-md border border-slate-200 px-2.5 py-1.5 text-[13px]" />
                 <button type="button" onClick={openAuxPicker} className="inline-flex h-9 items-center justify-center rounded-md border border-cyan-200 bg-white px-2.5 text-cyan-800 transition hover:bg-cyan-50" title="Buscar auxiliar">
@@ -624,12 +650,12 @@ export function DiferenciaCambioPanel({
               </div>
             </label>
             <label className="text-[13px]">
-              <span className="mb-0.5 block font-medium text-slate-700">Desde</span>
-              <input type="date" value={fechaDesde} onChange={(event) => setFechaDesde(event.target.value)} className="h-9 w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-[13px]" />
+              <span className="mb-0.5 block font-medium text-slate-700">Desde <span className="text-red-500">*</span></span>
+              <input required aria-required="true" type="date" value={fechaDesde} onChange={(event) => setFechaDesde(event.target.value)} className="h-9 w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-[13px]" />
             </label>
             <label className="text-[13px]">
-              <span className="mb-0.5 block font-medium text-slate-700">Hasta</span>
-              <input type="date" value={fechaHasta} onChange={(event) => setFechaHasta(event.target.value)} className="h-9 w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-[13px]" />
+              <span className="mb-0.5 block font-medium text-slate-700">Hasta <span className="text-red-500">*</span></span>
+              <input required aria-required="true" type="date" value={fechaHasta} onChange={(event) => setFechaHasta(event.target.value)} className="h-9 w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-[13px]" />
             </label>
             <label className="text-[13px]">
               <span className="mb-0.5 block font-medium text-slate-700">Tipo de cambio <span className="text-red-500">*</span></span>
