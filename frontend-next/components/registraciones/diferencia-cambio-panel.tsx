@@ -117,7 +117,7 @@ export function DiferenciaCambioPanel({
   const [fechaDesde, setFechaDesde] = useState(startOfMonth());
   const [fechaHasta, setFechaHasta] = useState(today());
   const [tipoCambio, setTipoCambio] = useState('');
-  const [factorCambio, setFactorCambio] = useState('1,0000');
+  const [factorCambio, setFactorCambio] = useState('');
   const [recalcular, setRecalcular] = useState(false);
   const [cuentaDif, setCuentaDif] = useState('');
   const [auxiliarDif, setAuxiliarDif] = useState('');
@@ -668,7 +668,7 @@ export function DiferenciaCambioPanel({
             </label>
             <label className="text-[13px]">
               <span className="mb-0.5 block font-medium text-slate-700">Factor de cambio <span className="text-red-500">*</span></span>
-              <input required aria-required="true" value={factorCambio} onChange={(event) => setFactorCambio(event.target.value)} className="h-9 w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-right text-[13px]" />
+              <input required aria-required="true" value={factorCambio} onChange={(event) => setFactorCambio(event.target.value)} placeholder="Ej: 6500,0000" className="h-9 w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-right text-[13px]" />
             </label>
           </div>
           <label className="mt-2 flex items-center gap-1.5 text-[13px] text-slate-700">
