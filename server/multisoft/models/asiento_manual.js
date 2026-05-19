@@ -161,6 +161,24 @@ function validateUsuario(username, cb) {
     });
 }
 
+function validateModificarAsiento(username, cb) {
+    var user = esc(username);
+    if (!user) return cb(new Error('Debe indicar el usuario que modifica el asiento.'));
+
+    var sql = "SELECT modif_asientos FROM DBA.Usuarios WHERE lower(Cod_Usuario) = " + sqlValue(user.toLowerCase());
+    conn.exec(sql, function (err, rows) {
+        if (err) return cb(err);
+        var row = (rows || [])[0];
+        if (!row) return cb(new Error("El usuario '" + user + "' no existe en DBA.USUARIOS."));
+
+        var permiso = String(row.modif_asientos || row.Modif_Asientos || row.MODIF_ASIENTOS || '').trim().toUpperCase();
+        if (permiso !== 'S') {
+            return cb(new Error("El usuario '" + user + "' no tiene permiso para modificar asientos. Verifique DBA.USUARIOS.modif_asientos."));
+        }
+        cb(null);
+    });
+}
+
 function normalizeRows(rows, accountRules) {
     var cleanRows = [];
     var totalDebito = 0;
@@ -386,6 +404,9 @@ AsientoManual.guardar = function (payload, cb) {
                                     return rollbackWith(new Error('No se encontro el asiento ' + body.nrotransac + ' para actualizar.'), cb);
                                 }
 
+                                validateModificarAsiento(body.usuario, function (permisoErr) {
+                                    if (permisoErr) return rollbackWith(permisoErr, cb);
+
                                 disableTriggers(function (disableErr) {
                                     if (disableErr) return rollbackWith(disableErr, cb);
 
@@ -428,6 +449,7 @@ AsientoManual.guardar = function (payload, cb) {
                                             });
                                         });
                                     });
+                                });
                                 });
                             });
                         }
