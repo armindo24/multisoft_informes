@@ -34,6 +34,7 @@ var Compras = require('../models/compras');
 var Migraciones = require('../models/migraciones');
 var Presupuesto = require('../models/presupuesto');
 var DiferenciaCambio = require('../models/diferencia_cambio');
+var AsientoManual = require('../models/asiento_manual');
 var Cuentas_pagar = require('../models/cuentas_pagar');
 var Fondo_Fijo = require('../models/fondo_fijo');
 var Gastos_Rendir = require('../models/gastos');
@@ -453,6 +454,16 @@ router.get('/registraciones/diferencia-cambio/next-transac', function (req, res,
 
 router.post('/registraciones/diferencia-cambio/guardar', function (req, res, next) {
     DiferenciaCambio.guardar(req.body || {}, function (err, result) {
+        if (err) return next(err);
+        if (!result || result.ok === false) {
+            return res.status(400).json(result || { ok: false, message: 'No se pudo grabar el asiento.' });
+        }
+        res.json({data: result});
+    });
+});
+
+router.post('/registraciones/cargar-asiento/guardar', function (req, res, next) {
+    AsientoManual.guardar(req.body || {}, function (err, result) {
         if (err) return next(err);
         if (!result || result.ok === false) {
             return res.status(400).json(result || { ok: false, message: 'No se pudo grabar el asiento.' });

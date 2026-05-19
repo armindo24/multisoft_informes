@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, CheckCircle2, CircleSlash2, FileText, Plus, Printer, Save, ShieldCheck, UserRound, X } from 'lucide-react';
 import type { AccountPlanOption, AuxiliarOption, SelectOption } from '@/types/finanzas';
 
@@ -15,6 +15,11 @@ type EntryLine = {
   creditome: string;
   proyecto: string;
   rubro: string;
+};
+
+type InitPayload = {
+  moneda_local?: { codmoneda?: string; descrip?: string };
+  moneda_extranjera?: { codmoneda?: string; descrip?: string };
 };
 
 function today() {
@@ -67,6 +72,11 @@ function auxName(options: AuxiliarOption[], accountCode: string, auxCode: string
   return options.find((option) => option.accountCode === accountCode && option.auxCode === auxCode)?.name || '';
 }
 
+function accountRequiresAux(option?: AccountPlanOption | null) {
+  const auxiliary = String(option?.auxiliar || '').trim().toUpperCase();
+  return auxiliary === 'S' || auxiliary === 'SI';
+}
+
 export function CargarAsientoPanel({
   empresas,
   tipoAsientos,
@@ -89,7 +99,8 @@ export function CargarAsientoPanel({
   const [fecha, setFecha] = useState(today());
   const [tipoAsiento, setTipoAsiento] = useState('');
   const [nroComprobante, setNroComprobante] = useState('');
-  const [moneda, setMoneda] = useState('GUARANIES');
+  const [moneda, setMoneda] = useState('GS');
+  const [monedaOptions, setMonedaOptions] = useState<SelectOption[]>([{ value: 'GS', label: 'GUARANIES' }]);
   const [factorCambio, setFactorCambio] = useState('C. Comprador');
   const [dif, setDif] = useState(false);
   const [activeTab, setActiveTab] = useState<'local' | 'extranjera'>('local');
@@ -98,6 +109,29 @@ export function CargarAsientoPanel({
   const [lines, setLines] = useState<EntryLine[]>([makeLine()]);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [createdAt] = useState(new Date());
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ tone: 'ok' | 'error' | 'info'; text: string } | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams({ empresa, periodo });
+    fetch(`/api/registraciones/diferencia-cambio/init?${params.toString()}`, { cache: 'no-store' })
+      .then((response) => response.json())
+      .then((payload: { ok?: boolean; data?: InitPayload }) => {
+        const data = payload?.data || {};
+        const nextOptions: SelectOption[] = [];
+        if (data.moneda_local?.codmoneda) {
+          nextOptions.push({ value: data.moneda_local.codmoneda, label: data.moneda_local.descrip || data.moneda_local.codmoneda });
+        }
+        if (data.moneda_extranjera?.codmoneda && data.moneda_extranjera.codmoneda !== data.moneda_local?.codmoneda) {
+          nextOptions.push({ value: data.moneda_extranjera.codmoneda, label: data.moneda_extranjera.descrip || data.moneda_extranjera.codmoneda });
+        }
+        if (nextOptions.length) {
+          setMonedaOptions(nextOptions);
+          setMoneda((current) => nextOptions.some((option) => option.value === current) ? current : nextOptions[0].value);
+        }
+      })
+      .catch(() => undefined);
+  }, [empresa, periodo]);
 
   const selectedLine = useMemo(
     () => lines.find((line) => line.id === selectedLineId) || lines[0] || null,
@@ -155,7 +189,7 @@ export function CargarAsientoPanel({
     if (!window.confirm('Desea cerrar y limpiar la carga actual?')) return;
     setTipoAsiento('');
     setNroComprobante('');
-    setMoneda('GUARANIES');
+    setMoneda(monedaOptions[0]?.value || 'GS');
     setFactorCambio('C. Comprador');
     setDif(false);
     setActiveTab('local');
@@ -163,6 +197,106 @@ export function CargarAsientoPanel({
     setConceptoLargo(false);
     setLines([makeLine()]);
     setSelectedLineId(null);
+    setMessage(null);
+  }
+
+  function validateBeforeSave() {
+    const cleanLines = lines.filter((line) => line.codplancta.trim());
+
+    if (!fecha) return 'La fecha del asiento no es valida. Verifique.';
+    if (!tipoAsiento) return 'El Tipo de Asiento no es valido. Verifique.';
+    if (!moneda) return 'Debe completar la moneda.';
+    if (!cleanLines.length) return 'El asiento no cuenta con detalles.';
+
+    let totalDebito = 0;
+    let totalCredito = 0;
+    let totalDebitoME = 0;
+    let totalCreditoME = 0;
+
+    for (const [index, line] of cleanLines.entries()) {
+      const account = accountOptions.find((option) => option.value === line.codplancta.trim());
+      if (!account) return `Debe completar una Cuenta valida en la linea ${index + 1}.`;
+      if (accountRequiresAux(account) && !line.codplanaux.trim()) return `Debe completar el Auxiliar en la linea ${index + 1}.`;
+      if (!accountRequiresAux(account) && line.codplanaux.trim()) return `Esta cuenta no usa auxiliares en la linea ${index + 1}.`;
+
+      const debito = parseAmount(line.debito);
+      const credito = parseAmount(line.credito);
+      const debitome = parseAmount(line.debitome);
+      const creditome = parseAmount(line.creditome);
+      if (debito <= 0 && credito <= 0 && debitome <= 0 && creditome <= 0) {
+        return `Debe completar el Importe Credito o Debito en la linea ${index + 1}.`;
+      }
+
+      totalDebito += debito;
+      totalCredito += credito;
+      totalDebitoME += debitome;
+      totalCreditoME += creditome;
+    }
+
+    if (Math.trunc(totalDebito * 100) !== Math.trunc(totalCredito * 100)) {
+      return `El Asiento no Balancea. Debito: ${formatAmount(totalDebito, 2)} - Credito: ${formatAmount(totalCredito, 2)}.`;
+    }
+    if (Math.round(totalDebitoME * 100) !== Math.round(totalCreditoME * 100)) {
+      return `El Asiento no Balancea en Moneda Extranjera. Debito: ${formatAmount(totalDebitoME, 2)} - Credito: ${formatAmount(totalCreditoME, 2)}.`;
+    }
+
+    return '';
+  }
+
+  async function saveEntry() {
+    const validation = validateBeforeSave();
+    if (validation) {
+      setMessage({ tone: 'error', text: validation });
+      return;
+    }
+
+    setSaving(true);
+    setMessage({ tone: 'info', text: 'Grabando asiento...' });
+
+    const cleanLines = lines
+      .filter((line) => line.codplancta.trim())
+      .map((line) => ({
+        codplancta: line.codplancta.trim(),
+        codplanaux: line.codplanaux.trim(),
+        concepto: line.concepto.trim(),
+        debito: parseAmount(line.debito),
+        credito: parseAmount(line.credito),
+        debitome: parseAmount(line.debitome),
+        creditome: parseAmount(line.creditome),
+        proyecto: line.proyecto.trim(),
+        rubro: line.rubro.trim(),
+      }));
+
+    try {
+      const response = await fetch('/api/registraciones/cargar-asiento/guardar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          empresa,
+          periodo,
+          fecha,
+          tipoasiento: tipoAsiento,
+          nrocompr: nroComprobante,
+          codmoneda: moneda,
+          usuario: currentUser,
+          rows: cleanLines,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload?.ok === false || payload?.data?.ok === false) {
+        throw new Error(payload?.message || payload?.data?.message || 'No se pudo grabar el asiento.');
+      }
+
+      const nrotransac = Number(payload?.data?.nrotransac || 0);
+      setMessage({ tone: 'ok', text: `El proceso ha finalizado con exito. El Nro. de Transaccion es ${nrotransac || '-'}.` });
+      setLines([makeLine()]);
+      setSelectedLineId(null);
+      setNroComprobante('');
+    } catch (error) {
+      setMessage({ tone: 'error', text: error instanceof Error ? error.message : 'No se pudo grabar el asiento.' });
+    } finally {
+      setSaving(false);
+    }
   }
 
   const visibleDebitField = activeTab === 'local' ? 'debito' : 'debitome';
@@ -185,12 +319,13 @@ export function CargarAsientoPanel({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              disabled={!canSave}
+              onClick={saveEntry}
+              disabled={!canSave || saving}
               className="inline-flex items-center gap-2 rounded-md bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:bg-blue-300"
               title={canSave ? 'Guardar asiento' : 'Complete fecha, tipo de asiento y balance del asiento'}
             >
               <Save className="h-4 w-4" />
-              Guardar
+              {saving ? 'Guardando...' : 'Guardar'}
             </button>
             <button type="button" className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">
               <Printer className="h-4 w-4" />
@@ -240,8 +375,9 @@ export function CargarAsientoPanel({
           <label className="text-sm font-semibold text-slate-700">
             Moneda
             <select value={moneda} onChange={(event) => setMoneda(event.target.value)} className="mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm">
-              <option value="GUARANIES">GUARANIES</option>
-              <option value="DOLARES">DOLARES</option>
+              {monedaOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
             </select>
           </label>
           <label className="text-sm font-semibold text-slate-700">
@@ -257,6 +393,18 @@ export function CargarAsientoPanel({
             <input value={periodo} onChange={(event) => setPeriodo(event.target.value)} className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm" />
           </label>
         </div>
+
+        {message ? (
+          <div className={`mx-4 mb-3 rounded-md border px-3 py-2 text-sm ${
+            message.tone === 'ok'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+              : message.tone === 'error'
+                ? 'border-rose-200 bg-rose-50 text-rose-800'
+                : 'border-cyan-200 bg-cyan-50 text-cyan-800'
+          }`}>
+            {message.text}
+          </div>
+        ) : null}
 
         <div className="grid gap-3 border-t border-slate-100 px-4 py-3 lg:grid-cols-3">
           <InfoCard icon={<UserRound className="h-5 w-5" />} title="Informacion de la Carga">
