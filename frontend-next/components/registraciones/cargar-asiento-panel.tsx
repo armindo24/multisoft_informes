@@ -218,6 +218,7 @@ export function CargarAsientoPanel({
   const [saving, setSaving] = useState(false);
   const [lastSavedTransac, setLastSavedTransac] = useState<number | null>(null);
   const [loadedEntryMeta, setLoadedEntryMeta] = useState<LoadedEntryMeta | null>(null);
+  const [printPromptTransac, setPrintPromptTransac] = useState<number | null>(null);
   const [message, setMessage] = useState<{ tone: 'ok' | 'error' | 'info'; text: string } | null>(null);
   const [picker, setPicker] = useState<{ type: 'account' | 'aux'; lineId: string } | null>(null);
   const [pickerSearch, setPickerSearch] = useState('');
@@ -440,6 +441,7 @@ export function CargarAsientoPanel({
     setSelectedLineId(null);
     setLastSavedTransac(null);
     setLoadedEntryMeta(null);
+    setPrintPromptTransac(null);
     setMessage(null);
   }
 
@@ -655,6 +657,7 @@ export function CargarAsientoPanel({
       if (nrotransac) {
         const savedRows = await fetchEntryRows(nrotransac);
         applyEntryRows(savedRows);
+        setPrintPromptTransac(nrotransac);
       }
       setMessage({ tone: 'ok', text: `El proceso ha finalizado con exito. El Nro. de Transaccion es ${nrotransac || '-'}.` });
     } catch (error) {
@@ -828,6 +831,11 @@ export function CargarAsientoPanel({
     } catch (error) {
       setMessage({ tone: 'error', text: readableError(error) || 'No se pudo recuperar el asiento.' });
     }
+  }
+
+  async function confirmPrintPrompt() {
+    setPrintPromptTransac(null);
+    await printEntry();
   }
 
   const visibleDebitField = activeTab === 'local' ? 'debito' : 'debitome';
@@ -1203,6 +1211,40 @@ export function CargarAsientoPanel({
         <span className="inline-flex items-center gap-2"><CalendarDays className="h-4 w-4" /> Fecha del Sistema: {formatDateTime(new Date())}</span>
         <span>Empresa: {empresaLabel}</span>
       </footer>
+
+      {printPromptTransac ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                <Printer className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-teal-700">Asiento grabado</p>
+                <h3 className="mt-1 text-lg font-bold text-slate-950">Nro. de Transaccion {printPromptTransac}</h3>
+                <p className="mt-2 text-sm text-slate-600">Desea imprimir el asiento generado?</p>
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPrintPromptTransac(null)}
+                className="h-9 rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700"
+              >
+                No
+              </button>
+              <button
+                type="button"
+                onClick={() => void confirmPrintPrompt()}
+                className="inline-flex h-9 items-center gap-2 rounded-md bg-blue-700 px-4 text-sm font-semibold text-white"
+              >
+                <Printer className="h-4 w-4" />
+                Si, imprimir
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {picker ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6">
