@@ -49,6 +49,16 @@ function formatAmount(value: number, decimals = 0) {
   });
 }
 
+function roundTo(value: number, decimals: number) {
+  const factor = 10 ** decimals;
+  return Math.round((Number(value || 0) + Number.EPSILON) * factor) / factor;
+}
+
+function inputAmount(value: number, decimals = 0) {
+  const rounded = roundTo(value, decimals);
+  return decimals > 0 ? rounded.toFixed(decimals) : String(Math.round(rounded));
+}
+
 function makeLine(concepto = ''): EntryLine {
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -102,6 +112,8 @@ export function CargarAsientoPanel({
   const [moneda, setMoneda] = useState('GS');
   const [monedaOptions, setMonedaOptions] = useState<SelectOption[]>([{ value: 'GS', label: 'GUARANIES' }]);
   const [factorCambio, setFactorCambio] = useState('C. Comprador');
+  const [factorCambioValor, setFactorCambioValor] = useState('');
+  const [factorAplicado, setFactorAplicado] = useState(false);
   const [dif, setDif] = useState(false);
   const [activeTab, setActiveTab] = useState<'local' | 'extranjera'>('local');
   const [showFullConcept, setShowFullConcept] = useState(false);
@@ -163,6 +175,9 @@ export function CargarAsientoPanel({
   const empresaLabel = empresas.find((option) => option.value === empresa)?.label || empresa;
 
   function updateLine(id: string, patch: Partial<EntryLine>) {
+    if ('debito' in patch || 'credito' in patch || 'debitome' in patch || 'creditome' in patch) {
+      setFactorAplicado(false);
+    }
     setLines((current) => current.map((line) => (line.id === id ? { ...line, ...patch } : line)));
   }
 
@@ -191,6 +206,8 @@ export function CargarAsientoPanel({
     setNroComprobante('');
     setMoneda(monedaOptions[0]?.value || 'GS');
     setFactorCambio('C. Comprador');
+    setFactorCambioValor('');
+    setFactorAplicado(false);
     setDif(false);
     setActiveTab('local');
     setShowFullConcept(false);
@@ -198,6 +215,56 @@ export function CargarAsientoPanel({
     setLines([makeLine()]);
     setSelectedLineId(null);
     setMessage(null);
+  }
+
+  function applyExchangeRate() {
+    const current = factorCambioValor || '1';
+    const entered = window.prompt('Factor de Cambio', current);
+    if (entered === null) return false;
+
+    const cambio = parseAmount(entered);
+    if (!Number.isFinite(cambio) || cambio <= 0) {
+      setMessage({ tone: 'error', text: 'Debe indicar un factor de cambio valido.' });
+      return false;
+    }
+
+    setFactorCambioValor(inputAmount(cambio, 4));
+    setLines((currentLines) => currentLines.map((line) => {
+      const next = { ...line };
+
+      if (activeTab === 'local') {
+        const credito = roundTo(parseAmount(line.credito), 0);
+        const debito = roundTo(parseAmount(line.debito), 0);
+
+        if (credito > 0) {
+          next.credito = inputAmount(credito, 0);
+          next.creditome = inputAmount(credito / cambio, 2);
+          next.debitome = '';
+        } else if (debito > 0) {
+          next.debito = inputAmount(debito, 0);
+          next.debitome = inputAmount(debito / cambio, 2);
+          next.creditome = '';
+        }
+      } else {
+        const creditome = roundTo(parseAmount(line.creditome), 2);
+        const debitome = roundTo(parseAmount(line.debitome), 2);
+
+        if (creditome > 0) {
+          next.creditome = inputAmount(creditome, 2);
+          next.credito = inputAmount(creditome * cambio, 0);
+          next.debito = '';
+        } else if (debitome > 0) {
+          next.debitome = inputAmount(debitome, 2);
+          next.debito = inputAmount(debitome * cambio, 0);
+          next.credito = '';
+        }
+      }
+
+      return next;
+    }));
+    setFactorAplicado(true);
+    setMessage({ tone: 'ok', text: `Factor de cambio aplicado: ${inputAmount(cambio, 4)}.` });
+    return true;
   }
 
   function validateBeforeSave() {
@@ -244,6 +311,11 @@ export function CargarAsientoPanel({
   }
 
   async function saveEntry() {
+    if (!factorAplicado) {
+      const shouldApply = window.confirm('Aun no aplico el Factor de Cambio. Desea hacerlo ahora?');
+      if (shouldApply && !applyExchangeRate()) return;
+    }
+
     const validation = validateBeforeSave();
     if (validation) {
       setMessage({ tone: 'error', text: validation });
@@ -387,6 +459,7 @@ export function CargarAsientoPanel({
               <option value="C. Vendedor">C. Vendedor</option>
               <option value="Manual">Manual</option>
             </select>
+            {factorCambioValor ? <span className="mt-1 block text-xs font-semibold text-slate-500">Aplicado: {factorCambioValor}</span> : null}
           </label>
           <label className="text-sm font-semibold text-slate-700">
             Periodo
@@ -444,7 +517,7 @@ export function CargarAsientoPanel({
             </button>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <button type="button" className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
+            <button type="button" onClick={applyExchangeRate} className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
               Aplicar Factor de Cambio
             </button>
             <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
