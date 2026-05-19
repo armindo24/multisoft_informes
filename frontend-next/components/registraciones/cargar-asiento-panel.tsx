@@ -56,6 +56,14 @@ function parseAmount(value: string) {
   return Number.isFinite(number) ? number : 0;
 }
 
+function parseExchangeRate(value: string) {
+  const raw = String(value || '').trim();
+  if (!raw) return 0;
+  if (raw.includes(',')) return parseAmount(raw);
+  const number = Number(raw);
+  return Number.isFinite(number) ? number : parseAmount(raw);
+}
+
 function formatAmount(value: number, decimals = 0) {
   return Number(value || 0).toLocaleString('es-PY', {
     minimumFractionDigits: decimals,
@@ -431,7 +439,7 @@ export function CargarAsientoPanel({
     const entered = window.prompt('Factor de Cambio', current);
     if (entered === null) return false;
 
-    const cambio = parseAmount(entered);
+    const cambio = parseExchangeRate(entered);
     if (!Number.isFinite(cambio) || cambio <= 0) {
       setMessage({ tone: 'error', text: 'Debe indicar un factor de cambio valido.' });
       return false;
@@ -448,11 +456,11 @@ export function CargarAsientoPanel({
         if (credito > 0) {
           next.credito = inputAmount(credito, 0);
           next.creditome = inputAmount(credito / cambio, 2);
-          next.debitome = '';
+          next.debitome = '0.00';
         } else if (debito > 0) {
           next.debito = inputAmount(debito, 0);
           next.debitome = inputAmount(debito / cambio, 2);
-          next.creditome = '';
+          next.creditome = '0.00';
         }
       } else {
         const creditome = roundTo(parseAmount(line.creditome), 2);
@@ -461,11 +469,11 @@ export function CargarAsientoPanel({
         if (creditome > 0) {
           next.creditome = inputAmount(creditome, 2);
           next.credito = inputAmount(creditome * cambio, 0);
-          next.debito = '';
+          next.debito = '0';
         } else if (debitome > 0) {
           next.debitome = inputAmount(debitome, 2);
           next.debito = inputAmount(debitome * cambio, 0);
-          next.credito = '';
+          next.credito = '0';
         }
       }
 
@@ -619,7 +627,7 @@ export function CargarAsientoPanel({
           tipoasiento: tipoAsiento,
           nrocompr: nroComprobante,
           codmoneda: moneda,
-          factcambio: parseAmount(factorCambioValor),
+          factcambio: parseExchangeRate(factorCambioValor),
           autorizado,
           usuario: currentUser,
           rows: cleanLines,
