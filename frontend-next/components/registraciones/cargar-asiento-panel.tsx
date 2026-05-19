@@ -446,12 +446,9 @@ export function CargarAsientoPanel({
   }
 
   function applyExchangeRate() {
-    let entered = factorCambioValor.trim();
-    if (!entered) {
-      const prompted = window.prompt('Factor de Cambio', '1');
-      if (prompted === null) return false;
-      entered = prompted;
-    }
+    const prompted = window.prompt('Factor de Cambio', factorCambioValor.trim() || '1');
+    if (prompted === null) return false;
+    const entered = prompted.trim();
 
     const cambio = parseExchangeRate(entered);
     if (!Number.isFinite(cambio) || cambio <= 0) {
@@ -459,11 +456,17 @@ export function CargarAsientoPanel({
       return false;
     }
 
+    const localHasValues = lines.some((line) => parseAmount(line.debito) > 0 || parseAmount(line.credito) > 0);
+    const foreignHasValues = lines.some((line) => parseAmount(line.debitome) > 0 || parseAmount(line.creditome) > 0);
+    const sourceTab = activeTab === 'local'
+      ? (localHasValues || !foreignHasValues ? 'local' : 'extranjera')
+      : (foreignHasValues || !localHasValues ? 'extranjera' : 'local');
+
     setFactorCambioValor(inputAmount(cambio, 4));
     setLines((currentLines) => currentLines.map((line) => {
       const next = { ...line };
 
-      if (activeTab === 'local') {
+      if (sourceTab === 'local') {
         const credito = roundTo(parseAmount(line.credito), 0);
         const debito = roundTo(parseAmount(line.debito), 0);
 
@@ -493,6 +496,7 @@ export function CargarAsientoPanel({
 
       return next;
     }));
+    setActiveTab(sourceTab === 'local' ? 'extranjera' : 'local');
     setFactorAplicado(true);
     setMessage({ tone: 'ok', text: `Factor de cambio aplicado: ${inputAmount(cambio, 4)}.` });
     return true;
