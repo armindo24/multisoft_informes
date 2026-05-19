@@ -435,9 +435,12 @@ export function CargarAsientoPanel({
   }
 
   function applyExchangeRate() {
-    const current = factorCambioValor || '1';
-    const entered = window.prompt('Factor de Cambio', current);
-    if (entered === null) return false;
+    let entered = factorCambioValor.trim();
+    if (!entered) {
+      const prompted = window.prompt('Factor de Cambio', '1');
+      if (prompted === null) return false;
+      entered = prompted;
+    }
 
     const cambio = parseExchangeRate(entered);
     if (!Number.isFinite(cambio) || cambio <= 0) {
@@ -898,7 +901,16 @@ export function CargarAsientoPanel({
           </label>
           <label className="font-semibold text-slate-700">
             Fecha
-            <input value={fecha} onChange={(event) => setFecha(event.target.value)} type="date" className="mt-0.5 h-8 w-full rounded-md border border-slate-200 px-2 text-[12px]" />
+            <input
+              value={fecha}
+              onChange={(event) => {
+                setFecha(event.target.value);
+                const year = event.target.value.slice(0, 4);
+                if (year) setPeriodo(year);
+              }}
+              type="date"
+              className="mt-0.5 h-8 w-full rounded-md border border-slate-200 px-2 text-[12px]"
+            />
           </label>
           <label className="font-semibold text-slate-700">
             Tipo de Asiento
@@ -932,11 +944,18 @@ export function CargarAsientoPanel({
               <option value="C. Vendedor">C. Vendedor</option>
               <option value="Manual">Manual</option>
             </select>
-            {factorCambioValor ? <span className="mt-0.5 block text-[11px] font-semibold text-slate-500">Aplicado: {factorCambioValor}</span> : null}
           </label>
           <label className="font-semibold text-slate-700">
-            Periodo
-            <input value={periodo} onChange={(event) => setPeriodo(event.target.value)} className="mt-0.5 h-8 w-full rounded-md border border-slate-200 px-2 text-[12px]" />
+            Factor del dia
+            <input
+              value={factorCambioValor}
+              onChange={(event) => {
+                setFactorCambioValor(event.target.value);
+                setFactorAplicado(false);
+              }}
+              placeholder="Ej: 6500.0000"
+              className="mt-0.5 h-8 w-full rounded-md border border-slate-200 px-2 text-right text-[12px]"
+            />
           </label>
         </div>
 
