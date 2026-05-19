@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarDays, CheckCircle2, CircleSlash2, FileText, Plus, Printer, Save, Search, ShieldCheck, UserRound, X } from 'lucide-react';
+import { CalendarDays, CheckCircle2, CircleSlash2, FileText, Minus, Plus, Printer, Save, Search, ShieldCheck, UserRound, X } from 'lucide-react';
 import type { AccountPlanOption, AuxiliarOption, SelectOption } from '@/types/finanzas';
 
 type EntryLine = {
@@ -691,7 +691,7 @@ export function CargarAsientoPanel({
                 <th className="w-10 px-2 py-1.5 text-left">Nro.</th>
                 <th className="w-36 px-2 py-1.5 text-left">Codigo</th>
                 <th className="w-32 px-2 py-1.5 text-left">Cod. Auxiliar</th>
-                <th className="px-2 py-1.5 text-left">Concepto</th>
+                <th className="px-2 py-1.5 text-center">Concepto</th>
                 <th className="w-36 px-2 py-1.5 text-right">Debito</th>
                 <th className="w-36 px-2 py-1.5 text-right">Credito</th>
                 <th className="w-24 px-2 py-1.5 text-left">Proyecto</th>
@@ -791,8 +791,14 @@ export function CargarAsientoPanel({
                       />
                     </td>
                     <td rowSpan={2} className="border-b border-slate-200 px-2 py-1 text-center align-top">
-                      <button type="button" onClick={(event) => { event.stopPropagation(); deleteLine(line.id); }} className="rounded px-2 py-1 text-lg font-bold text-slate-500 hover:bg-rose-50 hover:text-rose-600">
-                        ...
+                      <button
+                        type="button"
+                        title="Borrar detalle"
+                        aria-label="Borrar detalle"
+                        onClick={(event) => { event.stopPropagation(); deleteLine(line.id); }}
+                        className="inline-flex h-6 w-6 items-center justify-center rounded border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
+                      >
+                        <Minus className="h-4 w-4" />
                       </button>
                     </td>
                   </tr>
