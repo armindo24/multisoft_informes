@@ -482,7 +482,7 @@ AsientoManual.guardar = function (payload, cb) {
                         if (beginErr) return cb(beginErr);
 
                         if (body.nrotransac > 0) {
-                            var existsSql = "SELECT NroTransac FROM DBA.AsientosCab " +
+                            var existsSql = "SELECT NroTransac, Autorizado FROM DBA.AsientosCab " +
                                 "WHERE Cod_Empresa = " + sqlValue(body.empresa) + " " +
                                 "AND Periodo = " + sqlValue(body.periodo) + " " +
                                 "AND NroTransac = " + numValue(body.nrotransac);
@@ -491,6 +491,11 @@ AsientoManual.guardar = function (payload, cb) {
                                 if (existsErr) return rollbackWith(existsErr, cb);
                                 if (!existsRows || !existsRows.length) {
                                     return rollbackWith(new Error('No se encontro el asiento ' + body.nrotransac + ' para actualizar.'), cb);
+                                }
+                                var currentEntry = existsRows[0] || {};
+                                var currentAutorizado = String(currentEntry.Autorizado || currentEntry.autorizado || currentEntry.AUTORIZADO || '').trim().toUpperCase();
+                                if (currentAutorizado === 'S') {
+                                    return rollbackWith(new Error('El asiento esta autorizado. No se puede modificar ni borrar detalles.'), cb);
                                 }
 
                                 validateModificarAsiento(body.usuario, function (permisoErr) {

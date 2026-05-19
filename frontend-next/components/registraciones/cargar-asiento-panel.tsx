@@ -311,10 +311,15 @@ export function CargarAsientoPanel({
   const difference = activeTab === 'local'
     ? totals.debito - totals.credito
     : totals.debitome - totals.creditome;
-  const canSave = lines.length > 0 && tipoAsiento && fecha && Math.abs(difference) === 0 && (totals.debito > 0 || totals.debitome > 0);
+  const isAuthorizedEntryLocked = Boolean(lastSavedTransac && autorizado === 'S');
+  const canSave = !isAuthorizedEntryLocked && lines.length > 0 && tipoAsiento && fecha && Math.abs(difference) === 0 && (totals.debito > 0 || totals.debitome > 0);
   const empresaLabel = empresas.find((option) => option.value === empresa)?.label || empresa;
 
   function updateLine(id: string, patch: Partial<EntryLine>) {
+    if (isAuthorizedEntryLocked) {
+      setMessage({ tone: 'error', text: 'El asiento esta autorizado. No se puede modificar.' });
+      return;
+    }
     if ('debito' in patch || 'credito' in patch || 'debitome' in patch || 'creditome' in patch) {
       setFactorAplicado(false);
     }
@@ -322,6 +327,10 @@ export function CargarAsientoPanel({
   }
 
   function addLine() {
+    if (isAuthorizedEntryLocked) {
+      setMessage({ tone: 'error', text: 'El asiento esta autorizado. No se puede agregar detalles.' });
+      return;
+    }
     const currentConcept = selectedLine?.concepto || '';
     const next = makeLine(currentConcept);
     setLines((current) => [...current, next]);
@@ -418,6 +427,10 @@ export function CargarAsientoPanel({
   }
 
   function deleteLine(id: string) {
+    if (isAuthorizedEntryLocked) {
+      setMessage({ tone: 'error', text: 'El asiento esta autorizado. No se puede borrar detalles.' });
+      return;
+    }
     if (lines.length <= 1) {
       setLines([makeLine()]);
       setSelectedLineId(null);
@@ -487,6 +500,11 @@ export function CargarAsientoPanel({
   }
 
   async function applyExchangeRate() {
+    if (isAuthorizedEntryLocked) {
+      setMessage({ tone: 'error', text: 'El asiento esta autorizado. No se puede modificar.' });
+      return false;
+    }
+
     let cambio = parseExchangeRate(factorCambioValor);
     if ((!Number.isFinite(cambio) || cambio <= 0) && factorCambio !== 'Manual') {
       cambio = await loadDailyExchangeRate(factorCambio, fecha, true);
@@ -647,6 +665,11 @@ export function CargarAsientoPanel({
   }
 
   async function saveEntry() {
+    if (isAuthorizedEntryLocked) {
+      setMessage({ tone: 'error', text: 'El asiento esta autorizado. No se puede modificar ni borrar detalles.' });
+      return;
+    }
+
     if (!factorAplicado) {
       const shouldApply = window.confirm('Aun no aplico el Factor de Cambio. Desea hacerlo ahora?');
       if (shouldApply && !(await applyExchangeRate())) return;
@@ -912,7 +935,7 @@ export function CargarAsientoPanel({
               onClick={saveEntry}
               disabled={!canSave || saving}
               className="inline-flex h-8 items-center gap-2 rounded-md bg-blue-700 px-3 text-[12px] font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:bg-blue-300"
-              title={canSave ? 'Guardar asiento' : 'Complete fecha, tipo de asiento y balance del asiento'}
+              title={isAuthorizedEntryLocked ? 'El asiento esta autorizado' : canSave ? 'Guardar asiento' : 'Complete fecha, tipo de asiento y balance del asiento'}
             >
               <Save className="h-4 w-4" />
               {saving ? 'Guardando...' : 'Guardar'}
@@ -1208,10 +1231,11 @@ export function CargarAsientoPanel({
                     <td rowSpan={2} className="border-b border-slate-200 px-2 py-1 text-center align-top">
                       <button
                         type="button"
-                        title="Borrar detalle"
+                        title={isAuthorizedEntryLocked ? 'El asiento esta autorizado' : 'Borrar detalle'}
                         aria-label="Borrar detalle"
+                        disabled={isAuthorizedEntryLocked}
                         onClick={(event) => { event.stopPropagation(); deleteLine(line.id); }}
-                        className="inline-flex h-6 w-6 items-center justify-center rounded border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
+                        className="inline-flex h-6 w-6 items-center justify-center rounded border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <Minus className="h-4 w-4" />
                       </button>
