@@ -175,8 +175,35 @@ function validateModificarAsiento(username, cb) {
         if (permiso !== 'S') {
             return cb(new Error("El usuario '" + user + "' no tiene permiso para modificar asientos. Verifique DBA.USUARIOS.modif_asientos."));
         }
-        cb(null);
+
+        validateAsientosMgr(user, function (mgrErr, hasMgr) {
+            if (mgrErr) return cb(mgrErr);
+            if (!hasMgr) {
+                return cb(new Error("El usuario '" + user + "' tiene modif_asientos activo, pero no existe en DBA.ASIENTOSMGR."));
+            }
+            cb(null);
+        });
     });
+}
+
+function validateAsientosMgr(username, cb) {
+    var user = esc(username);
+    var columns = ['Cod_Usuario', 'CodUsuario', 'Usuario', 'UserID', 'User_ID', 'Cod_User'];
+    var idx = 0;
+
+    function tryColumn() {
+        if (idx >= columns.length) return cb(null, false);
+
+        var col = columns[idx];
+        idx += 1;
+        var sql = "SELECT " + col + " FROM DBA.AsientosMgr WHERE lower(" + col + ") = " + sqlValue(user.toLowerCase());
+        conn.exec(sql, function (err, rows) {
+            if (err) return tryColumn();
+            cb(null, !!(rows && rows.length));
+        });
+    }
+
+    tryColumn();
 }
 
 function normalizeRows(rows, accountRules) {
