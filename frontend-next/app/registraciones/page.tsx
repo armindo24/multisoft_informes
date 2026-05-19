@@ -1,5 +1,6 @@
 import { PageHeader } from '@/components/ui/page-header';
 import { DiferenciaCambioPanel } from '@/components/registraciones/diferencia-cambio-panel';
+import { CargarAsientoPanel } from '@/components/registraciones/cargar-asiento-panel';
 import { getSessionUser } from '@/lib/auth-server';
 import { getCuentaAuxSelect, getCuentaPlancta, getTipoAsientoOptions } from '@/lib/api';
 import { getScopedEmpresas } from '@/lib/empresas-server';
@@ -131,6 +132,7 @@ export default async function RegistracionesPage({
   const params = (await searchParams) || {};
   const selectedSection = String(params.section || '');
   const isDiferenciaCambio = selectedSection === 'diferencia-cambio';
+  const isCargarAsiento = selectedSection === 'cargar-asiento';
   const [empresasResponse, tipoAsientosResponse] = await Promise.all([
     getScopedEmpresas('Integrado'),
     getTipoAsientoOptions(),
@@ -139,7 +141,7 @@ export default async function RegistracionesPage({
   const tipoAsientos = sanitizeOptions((tipoAsientosResponse?.data || []) as Array<Record<string, string>>);
   const currentYear = String(new Date().getFullYear());
   const defaultEmpresa = empresas[0]?.value || '';
-  const [cuentaOptionsResponse, auxiliarOptionsResponse] = isDiferenciaCambio && defaultEmpresa
+  const [cuentaOptionsResponse, auxiliarOptionsResponse] = (isDiferenciaCambio || isCargarAsiento) && defaultEmpresa
     ? await Promise.all([
         getCuentaPlancta({ empresa: defaultEmpresa, periodo: currentYear }),
         getCuentaAuxSelect({ empresa: defaultEmpresa, periodo: currentYear }),
@@ -158,6 +160,22 @@ export default async function RegistracionesPage({
           auxOptions={auxOptions}
           defaultEmpresa={defaultEmpresa}
           defaultPeriodo={currentYear}
+        />
+      </div>
+    );
+  }
+
+  if (isCargarAsiento) {
+    return (
+      <div className="space-y-3">
+        <CargarAsientoPanel
+          empresas={empresas}
+          tipoAsientos={tipoAsientos}
+          accountOptions={accountOptions}
+          auxOptions={auxOptions}
+          defaultEmpresa={defaultEmpresa}
+          defaultPeriodo={currentYear}
+          currentUser={sessionUser?.username || 'admin'}
         />
       </div>
     );
