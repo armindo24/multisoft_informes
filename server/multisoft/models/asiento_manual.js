@@ -360,4 +360,65 @@ AsientoManual.guardar = function (payload, cb) {
     });
 };
 
+AsientoManual.imprimir = function (params, cb) {
+    params = params || {};
+    var empresa = esc(params.empresa);
+    var periodo = esc(params.periodo);
+    var nrotransac = normalizeNumber(params.nrotransac);
+
+    if (!empresa || !periodo || !nrotransac) {
+        return cb(null, { ok: false, message: 'Debe indicar empresa, periodo y numero de transaccion.' });
+    }
+
+    var lineExpr = isPostgres() ? 'COALESCE(ad.NroOrden, ad.Linea)' : 'isnull(ad.NroOrden, ad.Linea)';
+    var sql = "SELECT " +
+        "ad.Cod_Empresa AS cod_empresa, " +
+        "emp.Des_Empresa AS empresa_nombre, " +
+        "ad.NroTransac AS nrotransac, " +
+        "ac.TipoAsiento AS tipoasiento, " +
+        "ac.NroCompr AS nrocompr, " +
+        lineExpr + " AS linea, " +
+        "ad.CodPlanCta AS codplancta, " +
+        "ad.CodPlanAux AS codplanaux, " +
+        "ad.Concepto AS concepto, " +
+        "ad.DbCr AS dbcr, " +
+        "ad.Importe AS importe, " +
+        "ad.ImporteME AS importeme, " +
+        "ac.Fecha AS fecha, " +
+        "ad.DEBITO AS debito, " +
+        "ad.CREDITO AS credito, " +
+        "ad.DEBITOME AS debito_me, " +
+        "ad.CREDITOME AS credito_me, " +
+        "pc.Nombre AS nombre_cuenta, " +
+        "pa.Nombre AS nombre_auxiliar, " +
+        "ta.Descrip AS tipo_descrip, " +
+        "ac.autorizado AS autorizado, " +
+        "ac.cargadopor AS cargadopor, " +
+        "ac.fechacarga AS fechacarga, " +
+        "ac.autorizadopor AS autorizadopor, " +
+        "ac.fechaautoriz AS fechaautoriz, " +
+        "ac.nroasiento AS nroasiento, " +
+        "ac.factcambio AS factcambio, " +
+        "upper(ad.Concepto) AS buscar_concepto " +
+        "FROM dba.asientosdet ad " +
+        "JOIN dba.asientoscab ac ON ac.Cod_Empresa = ad.Cod_Empresa AND ac.Periodo = ad.Periodo AND ac.NroTransac = ad.NroTransac " +
+        "JOIN DBA.PLANCTA pc ON ad.Cod_Empresa = pc.Cod_Empresa AND ad.Periodo = pc.Periodo AND ad.CodPlanCta = pc.CodPlanCta " +
+        "LEFT JOIN DBA.PLANAUXI pa ON ad.Cod_Empresa = pa.Cod_Empresa AND ad.Periodo = pa.Periodo AND ad.CodPlanCta = pa.CodPlanCta AND ad.CodPlanAux = pa.CodPlanAux " +
+        "LEFT JOIN DBA.EMPRESA emp ON emp.Cod_Empresa = ad.Cod_Empresa " +
+        "JOIN dba.tipoasiento ta ON ac.TipoAsiento = ta.TipoAsiento " +
+        "WHERE ta.tpdef <> 'N' " +
+        "AND ad.Cod_Empresa = " + sqlValue(empresa) + " " +
+        "AND ad.Periodo = " + sqlValue(periodo) + " " +
+        "AND ad.NroTransac = " + numValue(nrotransac) + " " +
+        "ORDER BY ad.Cod_Empresa ASC, ad.NroTransac ASC, " + lineExpr + " ASC";
+
+    conn.exec(sql, function (err, rows) {
+        if (err) return cb(err);
+        if (!rows || !rows.length) {
+            return cb(null, { ok: false, message: 'No se encontraron datos para imprimir el asiento ' + nrotransac + '.' });
+        }
+        cb(null, { ok: true, rows: rows });
+    });
+};
+
 module.exports = AsientoManual;

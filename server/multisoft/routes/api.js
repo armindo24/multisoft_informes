@@ -474,6 +474,18 @@ router.post('/registraciones/cargar-asiento/guardar', function (req, res, next) 
     });
 });
 
+router.get('/registraciones/cargar-asiento/imprimir', function (req, res, next) {
+    AsientoManual.imprimir(req.query || {}, function (err, result) {
+        if (err) {
+            return res.status(400).json({ ok: false, message: err.message || String(err) });
+        }
+        if (!result || result.ok === false) {
+            return res.status(400).json(result || { ok: false, message: 'No se pudo preparar la impresion del asiento.' });
+        }
+        res.json({data: result});
+    });
+});
+
 router.get('/control/cierre/:empresa/:periodo', function (req, res, next) {
     Control.cierre(req.params, function (result) {
         res.json({data: result});

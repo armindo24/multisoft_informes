@@ -24,6 +24,8 @@ type InitPayload = {
   moneda_extranjera?: { codmoneda?: string; descrip?: string };
 };
 
+type PrintRow = Record<string, unknown>;
+
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -70,6 +72,44 @@ function readableError(value: unknown): string {
     return readableError(data.message) || readableError(data.error) || readableError(data.data) || JSON.stringify(value);
   }
   return String(value);
+}
+
+function rowText(row: PrintRow | null | undefined, ...keys: string[]) {
+  if (!row) return '';
+  for (const key of keys) {
+    const value = row[key] ?? row[key.toUpperCase()] ?? row[key.toLowerCase()];
+    if (value !== null && typeof value !== 'undefined') return String(value).trim();
+  }
+  return '';
+}
+
+function rowNumber(row: PrintRow | null | undefined, ...keys: string[]) {
+  return parseAmount(rowText(row, ...keys));
+}
+
+function escapeHtml(value: unknown) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function formatReportDate(value: unknown, withTime = false) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+  const match = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2}))?/.exec(raw);
+  const date = match
+    ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), Number(match[4] || 0), Number(match[5] || 0))
+    : new Date(raw);
+  if (Number.isNaN(date.getTime())) return raw;
+  return date.toLocaleString('es-PY', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    ...(withTime ? { hour: '2-digit', minute: '2-digit' } : {}),
+  });
 }
 
 function makeLine(concepto = ''): EntryLine {
@@ -136,6 +176,7 @@ export function CargarAsientoPanel({
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [createdAt] = useState(new Date());
   const [saving, setSaving] = useState(false);
+  const [lastSavedTransac, setLastSavedTransac] = useState<number | null>(null);
   const [message, setMessage] = useState<{ tone: 'ok' | 'error' | 'info'; text: string } | null>(null);
   const [picker, setPicker] = useState<{ type: 'account' | 'aux'; lineId: string } | null>(null);
   const [pickerSearch, setPickerSearch] = useState('');
@@ -356,6 +397,7 @@ export function CargarAsientoPanel({
     setConceptoLargo(false);
     setLines([makeLine()]);
     setSelectedLineId(null);
+    setLastSavedTransac(null);
     setMessage(null);
   }
 
@@ -503,6 +545,7 @@ export function CargarAsientoPanel({
       }
 
       const nrotransac = Number(payload?.data?.nrotransac || 0);
+      setLastSavedTransac(nrotransac || null);
       setMessage({ tone: 'ok', text: `El proceso ha finalizado con exito. El Nro. de Transaccion es ${nrotransac || '-'}.` });
       setLines([makeLine()]);
       setSelectedLineId(null);
@@ -511,6 +554,164 @@ export function CargarAsientoPanel({
       setMessage({ tone: 'error', text: readableError(error) || 'No se pudo grabar el asiento.' });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function printEntry() {
+    if (!lastSavedTransac) {
+      setMessage({ tone: 'error', text: 'Primero debe guardar el asiento para imprimir.' });
+      return;
+    }
+
+    setMessage({ tone: 'info', text: 'Preparando impresion del asiento...' });
+
+    try {
+      const params = new URLSearchParams({
+        empresa,
+        periodo,
+        nrotransac: String(lastSavedTransac),
+      });
+      const response = await fetch(`/api/registraciones/cargar-asiento/imprimir?${params.toString()}`, { cache: 'no-store' });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload?.ok === false || payload?.data?.ok === false) {
+        throw new Error(readableError(payload?.message) || readableError(payload?.error) || readableError(payload?.data?.message) || readableError(payload?.data?.error) || readableError(payload?.data) || 'No se pudo preparar la impresion del asiento.');
+      }
+
+      const rows = (payload?.data?.rows || []) as PrintRow[];
+      if (!rows.length) throw new Error('No se encontraron datos para imprimir.');
+
+      const first = rows[0];
+      const companyName = rowText(first, 'empresa_nombre', 'Des_Empresa') || empresaLabel;
+      const tipo = rowText(first, 'tipoasiento', 'TipoAsiento');
+      const tipoDesc = rowText(first, 'tipo_descrip', 'Descrip');
+      const nroCompr = rowText(first, 'nrocompr', 'NroCompr');
+      const fechaTransac = formatReportDate(rowText(first, 'fecha', 'Fecha'));
+      const factCambio = rowText(first, 'factcambio', 'FactCambio');
+      const cargadoPor = rowText(first, 'cargadopor', 'CargadoPor') || currentUser || '-';
+      const fechaCarga = formatReportDate(rowText(first, 'fechacarga', 'FechaCarga'), true);
+      const autorizado = rowText(first, 'autorizado', 'Autorizado').toUpperCase() === 'S';
+      const autorizadoPor = rowText(first, 'autorizadopor', 'AutorizadoPor') || '-';
+      const fechaAutoriz = formatReportDate(rowText(first, 'fechaautoriz', 'FechaAutoriz'), true);
+      const printedAt = formatDateTime(new Date());
+
+      const totalDebe = rows.reduce((acc, row) => acc + rowNumber(row, 'debito', 'DEBITO'), 0);
+      const totalHaber = rows.reduce((acc, row) => acc + rowNumber(row, 'credito', 'CREDITO'), 0);
+      const detailRows = rows.map((row, index) => {
+        const linea = rowText(row, 'linea', 'Linea') || String(index + 1);
+        return `
+          <tr>
+            <td>${escapeHtml(linea)}</td>
+            <td>${escapeHtml(rowText(row, 'codplancta', 'CodPlanCta'))}</td>
+            <td>${escapeHtml(rowText(row, 'codplanaux', 'CodPlanAux'))}</td>
+            <td>${escapeHtml(rowText(row, 'concepto', 'Concepto'))}</td>
+            <td class="num">${formatAmount(rowNumber(row, 'debito', 'DEBITO'), 0)}</td>
+            <td class="num">${formatAmount(rowNumber(row, 'credito', 'CREDITO'), 0)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      const html = `<!doctype html>
+        <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Diario de Verificacion ${escapeHtml(lastSavedTransac)}</title>
+          <style>
+            @page { size: A4 landscape; margin: 12mm; }
+            body { font-family: "Times New Roman", serif; color: #000; background: #fff; font-size: 12px; }
+            .sheet { border-top: 1px solid #0000cc; padding-top: 6px; }
+            .top { display: grid; grid-template-columns: 1fr auto; align-items: start; }
+            .company { font-size: 20px; font-weight: 700; }
+            .printed { display: grid; grid-template-columns: auto auto; gap: 6px 28px; font-weight: 700; }
+            h1 { margin: 2px 0 22px; text-align: center; font-size: 22px; }
+            .filters, .meta { display: grid; grid-template-columns: 1.2fr 1.2fr 1.3fr 1fr; gap: 8px 26px; margin-bottom: 6px; }
+            .label { font-weight: 700; }
+            .bar { border-top: 2px solid #000; margin: 4px 0 8px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { padding: 3px 6px; vertical-align: top; }
+            thead th { border-bottom: 2px solid #000; text-align: left; }
+            .currency { text-align: center; border-top: 2px solid #000; font-weight: 700; }
+            .num { text-align: right; white-space: nowrap; }
+            tfoot td { border-top: 2px solid #000; font-weight: 700; }
+            .audit { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 14px 28px 8px; }
+            .audit div { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; }
+            .double-line { border-top: 2px solid #000; border-bottom: 2px solid #000; height: 6px; margin-top: 8px; }
+            .total-general { display: grid; grid-template-columns: 1fr auto auto; gap: 36px; margin-top: 6px; font-weight: 700; }
+            @media print { button { display: none; } }
+          </style>
+        </head>
+        <body>
+          <div class="sheet">
+            <div class="top">
+              <div class="company">${escapeHtml(companyName)}</div>
+              <div class="printed"><span>Fecha :</span><span>${escapeHtml(printedAt)}</span></div>
+            </div>
+            <h1>Diario de Verificacion</h1>
+            <div class="filters">
+              <div><span class="label">Fecha :</span></div>
+              <div><span class="label">Tipo de Comprobante :</span></div>
+              <div><span class="label">Nro. de Transaccion :</span> ${escapeHtml(lastSavedTransac)}</div>
+              <div><span class="label">Impreso Por :</span> ${escapeHtml(currentUser || '-')}</div>
+              <div><span class="label">Autorizados :</span></div>
+            </div>
+            <div class="bar"></div>
+            <div class="meta">
+              <div><span class="label">Tipo de Cbte. :</span> ${escapeHtml(tipo)} &nbsp;&nbsp; ${escapeHtml(tipoDesc)}</div>
+              <div><span class="label">Nro. de Transac. :</span> ${escapeHtml(lastSavedTransac)}</div>
+              <div><span class="label">Factor de Cambio :</span> ${escapeHtml(factCambio)}</div>
+              <div></div>
+              <div><span class="label">Nro. de Cbte. :</span> ${escapeHtml(nroCompr)}</div>
+              <div><span class="label">Fecha de Transac. :</span> ${escapeHtml(fechaTransac)}</div>
+            </div>
+            <table>
+              <thead>
+                <tr><th colspan="4"></th><th colspan="2" class="currency">Moneda Local</th></tr>
+                <tr>
+                  <th style="width: 36px;">Sec.</th>
+                  <th style="width: 78px;">Cuenta</th>
+                  <th style="width: 180px;">Auxiliar</th>
+                  <th>Concepto</th>
+                  <th class="num" style="width: 110px;">Debe</th>
+                  <th class="num" style="width: 110px;">Haber</th>
+                </tr>
+              </thead>
+              <tbody>${detailRows}</tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="4">Totales</td>
+                  <td class="num">${formatAmount(totalDebe, 0)}</td>
+                  <td class="num">${formatAmount(totalHaber, 0)}</td>
+                </tr>
+              </tfoot>
+            </table>
+            <div class="audit">
+              <div><span class="label">Cargado Por :</span><span>${escapeHtml(cargadoPor)}</span><span class="label">Fecha :</span><span>${escapeHtml(fechaCarga)}</span></div>
+              <div><span class="label">Estado :</span><span>${autorizado ? 'Autorizado' : 'No Autorizado'}</span></div>
+              <div><span class="label">Autorizado Por :</span><span>${escapeHtml(autorizadoPor)}</span><span class="label">Fecha :</span><span>${escapeHtml(fechaAutoriz)}</span></div>
+            </div>
+            <div class="double-line"></div>
+            <div class="total-general">
+              <span>Total General</span>
+              <span>${formatAmount(totalDebe, 0)}</span>
+              <span>${formatAmount(totalHaber, 0)}</span>
+            </div>
+          </div>
+          <script>
+            window.addEventListener('load', function () {
+              window.focus();
+              setTimeout(function () { window.print(); }, 250);
+            });
+          </script>
+        </body>
+        </html>`;
+
+      const printWindow = window.open('', '_blank', 'width=1200,height=800');
+      if (!printWindow) throw new Error('El navegador bloqueo la ventana de impresion.');
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+      setMessage({ tone: 'ok', text: `Impresion preparada para el asiento ${lastSavedTransac}.` });
+    } catch (error) {
+      setMessage({ tone: 'error', text: readableError(error) || 'No se pudo preparar la impresion del asiento.' });
     }
   }
 
@@ -543,7 +744,12 @@ export function CargarAsientoPanel({
               <Save className="h-4 w-4" />
               {saving ? 'Guardando...' : 'Guardar'}
             </button>
-            <button type="button" className="inline-flex h-8 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-[12px] font-semibold text-slate-700">
+            <button
+              type="button"
+              onClick={printEntry}
+              className="inline-flex h-8 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-[12px] font-semibold text-slate-700"
+              title={lastSavedTransac ? `Imprimir asiento ${lastSavedTransac}` : 'Primero debe guardar el asiento'}
+            >
               <Printer className="h-4 w-4" />
               Imprimir
             </button>
