@@ -324,9 +324,9 @@ export function UserCompanyPanel() {
       )}
 
       {pickerOpen ? (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/45 p-4">
-          <div className="max-h-[85vh] w-full max-w-5xl overflow-hidden rounded-[1.8rem] border border-slate-200 bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/45 p-2 sm:p-4">
+          <div className="flex h-[calc(100vh-1rem)] max-h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl sm:h-auto sm:max-h-[86vh]">
+            <div className="shrink-0 flex items-center justify-between border-b border-slate-200 px-5 py-3 sm:px-6 sm:py-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-700">Asignacion de Empresas</p>
                 <h3 className="mt-1 text-xl font-semibold text-slate-900">
@@ -343,7 +343,7 @@ export function UserCompanyPanel() {
               </button>
             </div>
 
-            <div className="space-y-4 overflow-y-auto px-6 py-5">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4 sm:px-6">
               <label className="block text-sm text-slate-700">
                 <span className="mb-2 block font-medium">Buscar empresa</span>
                 <input
@@ -362,9 +362,9 @@ export function UserCompanyPanel() {
 
               <div className="grid gap-4 xl:grid-cols-2">
                 {(['Integrado', 'Sueldo'] as const).map((db) => (
-                  <section key={db} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <section key={db} className="min-h-0 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-700">{db}</h3>
-                    <div className="mt-3 max-h-[420px] space-y-2 overflow-y-auto pr-1">
+                    <div className="mt-3 max-h-[34vh] space-y-2 overflow-y-auto pr-1 xl:max-h-[38vh]">
                       {groupedOptions[db].length === 0 ? (
                         <p className="text-sm text-slate-500">No hay empresas disponibles para este sistema.</p>
                       ) : (
@@ -385,7 +385,7 @@ export function UserCompanyPanel() {
               </div>
             </div>
 
-            <div className="flex flex-wrap justify-end gap-3 border-t border-slate-200 px-6 py-4">
+            <div className="shrink-0 flex flex-wrap justify-end gap-3 border-t border-slate-200 bg-white px-5 py-3 sm:px-6 sm:py-4">
               <button
                 type="button"
                 onClick={() => setPickerOpen(false)}
