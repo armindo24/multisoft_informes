@@ -26,6 +26,16 @@ type InitPayload = {
 
 type PrintRow = Record<string, unknown>;
 
+type LoadedEntryMeta = {
+  nrotransac: number;
+  nroasiento: string;
+  cargadopor: string;
+  fechacarga: string;
+  autorizado: 'S' | 'N';
+  autorizadopor: string;
+  fechaautoriz: string;
+};
+
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -112,6 +122,15 @@ function formatReportDate(value: unknown, withTime = false) {
   });
 }
 
+function formatInputDate(value: unknown) {
+  const raw = String(value ?? '').trim();
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
+  if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return today();
+  return date.toISOString().slice(0, 10);
+}
+
 function makeLine(concepto = ''): EntryLine {
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -177,6 +196,7 @@ export function CargarAsientoPanel({
   const [createdAt] = useState(new Date());
   const [saving, setSaving] = useState(false);
   const [lastSavedTransac, setLastSavedTransac] = useState<number | null>(null);
+  const [loadedEntryMeta, setLoadedEntryMeta] = useState<LoadedEntryMeta | null>(null);
   const [message, setMessage] = useState<{ tone: 'ok' | 'error' | 'info'; text: string } | null>(null);
   const [picker, setPicker] = useState<{ type: 'account' | 'aux'; lineId: string } | null>(null);
   const [pickerSearch, setPickerSearch] = useState('');
@@ -398,6 +418,7 @@ export function CargarAsientoPanel({
     setLines([makeLine()]);
     setSelectedLineId(null);
     setLastSavedTransac(null);
+    setLoadedEntryMeta(null);
     setMessage(null);
   }
 
@@ -494,6 +515,66 @@ export function CargarAsientoPanel({
     return '';
   }
 
+  function applyEntryRows(rows: PrintRow[]) {
+    const first = rows[0];
+    const nrotransac = rowNumber(first, 'nrotransac', 'NroTransac');
+    const autorizadoValue = rowText(first, 'autorizado', 'Autorizado').toUpperCase() === 'S' ? 'S' : 'N';
+    const factCambio = rowText(first, 'factcambio', 'FactCambio');
+
+    setLastSavedTransac(nrotransac || null);
+    setLoadedEntryMeta({
+      nrotransac,
+      nroasiento: rowText(first, 'nroasiento', 'NroAsiento'),
+      cargadopor: rowText(first, 'cargadopor', 'CargadoPor'),
+      fechacarga: rowText(first, 'fechacarga', 'FechaCarga'),
+      autorizado: autorizadoValue,
+      autorizadopor: rowText(first, 'autorizadopor', 'AutorizadoPor'),
+      fechaautoriz: rowText(first, 'fechaautoriz', 'FechaAutoriz'),
+    });
+    setFecha(formatInputDate(rowText(first, 'fecha', 'Fecha')));
+    setTipoAsiento(rowText(first, 'tipoasiento', 'TipoAsiento'));
+    setNroComprobante(rowText(first, 'nrocompr', 'NroCompr'));
+    setMoneda(rowText(first, 'codmoneda', 'CodMoneda') || monedaOptions[0]?.value || 'GS');
+    setAutorizado(autorizadoValue);
+    if (factCambio) {
+      setFactorCambioValor(factCambio);
+      setFactorAplicado(true);
+    }
+
+    const loadedLines = rows.map((row) => ({
+      id: `${rowText(row, 'linea', 'Linea') || Date.now()}-${Math.random().toString(36).slice(2)}`,
+      codplancta: rowText(row, 'codplancta', 'CodPlanCta'),
+      codplanaux: rowText(row, 'codplanaux', 'CodPlanAux'),
+      concepto: rowText(row, 'concepto', 'Concepto'),
+      debito: inputAmount(rowNumber(row, 'debito', 'DEBITO'), 0),
+      credito: inputAmount(rowNumber(row, 'credito', 'CREDITO'), 0),
+      debitome: inputAmount(rowNumber(row, 'debito_me', 'DEBITO_ME'), 2),
+      creditome: inputAmount(rowNumber(row, 'credito_me', 'CREDITO_ME'), 2),
+      proyecto: '',
+      rubro: '',
+    }));
+
+    setLines(loadedLines.length ? loadedLines : [makeLine()]);
+    setSelectedLineId(loadedLines[0]?.id || null);
+  }
+
+  async function fetchEntryRows(nrotransac: number) {
+    const params = new URLSearchParams({
+      empresa,
+      periodo,
+      nrotransac: String(nrotransac),
+    });
+    const response = await fetch(`/api/registraciones/cargar-asiento/imprimir?${params.toString()}`, { cache: 'no-store' });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload?.ok === false || payload?.data?.ok === false) {
+      throw new Error(readableError(payload?.message) || readableError(payload?.error) || readableError(payload?.data?.message) || readableError(payload?.data?.error) || readableError(payload?.data) || 'No se pudo recuperar el asiento.');
+    }
+
+    const rows = (payload?.data?.rows || []) as PrintRow[];
+    if (!rows.length) throw new Error('No se encontraron datos para el asiento.');
+    return rows;
+  }
+
   async function saveEntry() {
     if (!factorAplicado) {
       const shouldApply = window.confirm('Aun no aplico el Factor de Cambio. Desea hacerlo ahora?');
@@ -534,6 +615,7 @@ export function CargarAsientoPanel({
           tipoasiento: tipoAsiento,
           nrocompr: nroComprobante,
           codmoneda: moneda,
+          factcambio: parseAmount(factorCambioValor),
           autorizado,
           usuario: currentUser,
           rows: cleanLines,
@@ -546,10 +628,11 @@ export function CargarAsientoPanel({
 
       const nrotransac = Number(payload?.data?.nrotransac || 0);
       setLastSavedTransac(nrotransac || null);
+      if (nrotransac) {
+        const savedRows = await fetchEntryRows(nrotransac);
+        applyEntryRows(savedRows);
+      }
       setMessage({ tone: 'ok', text: `El proceso ha finalizado con exito. El Nro. de Transaccion es ${nrotransac || '-'}.` });
-      setLines([makeLine()]);
-      setSelectedLineId(null);
-      setNroComprobante('');
     } catch (error) {
       setMessage({ tone: 'error', text: readableError(error) || 'No se pudo grabar el asiento.' });
     } finally {
@@ -566,19 +649,7 @@ export function CargarAsientoPanel({
     setMessage({ tone: 'info', text: 'Preparando impresion del asiento...' });
 
     try {
-      const params = new URLSearchParams({
-        empresa,
-        periodo,
-        nrotransac: String(lastSavedTransac),
-      });
-      const response = await fetch(`/api/registraciones/cargar-asiento/imprimir?${params.toString()}`, { cache: 'no-store' });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok || payload?.ok === false || payload?.data?.ok === false) {
-        throw new Error(readableError(payload?.message) || readableError(payload?.error) || readableError(payload?.data?.message) || readableError(payload?.data?.error) || readableError(payload?.data) || 'No se pudo preparar la impresion del asiento.');
-      }
-
-      const rows = (payload?.data?.rows || []) as PrintRow[];
-      if (!rows.length) throw new Error('No se encontraron datos para imprimir.');
+      const rows = await fetchEntryRows(lastSavedTransac);
 
       const first = rows[0];
       const companyName = rowText(first, 'empresa_nombre', 'Des_Empresa') || empresaLabel;
@@ -715,12 +786,35 @@ export function CargarAsientoPanel({
     }
   }
 
+  async function recoverEntry() {
+    const entered = window.prompt('Nro. de Transaccion', lastSavedTransac ? String(lastSavedTransac) : '');
+    if (entered === null) return;
+
+    const nrotransac = Number(String(entered).trim());
+    if (!Number.isFinite(nrotransac) || nrotransac <= 0) {
+      setMessage({ tone: 'error', text: 'Debe indicar un Nro. de Transaccion valido.' });
+      return;
+    }
+
+    setMessage({ tone: 'info', text: `Recuperando asiento ${nrotransac}...` });
+    try {
+      const rows = await fetchEntryRows(nrotransac);
+      applyEntryRows(rows);
+      setMessage({ tone: 'ok', text: `Asiento ${nrotransac} recuperado correctamente.` });
+    } catch (error) {
+      setMessage({ tone: 'error', text: readableError(error) || 'No se pudo recuperar el asiento.' });
+    }
+  }
+
   const visibleDebitField = activeTab === 'local' ? 'debito' : 'debitome';
   const visibleCreditField = activeTab === 'local' ? 'credito' : 'creditome';
   const activeTotalDebit = activeTab === 'local' ? totals.debito : totals.debitome;
   const activeTotalCredit = activeTab === 'local' ? totals.credito : totals.creditome;
   const activeDecimals = activeTab === 'local' ? 0 : 2;
   const autorizadoLabel = autorizado === 'S' ? 'Autorizado' : 'Pendiente';
+  const currentTransacLabel = lastSavedTransac ? String(lastSavedTransac) : 'Nuevo';
+  const loadedAt = loadedEntryMeta?.fechacarga ? formatReportDate(loadedEntryMeta.fechacarga, true) : formatDateTime(createdAt);
+  const loadedAuthorizedAt = loadedEntryMeta?.fechaautoriz ? formatReportDate(loadedEntryMeta.fechaautoriz, true) : '-';
 
   return (
     <div className="space-y-1.5 text-[12px]">
@@ -730,7 +824,7 @@ export function CargarAsientoPanel({
             <FileText className="h-5 w-5 text-indigo-700" />
             <div>
               <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-teal-700">Asientos</p>
-              <h1 className="text-base font-bold leading-tight text-slate-950">ASIENTO Nro. Nuevo</h1>
+              <h1 className="text-base font-bold leading-tight text-slate-950">ASIENTO Nro. {currentTransacLabel}</h1>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -752,6 +846,15 @@ export function CargarAsientoPanel({
             >
               <Printer className="h-4 w-4" />
               Imprimir
+            </button>
+            <button
+              type="button"
+              onClick={recoverEntry}
+              className="inline-flex h-8 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-[12px] font-semibold text-slate-700"
+              title="Recuperar asiento por Nro. de Transaccion"
+            >
+              <Search className="h-4 w-4" />
+              Recuperar
             </button>
             <button
               type="button"
@@ -839,18 +942,18 @@ export function CargarAsientoPanel({
 
         <div className="grid gap-1.5 border-t border-slate-100 px-3 py-1.5 lg:grid-cols-3">
           <InfoCard icon={<UserRound className="h-4 w-4" />} title="Informacion de la Carga">
-            <InfoLine label="Cargado por:" value={currentUser || '-'} />
-            <InfoLine label="Fecha:" value={formatDateTime(createdAt)} />
+            <InfoLine label="Cargado por:" value={loadedEntryMeta?.cargadopor || currentUser || '-'} />
+            <InfoLine label="Fecha:" value={loadedAt} />
             <InfoLine label="Origen:" value="Carga manual de asiento" />
           </InfoCard>
           <InfoCard icon={<ShieldCheck className="h-4 w-4" />} title="Informacion de la Autorizacion">
             <InfoLine label="Estado:" value={autorizadoLabel} valueClass={autorizado === 'S' ? 'text-emerald-700' : 'text-amber-700'} />
-            <InfoLine label="Autorizado por:" value={autorizado === 'S' ? currentUser || '-' : '-'} />
-            <InfoLine label="Fecha:" value={autorizado === 'S' ? formatDateTime(new Date()) : '-'} />
+            <InfoLine label="Autorizado por:" value={autorizado === 'S' ? loadedEntryMeta?.autorizadopor || currentUser || '-' : '-'} />
+            <InfoLine label="Fecha:" value={autorizado === 'S' ? loadedAuthorizedAt : '-'} />
           </InfoCard>
           <InfoCard icon={<CheckCircle2 className="h-4 w-4" />} title="Informacion de la Revision">
             <InfoLine label="Estado:" value="No" />
-            <InfoLine label="Nro. Asiento:" value="-" />
+            <InfoLine label="Nro. Asiento:" value={loadedEntryMeta?.nroasiento || (lastSavedTransac ? String(lastSavedTransac) : '-')} />
             <InfoLine label="Fecha:" value="-" />
           </InfoCard>
         </div>

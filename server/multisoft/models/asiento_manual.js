@@ -225,7 +225,7 @@ function normalizeRows(rows, accountRules) {
 
 function buildCabSql(body, nrotransac) {
     return "INSERT INTO DBA.AsientosCab (" +
-        "Cod_Empresa, NroTransac, Periodo, CodMoneda, TipoAsiento, NroCompr, Fecha, Transf, Origen, NroAsiento, Autorizado, CargadoPor, FechaCarga" +
+        "Cod_Empresa, NroTransac, Periodo, CodMoneda, TipoAsiento, NroCompr, Fecha, Transf, Origen, NroAsiento, FactCambio, Autorizado, CargadoPor, FechaCarga" +
         ") VALUES (" +
         sqlValue(body.empresa) + ", " +
         numValue(nrotransac) + ", " +
@@ -234,7 +234,9 @@ function buildCabSql(body, nrotransac) {
         sqlValue(body.tipoasiento) + ", " +
         (body.nrocompr ? numValue(body.nrocompr) : 'NULL') + ", " +
         sqlValue(body.fecha) + ", " +
-        "'N', 'CON', NULL, " + sqlValue(body.autorizado) + ", " +
+        "'N', 'CON', NULL, " +
+        (body.factcambio ? numValue(body.factcambio, 4) : 'NULL') + ", " +
+        sqlValue(body.autorizado) + ", " +
         sqlValue(body.usuario || '') + ", " +
         nowSql() +
         ")";
@@ -295,6 +297,7 @@ AsientoManual.guardar = function (payload, cb) {
         fecha: esc(payload.fecha),
         nrocompr: payload.nrocompr,
         codmoneda: esc(payload.codmoneda || payload.moneda || ''),
+        factcambio: normalizeNumber(payload.factcambio),
         autorizado: String(payload.autorizado || 'N').trim().toUpperCase() === 'S' ? 'S' : 'N',
         usuario: esc(payload.usuario || ''),
         rows: Array.isArray(payload.rows) ? payload.rows : []
@@ -388,6 +391,7 @@ AsientoManual.imprimir = function (params, cb) {
         "ad.NroTransac AS nrotransac, " +
         "ac.TipoAsiento AS tipoasiento, " +
         "ac.NroCompr AS nrocompr, " +
+        "ac.CodMoneda AS codmoneda, " +
         lineExpr + " AS linea, " +
         "ad.CodPlanCta AS codplancta, " +
         "ad.CodPlanAux AS codplanaux, " +
