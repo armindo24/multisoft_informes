@@ -270,8 +270,19 @@ function recalcularImportes(empresa, periodo, cb) {
         "debito = round(debito, 0), credito = round(credito, 0), debitome = round(debitome, 2), creditome = round(creditome, 2) " +
         "WHERE cod_empresa = " + sqlValue(empresa) + " AND periodo = " + sqlValue(periodo);
 
-    conn.exec(sql, function (err) {
-        cb(err || null);
+    if (isPostgres()) {
+        return conn.exec(sql, function (err) {
+            cb(err || null);
+        });
+    }
+
+    execOnly("SET TEMPORARY OPTION fire_triggers = 'off'", function (disableErr) {
+        if (disableErr) return cb(disableErr);
+        conn.exec(sql, function (err) {
+            execOnly("SET TEMPORARY OPTION fire_triggers = 'on'", function (enableErr) {
+                cb(err || enableErr || null);
+            });
+        });
     });
 }
 
