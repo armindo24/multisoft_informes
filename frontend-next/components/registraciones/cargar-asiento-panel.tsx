@@ -115,6 +115,7 @@ export function CargarAsientoPanel({
   const [factorCambioValor, setFactorCambioValor] = useState('');
   const [factorAplicado, setFactorAplicado] = useState(false);
   const [dif, setDif] = useState(false);
+  const [autorizado, setAutorizado] = useState<'S' | 'N'>('N');
   const [activeTab, setActiveTab] = useState<'local' | 'extranjera'>('local');
   const [showFullConcept, setShowFullConcept] = useState(false);
   const [conceptoLargo, setConceptoLargo] = useState(false);
@@ -209,6 +210,7 @@ export function CargarAsientoPanel({
     setFactorCambioValor('');
     setFactorAplicado(false);
     setDif(false);
+    setAutorizado('N');
     setActiveTab('local');
     setShowFullConcept(false);
     setConceptoLargo(false);
@@ -350,6 +352,7 @@ export function CargarAsientoPanel({
           tipoasiento: tipoAsiento,
           nrocompr: nroComprobante,
           codmoneda: moneda,
+          autorizado,
           usuario: currentUser,
           rows: cleanLines,
         }),
@@ -376,6 +379,7 @@ export function CargarAsientoPanel({
   const activeTotalDebit = activeTab === 'local' ? totals.debito : totals.debitome;
   const activeTotalCredit = activeTab === 'local' ? totals.credito : totals.creditome;
   const activeDecimals = activeTab === 'local' ? 0 : 2;
+  const autorizadoLabel = autorizado === 'S' ? 'Autorizado' : 'Pendiente';
 
   return (
     <div className="space-y-2 text-[13px]">
@@ -403,9 +407,17 @@ export function CargarAsientoPanel({
               <Printer className="h-4 w-4" />
               Imprimir
             </button>
-            <button type="button" className="inline-flex h-9 items-center gap-2 rounded-md border border-rose-200 bg-white px-3 text-sm font-semibold text-rose-600">
+            <button
+              type="button"
+              onClick={() => setAutorizado((current) => (current === 'S' ? 'N' : 'S'))}
+              className={`inline-flex h-9 items-center gap-2 rounded-md border px-3 text-sm font-semibold ${
+                autorizado === 'S'
+                  ? 'border-rose-200 bg-white text-rose-600'
+                  : 'border-emerald-200 bg-white text-emerald-700'
+              }`}
+            >
               <CircleSlash2 className="h-4 w-4" />
-              Desautorizar
+              {autorizado === 'S' ? 'Desautorizar' : 'Autorizar'}
             </button>
             <button type="button" onClick={clearForm} className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700">
               <X className="h-4 w-4" />
@@ -486,9 +498,9 @@ export function CargarAsientoPanel({
             <InfoLine label="Origen:" value="Carga manual de asiento" />
           </InfoCard>
           <InfoCard icon={<ShieldCheck className="h-4 w-4" />} title="Informacion de la Autorizacion">
-            <InfoLine label="Estado:" value="Pendiente" valueClass="text-amber-700" />
-            <InfoLine label="Autorizado por:" value="-" />
-            <InfoLine label="Fecha:" value="-" />
+            <InfoLine label="Estado:" value={autorizadoLabel} valueClass={autorizado === 'S' ? 'text-emerald-700' : 'text-amber-700'} />
+            <InfoLine label="Autorizado por:" value={autorizado === 'S' ? currentUser || '-' : '-'} />
+            <InfoLine label="Fecha:" value={autorizado === 'S' ? formatDateTime(new Date()) : '-'} />
           </InfoCard>
           <InfoCard icon={<CheckCircle2 className="h-4 w-4" />} title="Informacion de la Revision">
             <InfoLine label="Estado:" value="No" />

@@ -211,7 +211,7 @@ function buildCabSql(body, nrotransac) {
         sqlValue(body.tipoasiento) + ", " +
         (body.nrocompr ? numValue(body.nrocompr) : 'NULL') + ", " +
         sqlValue(body.fecha) + ", " +
-        "'N', 'CON', NULL, 'N', " +
+        "'N', 'CON', NULL, " + sqlValue(body.autorizado) + ", " +
         sqlValue(body.usuario || '') + ", " +
         nowSql() +
         ")";
@@ -261,6 +261,7 @@ AsientoManual.guardar = function (payload, cb) {
         fecha: esc(payload.fecha),
         nrocompr: payload.nrocompr,
         codmoneda: esc(payload.codmoneda || payload.moneda || ''),
+        autorizado: String(payload.autorizado || 'N').trim().toUpperCase() === 'S' ? 'S' : 'N',
         usuario: esc(payload.usuario || ''),
         rows: Array.isArray(payload.rows) ? payload.rows : []
     };
