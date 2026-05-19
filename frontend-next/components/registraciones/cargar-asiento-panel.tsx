@@ -972,7 +972,7 @@ export function CargarAsientoPanel({
                 setFecha(nextFecha);
                 const year = nextFecha.slice(0, 4);
                 if (year) setPeriodo(year);
-                void loadDailyExchangeRate(factorCambio, nextFecha);
+                void loadDailyExchangeRate(factorCambio, nextFecha, true);
               }}
               type="date"
               className="mt-0.5 h-8 w-full rounded-md border border-slate-200 px-2 text-[12px]"

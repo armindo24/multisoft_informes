@@ -322,7 +322,7 @@ AsientoManual.factorCambio = function (params, cb) {
             if (withEmpresa) return execute(false);
             cb(null, {
                 ok: false,
-                message: 'No se encontro cotizacion en DBA.FACTCAMB para ' + tipo + ' del dia ' + fecha + '.'
+                message: 'No se encontro cotizacion para ' + tipo + ' del dia ' + fecha + '.'
             });
         });
     }
