@@ -51,7 +51,16 @@ function formatDateTime(value: Date) {
 }
 
 function parseAmount(value: string) {
-  const normalized = String(value || '').replace(/\./g, '').replace(',', '.');
+  const raw = String(value || '').trim();
+  if (!raw) return 0;
+  if (!raw.includes(',') && raw.includes('.')) {
+    const parts = raw.split('.');
+    if (parts.length === 2 && parts[1].length <= 2) {
+      const decimal = Number(raw);
+      return Number.isFinite(decimal) ? decimal : 0;
+    }
+  }
+  const normalized = raw.replace(/\./g, '').replace(',', '.');
   const number = Number(normalized);
   return Number.isFinite(number) ? number : 0;
 }
