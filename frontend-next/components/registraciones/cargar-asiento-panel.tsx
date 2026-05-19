@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarDays, CheckCircle2, CircleSlash2, FileText, Minus, Plus, Printer, Save, Search, ShieldCheck, UserRound, X } from 'lucide-react';
 import type { AccountPlanOption, AuxiliarOption, SelectOption } from '@/types/finanzas';
 
@@ -1018,9 +1018,8 @@ export function CargarAsientoPanel({
                 const lineAccountName = accountName(accountOptions, line.codplancta);
                 const lineAuxName = auxName(auxOptions, line.codplancta, line.codplanaux);
                 return (
-                  <>
+                  <Fragment key={line.id}>
                   <tr
-                    key={`${line.id}-main`}
                     onClick={() => setSelectedLineId(line.id)}
                     className={`${selected ? 'bg-blue-50' : 'bg-white'}`}
                   >
@@ -1112,7 +1111,6 @@ export function CargarAsientoPanel({
                     </td>
                   </tr>
                   <tr
-                    key={`${line.id}-meta`}
                     onClick={() => setSelectedLineId(line.id)}
                     className={`border-b border-slate-200 ${selected ? 'bg-blue-50' : 'bg-white'}`}
                   >
@@ -1123,7 +1121,7 @@ export function CargarAsientoPanel({
                       {lineAuxName || '-'}
                     </td>
                   </tr>
-                  </>
+                  </Fragment>
                 );
               })}
             </tbody>
