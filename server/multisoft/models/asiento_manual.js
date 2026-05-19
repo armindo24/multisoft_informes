@@ -265,6 +265,36 @@ function buildDetSql(body, row, nrotransac, linea) {
         ")";
 }
 
+function buildCabUpdateSql(body, nrotransac) {
+    return "UPDATE DBA.AsientosCab SET " +
+        "CodMoneda = " + sqlValue(body.codmoneda) + ", " +
+        "TipoAsiento = " + sqlValue(body.tipoasiento) + ", " +
+        "NroCompr = " + (body.nrocompr ? numValue(body.nrocompr) : 'NULL') + ", " +
+        "Fecha = " + sqlValue(body.fecha) + ", " +
+        "FactCambio = " + (body.factcambio ? numValue(body.factcambio, 4) : 'NULL') + ", " +
+        "Autorizado = " + sqlValue(body.autorizado) + " " +
+        "WHERE Cod_Empresa = " + sqlValue(body.empresa) + " " +
+        "AND Periodo = " + sqlValue(body.periodo) + " " +
+        "AND NroTransac = " + numValue(nrotransac);
+}
+
+function insertDetails(body, rows, nrotransac, cb) {
+    var idx = 0;
+
+    function nextDetail() {
+        if (idx >= rows.length) return cb(null);
+
+        var detailSql = buildDetSql(body, rows[idx], nrotransac, idx + 1);
+        idx += 1;
+        conn.exec(detailSql, function (detErr) {
+            if (detErr) return cb(detErr);
+            nextDetail();
+        });
+    }
+
+    nextDetail();
+}
+
 function recalcularImportes(empresa, periodo, cb) {
     var sql = "UPDATE dba.asientosdet " +
         "SET importe = CASE WHEN dbcr = 'D' THEN round(debito, 0) WHEN dbcr = 'C' THEN round(credito, 0) ELSE round(importe, 0) END, " +
@@ -298,6 +328,7 @@ AsientoManual.guardar = function (payload, cb) {
         nrocompr: payload.nrocompr,
         codmoneda: esc(payload.codmoneda || payload.moneda || ''),
         factcambio: normalizeNumber(payload.factcambio),
+        nrotransac: normalizeNumber(payload.nrotransac),
         autorizado: String(payload.autorizado || 'N').trim().toUpperCase() === 'S' ? 'S' : 'N',
         usuario: esc(payload.usuario || ''),
         rows: Array.isArray(payload.rows) ? payload.rows : []
@@ -329,6 +360,45 @@ AsientoManual.guardar = function (payload, cb) {
                     execOnly(beginSql(), function (beginErr) {
                         if (beginErr) return cb(beginErr);
 
+                        if (body.nrotransac > 0) {
+                            var existsSql = "SELECT NroTransac FROM DBA.AsientosCab " +
+                                "WHERE Cod_Empresa = " + sqlValue(body.empresa) + " " +
+                                "AND Periodo = " + sqlValue(body.periodo) + " " +
+                                "AND NroTransac = " + numValue(body.nrotransac);
+
+                            return conn.exec(existsSql, function (existsErr, existsRows) {
+                                if (existsErr) return rollbackWith(existsErr, cb);
+                                if (!existsRows || !existsRows.length) {
+                                    return rollbackWith(new Error('No se encontro el asiento ' + body.nrotransac + ' para actualizar.'), cb);
+                                }
+
+                                conn.exec(buildCabUpdateSql(body, body.nrotransac), function (updateErr) {
+                                    if (updateErr) return rollbackWith(updateErr, cb);
+
+                                    var deleteSql = "DELETE FROM DBA.AsientosDet " +
+                                        "WHERE Cod_Empresa = " + sqlValue(body.empresa) + " " +
+                                        "AND Periodo = " + sqlValue(body.periodo) + " " +
+                                        "AND NroTransac = " + numValue(body.nrotransac);
+
+                                    conn.exec(deleteSql, function (deleteErr) {
+                                        if (deleteErr) return rollbackWith(deleteErr, cb);
+
+                                        insertDetails(body, rows, body.nrotransac, function (detailsErr) {
+                                            if (detailsErr) return rollbackWith(detailsErr, cb);
+
+                                            return recalcularImportes(body.empresa, body.periodo, function (recalcErr) {
+                                                if (recalcErr) return rollbackWith(recalcErr, cb);
+                                                execOnly('COMMIT', function (commitErr) {
+                                                    if (commitErr) return cb(commitErr);
+                                                    cb(null, { ok: true, nrotransac: body.nrotransac, updated: true });
+                                                });
+                                            });
+                                        });
+                                    });
+                                });
+                            });
+                        }
+
                         var nextSql = "SELECT MAX(NroTransac) AS nrotransac FROM DBA.AsientosCab WHERE Cod_Empresa = " + sqlValue(body.empresa);
                         conn.exec(nextSql, function (nextErr, nextRows) {
                             if (nextErr) return rollbackWith(nextErr, cb);
@@ -343,9 +413,9 @@ AsientoManual.guardar = function (payload, cb) {
                                 conn.exec(buildCabSql(body, nrotransac), function (cabErr) {
                                     if (cabErr) return rollbackWith(cabErr, cb);
 
-                                    var idx = 0;
-                                    function nextDetail() {
-                                        if (idx >= rows.length) {
+                                    insertDetails(body, rows, nrotransac, function (detailsErr) {
+                                        if (detailsErr) return rollbackWith(detailsErr, cb);
+
                                             return recalcularImportes(body.empresa, body.periodo, function (recalcErr) {
                                                 if (recalcErr) return rollbackWith(recalcErr, cb);
                                                 execOnly('COMMIT', function (commitErr) {
@@ -353,17 +423,7 @@ AsientoManual.guardar = function (payload, cb) {
                                                     cb(null, { ok: true, nrotransac: nrotransac });
                                                 });
                                             });
-                                        }
-
-                                        var detailSql = buildDetSql(body, rows[idx], nrotransac, idx + 1);
-                                        idx += 1;
-                                        conn.exec(detailSql, function (detErr) {
-                                            if (detErr) return rollbackWith(detErr, cb);
-                                            nextDetail();
-                                        });
-                                    }
-
-                                    nextDetail();
+                                    });
                                 });
                             });
                         });

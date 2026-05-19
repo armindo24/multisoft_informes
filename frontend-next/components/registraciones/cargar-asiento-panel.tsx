@@ -642,6 +642,7 @@ export function CargarAsientoPanel({
           nrocompr: nroComprobante,
           codmoneda: moneda,
           factcambio: parseExchangeRate(factorCambioValor),
+          nrotransac: lastSavedTransac || undefined,
           autorizado,
           usuario: currentUser,
           rows: cleanLines,
@@ -653,13 +654,14 @@ export function CargarAsientoPanel({
       }
 
       const nrotransac = Number(payload?.data?.nrotransac || 0);
+      const updated = Boolean(payload?.data?.updated);
       setLastSavedTransac(nrotransac || null);
       if (nrotransac) {
         const savedRows = await fetchEntryRows(nrotransac);
         applyEntryRows(savedRows);
         setPrintPromptTransac(nrotransac);
       }
-      setMessage({ tone: 'ok', text: `El proceso ha finalizado con exito. El Nro. de Transaccion es ${nrotransac || '-'}.` });
+      setMessage({ tone: 'ok', text: updated ? `El asiento ${nrotransac || '-'} fue actualizado correctamente.` : `El proceso ha finalizado con exito. El Nro. de Transaccion es ${nrotransac || '-'}.` });
     } catch (error) {
       setMessage({ tone: 'error', text: readableError(error) || 'No se pudo grabar el asiento.' });
     } finally {
