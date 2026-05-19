@@ -385,6 +385,14 @@ function buildCabUpdateSql(body, nrotransac) {
         "AND NroTransac = " + numValue(nrotransac);
 }
 
+function buildAutorizadoUpdateSql(body, nrotransac) {
+    return "UPDATE DBA.AsientosCab SET " +
+        "Autorizado = " + sqlValue(body.autorizado) + " " +
+        "WHERE Cod_Empresa = " + sqlValue(body.empresa) + " " +
+        "AND Periodo = " + sqlValue(body.periodo) + " " +
+        "AND NroTransac = " + numValue(nrotransac);
+}
+
 function insertDetails(body, rows, nrotransac, cb) {
     var idx = 0;
 
@@ -495,7 +503,17 @@ AsientoManual.guardar = function (payload, cb) {
                                 var currentEntry = existsRows[0] || {};
                                 var currentAutorizado = String(currentEntry.Autorizado || currentEntry.autorizado || currentEntry.AUTORIZADO || '').trim().toUpperCase();
                                 if (currentAutorizado === 'S') {
-                                    return rollbackWith(new Error('El asiento esta autorizado. No se puede modificar ni borrar detalles.'), cb);
+                                    if (body.autorizado !== 'N') {
+                                        return rollbackWith(new Error('El asiento esta autorizado. No se puede modificar ni borrar detalles.'), cb);
+                                    }
+
+                                    return conn.exec(buildAutorizadoUpdateSql(body, body.nrotransac), function (authErr) {
+                                        if (authErr) return rollbackWith(authErr, cb);
+                                        execOnly('COMMIT', function (commitAuthErr) {
+                                            if (commitAuthErr) return cb(commitAuthErr);
+                                            cb(null, { ok: true, nrotransac: body.nrotransac, updated: true, authorizationOnly: true });
+                                        });
+                                    });
                                 }
 
                                 validateModificarAsiento(body.usuario, function (permisoErr) {

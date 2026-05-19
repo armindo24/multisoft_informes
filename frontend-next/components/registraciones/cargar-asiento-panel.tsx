@@ -311,8 +311,10 @@ export function CargarAsientoPanel({
   const difference = activeTab === 'local'
     ? totals.debito - totals.credito
     : totals.debitome - totals.creditome;
-  const isAuthorizedEntryLocked = Boolean(lastSavedTransac && autorizado === 'S');
-  const canSave = !isAuthorizedEntryLocked && lines.length > 0 && tipoAsiento && fecha && Math.abs(difference) === 0 && (totals.debito > 0 || totals.debitome > 0);
+  const wasLoadedAuthorized = loadedEntryMeta?.autorizado === 'S';
+  const isDesauthorizingOnly = Boolean(lastSavedTransac && wasLoadedAuthorized && autorizado === 'N');
+  const isAuthorizedEntryLocked = Boolean(lastSavedTransac && wasLoadedAuthorized);
+  const canSave = isDesauthorizingOnly || (!isAuthorizedEntryLocked && lines.length > 0 && tipoAsiento && fecha && Math.abs(difference) === 0 && (totals.debito > 0 || totals.debitome > 0));
   const empresaLabel = empresas.find((option) => option.value === empresa)?.label || empresa;
 
   function updateLine(id: string, patch: Partial<EntryLine>) {
@@ -665,17 +667,17 @@ export function CargarAsientoPanel({
   }
 
   async function saveEntry() {
-    if (isAuthorizedEntryLocked) {
+    if (isAuthorizedEntryLocked && !isDesauthorizingOnly) {
       setMessage({ tone: 'error', text: 'El asiento esta autorizado. No se puede modificar ni borrar detalles.' });
       return;
     }
 
-    if (!factorAplicado) {
+    if (!isDesauthorizingOnly && !factorAplicado) {
       const shouldApply = window.confirm('Aun no aplico el Factor de Cambio. Desea hacerlo ahora?');
       if (shouldApply && !(await applyExchangeRate())) return;
     }
 
-    const validation = validateBeforeSave();
+    const validation = isDesauthorizingOnly ? '' : validateBeforeSave();
     if (validation) {
       setMessage({ tone: 'error', text: validation });
       return;
@@ -729,7 +731,7 @@ export function CargarAsientoPanel({
         applyEntryRows(savedRows);
         setPrintPromptTransac(nrotransac);
       }
-      setMessage({ tone: 'ok', text: updated ? `El asiento ${nrotransac || '-'} fue actualizado correctamente.` : `El proceso ha finalizado con exito. El Nro. de Transaccion es ${nrotransac || '-'}.` });
+      setMessage({ tone: 'ok', text: isDesauthorizingOnly ? `El asiento ${nrotransac || '-'} fue desautorizado correctamente.` : updated ? `El asiento ${nrotransac || '-'} fue actualizado correctamente.` : `El proceso ha finalizado con exito. El Nro. de Transaccion es ${nrotransac || '-'}.` });
     } catch (error) {
       setMessage({ tone: 'error', text: readableError(error) || 'No se pudo grabar el asiento.' });
     } finally {
