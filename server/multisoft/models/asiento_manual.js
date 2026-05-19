@@ -312,6 +312,16 @@ function execWithoutTriggers(sql, cb) {
     });
 }
 
+function disableTriggers(cb) {
+    if (isPostgres()) return cb(null);
+    execOnly("SET TEMPORARY OPTION fire_triggers = 'off'", cb);
+}
+
+function enableTriggers(cb) {
+    if (isPostgres()) return cb(null);
+    execOnly("SET TEMPORARY OPTION fire_triggers = 'on'", cb);
+}
+
 function recalcularImportes(empresa, periodo, cb) {
     var sql = "UPDATE dba.asientosdet " +
         "SET importe = CASE WHEN dbcr = 'D' THEN round(debito, 0) WHEN dbcr = 'C' THEN round(credito, 0) ELSE round(importe, 0) END, " +
@@ -376,25 +386,44 @@ AsientoManual.guardar = function (payload, cb) {
                                     return rollbackWith(new Error('No se encontro el asiento ' + body.nrotransac + ' para actualizar.'), cb);
                                 }
 
-                                execWithoutTriggers(buildCabUpdateSql(body, body.nrotransac), function (updateErr) {
-                                    if (updateErr) return rollbackWith(updateErr, cb);
+                                disableTriggers(function (disableErr) {
+                                    if (disableErr) return rollbackWith(disableErr, cb);
 
-                                    var deleteSql = "DELETE FROM DBA.AsientosDet " +
-                                        "WHERE Cod_Empresa = " + sqlValue(body.empresa) + " " +
-                                        "AND Periodo = " + sqlValue(body.periodo) + " " +
-                                        "AND NroTransac = " + numValue(body.nrotransac);
+                                    function rollbackUpdate(err) {
+                                        enableTriggers(function () {
+                                            rollbackWith(err, cb);
+                                        });
+                                    }
 
-                                    conn.exec(deleteSql, function (deleteErr) {
-                                        if (deleteErr) return rollbackWith(deleteErr, cb);
+                                    conn.exec(buildCabUpdateSql(body, body.nrotransac), function (updateErr) {
+                                        if (updateErr) return rollbackUpdate(updateErr);
 
-                                        insertDetails(body, rows, body.nrotransac, function (detailsErr) {
-                                            if (detailsErr) return rollbackWith(detailsErr, cb);
+                                        var deleteSql = "DELETE FROM DBA.AsientosDet " +
+                                            "WHERE Cod_Empresa = " + sqlValue(body.empresa) + " " +
+                                            "AND Periodo = " + sqlValue(body.periodo) + " " +
+                                            "AND NroTransac = " + numValue(body.nrotransac);
 
-                                            return recalcularImportes(body.empresa, body.periodo, function (recalcErr) {
-                                                if (recalcErr) return rollbackWith(recalcErr, cb);
-                                                execOnly('COMMIT', function (commitErr) {
-                                                    if (commitErr) return cb(commitErr);
-                                                    cb(null, { ok: true, nrotransac: body.nrotransac, updated: true });
+                                        conn.exec(deleteSql, function (deleteErr) {
+                                            if (deleteErr) return rollbackUpdate(deleteErr);
+
+                                            insertDetails(body, rows, body.nrotransac, function (detailsErr) {
+                                                if (detailsErr) return rollbackUpdate(detailsErr);
+
+                                                var recalcSql = "UPDATE dba.asientosdet " +
+                                                    "SET importe = CASE WHEN dbcr = 'D' THEN round(debito, 0) WHEN dbcr = 'C' THEN round(credito, 0) ELSE round(importe, 0) END, " +
+                                                    "importeme = CASE WHEN dbcr = 'D' THEN round(debitome, 2) WHEN dbcr = 'C' THEN round(creditome, 2) ELSE round(importeme, 2) END, " +
+                                                    "debito = round(debito, 0), credito = round(credito, 0), debitome = round(debitome, 2), creditome = round(creditome, 2) " +
+                                                    "WHERE cod_empresa = " + sqlValue(body.empresa) + " AND periodo = " + sqlValue(body.periodo);
+
+                                                conn.exec(recalcSql, function (recalcErr) {
+                                                    if (recalcErr) return rollbackUpdate(recalcErr);
+                                                    enableTriggers(function (enableErr) {
+                                                        if (enableErr) return rollbackWith(enableErr, cb);
+                                                        execOnly('COMMIT', function (commitErr) {
+                                                            if (commitErr) return cb(commitErr);
+                                                            cb(null, { ok: true, nrotransac: body.nrotransac, updated: true });
+                                                        });
+                                                    });
                                                 });
                                             });
                                         });
