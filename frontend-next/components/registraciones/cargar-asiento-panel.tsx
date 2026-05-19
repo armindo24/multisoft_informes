@@ -94,7 +94,11 @@ function rowText(row: PrintRow | null | undefined, ...keys: string[]) {
 }
 
 function rowNumber(row: PrintRow | null | undefined, ...keys: string[]) {
-  return parseAmount(rowText(row, ...keys));
+  const raw = rowText(row, ...keys);
+  if (!raw) return 0;
+  if (raw.includes(',')) return parseAmount(raw);
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : parseAmount(raw);
 }
 
 function escapeHtml(value: unknown) {
