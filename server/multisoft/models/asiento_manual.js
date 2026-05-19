@@ -295,13 +295,7 @@ function insertDetails(body, rows, nrotransac, cb) {
     nextDetail();
 }
 
-function recalcularImportes(empresa, periodo, cb) {
-    var sql = "UPDATE dba.asientosdet " +
-        "SET importe = CASE WHEN dbcr = 'D' THEN round(debito, 0) WHEN dbcr = 'C' THEN round(credito, 0) ELSE round(importe, 0) END, " +
-        "importeme = CASE WHEN dbcr = 'D' THEN round(debitome, 2) WHEN dbcr = 'C' THEN round(creditome, 2) ELSE round(importeme, 2) END, " +
-        "debito = round(debito, 0), credito = round(credito, 0), debitome = round(debitome, 2), creditome = round(creditome, 2) " +
-        "WHERE cod_empresa = " + sqlValue(empresa) + " AND periodo = " + sqlValue(periodo);
-
+function execWithoutTriggers(sql, cb) {
     if (isPostgres()) {
         return conn.exec(sql, function (err) {
             cb(err || null);
@@ -316,6 +310,16 @@ function recalcularImportes(empresa, periodo, cb) {
             });
         });
     });
+}
+
+function recalcularImportes(empresa, periodo, cb) {
+    var sql = "UPDATE dba.asientosdet " +
+        "SET importe = CASE WHEN dbcr = 'D' THEN round(debito, 0) WHEN dbcr = 'C' THEN round(credito, 0) ELSE round(importe, 0) END, " +
+        "importeme = CASE WHEN dbcr = 'D' THEN round(debitome, 2) WHEN dbcr = 'C' THEN round(creditome, 2) ELSE round(importeme, 2) END, " +
+        "debito = round(debito, 0), credito = round(credito, 0), debitome = round(debitome, 2), creditome = round(creditome, 2) " +
+        "WHERE cod_empresa = " + sqlValue(empresa) + " AND periodo = " + sqlValue(periodo);
+
+    execWithoutTriggers(sql, cb);
 }
 
 AsientoManual.guardar = function (payload, cb) {
@@ -372,7 +376,7 @@ AsientoManual.guardar = function (payload, cb) {
                                     return rollbackWith(new Error('No se encontro el asiento ' + body.nrotransac + ' para actualizar.'), cb);
                                 }
 
-                                conn.exec(buildCabUpdateSql(body, body.nrotransac), function (updateErr) {
+                                execWithoutTriggers(buildCabUpdateSql(body, body.nrotransac), function (updateErr) {
                                     if (updateErr) return rollbackWith(updateErr, cb);
 
                                     var deleteSql = "DELETE FROM DBA.AsientosDet " +
