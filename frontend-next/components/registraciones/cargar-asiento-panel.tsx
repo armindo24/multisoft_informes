@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, CheckCircle2, CircleSlash2, FileText, Plus, Printer, Save, ShieldCheck, UserRound, X } from 'lucide-react';
+import { CalendarDays, CheckCircle2, CircleSlash2, FileText, Plus, Printer, Save, Search, ShieldCheck, UserRound, X } from 'lucide-react';
 import type { AccountPlanOption, AuxiliarOption, SelectOption } from '@/types/finanzas';
 
 type EntryLine = {
@@ -124,6 +124,8 @@ export function CargarAsientoPanel({
   const [createdAt] = useState(new Date());
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ tone: 'ok' | 'error' | 'info'; text: string } | null>(null);
+  const [picker, setPicker] = useState<{ type: 'account' | 'aux'; lineId: string } | null>(null);
+  const [pickerSearch, setPickerSearch] = useState('');
 
   useEffect(() => {
     const params = new URLSearchParams({ empresa, periodo });
@@ -156,6 +158,33 @@ export function CargarAsientoPanel({
     return auxOptions.filter((option) => !accountCode || option.accountCode === accountCode);
   }, [auxOptions, selectedLine?.codplancta]);
 
+  const pickerLine = useMemo(
+    () => lines.find((line) => line.id === picker?.lineId) || null,
+    [lines, picker?.lineId],
+  );
+
+  const filteredPickerAccounts = useMemo(() => {
+    const term = pickerSearch.trim().toLowerCase();
+    if (!term) return accountOptions.slice(0, 80);
+    return accountOptions.filter((option) =>
+      option.value.toLowerCase().includes(term) ||
+      option.name.toLowerCase().includes(term) ||
+      option.label.toLowerCase().includes(term),
+    ).slice(0, 120);
+  }, [accountOptions, pickerSearch]);
+
+  const filteredPickerAux = useMemo(() => {
+    const accountCode = pickerLine?.codplancta || '';
+    const term = pickerSearch.trim().toLowerCase();
+    const scoped = auxOptions.filter((option) => !accountCode || option.accountCode === accountCode);
+    if (!term) return scoped.slice(0, 80);
+    return scoped.filter((option) =>
+      option.auxCode.toLowerCase().includes(term) ||
+      option.name.toLowerCase().includes(term) ||
+      option.label.toLowerCase().includes(term),
+    ).slice(0, 120);
+  }, [auxOptions, pickerLine?.codplancta, pickerSearch]);
+
   const totals = useMemo(() => {
     return lines.reduce(
       (acc, line) => {
@@ -187,6 +216,34 @@ export function CargarAsientoPanel({
     const next = makeLine(currentConcept);
     setLines((current) => [...current, next]);
     setSelectedLineId(next.id);
+  }
+
+  function openPicker(type: 'account' | 'aux', lineId: string) {
+    const line = lines.find((item) => item.id === lineId);
+    if (type === 'aux' && !line?.codplancta.trim()) {
+      setMessage({ tone: 'error', text: 'Debe seleccionar primeramente la cuenta contable.' });
+      return;
+    }
+    setSelectedLineId(lineId);
+    setPicker({ type, lineId });
+    setPickerSearch('');
+  }
+
+  function closePicker() {
+    setPicker(null);
+    setPickerSearch('');
+  }
+
+  function selectAccount(option: AccountPlanOption) {
+    if (!picker) return;
+    updateLine(picker.lineId, { codplancta: option.value, codplanaux: '' });
+    closePicker();
+  }
+
+  function selectAux(option: AuxiliarOption) {
+    if (!picker) return;
+    updateLine(picker.lineId, { codplanaux: option.auxCode });
+    closePicker();
   }
 
   function deleteLine(id: string) {
@@ -528,6 +585,11 @@ export function CargarAsientoPanel({
               Moneda Extranjera
             </button>
           </div>
+          <div className="grid min-w-[360px] flex-1 gap-2 sm:grid-cols-3 lg:max-w-xl">
+            <TotalCard title="Debito Total" value={formatAmount(activeTotalDebit, activeDecimals)} tone="blue" />
+            <TotalCard title="Credito Total" value={formatAmount(activeTotalCredit, activeDecimals)} tone="green" />
+            <TotalCard title="Diferencia" value={formatAmount(difference, activeDecimals)} tone={Math.abs(difference) === 0 ? 'purple' : 'rose'} />
+          </div>
           <div className="flex flex-wrap items-center gap-2">
             <button type="button" onClick={applyExchangeRate} className="h-8 rounded-md border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-700">
               Aplicar Factor de Cambio
@@ -539,24 +601,7 @@ export function CargarAsientoPanel({
           </div>
         </div>
 
-        <div className="grid gap-2 border-b border-slate-100 px-3 py-2 md:grid-cols-3">
-          <TotalCard title="Debito Total" value={formatAmount(activeTotalDebit, activeDecimals)} tone="blue" />
-          <TotalCard title="Credito Total" value={formatAmount(activeTotalCredit, activeDecimals)} tone="green" />
-          <TotalCard title="Diferencia" value={formatAmount(difference, activeDecimals)} tone={Math.abs(difference) === 0 ? 'purple' : 'rose'} />
-        </div>
-
         <div className="overflow-x-auto">
-          <datalist id="asiento-cuentas">
-            {accountOptions.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </datalist>
-          <datalist id="asiento-auxiliares">
-            {auxOptions.map((option) => (
-              <option key={`${option.accountCode}-${option.auxCode}`} value={option.auxCode}>{option.label}</option>
-            ))}
-          </datalist>
-
           <table className="min-w-[980px] w-full border-collapse text-[13px]">
             <thead className="bg-blue-900 text-white">
               <tr>
@@ -588,21 +633,29 @@ export function CargarAsientoPanel({
                   >
                     <td className="px-2 py-1.5 align-top font-semibold text-slate-700">{index + 1}</td>
                     <td className="px-2 py-1.5 align-top">
-                      <input
-                        list="asiento-cuentas"
-                        value={line.codplancta}
-                        onChange={(event) => updateLine(line.id, { codplancta: event.target.value })}
-                        className="h-7 w-full rounded border border-slate-200 px-2"
-                      />
+                      <div className="flex gap-1">
+                        <input
+                          value={line.codplancta}
+                          onChange={(event) => updateLine(line.id, { codplancta: event.target.value, codplanaux: '' })}
+                          className="h-7 w-full rounded border border-slate-200 px-2"
+                        />
+                        <button type="button" onClick={() => openPicker('account', line.id)} className="inline-flex h-7 w-8 shrink-0 items-center justify-center rounded border border-cyan-200 bg-cyan-50 text-cyan-700">
+                          <Search className="h-4 w-4" />
+                        </button>
+                      </div>
                       {lineAccountName ? <p className="mt-0.5 text-[11px] font-semibold text-blue-700">Cuenta: {lineAccountName}</p> : null}
                     </td>
                     <td className="px-2 py-1.5 align-top">
-                      <input
-                        list="asiento-auxiliares"
-                        value={line.codplanaux}
-                        onChange={(event) => updateLine(line.id, { codplanaux: event.target.value })}
-                        className="h-7 w-full rounded border border-slate-200 px-2"
-                      />
+                      <div className="flex gap-1">
+                        <input
+                          value={line.codplanaux}
+                          onChange={(event) => updateLine(line.id, { codplanaux: event.target.value })}
+                          className="h-7 w-full rounded border border-slate-200 px-2"
+                        />
+                        <button type="button" onClick={() => openPicker('aux', line.id)} className="inline-flex h-7 w-8 shrink-0 items-center justify-center rounded border border-cyan-200 bg-cyan-50 text-cyan-700">
+                          <Search className="h-4 w-4" />
+                        </button>
+                      </div>
                       {lineAuxName ? <p className="mt-0.5 text-[11px] font-semibold text-blue-700">Auxiliar: {lineAuxName}</p> : null}
                     </td>
                     <td className="px-2 py-1.5 align-top">
@@ -680,6 +733,67 @@ export function CargarAsientoPanel({
         <span className="inline-flex items-center gap-2"><CalendarDays className="h-4 w-4" /> Fecha del Sistema: {formatDateTime(new Date())}</span>
         <span>Empresa: {empresaLabel}</span>
       </footer>
+
+      {picker ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6">
+          <div className="w-full max-w-3xl overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-teal-700">
+                  {picker.type === 'account' ? 'Cuenta contable' : 'Auxiliar'}
+                </p>
+                <h3 className="text-lg font-bold text-slate-950">
+                  {picker.type === 'account' ? 'Buscar cuenta' : `Buscar auxiliar${pickerLine?.codplancta ? ` de ${pickerLine.codplancta}` : ''}`}
+                </h3>
+              </div>
+              <button type="button" onClick={closePicker} className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-slate-600">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="border-b border-slate-100 p-3">
+              <div className="flex items-center gap-2 rounded-md border border-slate-200 px-3">
+                <Search className="h-4 w-4 text-slate-400" />
+                <input
+                  autoFocus
+                  value={pickerSearch}
+                  onChange={(event) => setPickerSearch(event.target.value)}
+                  placeholder="Buscar por codigo o descripcion"
+                  className="h-10 w-full outline-none"
+                />
+              </div>
+            </div>
+            <div className="max-h-[420px] overflow-y-auto p-2">
+              {picker.type === 'account' ? (
+                filteredPickerAccounts.length ? filteredPickerAccounts.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => selectAccount(option)}
+                    className="grid w-full grid-cols-[130px_1fr_80px] gap-3 rounded-md px-3 py-2 text-left hover:bg-cyan-50"
+                  >
+                    <span className="font-bold text-slate-950">{option.value}</span>
+                    <span className="text-slate-700">{option.name}</span>
+                    <span className="text-right text-xs font-semibold text-slate-500">{option.auxiliar === 'S' ? 'Auxiliar' : ''}</span>
+                  </button>
+                )) : <p className="px-3 py-6 text-center text-slate-500">No se encontraron cuentas.</p>
+              ) : (
+                filteredPickerAux.length ? filteredPickerAux.map((option) => (
+                  <button
+                    key={`${option.accountCode}-${option.auxCode}`}
+                    type="button"
+                    onClick={() => selectAux(option)}
+                    className="grid w-full grid-cols-[130px_1fr_120px] gap-3 rounded-md px-3 py-2 text-left hover:bg-cyan-50"
+                  >
+                    <span className="font-bold text-slate-950">{option.auxCode}</span>
+                    <span className="text-slate-700">{option.name}</span>
+                    <span className="text-right text-xs font-semibold text-slate-500">{option.accountCode}</span>
+                  </button>
+                )) : <p className="px-3 py-6 text-center text-slate-500">No se encontraron auxiliares para la cuenta.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -714,9 +828,9 @@ function TotalCard({ title, value, tone }: { title: string; value: string; tone:
   }[tone];
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white px-3 py-2 text-center">
-      <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-700">{title}</p>
-      <p className={`mt-0.5 text-lg font-black ${toneClass}`}>{value}</p>
+    <div className="rounded-md border border-slate-200 bg-white px-2 py-1 text-center">
+      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-700">{title}</p>
+      <p className={`text-base font-black leading-5 ${toneClass}`}>{value}</p>
     </div>
   );
 }
