@@ -678,11 +678,11 @@ export function CargarAsientoPanel({
             <thead className="bg-blue-900 text-white">
               <tr>
                 <th className="w-10 px-2 py-1.5 text-left">Nro.</th>
-                <th className="w-32 px-2 py-1.5 text-left">Codigo</th>
+                <th className="w-36 px-2 py-1.5 text-left">Codigo</th>
                 <th className="w-32 px-2 py-1.5 text-left">Cod. Auxiliar</th>
                 <th className="px-2 py-1.5 text-left">Concepto</th>
-                <th className="w-32 px-2 py-1.5 text-right">Debito</th>
-                <th className="w-32 px-2 py-1.5 text-right">Credito</th>
+                <th className="w-36 px-2 py-1.5 text-right">Debito</th>
+                <th className="w-36 px-2 py-1.5 text-right">Credito</th>
                 <th className="w-24 px-2 py-1.5 text-left">Proyecto</th>
                 <th className="w-24 px-2 py-1.5 text-left">Rubro</th>
                 <th className="w-10 px-2 py-1.5 text-center">
@@ -698,12 +698,13 @@ export function CargarAsientoPanel({
                 const lineAccountName = accountName(accountOptions, line.codplancta);
                 const lineAuxName = auxName(auxOptions, line.codplancta, line.codplanaux);
                 return (
+                  <>
                   <tr
-                    key={line.id}
+                    key={`${line.id}-main`}
                     onClick={() => setSelectedLineId(line.id)}
-                    className={`border-b border-slate-200 ${selected ? 'bg-blue-50' : 'bg-white'}`}
+                    className={`${selected ? 'bg-blue-50' : 'bg-white'}`}
                   >
-                    <td className="px-2 py-1.5 align-top font-semibold text-slate-700">{index + 1}</td>
+                    <td rowSpan={2} className="border-b border-slate-200 px-2 py-1.5 align-top font-semibold text-slate-700">{index + 1}</td>
                     <td className="px-2 py-1.5 align-top">
                       <div className="flex gap-1">
                         <input
@@ -711,13 +712,12 @@ export function CargarAsientoPanel({
                           onChange={(event) => updateLine(line.id, { codplancta: event.target.value, codplanaux: '' })}
                           onKeyDown={(event) => handleDetailEnter(event, line, index, 'codplancta')}
                           ref={(element) => { inputRefs.current[inputKey(line.id, 'codplancta')] = element; }}
-                          className="h-7 w-full rounded border border-slate-200 px-2"
+                          className="h-7 w-full rounded border border-slate-200 px-2 font-semibold"
                         />
                         <button type="button" onClick={() => openPicker('account', line.id)} className="inline-flex h-7 w-8 shrink-0 items-center justify-center rounded border border-cyan-200 bg-cyan-50 text-cyan-700">
                           <Search className="h-4 w-4" />
                         </button>
                       </div>
-                      {lineAccountName ? <p className="mt-0.5 text-[11px] font-semibold text-blue-700">Cuenta: {lineAccountName}</p> : null}
                     </td>
                     <td className="px-2 py-1.5 align-top">
                       <div className="flex gap-1">
@@ -726,13 +726,12 @@ export function CargarAsientoPanel({
                           onChange={(event) => updateLine(line.id, { codplanaux: event.target.value })}
                           onKeyDown={(event) => handleDetailEnter(event, line, index, 'codplanaux')}
                           ref={(element) => { inputRefs.current[inputKey(line.id, 'codplanaux')] = element; }}
-                          className="h-7 w-full rounded border border-slate-200 px-2"
+                          className="h-7 w-full rounded border border-slate-200 px-2 text-right font-semibold"
                         />
                         <button type="button" onClick={() => openPicker('aux', line.id)} className="inline-flex h-7 w-8 shrink-0 items-center justify-center rounded border border-cyan-200 bg-cyan-50 text-cyan-700">
                           <Search className="h-4 w-4" />
                         </button>
                       </div>
-                      {lineAuxName ? <p className="mt-0.5 text-[11px] font-semibold text-blue-700">Auxiliar: {lineAuxName}</p> : null}
                     </td>
                     <td className="px-2 py-1.5 align-top">
                       <textarea
@@ -780,12 +779,27 @@ export function CargarAsientoPanel({
                         className="h-7 w-full rounded border border-slate-200 px-2"
                       />
                     </td>
-                    <td className="px-2 py-1.5 text-center align-top">
+                    <td rowSpan={2} className="border-b border-slate-200 px-2 py-1.5 text-center align-top">
                       <button type="button" onClick={(event) => { event.stopPropagation(); deleteLine(line.id); }} className="rounded px-2 py-1 text-lg font-bold text-slate-500 hover:bg-rose-50 hover:text-rose-600">
                         ...
                       </button>
                     </td>
                   </tr>
+                  <tr
+                    key={`${line.id}-meta`}
+                    onClick={() => setSelectedLineId(line.id)}
+                    className={`border-b border-slate-200 ${selected ? 'bg-blue-50' : 'bg-white'}`}
+                  >
+                    <td colSpan={2} className="px-3 py-1 text-[11px] font-semibold text-blue-700">
+                      <span className="mr-2 text-blue-900">Cuenta:</span>
+                      {lineAccountName || '-'}
+                    </td>
+                    <td colSpan={5} className="px-3 py-1 text-[11px] font-semibold text-blue-700">
+                      <span className="mr-2 text-blue-900">Auxiliar:</span>
+                      {lineAuxName || '-'}
+                    </td>
+                  </tr>
+                  </>
                 );
               })}
             </tbody>
