@@ -78,10 +78,10 @@ function makeLine(concepto = ''): EntryLine {
     codplancta: '',
     codplanaux: '',
     concepto,
-    debito: '',
-    credito: '',
-    debitome: '',
-    creditome: '',
+    debito: '0',
+    credito: '0',
+    debitome: '0.00',
+    creditome: '0.00',
     proyecto: '',
     rubro: '',
   };
@@ -807,12 +807,10 @@ export function CargarAsientoPanel({
                     onClick={() => setSelectedLineId(line.id)}
                     className={`border-b border-slate-200 ${selected ? 'bg-blue-50' : 'bg-white'}`}
                   >
-                    <td colSpan={2} className="px-3 py-0.5 text-[10px] font-semibold text-blue-700">
-                      <span className="mr-2 text-blue-900">Cuenta:</span>
+                    <td colSpan={7} className="px-3 py-0.5 text-[11px] font-semibold text-blue-700">
+                      <span className="mr-2 font-bold text-blue-950">Cuenta:</span>
                       {lineAccountName || '-'}
-                    </td>
-                    <td colSpan={5} className="px-3 py-0.5 text-[10px] font-semibold text-blue-700">
-                      <span className="mr-2 text-blue-900">Auxiliar:</span>
+                      <span className="ml-10 mr-2 font-bold text-blue-950">Auxiliar:</span>
                       {lineAuxName || '-'}
                     </td>
                   </tr>
