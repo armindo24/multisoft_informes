@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarDays, CheckCircle2, CircleSlash2, FileText, Plus, Printer, Save, Search, ShieldCheck, UserRound, X } from 'lucide-react';
 import type { AccountPlanOption, AuxiliarOption, SelectOption } from '@/types/finanzas';
 
@@ -16,6 +16,8 @@ type EntryLine = {
   proyecto: string;
   rubro: string;
 };
+
+type DetailColumn = 'codplancta' | 'codplanaux' | 'concepto' | 'debito' | 'credito' | 'proyecto' | 'rubro';
 
 type InitPayload = {
   moneda_local?: { codmoneda?: string; descrip?: string };
@@ -126,6 +128,15 @@ export function CargarAsientoPanel({
   const [message, setMessage] = useState<{ tone: 'ok' | 'error' | 'info'; text: string } | null>(null);
   const [picker, setPicker] = useState<{ type: 'account' | 'aux'; lineId: string } | null>(null);
   const [pickerSearch, setPickerSearch] = useState('');
+  const inputRefs = useRef<Record<string, HTMLInputElement | HTMLTextAreaElement | null>>({});
+
+  function inputKey(lineId: string, column: DetailColumn) {
+    return `${lineId}:${column}`;
+  }
+
+  function focusCell(lineId: string, column: DetailColumn) {
+    window.setTimeout(() => inputRefs.current[inputKey(lineId, column)]?.focus(), 0);
+  }
 
   useEffect(() => {
     const params = new URLSearchParams({ empresa, periodo });
@@ -244,6 +255,67 @@ export function CargarAsientoPanel({
     if (!picker) return;
     updateLine(picker.lineId, { codplanaux: option.auxCode });
     closePicker();
+  }
+
+  function accountForLine(line: EntryLine) {
+    return accountOptions.find((option) => option.value === line.codplancta.trim()) || null;
+  }
+
+  function handleDetailEnter(event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>, line: EntryLine, index: number, column: DetailColumn) {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+
+    if (column === 'codplancta') {
+      const previous = index > 0 ? lines[index - 1] : null;
+      const nextCode = line.codplancta.trim() || previous?.codplancta || '';
+      if (!nextCode) return;
+      updateLine(line.id, { codplancta: nextCode, codplanaux: line.codplancta.trim() ? line.codplanaux : previous?.codplanaux || '' });
+      focusCell(line.id, 'codplanaux');
+      return;
+    }
+
+    if (column === 'codplanaux') {
+      const previous = index > 0 ? lines[index - 1] : null;
+      const nextAux = line.codplanaux.trim() || previous?.codplanaux || '';
+      if (nextAux && !line.codplanaux.trim()) {
+        updateLine(line.id, { codplanaux: nextAux });
+      }
+      focusCell(line.id, 'concepto');
+      return;
+    }
+
+    if (column === 'debito') {
+      focusCell(line.id, 'credito');
+      return;
+    }
+
+    if (column === 'credito') {
+      const account = accountForLine(line);
+      const requiresAux = accountRequiresAux(account);
+      const debit = parseAmount(activeTab === 'local' ? line.debito : line.debitome);
+      const credit = parseAmount(activeTab === 'local' ? line.credito : line.creditome);
+      if (!line.codplancta.trim()) {
+        focusCell(line.id, 'codplancta');
+        return;
+      }
+      if (requiresAux && !line.codplanaux.trim()) {
+        focusCell(line.id, 'codplanaux');
+        return;
+      }
+      if ((debit > 0 || credit > 0) && index === lines.length - 1) {
+        const next = makeLine(line.concepto);
+        setLines((current) => [...current, next]);
+        setSelectedLineId(next.id);
+        focusCell(next.id, 'codplancta');
+        return;
+      }
+      focusCell(line.id, 'codplancta');
+      return;
+    }
+
+    const order: DetailColumn[] = ['codplancta', 'codplanaux', 'concepto', 'debito', 'credito', 'proyecto', 'rubro'];
+    const nextColumn = order[order.indexOf(column) + 1] || 'codplancta';
+    focusCell(line.id, nextColumn);
   }
 
   function deleteLine(id: string) {
@@ -637,6 +709,8 @@ export function CargarAsientoPanel({
                         <input
                           value={line.codplancta}
                           onChange={(event) => updateLine(line.id, { codplancta: event.target.value, codplanaux: '' })}
+                          onKeyDown={(event) => handleDetailEnter(event, line, index, 'codplancta')}
+                          ref={(element) => { inputRefs.current[inputKey(line.id, 'codplancta')] = element; }}
                           className="h-7 w-full rounded border border-slate-200 px-2"
                         />
                         <button type="button" onClick={() => openPicker('account', line.id)} className="inline-flex h-7 w-8 shrink-0 items-center justify-center rounded border border-cyan-200 bg-cyan-50 text-cyan-700">
@@ -650,6 +724,8 @@ export function CargarAsientoPanel({
                         <input
                           value={line.codplanaux}
                           onChange={(event) => updateLine(line.id, { codplanaux: event.target.value })}
+                          onKeyDown={(event) => handleDetailEnter(event, line, index, 'codplanaux')}
+                          ref={(element) => { inputRefs.current[inputKey(line.id, 'codplanaux')] = element; }}
                           className="h-7 w-full rounded border border-slate-200 px-2"
                         />
                         <button type="button" onClick={() => openPicker('aux', line.id)} className="inline-flex h-7 w-8 shrink-0 items-center justify-center rounded border border-cyan-200 bg-cyan-50 text-cyan-700">
@@ -662,6 +738,8 @@ export function CargarAsientoPanel({
                       <textarea
                         value={line.concepto}
                         onChange={(event) => updateLine(line.id, { concepto: event.target.value })}
+                        onKeyDown={(event) => handleDetailEnter(event, line, index, 'concepto')}
+                        ref={(element) => { inputRefs.current[inputKey(line.id, 'concepto')] = element; }}
                         rows={showFullConcept ? 3 : 1}
                         className="min-h-7 w-full resize-none rounded border border-slate-200 px-2 py-1"
                       />
@@ -670,6 +748,8 @@ export function CargarAsientoPanel({
                       <input
                         value={String(line[visibleDebitField as keyof EntryLine] || '')}
                         onChange={(event) => updateLine(line.id, { [visibleDebitField]: event.target.value } as Partial<EntryLine>)}
+                        onKeyDown={(event) => handleDetailEnter(event, line, index, 'debito')}
+                        ref={(element) => { inputRefs.current[inputKey(line.id, 'debito')] = element; }}
                         className="h-7 w-full rounded border border-slate-200 px-2 text-right"
                       />
                     </td>
@@ -677,14 +757,28 @@ export function CargarAsientoPanel({
                       <input
                         value={String(line[visibleCreditField as keyof EntryLine] || '')}
                         onChange={(event) => updateLine(line.id, { [visibleCreditField]: event.target.value } as Partial<EntryLine>)}
+                        onKeyDown={(event) => handleDetailEnter(event, line, index, 'credito')}
+                        ref={(element) => { inputRefs.current[inputKey(line.id, 'credito')] = element; }}
                         className="h-7 w-full rounded border border-slate-200 px-2 text-right"
                       />
                     </td>
                     <td className="px-2 py-1.5 align-top">
-                      <input value={line.proyecto} onChange={(event) => updateLine(line.id, { proyecto: event.target.value })} className="h-7 w-full rounded border border-slate-200 px-2" />
+                      <input
+                        value={line.proyecto}
+                        onChange={(event) => updateLine(line.id, { proyecto: event.target.value })}
+                        onKeyDown={(event) => handleDetailEnter(event, line, index, 'proyecto')}
+                        ref={(element) => { inputRefs.current[inputKey(line.id, 'proyecto')] = element; }}
+                        className="h-7 w-full rounded border border-slate-200 px-2"
+                      />
                     </td>
                     <td className="px-2 py-1.5 align-top">
-                      <input value={line.rubro} onChange={(event) => updateLine(line.id, { rubro: event.target.value })} className="h-7 w-full rounded border border-slate-200 px-2" />
+                      <input
+                        value={line.rubro}
+                        onChange={(event) => updateLine(line.id, { rubro: event.target.value })}
+                        onKeyDown={(event) => handleDetailEnter(event, line, index, 'rubro')}
+                        ref={(element) => { inputRefs.current[inputKey(line.id, 'rubro')] = element; }}
+                        className="h-7 w-full rounded border border-slate-200 px-2"
+                      />
                     </td>
                     <td className="px-2 py-1.5 text-center align-top">
                       <button type="button" onClick={(event) => { event.stopPropagation(); deleteLine(line.id); }} className="rounded px-2 py-1 text-lg font-bold text-slate-500 hover:bg-rose-50 hover:text-rose-600">
