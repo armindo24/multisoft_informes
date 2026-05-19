@@ -138,6 +138,29 @@ function fetchAccountRules(empresa, periodo, rows, cb) {
     });
 }
 
+function validateTipoAsiento(tipoAsiento, cb) {
+    var sql = "SELECT TipoAsiento FROM DBA.TipoAsiento WHERE TipoAsiento = " + sqlValue(tipoAsiento);
+    conn.exec(sql, function (err, rows) {
+        if (err) return cb(err);
+        if (!rows || !rows.length) return cb(new Error('El Tipo de Asiento no existe en DBA.TipoAsiento: ' + tipoAsiento + '.'));
+        cb(null);
+    });
+}
+
+function validateUsuario(username, cb) {
+    var user = esc(username);
+    if (!user) return cb(new Error('Debe indicar el usuario que carga el asiento.'));
+
+    var sql = "SELECT Cod_Usuario FROM DBA.Usuarios WHERE lower(Cod_Usuario) = " + sqlValue(user.toLowerCase());
+    conn.exec(sql, function (err, rows) {
+        if (err) return cb(err);
+        if (!rows || !rows.length) {
+            return cb(new Error("El usuario '" + user + "' no existe en DBA.USUARIOS. Verifique el usuario integrado antes de grabar el asiento."));
+        }
+        cb(null);
+    });
+}
+
 function normalizeRows(rows, accountRules) {
     var cleanRows = [];
     var totalDebito = 0;
@@ -179,10 +202,10 @@ function normalizeRows(rows, accountRules) {
             dbcr: dbcr,
             importe: importe,
             importeme: importeme,
-            debito: dbcr === 'D' ? importe : 0,
-            credito: dbcr === 'C' ? importe : 0,
-            debitome: dbcr === 'D' ? importeme : 0,
-            creditome: dbcr === 'C' ? importeme : 0,
+            debito: debito,
+            credito: credito,
+            debitome: debitome,
+            creditome: creditome,
             concepto: esc(row.concepto),
             proyecto: esc(row.proyecto),
             rubro: esc(row.rubro)
@@ -273,54 +296,62 @@ AsientoManual.guardar = function (payload, cb) {
     validatePeriodo(body.empresa, body.periodo, body.fecha, function (periodErr) {
         if (periodErr) return cb(null, { ok: false, message: periodErr.message || String(periodErr) });
 
-        fetchAccountRules(body.empresa, body.periodo, body.rows, function (rulesErr, rules) {
-            if (rulesErr) return cb(rulesErr);
+        validateUsuario(body.usuario, function (userErr) {
+            if (userErr) return cb(null, { ok: false, message: userErr.message || String(userErr) });
 
-            var rows;
-            try {
-                rows = normalizeRows(body.rows, rules);
-            } catch (validationErr) {
-                return cb(null, { ok: false, message: validationErr.message || String(validationErr) });
-            }
+            validateTipoAsiento(body.tipoasiento, function (tipoErr) {
+                if (tipoErr) return cb(null, { ok: false, message: tipoErr.message || String(tipoErr) });
 
-            execOnly(beginSql(), function (beginErr) {
-                if (beginErr) return cb(beginErr);
+                fetchAccountRules(body.empresa, body.periodo, body.rows, function (rulesErr, rules) {
+                    if (rulesErr) return cb(rulesErr);
 
-                var nextSql = "SELECT MAX(NroTransac) AS nrotransac FROM DBA.AsientosCab WHERE Cod_Empresa = " + sqlValue(body.empresa);
-                conn.exec(nextSql, function (nextErr, nextRows) {
-                    if (nextErr) return rollbackWith(nextErr, cb);
+                    var rows;
+                    try {
+                        rows = normalizeRows(body.rows, rules);
+                    } catch (validationErr) {
+                        return cb(null, { ok: false, message: validationErr.message || String(validationErr) });
+                    }
 
-                    var maxRow = (nextRows || [])[0] || {};
-                    var nrotransac = normalizeNumber(maxRow.nrotransac || maxRow.NroTransac || maxRow.NROTRANSAC || 0) + 1;
-                    var updateControlSql = "UPDATE DBA.Control SET CtasToCont = " + numValue(nrotransac) + " WHERE Cod_Empresa = " + sqlValue(body.empresa);
+                    execOnly(beginSql(), function (beginErr) {
+                        if (beginErr) return cb(beginErr);
 
-                    conn.exec(updateControlSql, function (controlErr) {
-                        if (controlErr) return rollbackWith(controlErr, cb);
+                        var nextSql = "SELECT MAX(NroTransac) AS nrotransac FROM DBA.AsientosCab WHERE Cod_Empresa = " + sqlValue(body.empresa);
+                        conn.exec(nextSql, function (nextErr, nextRows) {
+                            if (nextErr) return rollbackWith(nextErr, cb);
 
-                        conn.exec(buildCabSql(body, nrotransac), function (cabErr) {
-                            if (cabErr) return rollbackWith(cabErr, cb);
+                            var maxRow = (nextRows || [])[0] || {};
+                            var nrotransac = normalizeNumber(maxRow.nrotransac || maxRow.NroTransac || maxRow.NROTRANSAC || 0) + 1;
+                            var updateControlSql = "UPDATE DBA.Control SET CtasToCont = " + numValue(nrotransac) + " WHERE Cod_Empresa = " + sqlValue(body.empresa);
 
-                            var idx = 0;
-                            function nextDetail() {
-                                if (idx >= rows.length) {
-                                    return recalcularImportes(body.empresa, body.periodo, function (recalcErr) {
-                                        if (recalcErr) return rollbackWith(recalcErr, cb);
-                                        execOnly('COMMIT', function (commitErr) {
-                                            if (commitErr) return cb(commitErr);
-                                            cb(null, { ok: true, nrotransac: nrotransac });
+                            conn.exec(updateControlSql, function (controlErr) {
+                                if (controlErr) return rollbackWith(controlErr, cb);
+
+                                conn.exec(buildCabSql(body, nrotransac), function (cabErr) {
+                                    if (cabErr) return rollbackWith(cabErr, cb);
+
+                                    var idx = 0;
+                                    function nextDetail() {
+                                        if (idx >= rows.length) {
+                                            return recalcularImportes(body.empresa, body.periodo, function (recalcErr) {
+                                                if (recalcErr) return rollbackWith(recalcErr, cb);
+                                                execOnly('COMMIT', function (commitErr) {
+                                                    if (commitErr) return cb(commitErr);
+                                                    cb(null, { ok: true, nrotransac: nrotransac });
+                                                });
+                                            });
+                                        }
+
+                                        var detailSql = buildDetSql(body, rows[idx], nrotransac, idx + 1);
+                                        idx += 1;
+                                        conn.exec(detailSql, function (detErr) {
+                                            if (detErr) return rollbackWith(detErr, cb);
+                                            nextDetail();
                                         });
-                                    });
-                                }
+                                    }
 
-                                var detailSql = buildDetSql(body, rows[idx], nrotransac, idx + 1);
-                                idx += 1;
-                                conn.exec(detailSql, function (detErr) {
-                                    if (detErr) return rollbackWith(detErr, cb);
                                     nextDetail();
                                 });
-                            }
-
-                            nextDetail();
+                            });
                         });
                     });
                 });

@@ -464,7 +464,9 @@ router.post('/registraciones/diferencia-cambio/guardar', function (req, res, nex
 
 router.post('/registraciones/cargar-asiento/guardar', function (req, res, next) {
     AsientoManual.guardar(req.body || {}, function (err, result) {
-        if (err) return next(err);
+        if (err) {
+            return res.status(400).json({ ok: false, message: err.message || String(err) });
+        }
         if (!result || result.ok === false) {
             return res.status(400).json(result || { ok: false, message: 'No se pudo grabar el asiento.' });
         }

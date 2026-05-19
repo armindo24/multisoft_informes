@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 
     if (!response.ok) {
       return NextResponse.json(
-        { ok: false, message: payload?.message || payload?.error || 'No se pudo grabar el asiento.' },
+        { ok: false, message: payload?.message || payload?.error || payload?.data?.message || payload?.data?.error || 'No se pudo grabar el asiento.' },
         { status: response.status },
       );
     }
