@@ -61,6 +61,17 @@ function inputAmount(value: number, decimals = 0) {
   return decimals > 0 ? rounded.toFixed(decimals) : String(Math.round(rounded));
 }
 
+function readableError(value: unknown): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (value instanceof Error) return value.message;
+  if (typeof value === 'object') {
+    const data = value as Record<string, unknown>;
+    return readableError(data.message) || readableError(data.error) || readableError(data.data) || JSON.stringify(value);
+  }
+  return String(value);
+}
+
 function makeLine(concepto = ''): EntryLine {
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -488,7 +499,7 @@ export function CargarAsientoPanel({
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok || payload?.ok === false || payload?.data?.ok === false) {
-        throw new Error(payload?.message || payload?.data?.message || 'No se pudo grabar el asiento.');
+        throw new Error(readableError(payload?.message) || readableError(payload?.error) || readableError(payload?.data?.message) || readableError(payload?.data?.error) || readableError(payload?.data) || 'No se pudo grabar el asiento.');
       }
 
       const nrotransac = Number(payload?.data?.nrotransac || 0);
@@ -497,7 +508,7 @@ export function CargarAsientoPanel({
       setSelectedLineId(null);
       setNroComprobante('');
     } catch (error) {
-      setMessage({ tone: 'error', text: error instanceof Error ? error.message : 'No se pudo grabar el asiento.' });
+      setMessage({ tone: 'error', text: readableError(error) || 'No se pudo grabar el asiento.' });
     } finally {
       setSaving(false);
     }
@@ -511,14 +522,14 @@ export function CargarAsientoPanel({
   const autorizadoLabel = autorizado === 'S' ? 'Autorizado' : 'Pendiente';
 
   return (
-    <div className="space-y-2 text-[13px]">
+    <div className="space-y-1.5 text-[12px]">
       <section className="card overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white px-3 py-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white px-3 py-1.5">
           <div className="flex items-center gap-2">
-            <FileText className="h-6 w-6 text-indigo-700" />
+            <FileText className="h-5 w-5 text-indigo-700" />
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-teal-700">Asientos</p>
-              <h1 className="text-lg font-bold leading-tight text-slate-950">ASIENTO N° Nuevo</h1>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-teal-700">Asientos</p>
+              <h1 className="text-base font-bold leading-tight text-slate-950">ASIENTO Nro. Nuevo</h1>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -526,20 +537,20 @@ export function CargarAsientoPanel({
               type="button"
               onClick={saveEntry}
               disabled={!canSave || saving}
-              className="inline-flex h-9 items-center gap-2 rounded-md bg-blue-700 px-3 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:bg-blue-300"
+              className="inline-flex h-8 items-center gap-2 rounded-md bg-blue-700 px-3 text-[12px] font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:bg-blue-300"
               title={canSave ? 'Guardar asiento' : 'Complete fecha, tipo de asiento y balance del asiento'}
             >
               <Save className="h-4 w-4" />
               {saving ? 'Guardando...' : 'Guardar'}
             </button>
-            <button type="button" className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700">
+            <button type="button" className="inline-flex h-8 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-[12px] font-semibold text-slate-700">
               <Printer className="h-4 w-4" />
               Imprimir
             </button>
             <button
               type="button"
               onClick={() => setAutorizado((current) => (current === 'S' ? 'N' : 'S'))}
-              className={`inline-flex h-9 items-center gap-2 rounded-md border px-3 text-sm font-semibold ${
+              className={`inline-flex h-8 items-center gap-2 rounded-md border px-3 text-[12px] font-semibold ${
                 autorizado === 'S'
                   ? 'border-rose-200 bg-white text-rose-600'
                   : 'border-emerald-200 bg-white text-emerald-700'
@@ -548,17 +559,17 @@ export function CargarAsientoPanel({
               <CircleSlash2 className="h-4 w-4" />
               {autorizado === 'S' ? 'Desautorizar' : 'Autorizar'}
             </button>
-            <button type="button" onClick={clearForm} className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700">
+            <button type="button" onClick={clearForm} className="inline-flex h-8 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-[12px] font-semibold text-slate-700">
               <X className="h-4 w-4" />
               Cerrar
             </button>
           </div>
         </div>
 
-        <div className="grid gap-2 px-3 py-2 lg:grid-cols-[1.2fr_0.7fr_1.35fr_0.95fr_0.55fr] xl:grid-cols-[1.2fr_0.75fr_1.45fr_0.95fr_0.45fr_0.85fr_0.85fr_0.65fr]">
+        <div className="grid gap-1.5 px-3 py-1.5 lg:grid-cols-[1.25fr_0.72fr_1.45fr_0.95fr_0.42fr_0.82fr_0.82fr_0.62fr]">
           <label className="font-semibold text-slate-700">
             Empresa
-            <select value={empresa} onChange={(event) => setEmpresa(event.target.value)} className="mt-1 h-9 w-full rounded-md border border-slate-200 bg-white px-2 text-[13px]">
+            <select value={empresa} onChange={(event) => setEmpresa(event.target.value)} className="mt-0.5 h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-[12px]">
               {empresas.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
@@ -566,11 +577,11 @@ export function CargarAsientoPanel({
           </label>
           <label className="font-semibold text-slate-700">
             Fecha
-            <input value={fecha} onChange={(event) => setFecha(event.target.value)} type="date" className="mt-1 h-9 w-full rounded-md border border-slate-200 px-2 text-[13px]" />
+            <input value={fecha} onChange={(event) => setFecha(event.target.value)} type="date" className="mt-0.5 h-8 w-full rounded-md border border-slate-200 px-2 text-[12px]" />
           </label>
           <label className="font-semibold text-slate-700">
             Tipo de Asiento
-            <select value={tipoAsiento} onChange={(event) => setTipoAsiento(event.target.value)} className="mt-1 h-9 w-full rounded-md border border-slate-200 bg-white px-2 text-[13px]">
+            <select value={tipoAsiento} onChange={(event) => setTipoAsiento(event.target.value)} className="mt-0.5 h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-[12px]">
               <option value="">Seleccione...</option>
               {tipoAsientos.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
@@ -579,7 +590,7 @@ export function CargarAsientoPanel({
           </label>
           <label className="font-semibold text-slate-700">
             Nro. Comprobante
-            <input value={nroComprobante} onChange={(event) => setNroComprobante(event.target.value)} className="mt-1 h-9 w-full rounded-md border border-slate-200 px-2 text-[13px]" />
+            <input value={nroComprobante} onChange={(event) => setNroComprobante(event.target.value)} className="mt-0.5 h-8 w-full rounded-md border border-slate-200 px-2 text-[12px]" />
           </label>
           <label className="flex items-end gap-2 pb-2 font-semibold text-slate-700">
             <input checked={dif} onChange={(event) => setDif(event.target.checked)} type="checkbox" className="h-4 w-4 rounded border-slate-300" />
@@ -587,7 +598,7 @@ export function CargarAsientoPanel({
           </label>
           <label className="font-semibold text-slate-700">
             Moneda
-            <select value={moneda} onChange={(event) => setMoneda(event.target.value)} className="mt-1 h-9 w-full rounded-md border border-slate-200 bg-white px-2 text-[13px]">
+            <select value={moneda} onChange={(event) => setMoneda(event.target.value)} className="mt-0.5 h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-[12px]">
               {monedaOptions.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
@@ -595,7 +606,7 @@ export function CargarAsientoPanel({
           </label>
           <label className="font-semibold text-slate-700">
             Factor de Cambio
-            <select value={factorCambio} onChange={(event) => setFactorCambio(event.target.value)} className="mt-1 h-9 w-full rounded-md border border-slate-200 bg-white px-2 text-[13px]">
+            <select value={factorCambio} onChange={(event) => setFactorCambio(event.target.value)} className="mt-0.5 h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-[12px]">
               <option value="C. Comprador">C. Comprador</option>
               <option value="C. Vendedor">C. Vendedor</option>
               <option value="Manual">Manual</option>
@@ -604,12 +615,12 @@ export function CargarAsientoPanel({
           </label>
           <label className="font-semibold text-slate-700">
             Periodo
-            <input value={periodo} onChange={(event) => setPeriodo(event.target.value)} className="mt-1 h-9 w-full rounded-md border border-slate-200 px-2 text-[13px]" />
+            <input value={periodo} onChange={(event) => setPeriodo(event.target.value)} className="mt-0.5 h-8 w-full rounded-md border border-slate-200 px-2 text-[12px]" />
           </label>
         </div>
 
         {message ? (
-          <div className={`mx-3 mb-2 rounded-md border px-3 py-1.5 text-[13px] ${
+          <div className={`mx-3 mb-1.5 rounded-md border px-3 py-1 text-[12px] ${
             message.tone === 'ok'
               ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
               : message.tone === 'error'
@@ -620,7 +631,7 @@ export function CargarAsientoPanel({
           </div>
         ) : null}
 
-        <div className="grid gap-2 border-t border-slate-100 px-3 py-2 lg:grid-cols-3">
+        <div className="grid gap-1.5 border-t border-slate-100 px-3 py-1.5 lg:grid-cols-3">
           <InfoCard icon={<UserRound className="h-4 w-4" />} title="Informacion de la Carga">
             <InfoLine label="Cargado por:" value={currentUser || '-'} />
             <InfoLine label="Fecha:" value={formatDateTime(createdAt)} />
@@ -663,7 +674,7 @@ export function CargarAsientoPanel({
             <TotalCard title="Diferencia" value={formatAmount(difference, activeDecimals)} tone={Math.abs(difference) === 0 ? 'purple' : 'rose'} />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={applyExchangeRate} className="h-8 rounded-md border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-700">
+            <button type="button" onClick={applyExchangeRate} className="h-7 rounded-md border border-slate-200 bg-white px-2.5 text-[12px] font-semibold text-slate-700">
               Aplicar Factor de Cambio
             </button>
             <label className="flex items-center gap-2 font-semibold text-slate-700">
@@ -674,7 +685,7 @@ export function CargarAsientoPanel({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-[980px] w-full border-collapse text-[13px]">
+          <table className="min-w-[980px] w-full border-collapse text-[12px]">
             <thead className="bg-blue-900 text-white">
               <tr>
                 <th className="w-10 px-2 py-1.5 text-left">Nro.</th>
@@ -704,82 +715,82 @@ export function CargarAsientoPanel({
                     onClick={() => setSelectedLineId(line.id)}
                     className={`${selected ? 'bg-blue-50' : 'bg-white'}`}
                   >
-                    <td rowSpan={2} className="border-b border-slate-200 px-2 py-1.5 align-top font-semibold text-slate-700">{index + 1}</td>
-                    <td className="px-2 py-1.5 align-top">
+                    <td rowSpan={2} className="border-b border-slate-200 px-2 py-1 align-top font-semibold text-slate-700">{index + 1}</td>
+                    <td className="px-2 py-1 align-top">
                       <div className="flex gap-1">
                         <input
                           value={line.codplancta}
                           onChange={(event) => updateLine(line.id, { codplancta: event.target.value, codplanaux: '' })}
                           onKeyDown={(event) => handleDetailEnter(event, line, index, 'codplancta')}
                           ref={(element) => { inputRefs.current[inputKey(line.id, 'codplancta')] = element; }}
-                          className="h-7 w-full rounded border border-slate-200 px-2 font-semibold"
+                          className="h-6 w-full rounded border border-slate-200 px-2 font-semibold"
                         />
-                        <button type="button" onClick={() => openPicker('account', line.id)} className="inline-flex h-7 w-8 shrink-0 items-center justify-center rounded border border-cyan-200 bg-cyan-50 text-cyan-700">
+                        <button type="button" onClick={() => openPicker('account', line.id)} className="inline-flex h-6 w-7 shrink-0 items-center justify-center rounded border border-cyan-200 bg-cyan-50 text-cyan-700">
                           <Search className="h-4 w-4" />
                         </button>
                       </div>
                     </td>
-                    <td className="px-2 py-1.5 align-top">
+                    <td className="px-2 py-1 align-top">
                       <div className="flex gap-1">
                         <input
                           value={line.codplanaux}
                           onChange={(event) => updateLine(line.id, { codplanaux: event.target.value })}
                           onKeyDown={(event) => handleDetailEnter(event, line, index, 'codplanaux')}
                           ref={(element) => { inputRefs.current[inputKey(line.id, 'codplanaux')] = element; }}
-                          className="h-7 w-full rounded border border-slate-200 px-2 text-right font-semibold"
+                          className="h-6 w-full rounded border border-slate-200 px-2 text-right font-semibold"
                         />
-                        <button type="button" onClick={() => openPicker('aux', line.id)} className="inline-flex h-7 w-8 shrink-0 items-center justify-center rounded border border-cyan-200 bg-cyan-50 text-cyan-700">
+                        <button type="button" onClick={() => openPicker('aux', line.id)} className="inline-flex h-6 w-7 shrink-0 items-center justify-center rounded border border-cyan-200 bg-cyan-50 text-cyan-700">
                           <Search className="h-4 w-4" />
                         </button>
                       </div>
                     </td>
-                    <td className="px-2 py-1.5 align-top">
+                    <td className="px-2 py-1 align-top">
                       <textarea
                         value={line.concepto}
                         onChange={(event) => updateLine(line.id, { concepto: event.target.value })}
                         onKeyDown={(event) => handleDetailEnter(event, line, index, 'concepto')}
                         ref={(element) => { inputRefs.current[inputKey(line.id, 'concepto')] = element; }}
                         rows={showFullConcept ? 3 : 1}
-                        className="min-h-7 w-full resize-none rounded border border-slate-200 px-2 py-1"
+                        className="min-h-6 w-full resize-none rounded border border-slate-200 px-2 py-0.5"
                       />
                     </td>
-                    <td className="px-2 py-1.5 align-top">
+                    <td className="px-2 py-1 align-top">
                       <input
                         value={String(line[visibleDebitField as keyof EntryLine] || '')}
                         onChange={(event) => updateLine(line.id, { [visibleDebitField]: event.target.value } as Partial<EntryLine>)}
                         onKeyDown={(event) => handleDetailEnter(event, line, index, 'debito')}
                         ref={(element) => { inputRefs.current[inputKey(line.id, 'debito')] = element; }}
-                        className="h-7 w-full rounded border border-slate-200 px-2 text-right"
+                        className="h-6 w-full rounded border border-slate-200 px-2 text-right"
                       />
                     </td>
-                    <td className="px-2 py-1.5 align-top">
+                    <td className="px-2 py-1 align-top">
                       <input
                         value={String(line[visibleCreditField as keyof EntryLine] || '')}
                         onChange={(event) => updateLine(line.id, { [visibleCreditField]: event.target.value } as Partial<EntryLine>)}
                         onKeyDown={(event) => handleDetailEnter(event, line, index, 'credito')}
                         ref={(element) => { inputRefs.current[inputKey(line.id, 'credito')] = element; }}
-                        className="h-7 w-full rounded border border-slate-200 px-2 text-right"
+                        className="h-6 w-full rounded border border-slate-200 px-2 text-right"
                       />
                     </td>
-                    <td className="px-2 py-1.5 align-top">
+                    <td className="px-2 py-1 align-top">
                       <input
                         value={line.proyecto}
                         onChange={(event) => updateLine(line.id, { proyecto: event.target.value })}
                         onKeyDown={(event) => handleDetailEnter(event, line, index, 'proyecto')}
                         ref={(element) => { inputRefs.current[inputKey(line.id, 'proyecto')] = element; }}
-                        className="h-7 w-full rounded border border-slate-200 px-2"
+                        className="h-6 w-full rounded border border-slate-200 px-2"
                       />
                     </td>
-                    <td className="px-2 py-1.5 align-top">
+                    <td className="px-2 py-1 align-top">
                       <input
                         value={line.rubro}
                         onChange={(event) => updateLine(line.id, { rubro: event.target.value })}
                         onKeyDown={(event) => handleDetailEnter(event, line, index, 'rubro')}
                         ref={(element) => { inputRefs.current[inputKey(line.id, 'rubro')] = element; }}
-                        className="h-7 w-full rounded border border-slate-200 px-2"
+                        className="h-6 w-full rounded border border-slate-200 px-2"
                       />
                     </td>
-                    <td rowSpan={2} className="border-b border-slate-200 px-2 py-1.5 text-center align-top">
+                    <td rowSpan={2} className="border-b border-slate-200 px-2 py-1 text-center align-top">
                       <button type="button" onClick={(event) => { event.stopPropagation(); deleteLine(line.id); }} className="rounded px-2 py-1 text-lg font-bold text-slate-500 hover:bg-rose-50 hover:text-rose-600">
                         ...
                       </button>
@@ -790,11 +801,11 @@ export function CargarAsientoPanel({
                     onClick={() => setSelectedLineId(line.id)}
                     className={`border-b border-slate-200 ${selected ? 'bg-blue-50' : 'bg-white'}`}
                   >
-                    <td colSpan={2} className="px-3 py-1 text-[11px] font-semibold text-blue-700">
+                    <td colSpan={2} className="px-3 py-0.5 text-[10px] font-semibold text-blue-700">
                       <span className="mr-2 text-blue-900">Cuenta:</span>
                       {lineAccountName || '-'}
                     </td>
-                    <td colSpan={5} className="px-3 py-1 text-[11px] font-semibold text-blue-700">
+                    <td colSpan={5} className="px-3 py-0.5 text-[10px] font-semibold text-blue-700">
                       <span className="mr-2 text-blue-900">Auxiliar:</span>
                       {lineAuxName || '-'}
                     </td>
@@ -807,8 +818,8 @@ export function CargarAsientoPanel({
         </div>
       </section>
 
-      <section className="card px-3 py-2">
-        <div className="mb-2 flex items-center justify-between gap-3">
+      <section className="card px-3 py-1.5">
+        <div className="mb-1 flex items-center justify-between gap-3">
           <h2 className="font-bold text-blue-900">Detalle de la linea seleccionada</h2>
           <label className="flex items-center gap-2 font-semibold text-slate-700">
             Concepto largo
@@ -818,11 +829,11 @@ export function CargarAsientoPanel({
         <div className="grid gap-2 lg:grid-cols-[0.9fr_0.7fr_1.6fr]">
           <label className="font-semibold text-slate-700">
             Cuenta
-            <input value={selectedLine ? accountName(accountOptions, selectedLine.codplancta) : ''} readOnly className="mt-1 h-8 w-full rounded-md border border-slate-200 bg-slate-50 px-2 text-[13px]" />
+            <input value={selectedLine ? accountName(accountOptions, selectedLine.codplancta) : ''} readOnly className="mt-0.5 h-7 w-full rounded-md border border-slate-200 bg-slate-50 px-2 text-[12px]" />
           </label>
           <label className="font-semibold text-slate-700">
             Auxiliar
-            <input value={selectedLine ? auxName(filteredAuxOptions, selectedLine.codplancta, selectedLine.codplanaux) : ''} readOnly className="mt-1 h-8 w-full rounded-md border border-slate-200 bg-slate-50 px-2 text-[13px]" />
+            <input value={selectedLine ? auxName(filteredAuxOptions, selectedLine.codplancta, selectedLine.codplanaux) : ''} readOnly className="mt-0.5 h-7 w-full rounded-md border border-slate-200 bg-slate-50 px-2 text-[12px]" />
           </label>
           <label className="font-semibold text-slate-700">
             Observacion / Concepto Completo
@@ -830,13 +841,13 @@ export function CargarAsientoPanel({
               value={selectedLine?.concepto || ''}
               onChange={(event) => selectedLine && updateLine(selectedLine.id, { concepto: event.target.value })}
               rows={conceptoLargo ? 4 : 1}
-              className="mt-1 w-full resize-none rounded-md border border-slate-200 px-2 py-1 text-[13px]"
+              className="mt-0.5 w-full resize-none rounded-md border border-slate-200 px-2 py-0.5 text-[12px]"
             />
           </label>
         </div>
       </section>
 
-      <footer className="flex flex-wrap items-center justify-between gap-3 rounded-b-md bg-blue-900 px-3 py-1.5 text-[13px] font-semibold text-white">
+      <footer className="flex flex-wrap items-center justify-between gap-3 rounded-b-md bg-blue-900 px-3 py-1 text-[12px] font-semibold text-white">
         <span>Usuario: {currentUser || '-'}</span>
         <span className="inline-flex items-center gap-2"><CalendarDays className="h-4 w-4" /> Fecha del Sistema: {formatDateTime(new Date())}</span>
         <span>Empresa: {empresaLabel}</span>
@@ -908,19 +919,19 @@ export function CargarAsientoPanel({
 
 function InfoCard({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-2">
-      <div className="mb-1.5 flex items-center gap-2 font-bold text-indigo-800">
+    <div className="rounded-md border border-slate-200 bg-white p-1.5">
+      <div className="mb-1 flex items-center gap-2 text-[12px] font-bold text-indigo-800">
         {icon}
         {title}
       </div>
-      <div className="space-y-1">{children}</div>
+      <div className="space-y-0.5">{children}</div>
     </div>
   );
 }
 
 function InfoLine({ label, value, valueClass = '' }: { label: string; value: string; valueClass?: string }) {
   return (
-    <div className="grid grid-cols-[86px_1fr] gap-2 text-[13px]">
+    <div className="grid grid-cols-[82px_1fr] gap-2 text-[12px] leading-5">
       <span className="font-semibold text-blue-900">{label}</span>
       <span className={`font-semibold text-slate-700 ${valueClass}`}>{value}</span>
     </div>

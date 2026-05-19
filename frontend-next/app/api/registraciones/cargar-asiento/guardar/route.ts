@@ -4,6 +4,16 @@ export const runtime = 'nodejs';
 
 const API_BASE = process.env.NEXT_PUBLIC_NODE_API_URL || 'http://localhost:3000/api/v1';
 
+function readableError(value: unknown): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') {
+    const data = value as Record<string, unknown>;
+    return readableError(data.message) || readableError(data.error) || readableError(data.data) || JSON.stringify(value);
+  }
+  return String(value);
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
@@ -17,7 +27,7 @@ export async function POST(request: Request) {
 
     if (!response.ok) {
       return NextResponse.json(
-        { ok: false, message: payload?.message || payload?.error || payload?.data?.message || payload?.data?.error || 'No se pudo grabar el asiento.' },
+        { ok: false, message: readableError(payload?.message) || readableError(payload?.error) || readableError(payload?.data?.message) || readableError(payload?.data?.error) || readableError(payload?.data) || 'No se pudo grabar el asiento.' },
         { status: response.status },
       );
     }
