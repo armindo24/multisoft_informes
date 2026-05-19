@@ -206,6 +206,25 @@ function validateAsientosMgr(username, cb) {
     tryColumn();
 }
 
+function buildFactorCambioSql(empresa, fecha, tipo, withEmpresa) {
+    var vendedor = String(tipo || '').toLowerCase().indexOf('vendedor') >= 0;
+    var factorExpr = vendedor
+        ? "COALESCE(NULLIF(f.factor_vendedor,0), NULLIF(f.factor,0), 0)"
+        : "COALESCE(NULLIF(f.factor_compra_set,0), NULLIF(f.factor,0), 0)";
+    var selectPrefix = isPostgres() ? "SELECT " : "SELECT TOP 1 ";
+    var sql = selectPrefix +
+        "DATE(f.fact_fecha) AS fecha, " +
+        factorExpr + " AS factcambio " +
+        "FROM dba.factcamb f " +
+        "WHERE f.codmoneda = 'US' " +
+        (withEmpresa ? "AND f.cod_empresa = " + sqlValue(empresa) + " " : "") +
+        "AND DATE(f.fact_fecha) = CAST(" + sqlValue(fecha) + " AS DATE) " +
+        "ORDER BY DATE(f.fact_fecha) DESC";
+
+    if (isPostgres()) sql += " LIMIT 1";
+    return sql;
+}
+
 function normalizeRows(rows, accountRules) {
     var cleanRows = [];
     var totalDebito = 0;
@@ -267,6 +286,49 @@ function normalizeRows(rows, accountRules) {
 
     return cleanRows;
 }
+
+AsientoManual.factorCambio = function (params, cb) {
+    params = params || {};
+    var empresa = esc(params.empresa);
+    var fecha = esc(params.fecha);
+    var tipo = esc(params.tipo || params.factor || '');
+
+    if (!empresa || !fecha || !tipo) {
+        return cb(null, { ok: false, message: 'Debe indicar empresa, fecha y tipo de cambio.' });
+    }
+
+    if (tipo.toLowerCase().indexOf('manual') >= 0) {
+        return cb(null, { ok: true, factcambio: 0, manual: true });
+    }
+
+    function execute(withEmpresa, previousErr) {
+        conn.exec(buildFactorCambioSql(empresa, fecha, tipo, withEmpresa), function (err, rows) {
+            if (err) {
+                if (withEmpresa) return execute(false, err);
+                return cb(previousErr || err);
+            }
+
+            var row = (rows || [])[0];
+            var factor = normalizeNumber(row && (row.factcambio || row.FactCambio || row.FACTCAMBIO));
+            if (factor > 0) {
+                return cb(null, {
+                    ok: true,
+                    fecha: row.fecha || row.Fecha || row.FECHA || fecha,
+                    tipo: tipo,
+                    factcambio: factor
+                });
+            }
+
+            if (withEmpresa) return execute(false);
+            cb(null, {
+                ok: false,
+                message: 'No se encontro cotizacion en DBA.FACTCAMB para ' + tipo + ' del dia ' + fecha + '.'
+            });
+        });
+    }
+
+    execute(true);
+};
 
 function buildCabSql(body, nrotransac) {
     return "INSERT INTO DBA.AsientosCab (" +

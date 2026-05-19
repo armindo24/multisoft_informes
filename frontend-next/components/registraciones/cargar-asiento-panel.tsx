@@ -207,6 +207,7 @@ export function CargarAsientoPanel({
   const [factorCambio, setFactorCambio] = useState('C. Comprador');
   const [factorCambioValor, setFactorCambioValor] = useState('');
   const [factorAplicado, setFactorAplicado] = useState(false);
+  const [loadingFactor, setLoadingFactor] = useState(false);
   const [dif, setDif] = useState(false);
   const [autorizado, setAutorizado] = useState<'S' | 'N'>('N');
   const [activeTab, setActiveTab] = useState<'local' | 'extranjera'>('local');
@@ -252,6 +253,10 @@ export function CargarAsientoPanel({
       })
       .catch(() => undefined);
   }, [empresa, periodo]);
+
+  useEffect(() => {
+    if (factorCambio !== 'Manual' && fecha) void loadDailyExchangeRate(factorCambio, fecha, true);
+  }, [empresa]);
 
   const selectedLine = useMemo(
     () => lines.find((line) => line.id === selectedLineId) || lines[0] || null,
@@ -445,12 +450,48 @@ export function CargarAsientoPanel({
     setMessage(null);
   }
 
-  function applyExchangeRate() {
-    const prompted = window.prompt('Factor de Cambio', factorCambioValor.trim() || '1');
-    if (prompted === null) return false;
-    const entered = prompted.trim();
+  async function loadDailyExchangeRate(nextTipo = factorCambio, nextFecha = fecha, silent = false) {
+    if (!nextFecha || nextTipo === 'Manual') return 0;
 
-    const cambio = parseExchangeRate(entered);
+    setLoadingFactor(true);
+    try {
+      const params = new URLSearchParams({
+        empresa,
+        periodo: nextFecha.slice(0, 4) || periodo,
+        fecha: nextFecha,
+        tipo: nextTipo,
+      });
+      const response = await fetch(`/api/registraciones/cargar-asiento/factor-cambio?${params.toString()}`, { cache: 'no-store' });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload?.ok === false || payload?.data?.ok === false) {
+        throw new Error(readableError(payload?.message) || readableError(payload?.error) || readableError(payload?.data?.message) || readableError(payload?.data?.error) || readableError(payload?.data) || 'No se encontro la cotizacion del dia.');
+      }
+
+      const value = Number(payload?.data?.factcambio || 0);
+      if (!Number.isFinite(value) || value <= 0) {
+        throw new Error('No se encontro una cotizacion valida para la fecha seleccionada.');
+      }
+
+      setFactorCambioValor(inputAmount(value, 4));
+      setFactorAplicado(false);
+      if (!silent) {
+        setMessage({ tone: 'ok', text: `Cotizacion ${nextTipo} del ${formatReportDate(nextFecha)}: ${inputAmount(value, 4)}.` });
+      }
+      return value;
+    } catch (error) {
+      if (!silent) setMessage({ tone: 'error', text: readableError(error) || 'No se pudo consultar la cotizacion del dia.' });
+      return 0;
+    } finally {
+      setLoadingFactor(false);
+    }
+  }
+
+  async function applyExchangeRate() {
+    let cambio = parseExchangeRate(factorCambioValor);
+    if ((!Number.isFinite(cambio) || cambio <= 0) && factorCambio !== 'Manual') {
+      cambio = await loadDailyExchangeRate(factorCambio, fecha, true);
+    }
+
     if (!Number.isFinite(cambio) || cambio <= 0) {
       setMessage({ tone: 'error', text: 'Debe indicar un factor de cambio valido.' });
       return false;
@@ -608,7 +649,7 @@ export function CargarAsientoPanel({
   async function saveEntry() {
     if (!factorAplicado) {
       const shouldApply = window.confirm('Aun no aplico el Factor de Cambio. Desea hacerlo ahora?');
-      if (shouldApply && !applyExchangeRate()) return;
+      if (shouldApply && !(await applyExchangeRate())) return;
     }
 
     const validation = validateBeforeSave();
@@ -927,9 +968,11 @@ export function CargarAsientoPanel({
             <input
               value={fecha}
               onChange={(event) => {
-                setFecha(event.target.value);
-                const year = event.target.value.slice(0, 4);
+                const nextFecha = event.target.value;
+                setFecha(nextFecha);
+                const year = nextFecha.slice(0, 4);
                 if (year) setPeriodo(year);
+                void loadDailyExchangeRate(factorCambio, nextFecha);
               }}
               type="date"
               className="mt-0.5 h-8 w-full rounded-md border border-slate-200 px-2 text-[12px]"
@@ -962,7 +1005,16 @@ export function CargarAsientoPanel({
           </label>
           <label className="font-semibold text-slate-700">
             Factor de Cambio
-            <select value={factorCambio} onChange={(event) => setFactorCambio(event.target.value)} className="mt-0.5 h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-[12px]">
+            <select
+              value={factorCambio}
+              onChange={(event) => {
+                const nextTipo = event.target.value;
+                setFactorCambio(nextTipo);
+                setFactorAplicado(false);
+                if (nextTipo !== 'Manual') void loadDailyExchangeRate(nextTipo, fecha);
+              }}
+              className="mt-0.5 h-8 w-full rounded-md border border-slate-200 bg-white px-2 text-[12px]"
+            >
               <option value="C. Comprador">C. Comprador</option>
               <option value="C. Vendedor">C. Vendedor</option>
               <option value="Manual">Manual</option>
@@ -977,7 +1029,8 @@ export function CargarAsientoPanel({
                 setFactorAplicado(false);
               }}
               placeholder="Ej: 6500.0000"
-              className="mt-0.5 h-8 w-full rounded-md border border-slate-200 px-2 text-right text-[12px]"
+              disabled={loadingFactor}
+              className="mt-0.5 h-8 w-full rounded-md border border-slate-200 px-2 text-right text-[12px] disabled:bg-slate-50"
             />
           </label>
         </div>
@@ -1037,8 +1090,8 @@ export function CargarAsientoPanel({
             <TotalCard title="Diferencia" value={formatAmount(difference, activeDecimals)} tone={Math.abs(difference) === 0 ? 'purple' : 'rose'} />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={applyExchangeRate} className="h-7 rounded-md border border-slate-200 bg-white px-2.5 text-[12px] font-semibold text-slate-700">
-              Aplicar Factor de Cambio
+            <button type="button" onClick={() => void applyExchangeRate()} disabled={loadingFactor} className="h-7 rounded-md border border-slate-200 bg-white px-2.5 text-[12px] font-semibold text-slate-700 disabled:cursor-not-allowed disabled:bg-slate-50">
+              {loadingFactor ? 'Buscando cotizacion...' : 'Aplicar Factor de Cambio'}
             </button>
             <label className="flex items-center gap-2 font-semibold text-slate-700">
               Desplegar el Concepto Completo
