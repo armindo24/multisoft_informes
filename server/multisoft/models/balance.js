@@ -651,10 +651,8 @@ function runGeneralPucCuentasQuery(params, cb) {
 }
 
 function runGeneralPucQuery(params, cb) {
-    var mesDesde = String(params.mesd || '01').padStart(2, '0');
-    var mesHasta = String(params.mesh || mesDesde || '01').padStart(2, '0');
-    var anhoMesDesde = parseInt(params.periodo.toString() + mesDesde, 10);
-    var anhoMesHasta = parseInt(params.periodo.toString() + mesHasta, 10);
+    var anhoMesDesde = parseInt(params.periodo.toString() + params.mesd.toString(), 10);
+    var anhoMesHasta = parseInt(params.periodo.toString() + params.mesh.toString(), 10);
     var requestedNivel = parseInt(params.nivel, 10) || 0;
     var debugEnabled = String(params.debug || '') === '1' || String(process.env.BALANCE_PUC_DEBUG || '') === '1';
     var debugParent = (params.debug_parent || '11020105001').toString().trim();
@@ -695,10 +693,9 @@ function runGeneralPucQuery(params, cb) {
         " planctaunico.tiposaldo as TipoSaldo, " +
         " '0' as CTCtaOrden, " +
         " padre.codplanctaestrategico as codplanctauni, " +
-        " padre.nombre as nombreuni, " +
         " max(planctaunico.tipo_cuenta) as tipo_cuenta, " +
         " coalesce(moneda.simbolo, padre.codmoneda, '') as simbolo, " +
-        " factcamb.factor_compra_set as factor_compra_set " +
+        " max(factcamb.factor_compra_set) as factor_compra_set " +
         "FROM dba.control, __PUC_TABLE__ planctaunico " +
         "INNER JOIN dba.plancta " +
         " ON planctaunico.cod_empresa = plancta.cod_empresa " +
@@ -718,8 +715,6 @@ function runGeneralPucQuery(params, cb) {
         " ON planctaunico.cod_empresa = padre.cod_empresa " +
         "AND planctaunico.periodo = padre.periodo " +
         "AND planctaunico.codplanctaestrategicopad = padre.codplanctaestrategico " +
-        "AND plancta.cod_empresa = '" + params.empresa + "' " +
-        "AND plancta.periodo = '" + params.periodo + "' " +
         "LEFT OUTER JOIN dba.moneda " +
         " ON padre.codmoneda = moneda.codmoneda " +
         "LEFT OUTER JOIN dba.factcamb " +
@@ -736,9 +731,9 @@ function runGeneralPucQuery(params, cb) {
         string += "AND padre.nivel = " + requestedNivel + " ";
     }
 
-    string += "GROUP BY planctaunico.cod_empresa, padre.codplanctaestrategico, padre.nombre, padre.codplanctaestrategicopad, padre.nivel, planctaunico.imputable, planctaunico.tiposaldo, coalesce(moneda.simbolo, padre.codmoneda, ''), factcamb.factor_compra_set ";
+    string += "GROUP BY planctaunico.cod_empresa, padre.codplanctaestrategico, padre.nombre, padre.codplanctaestrategicopad, padre.nivel, planctaunico.imputable, planctaunico.tiposaldo, coalesce(moneda.simbolo, padre.codmoneda, '') ";
 
-    if (params.incluir !== 'SI' && params.saldo === 'SI') {
+    if (params.incluir !== 'SI') {
         string += "HAVING " + havingExpr + " ";
     }
 
