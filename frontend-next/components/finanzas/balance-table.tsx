@@ -288,8 +288,8 @@ export function BalanceTable({
                 </tr>
               </thead>
               <tbody>
-                {normalizedRows.map((row) => (
-                  <tr key={`${row.cuenta}-${row.descripcion}`} className={`border-b border-slate-100 ${getRowTone(row.nivel)}`}>
+                {normalizedRows.map((row, index) => (
+                  <tr key={`${row.cuenta}-${row.descripcion}-${index}`} className={`border-b border-slate-100 ${getRowTone(row.nivel)}`}>
                     <td className="px-3 py-2 align-top">{row.cuenta}</td>
                     <td className="px-3 py-2 align-top">
                       <div style={{ paddingLeft: `${getIndent(row.nivel)}px` }}>
