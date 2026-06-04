@@ -657,23 +657,25 @@ export default async function FinanzasPage({
   const integralProveedores = ((integralAuxResponse?.proveedores || []) as BalanceAuxRow[]);
   const integralWarning = integralAuxResponse?.warning || '';
   const isBalanceCuentasPuc = balanceCuentasPuc === 'SI';
-  const pucPrimaryResponse = (shouldLoadBalancePuc && empresa && empresaCanUsePuc
-    ? await getBalanceGeneralPuc({
-        empresa,
-        periodo,
-        mesd,
-        mesh,
-        moneda,
-        cuentad,
-        cuentah,
-        nivel: nivel || '0',
-        aux,
-        saldo,
-        practicado_al: practicadoAl,
-        recalcular_saldos: recalcularSaldos,
-        codigo_entidad: empresaCodigoEntidad,
-        balance_cuentas_puc: balanceCuentasPuc,
-      })
+  const pucPrimaryResponse = (shouldLoadBalancePuc && empresa && (!isBalanceCuentasPuc || empresaCanUsePuc)
+    ? isBalanceCuentasPuc
+      ? await getBalanceGeneralPuc({
+          empresa,
+          periodo,
+          mesd,
+          mesh,
+          moneda,
+          cuentad,
+          cuentah,
+          nivel: nivel || '0',
+          aux,
+          saldo,
+          practicado_al: practicadoAl,
+          recalcular_saldos: recalcularSaldos,
+          codigo_entidad: empresaCodigoEntidad,
+          balance_cuentas_puc: balanceCuentasPuc,
+        })
+      : await getBalanceGeneral({ empresa, periodo, mesd, mesh, moneda, cuentad, cuentah, nivel: nivel || '0', aux, saldo })
     : null) as BalanceResponseLike;
   const shouldFallbackPuc = shouldLoadBalancePuc && !isBalanceCuentasPuc && (
     !Array.isArray(pucPrimaryResponse?.data) || pucPrimaryResponse.data.length === 0
@@ -953,7 +955,7 @@ export default async function FinanzasPage({
             moneda={moneda}
             title="Balance general PUC"
             description="Vista basada en el informe PUC anterior. Cuando la base no soporta la estructura completa, se usa el balance clasico como respaldo."
-            showPucMapping={false}
+            showPucMapping={balanceCuentasPuc === 'SI'}
             exportMeta={reportMeta}
             exportBranding={exportBranding}
             pucExport={{
