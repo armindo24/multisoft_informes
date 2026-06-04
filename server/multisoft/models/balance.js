@@ -500,19 +500,19 @@ function runGeneralPucCuentasQuery(params, cb) {
             }
             var allowPucJoin = !!pucTable;
 
+            var accumTable = hasAcumplanDia ? 'DBA.AcumplanDia' : 'DBA.Acumplan';
+            var rangeField = hasAcumplanDia ? 'AnhoMesDia' : 'AnhoMes';
             var anhoMesDesde = parseInt(String(params.periodo) + (mesDesde < 10 ? ('0' + mesDesde) : String(mesDesde)), 10);
             var anhoMesHasta = parseInt(String(params.periodo) + (mesHasta < 10 ? ('0' + mesHasta) : String(mesHasta)), 10);
-            if (params.practicado_al) {
+            var rangeDesde = hasAcumplanDia ? anhoMesDiaDesde : anhoMesDesde;
+            var rangeHasta = hasAcumplanDia ? anhoMesDiaHasta : anhoMesHasta;
+            if (!hasAcumplanDia && params.practicado_al) {
                 var p = String(params.practicado_al).trim();
                 if (/^\d{4}-\d{2}-\d{2}$/.test(p)) {
-                    anhoMesHasta = parseInt(p.substring(0, 4) + p.substring(5, 7), 10);
+                    rangeHasta = parseInt(p.substring(0, 4) + p.substring(5, 7), 10);
                 }
             }
 
-            var accumTable = hasAcumplanDia ? 'DBA.AcumplanDia' : 'DBA.Acumplan';
-            var rangeField = hasAcumplanDia ? 'AnhoMesDia' : 'AnhoMes';
-            var rangeDesde = hasAcumplanDia ? anhoMesDiaDesde : anhoMesDesde;
-            var rangeHasta = hasAcumplanDia ? anhoMesDiaHasta : anhoMesHasta;
             var localExpr = "(case DBA.PLANCTA.TipoSaldo when 'D' then sum(coalesce(" + accumTable + ".TotalDb,0)) - sum(coalesce(" + accumTable + ".TotalCr,0)) else sum(coalesce(" + accumTable + ".TotalCr,0)) - sum(coalesce(" + accumTable + ".TotalDb,0)) end)";
             var meExpr = "(case DBA.PLANCTA.TipoSaldo when 'D' then sum(coalesce(" + accumTable + ".TotalDbME,0)) - sum(coalesce(" + accumTable + ".TotalCrME,0)) else sum(coalesce(" + accumTable + ".TotalCrME,0)) - sum(coalesce(" + accumTable + ".TotalDbME,0)) end)";
             // En PostgreSQL puede venir varchar tanto en AnhoMes como AnhoMesDia.
@@ -614,22 +614,11 @@ function runGeneralPucCuentasQuery(params, cb) {
                 }
                 if ((row || []).length === 0 && hasAcumplanDia) {
                     // Fallback: si acumulado diario no trae filas, probar acumulado mensual.
-                    accumTable = 'DBA.Acumplan';
-                    rangeField = 'AnhoMes';
-                    rangeDesde = anhoMesDesde;
-                    rangeHasta = anhoMesHasta;
-                    localExpr = "(case DBA.PLANCTA.TipoSaldo when 'D' then sum(coalesce(" + accumTable + ".TotalDb,0)) - sum(coalesce(" + accumTable + ".TotalCr,0)) else sum(coalesce(" + accumTable + ".TotalCr,0)) - sum(coalesce(" + accumTable + ".TotalDb,0)) end)";
-                    meExpr = "(case DBA.PLANCTA.TipoSaldo when 'D' then sum(coalesce(" + accumTable + ".TotalDbME,0)) - sum(coalesce(" + accumTable + ".TotalCrME,0)) else sum(coalesce(" + accumTable + ".TotalCrME,0)) - sum(coalesce(" + accumTable + ".TotalDbME,0)) end)";
-                    rangeExpr = "cast(coalesce(" + accumTable + "." + rangeField + ",'0') as integer)";
-                    saldoExpr = params.moneda == 'local'
-                        ? localExpr
-                        : (isAmbas
-                            ? "(case when upper(coalesce(DBA.PLANCTA.CodMoneda,'')) in ('GS','PYG') then " + localExpr + " else " + meExpr + " end)"
-                            : meExpr);
-                    havingExpr = isAmbas
-                        ? ("(cast(" + localExpr + " as decimal(20,0)) <> 0 OR cast(" + meExpr + " as decimal(20,2)) <> 0)")
-                        : ("cast(" + saldoExpr + " as decimal(20," + saldoScale + ")) <> 0");
-                    var sqlMes = buildSql(allowPucJoin, true);
+                    var sqlMes = sql
+                        .replace(/DBA\.AcumplanDia/g, 'DBA.Acumplan')
+                        .replace(/AnhoMesDia/g, 'AnhoMes')
+                        .replace(new RegExp(">=\\s*" + rangeDesde, "g"), ">= " + anhoMesDesde)
+                        .replace(new RegExp("<=\\s*" + rangeHasta, "g"), "<= " + anhoMesHasta);
                     return conn.exec(sqlMes, function (err3, row3) {
                         if (err3) {
                             console.error('[runGeneralPucCuentasQuery] Error fallback Acumplan:', err3.message || err3);
