@@ -416,7 +416,7 @@ Balance.generalPuc = function (params, cb) {
     params.balance_cuentas_puc = (params.balance_cuentas_puc || 'NO').toString().toUpperCase();
 
     if (params.balance_cuentas_puc === 'SI') {
-        runGeneralPucQuery(params, function (rows, warning) {
+        runGeneralPucCuentasQuery(params, function (rows, warning) {
             attachResultadoEjercicio(params, rows, warning, cb);
         });
         return;
@@ -728,7 +728,7 @@ function runGeneralPucQuery(params, cb) {
         "AND " + ctaEstrExpr + " <= '" + params.cuentah + "' ";
 
     if (requestedNivel > 0) {
-        string += "AND padre.nivel = " + requestedNivel + " ";
+        string += "AND padre.nivel <= " + requestedNivel + " ";
     }
 
     string += "GROUP BY planctaunico.cod_empresa, padre.codplanctaestrategico, padre.nombre, padre.codplanctaestrategicopad, padre.nivel, planctaunico.imputable, planctaunico.tiposaldo, coalesce(moneda.simbolo, padre.codmoneda, '') ";
