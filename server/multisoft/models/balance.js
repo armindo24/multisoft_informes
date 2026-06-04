@@ -766,13 +766,6 @@ function runGeneralPucQuery(params, cb) {
                 console.error('[runGeneralPucQuery] Error ejecutando consulta:', err.message || err);
                 return cb([], getSchemaWarning(err, 'Balance General PUC'));
             }
-            if ((!row || row.length === 0) && requestedNivel > 0 && fallbackWarning !== 'nivel-acumulado') {
-                var exactLevel = "AND padre.nivel = " + requestedNivel + " ";
-                var rangedLevel = "AND padre.nivel <= " + requestedNivel + " ";
-                if (sql.indexOf(exactLevel) >= 0) {
-                    return executeQuery(sql.replace(exactLevel, rangedLevel), 'nivel-acumulado');
-                }
-            }
             processRows(row || [], fallbackWarning || '');
         });
     }
