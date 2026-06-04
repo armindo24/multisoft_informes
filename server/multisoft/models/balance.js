@@ -671,7 +671,7 @@ function runGeneralPucQuery(params, cb) {
         " padre.nombre as Nombre, " +
         " padre.codplanctaestrategicopad as CodPlanCtaPad, " +
         " padre.nivel as Nivel, " +
-        " planctaunico.imputable as Imputable, " +
+        " padre.imputable as Imputable, " +
         " cast(sum(coalesce(acumplan.totaldb,0)) as decimal(20,0)) as TOTAL_DEBITO, " +
         " cast(sum(coalesce(acumplan.totalcr,0)) as decimal(20,0)) as TOTAL_CREDITO, " +
         " cast(sum(coalesce(acumplan.totaldbme,0)) as decimal(20,2)) as TOTAL_DEBITOME, " +
@@ -713,6 +713,7 @@ function runGeneralPucQuery(params, cb) {
         "AND control.periodo = planctaunico.periodo " +
         "AND planctaunico.cod_empresa = '" + params.empresa + "' " +
         "AND planctaunico.periodo = '" + params.periodo + "' " +
+        "AND coalesce(padre.imputable, 'N') = 'S' " +
         "AND " + ctaEstrExpr + " >= '" + params.cuentad + "' " +
         "AND " + ctaEstrExpr + " <= '" + params.cuentah + "' ";
 
@@ -720,7 +721,7 @@ function runGeneralPucQuery(params, cb) {
         string += "AND padre.nivel <= " + requestedNivel + " ";
     }
 
-    string += "GROUP BY planctaunico.cod_empresa, padre.codplanctaestrategico, padre.nombre, padre.codplanctaestrategicopad, padre.nivel, planctaunico.imputable, planctaunico.tiposaldo, coalesce(moneda.simbolo, plancta.codmoneda, '') ";
+    string += "GROUP BY planctaunico.cod_empresa, padre.codplanctaestrategico, padre.nombre, padre.codplanctaestrategicopad, padre.nivel, padre.imputable, planctaunico.tiposaldo, coalesce(moneda.simbolo, plancta.codmoneda, '') ";
 
     if (params.incluir !== 'SI') {
         string += "HAVING " + havingExpr + " ";
