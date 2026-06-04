@@ -416,7 +416,7 @@ Balance.generalPuc = function (params, cb) {
     params.balance_cuentas_puc = (params.balance_cuentas_puc || 'NO').toString().toUpperCase();
 
     if (params.balance_cuentas_puc === 'SI') {
-        runGeneralPucCuentasHistoricoQuery(params, function (rows, warning) {
+        runGeneralPucQuery(params, function (rows, warning) {
             attachResultadoEjercicio(params, rows, warning, cb);
         });
         return;
@@ -471,110 +471,6 @@ function attachResultadoEjercicio(params, rows, warning, cb) {
                 extranjera: resultadoME
             },
             warning: warning || ''
-        });
-    });
-}
-
-function runGeneralPucCuentasHistoricoQuery(params, cb) {
-    var mesDesde = String(params.mesd || '01').padStart(2, '0');
-    var mesHasta = String(params.mesh || mesDesde || '01').padStart(2, '0');
-    var anhoMesDesde = parseInt(String(params.periodo) + mesDesde, 10);
-    var anhoMesHasta = parseInt(String(params.periodo) + mesHasta, 10);
-    var requestedNivel = parseInt(params.nivel, 10) || 0;
-    var fecha = String(params.practicado_al || '').trim();
-    if (/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-        anhoMesHasta = parseInt(fecha.substring(0, 4) + fecha.substring(5, 7), 10);
-        fecha = fecha.substring(8, 10) + '/' + fecha.substring(5, 7) + '/' + fecha.substring(0, 4);
-    } else {
-        var lastDay = new Date(parseInt(params.periodo, 10), parseInt(mesHasta, 10), 0).getDate();
-        fecha = String(lastDay).padStart(2, '0') + '/' + mesHasta + '/' + String(params.periodo);
-    }
-
-    resolvePucTable(function (pErr, pucTable) {
-        if (pErr) {
-            console.error('[runGeneralPucCuentasHistoricoQuery] Error resolviendo tabla PUC:', pErr.message || pErr);
-            return cb([], getSchemaWarning(pErr, 'Balance General PUC'));
-        }
-        if (!pucTable) {
-            return cb([], 'No existe tabla PUC (planctaunico/planctaestrategico).');
-        }
-
-        var fechaExpr = "cast(substring('" + fecha + "', 7, 4) || '-' || substring('" + fecha + "', 4, 2) || '-' || substring('" + fecha + "', 1, 2) as date)";
-        var sql = "SELECT planctaunico.cod_empresa, " +
-            "padre.codplanctaestrategico as CodPlanCta, " +
-            "padre.nombre as Nombre, " +
-            "padre.nivel as Nivel, " +
-            "planctaunico.imputable as Imputable, " +
-            "sum(coalesce(acumplan.totaldb, 0)) as TOTAL_DEBITO, " +
-            "sum(coalesce(acumplan.totalcr, 0)) as TOTAL_CREDITO, " +
-            "sum(coalesce(acumplan.totaldbme, 0)) as TOTAL_DEBITOME, " +
-            "sum(coalesce(acumplan.totalcrme, 0)) as TOTAL_CREDITOME, " +
-            "planctaunico.TipoSaldo as TipoSaldo, " +
-            "'0' as CTCtaOrden, " +
-            "padre.codplanctaestrategico as codplanctauni, " +
-            "padre.nombre as nombreuni, " +
-            "max(planctaunico.tipo_cuenta) as tipo_cuenta, " +
-            "moneda.simbolo, " +
-            "factcamb.factor_compra_set " +
-            "FROM dba.control, " + pucTable + " planctaunico " +
-            "INNER JOIN dba.plancta " +
-            "ON planctaunico.cod_empresa = plancta.cod_empresa " +
-            "AND planctaunico.periodo = plancta.periodo " +
-            "AND planctaunico.codplanctaestrategico = plancta.codplanctauni " +
-            "AND plancta.cod_empresa = '" + params.empresa + "' " +
-            "AND plancta.periodo = '" + params.periodo + "' " +
-            "LEFT OUTER JOIN dba.acumplan " +
-            "ON plancta.cod_empresa = acumplan.cod_empresa " +
-            "AND plancta.periodo = acumplan.periodo " +
-            "AND plancta.codplancta = acumplan.codplancta " +
-            "AND acumplan.cod_empresa = '" + params.empresa + "' " +
-            "AND acumplan.periodo = '" + params.periodo + "' " +
-            "AND cast(coalesce(acumplan.anhomes, '0') as integer) >= " + anhoMesDesde + " " +
-            "AND cast(coalesce(acumplan.anhomes, '0') as integer) <= " + anhoMesHasta + " " +
-            "INNER JOIN " + pucTable + " padre " +
-            "ON planctaunico.cod_empresa = padre.cod_empresa " +
-            "AND planctaunico.periodo = padre.periodo " +
-            "AND planctaunico.codplanctaestrategicopad = padre.codplanctaestrategico " +
-            "AND plancta.cod_empresa = '" + params.empresa + "' " +
-            "AND plancta.periodo = '" + params.periodo + "' " +
-            "LEFT OUTER JOIN dba.moneda " +
-            "ON padre.codmoneda = moneda.codmoneda " +
-            "LEFT OUTER JOIN dba.factcamb " +
-            "ON factcamb.codmoneda = 'US' " +
-            "AND date(factcamb.fact_fecha) = (select max(date(fact_fecha)) from dba.factcamb where codmoneda = 'US' and date(fact_fecha) = " + fechaExpr + ") " +
-            "WHERE control.cod_empresa = planctaunico.cod_empresa " +
-            "AND control.periodo = planctaunico.periodo " +
-            "AND planctaunico.cod_empresa = '" + params.empresa + "' " +
-            "AND planctaunico.periodo = '" + params.periodo + "' " +
-            "AND cast(planctaunico.codplanctaestrategico as varchar(60)) >= '" + params.cuentad + "' " +
-            "AND cast(planctaunico.codplanctaestrategico as varchar(60)) <= '" + params.cuentah + "' ";
-
-        if (requestedNivel > 0) {
-            sql += "AND padre.Nivel = " + requestedNivel + " ";
-        }
-
-        sql += "GROUP BY planctaunico.cod_empresa, padre.codplanctaestrategico, padre.nombre, padre.nivel, planctaunico.imputable, planctaunico.tiposaldo, moneda.simbolo, factcamb.factor_compra_set " +
-            "ORDER BY padre.codplanctaestrategico";
-
-        conn.exec(sql, function (err, rows) {
-            if (err) {
-                console.error('[runGeneralPucCuentasHistoricoQuery] Error ejecutando consulta:', err.message || err);
-                return cb([], getSchemaWarning(err, 'Balance General PUC'));
-            }
-            var normalized = (rows || []).map(function (row) {
-                var totalDebito = toNumber(row.TOTAL_DEBITO || row.total_debito);
-                var totalCredito = toNumber(row.TOTAL_CREDITO || row.total_credito);
-                var totalDebitoMe = toNumber(row.TOTAL_DEBITOME || row.total_debitome);
-                var totalCreditoMe = toNumber(row.TOTAL_CREDITOME || row.total_creditome);
-                var tipoSaldo = String(row.TipoSaldo || row.tiposaldo || '').toUpperCase();
-                var saldoLocal = tipoSaldo === 'C' ? (totalCredito - totalDebito) : (totalDebito - totalCredito);
-                var saldoMe = tipoSaldo === 'C' ? (totalCreditoMe - totalDebitoMe) : (totalDebitoMe - totalCreditoMe);
-                row.SALDO_LOCAL = saldoLocal;
-                row.SALDO_ME = saldoMe;
-                row.SALDO = params.moneda === 'extranjera' ? saldoMe : saldoLocal;
-                return row;
-            });
-            cb(normalized, '');
         });
     });
 }
