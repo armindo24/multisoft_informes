@@ -60,6 +60,7 @@ function getIndent(level: number) {
 
 export function BalanceTable({
   rows,
+  pucExportRows,
   result = 0,
   resultME = 0,
   moneda = 'local',
@@ -72,6 +73,7 @@ export function BalanceTable({
   scheduleConfig,
 }: {
   rows: BalanceRow[];
+  pucExportRows?: BalanceRow[];
   result?: number;
   resultME?: number;
   moneda?: string;
@@ -107,6 +109,18 @@ export function BalanceTable({
     guaranies: num(row.SALDO_LOCAL || row.saldo_local || row.SALDO || row.saldo),
     dolares: num(row.SALDO_ME || row.saldo_me),
   })), [rows]);
+  const normalizedPucExportRows = useMemo(() => (pucExportRows || rows).map((row) => ({
+    cuenta: getCode(row),
+    descripcion: getName(row),
+    cuentaPuc: String(rowValue(row, ['codplanctauni', 'CodPlanCtaUni', 'CodPlanCtaUNI', 'codplanctapuc'])).trim(),
+    descripcionPuc: String(rowValue(row, ['nombreuni', 'NombreUni', 'NombreUNI', 'nombrepuc'])).trim(),
+    nivel: getLevel(row),
+    debito: num(row.TOTAL_DEBITO || row.total_debito),
+    credito: num(row.TOTAL_CREDITO || row.total_credito),
+    saldo: num(row.SALDO || row.saldo),
+    guaranies: num(row.SALDO_LOCAL || row.saldo_local || row.SALDO || row.saldo),
+    dolares: num(row.SALDO_ME || row.saldo_me),
+  })), [pucExportRows, rows]);
 
   const resultLabelLocal = result >= 0 ? 'Utilidad' : 'Perdida';
   const resultLabelME = resultME >= 0 ? 'Utilidad' : 'Perdida';
@@ -169,7 +183,9 @@ export function BalanceTable({
   }
 
   function exportPucTxt() {
-    if (!pucExport || !rows.length) return;
+    const exportRows = pucExportRows || rows;
+    const normalizedExportRows = normalizedPucExportRows;
+    if (!pucExport || !exportRows.length) return;
 
     const codigoUnico = String(pucExport.codigoEntidad || '').trim();
     if (!codigoUnico) {
@@ -198,16 +214,16 @@ export function BalanceTable({
     const contenido: string[] = [];
 
     if (esCasaDeBolsa) {
-      contenido.push(`${fila1}${fechaCompacta}${codigoUnico}${String(normalizedRows.length).padStart(9, ' ')}`);
+      contenido.push(`${fila1}${fechaCompacta}${codigoUnico}${String(normalizedExportRows.length).padStart(9, ' ')}`);
     } else {
       const baseCab = `${fila1}${fechaCompacta}${codigoUnico}${ruc}`;
-      const espacios = Math.max(0, 61 - baseCab.length - String(normalizedRows.length).length);
-      contenido.push(`${baseCab}${' '.repeat(espacios)}${String(normalizedRows.length)}`);
+      const espacios = Math.max(0, 61 - baseCab.length - String(normalizedExportRows.length).length);
+      contenido.push(`${baseCab}${' '.repeat(espacios)}${String(normalizedExportRows.length)}`);
     }
 
-    for (let i = 0; i < normalizedRows.length; i += 1) {
-      const row = rows[i] as BalanceRow & { simbolo?: string; tipo_cuenta?: string };
-      const normalized = normalizedRows[i];
+    for (let i = 0; i < normalizedExportRows.length; i += 1) {
+      const row = exportRows[i] as BalanceRow & { simbolo?: string; tipo_cuenta?: string };
+      const normalized = normalizedExportRows[i];
       const cuenta = String(normalized.cuentaPuc || normalized.cuenta || '').padEnd(18, ' ');
       const simbolo = String(rowValue(row, ['simbolo', 'Simbolo']) || 'PYG').trim() || 'PYG';
       const tipoCuenta = String(rowValue(row, ['tipo_cuenta', 'Tipo_Cuenta', 'tipoCuenta'])).trim();

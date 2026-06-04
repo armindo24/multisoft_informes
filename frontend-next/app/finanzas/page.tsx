@@ -675,6 +675,25 @@ export default async function FinanzasPage({
         balance_cuentas_puc: balanceCuentasPuc,
       })
     : null;
+  const pucExportResponse = shouldLoadBalancePuc && empresa && empresaCanUsePuc && isBalanceCuentasPuc
+    ? await getBalanceGeneralPuc({
+        empresa,
+        periodo,
+        mesd,
+        mesh,
+        moneda,
+        cuentad,
+        cuentah,
+        nivel: nivel || '0',
+        aux,
+        saldo,
+        practicado_al: practicadoAl,
+        recalcular_saldos: 'NO',
+        codigo_entidad: empresaCodigoEntidad,
+        balance_cuentas_puc: balanceCuentasPuc,
+        export_detalle_puc: 'SI',
+      })
+    : null;
   const shouldFallbackPuc = shouldLoadBalancePuc && empresaCanUsePuc && !isBalanceCuentasPuc && (
     !Array.isArray(pucPrimaryResponse?.data) || pucPrimaryResponse.data.length === 0
   );
@@ -692,6 +711,7 @@ export default async function FinanzasPage({
         )
       : ((pucClassicLocal?.data || []) as BalanceRow[])
     : ((pucPrimaryResponse?.data || []) as BalanceRow[]);
+  const pucExportRows = ((pucExportResponse?.data || []) as BalanceRow[]);
   const pucWarning = shouldLoadBalancePuc && !empresaCanUsePuc
     ? 'Esta empresa usa balance clasico. La opcion PUC se habilita solo cuando dba.empresa tiene es_casa_de_bolsa activo y codigo_entidad.'
     : shouldFallbackPuc
@@ -948,6 +968,7 @@ export default async function FinanzasPage({
           ) : null}
           <BalanceTable
             rows={pucRows}
+            pucExportRows={pucExportRows.length > 0 ? pucExportRows : undefined}
             result={pucResult}
             resultME={pucResultME}
             moneda={moneda}

@@ -594,6 +594,7 @@ export async function getBalanceGeneralPuc(params: {
   recalcular_saldos?: string;
   codigo_entidad?: string;
   balance_cuentas_puc?: string;
+  export_detalle_puc?: string;
 }) {
   const query = toQuery({
     empresa: params.empresa,
@@ -610,6 +611,7 @@ export async function getBalanceGeneralPuc(params: {
     recalcular_saldos: params.recalcular_saldos,
     codigo_entidad: params.codigo_entidad,
     balance_cuentas_puc: params.balance_cuentas_puc,
+    export_detalle_puc: params.export_detalle_puc,
   });
   return safeFetch<{
     data: Array<Record<string, unknown>>;
