@@ -556,20 +556,10 @@ function runGeneralPucCuentasHistoricoQuery(params, cb) {
         sql += "GROUP BY planctaunico.cod_empresa, padre.codplanctaestrategico, padre.nombre, padre.nivel, planctaunico.imputable, planctaunico.tiposaldo, moneda.simbolo, factcamb.factor_compra_set " +
             "ORDER BY padre.codplanctaestrategico";
 
-        function runHistoricoSql(query, mode) {
-        conn.exec(query, function (err, rows) {
+        conn.exec(sql, function (err, rows) {
             if (err) {
                 console.error('[runGeneralPucCuentasHistoricoQuery] Error ejecutando consulta:', err.message || err);
                 return cb([], getSchemaWarning(err, 'Balance General PUC'));
-            }
-            if ((!rows || rows.length === 0) && requestedNivel > 0) {
-                var exactLevel = "AND padre.Nivel = " + requestedNivel + " ";
-                if (mode === 'exacto' && query.indexOf(exactLevel) >= 0) {
-                    return runHistoricoSql(query.replace(exactLevel, "AND padre.Nivel <= " + requestedNivel + " "), 'acumulado');
-                }
-                if (mode === 'acumulado' && query.indexOf("AND padre.Nivel <= " + requestedNivel + " ") >= 0) {
-                    return runHistoricoSql(query.replace("AND padre.Nivel <= " + requestedNivel + " ", ''), 'sin-nivel');
-                }
             }
             var normalized = (rows || []).map(function (row) {
                 var totalDebito = toNumber(row.TOTAL_DEBITO || row.total_debito);
@@ -586,9 +576,6 @@ function runGeneralPucCuentasHistoricoQuery(params, cb) {
             });
             cb(normalized, '');
         });
-        }
-
-        runHistoricoSql(sql, 'exacto');
     });
 }
 
