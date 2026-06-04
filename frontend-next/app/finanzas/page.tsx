@@ -656,28 +656,25 @@ export default async function FinanzasPage({
   const integralClientes = ((integralAuxResponse?.clientes || []) as BalanceAuxRow[]);
   const integralProveedores = ((integralAuxResponse?.proveedores || []) as BalanceAuxRow[]);
   const integralWarning = integralAuxResponse?.warning || '';
-  const isBalanceCuentasPuc = balanceCuentasPuc === 'SI';
-  const pucPrimaryResponse = (shouldLoadBalancePuc && empresa && (!isBalanceCuentasPuc || empresaCanUsePuc)
-    ? isBalanceCuentasPuc
-      ? await getBalanceGeneralPuc({
-          empresa,
-          periodo,
-          mesd,
-          mesh,
-          moneda,
-          cuentad,
-          cuentah,
-          nivel: nivel || '0',
-          aux,
-          saldo,
-          practicado_al: practicadoAl,
-          recalcular_saldos: recalcularSaldos,
-          codigo_entidad: empresaCodigoEntidad,
-          balance_cuentas_puc: balanceCuentasPuc,
-        })
-      : await getBalanceGeneral({ empresa, periodo, mesd, mesh, moneda, cuentad, cuentah, nivel: nivel || '0', aux, saldo })
-    : null) as BalanceResponseLike;
-  const shouldFallbackPuc = shouldLoadBalancePuc && !isBalanceCuentasPuc && (
+  const pucPrimaryResponse = shouldLoadBalancePuc && empresa && empresaCanUsePuc
+    ? await getBalanceGeneralPuc({
+        empresa,
+        periodo,
+        mesd,
+        mesh,
+        moneda,
+        cuentad,
+        cuentah,
+        nivel: nivel || '0',
+        aux,
+        saldo,
+        practicado_al: practicadoAl,
+        recalcular_saldos: recalcularSaldos,
+        codigo_entidad: empresaCodigoEntidad,
+        balance_cuentas_puc: balanceCuentasPuc,
+      })
+    : null;
+  const shouldFallbackPuc = shouldLoadBalancePuc && empresaCanUsePuc && (
     !Array.isArray(pucPrimaryResponse?.data) || pucPrimaryResponse.data.length === 0
   );
   const pucClassicLocal = shouldFallbackPuc
@@ -694,7 +691,7 @@ export default async function FinanzasPage({
         )
       : ((pucClassicLocal?.data || []) as BalanceRow[])
     : ((pucPrimaryResponse?.data || []) as BalanceRow[]);
-  const pucWarning = shouldLoadBalancePuc && isBalanceCuentasPuc && !empresaCanUsePuc
+  const pucWarning = shouldLoadBalancePuc && !empresaCanUsePuc
     ? 'Esta empresa usa balance clasico. La opcion PUC se habilita solo cuando dba.empresa tiene es_casa_de_bolsa activo y codigo_entidad.'
     : shouldFallbackPuc
     ? (pucPrimaryResponse?.warning || 'La estructura PUC no pudo generarse con esta base. Se muestra el balance clasico como respaldo.')
