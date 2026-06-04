@@ -645,13 +645,13 @@ function runGeneralPucQuery(params, cb) {
     var requestedNivel = parseInt(params.nivel, 10) || 0;
     var debugEnabled = String(params.debug || '') === '1' || String(process.env.BALANCE_PUC_DEBUG || '') === '1';
     var debugParent = (params.debug_parent || '11020105001').toString().trim();
-    var localExpr = "(case planctaunico.tiposaldo when 'D' then sum(coalesce(acumplan.totaldb,0)) - sum(coalesce(acumplan.totalcr,0)) else sum(coalesce(acumplan.totalcr,0)) - sum(coalesce(acumplan.totaldb,0)) end)";
-    var meExpr = "(case planctaunico.tiposaldo when 'D' then sum(coalesce(acumplan.totaldbme,0)) - sum(coalesce(acumplan.totalcrme,0)) else sum(coalesce(acumplan.totalcrme,0)) - sum(coalesce(acumplan.totaldbme,0)) end)";
+    var localExpr = "sum(case planctaunico.tiposaldo when 'D' then coalesce(acumplan.totaldb,0) - coalesce(acumplan.totalcr,0) else coalesce(acumplan.totalcr,0) - coalesce(acumplan.totaldb,0) end)";
+    var meExpr = "sum(case planctaunico.tiposaldo when 'D' then coalesce(acumplan.totaldbme,0) - coalesce(acumplan.totalcrme,0) else coalesce(acumplan.totalcrme,0) - coalesce(acumplan.totaldbme,0) end)";
     var isAmbas = (params.moneda === 'ambas');
     var saldoExpr = params.moneda == 'local'
         ? localExpr
         : (isAmbas
-            ? "(case when upper(coalesce(moneda.simbolo, plancta.codmoneda, '')) in ('GS','PYG') then " + localExpr + " else " + meExpr + " end)"
+            ? "(case when upper(coalesce(moneda.simbolo, padre.codmoneda, '')) in ('GS','PYG') then " + localExpr + " else " + meExpr + " end)"
             : meExpr);
     var saldoScale = (params.moneda == 'local' ? "0" : "2");
     var havingExpr = isAmbas
@@ -679,11 +679,11 @@ function runGeneralPucQuery(params, cb) {
         " cast(" + localExpr + " as decimal(20,0)) as SALDO_LOCAL, " +
         " cast(" + meExpr + " as decimal(20,2)) as SALDO_ME, " +
         " cast(" + saldoExpr + " as decimal(20," + saldoScale + ")) as SALDO, " +
-        " planctaunico.tiposaldo as TipoSaldo, " +
+        " max(planctaunico.tiposaldo) as TipoSaldo, " +
         " '0' as CTCtaOrden, " +
         " padre.codplanctaestrategico as codplanctauni, " +
         " max(planctaunico.tipo_cuenta) as tipo_cuenta, " +
-        " coalesce(moneda.simbolo, plancta.codmoneda, '') as simbolo, " +
+        " coalesce(moneda.simbolo, padre.codmoneda, '') as simbolo, " +
         " max(factcamb.factor_compra_set) as factor_compra_set " +
         "FROM dba.control, __PUC_TABLE__ planctaunico " +
         "INNER JOIN dba.plancta " +
@@ -705,7 +705,7 @@ function runGeneralPucQuery(params, cb) {
         "AND planctaunico.periodo = padre.periodo " +
         "AND planctaunico.codplanctaestrategicopad = padre.codplanctaestrategico " +
         "LEFT OUTER JOIN dba.moneda " +
-        " ON plancta.codmoneda = moneda.codmoneda " +
+        " ON padre.codmoneda = moneda.codmoneda " +
         "LEFT OUTER JOIN dba.factcamb " +
         " ON factcamb.codmoneda = 'US' " +
         "AND date(factcamb.fact_fecha) = (select max(date(fact_fecha)) from dba.factcamb where codmoneda = 'US' and date(fact_fecha) = cast('" + factDate + "' as date)) " +
@@ -721,7 +721,7 @@ function runGeneralPucQuery(params, cb) {
         string += "AND padre.nivel <= " + requestedNivel + " ";
     }
 
-    string += "GROUP BY planctaunico.cod_empresa, padre.codplanctaestrategico, padre.nombre, padre.codplanctaestrategicopad, padre.nivel, padre.imputable, planctaunico.tiposaldo, coalesce(moneda.simbolo, plancta.codmoneda, '') ";
+    string += "GROUP BY planctaunico.cod_empresa, padre.codplanctaestrategico, padre.nombre, padre.codplanctaestrategicopad, padre.nivel, padre.imputable, coalesce(moneda.simbolo, padre.codmoneda, '') ";
 
     if (params.incluir !== 'SI') {
         string += "HAVING " + havingExpr + " ";
