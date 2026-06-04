@@ -27,6 +27,15 @@ function getLevel(row: BalanceRow) {
   return Number(row.Nivel || row.nivel || 0);
 }
 
+function rowValue(row: BalanceRow, keys: string[]) {
+  const source = row as Record<string, unknown>;
+  for (const key of keys) {
+    const value = source[key] ?? source[key.toUpperCase()] ?? source[key.toLowerCase()];
+    if (value !== null && typeof value !== 'undefined') return value;
+  }
+  return '';
+}
+
 function formatCurrency(value: number, decimals = 0) {
   return new Intl.NumberFormat('es-PY', {
     minimumFractionDigits: decimals,
@@ -89,8 +98,8 @@ export function BalanceTable({
   const normalizedRows = useMemo(() => rows.map((row) => ({
     cuenta: getCode(row),
     descripcion: getName(row),
-    cuentaPuc: String((row as BalanceRow & { codplanctauni?: string; CodPlanCtaUni?: string }).codplanctauni || (row as BalanceRow & { codplanctauni?: string; CodPlanCtaUni?: string }).CodPlanCtaUni || ''),
-    descripcionPuc: String((row as BalanceRow & { nombreuni?: string; NombreUni?: string }).nombreuni || (row as BalanceRow & { nombreuni?: string; NombreUni?: string }).NombreUni || ''),
+    cuentaPuc: String(rowValue(row, ['codplanctauni', 'CodPlanCtaUni', 'CodPlanCtaUNI', 'codplanctapuc'])).trim(),
+    descripcionPuc: String(rowValue(row, ['nombreuni', 'NombreUni', 'NombreUNI', 'nombrepuc'])).trim(),
     nivel: getLevel(row),
     debito: num(row.TOTAL_DEBITO || row.total_debito),
     credito: num(row.TOTAL_CREDITO || row.total_credito),
@@ -189,19 +198,20 @@ export function BalanceTable({
     const contenido: string[] = [];
 
     if (esCasaDeBolsa) {
-      contenido.push(`${fila1}${fechaCompacta}${codigoUnico}${String(rows.length).padStart(9, ' ')}`);
+      contenido.push(`${fila1}${fechaCompacta}${codigoUnico}${String(normalizedRows.length).padStart(9, ' ')}`);
     } else {
       const baseCab = `${fila1}${fechaCompacta}${codigoUnico}${ruc}`;
-      const espacios = Math.max(0, 61 - baseCab.length - String(rows.length).length);
-      contenido.push(`${baseCab}${' '.repeat(espacios)}${String(rows.length)}`);
+      const espacios = Math.max(0, 61 - baseCab.length - String(normalizedRows.length).length);
+      contenido.push(`${baseCab}${' '.repeat(espacios)}${String(normalizedRows.length)}`);
     }
 
-    for (let i = 0; i < rows.length; i += 1) {
+    for (let i = 0; i < normalizedRows.length; i += 1) {
       const row = rows[i] as BalanceRow & { simbolo?: string; tipo_cuenta?: string };
-      const cuenta = String(row.CodPlanCta || row.codplancta || '').padEnd(18, ' ');
-      const simbolo = String(row.simbolo || 'PYG').trim() || 'PYG';
-      const tipoCuenta = String(row.tipo_cuenta || '').trim();
-      const monto = Math.round(Math.abs(num(row.SALDO || row.saldo)));
+      const normalized = normalizedRows[i];
+      const cuenta = String(normalized.cuentaPuc || normalized.cuenta || '').padEnd(18, ' ');
+      const simbolo = String(rowValue(row, ['simbolo', 'Simbolo']) || 'PYG').trim() || 'PYG';
+      const tipoCuenta = String(rowValue(row, ['tipo_cuenta', 'Tipo_Cuenta', 'tipoCuenta'])).trim();
+      const monto = Math.round(Math.abs(normalized.saldo));
       const montoRellenado = `${String(monto).padStart(18, '0')}00`;
       const nroLinea = String(i + 1).padStart(9, '0');
       contenido.push(`${formulario}${cuenta}${simbolo}0${tipoCuenta}${fechaCompacta}${montoRellenado}${nroLinea}`);
