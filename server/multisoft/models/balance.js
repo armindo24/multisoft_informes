@@ -684,6 +684,7 @@ function runGeneralPucQuery(params, cb) {
         " '0' as CTCtaOrden, " +
         " padre.codplanctaestrategico as codplanctauni, " +
         " max(planctaunico.tipo_cuenta) as tipo_cuenta, " +
+        (exportDetallePuc ? " plancta.codmoneda as codmoneda_contable, " : " '' as codmoneda_contable, ") +
         " coalesce(moneda.simbolo, " + (exportDetallePuc ? "plancta.codmoneda" : "padre.codmoneda") + ", '') as simbolo, " +
         " max(factcamb.factor_compra_set) as factor_compra_set " +
         "FROM dba.control, __PUC_TABLE__ planctaunico " +
@@ -722,7 +723,11 @@ function runGeneralPucQuery(params, cb) {
         string += "AND padre.nivel <= " + requestedNivel + " ";
     }
 
-    string += "GROUP BY planctaunico.cod_empresa, padre.codplanctaestrategico, padre.nombre, padre.codplanctaestrategicopad, padre.nivel, padre.imputable, coalesce(moneda.simbolo, " + (exportDetallePuc ? "plancta.codmoneda" : "padre.codmoneda") + ", '') ";
+    string += "GROUP BY planctaunico.cod_empresa, padre.codplanctaestrategico, padre.nombre, padre.codplanctaestrategicopad, padre.nivel, padre.imputable, ";
+    if (exportDetallePuc) {
+        string += "plancta.codmoneda, ";
+    }
+    string += "coalesce(moneda.simbolo, " + (exportDetallePuc ? "plancta.codmoneda" : "padre.codmoneda") + ", '') ";
 
     if (params.incluir !== 'SI') {
         string += "HAVING " + havingExpr + " ";

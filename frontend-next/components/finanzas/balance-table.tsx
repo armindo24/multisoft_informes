@@ -43,6 +43,15 @@ function formatCurrency(value: number, decimals = 0) {
   }).format(value);
 }
 
+function normalizePucCurrency(value: unknown) {
+  const raw = String(value || '').trim().toUpperCase();
+  if (['GS', 'PY', 'PYG', 'GUARANI', 'GUARANIES'].includes(raw)) return 'PYG';
+  if (['US', 'USD', 'DOLAR', 'DOLARES'].includes(raw)) return 'USD';
+  if (['EU', 'EUR', 'EURO', 'EUROS'].includes(raw)) return 'EUR';
+  if (['AR', 'ARS', 'PESO', 'PESOS'].includes(raw)) return 'ARS';
+  return raw || 'PYG';
+}
+
 function getRowTone(level: number) {
   if (level <= 1) return 'bg-slate-100 font-extrabold text-slate-950';
   if (level === 2) return 'bg-slate-50 font-bold text-slate-900';
@@ -225,7 +234,7 @@ export function BalanceTable({
       const row = exportRows[i] as BalanceRow & { simbolo?: string; tipo_cuenta?: string };
       const normalized = normalizedExportRows[i];
       const cuenta = String(normalized.cuentaPuc || normalized.cuenta || '').padEnd(18, ' ');
-      const simbolo = String(rowValue(row, ['simbolo', 'Simbolo']) || 'PYG').trim() || 'PYG';
+      const simbolo = normalizePucCurrency(rowValue(row, ['codmoneda_contable', 'CodMonedaContable', 'codmoneda', 'CodMoneda', 'simbolo', 'Simbolo']));
       const tipoCuenta = String(rowValue(row, ['tipo_cuenta', 'Tipo_Cuenta', 'tipoCuenta'])).trim();
       const monto = Math.round(Math.abs(normalized.saldo));
       const montoRellenado = `${String(monto).padStart(18, '0')}00`;
