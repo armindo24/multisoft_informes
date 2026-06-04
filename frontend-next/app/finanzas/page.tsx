@@ -656,6 +656,7 @@ export default async function FinanzasPage({
   const integralClientes = ((integralAuxResponse?.clientes || []) as BalanceAuxRow[]);
   const integralProveedores = ((integralAuxResponse?.proveedores || []) as BalanceAuxRow[]);
   const integralWarning = integralAuxResponse?.warning || '';
+  const isBalanceCuentasPuc = balanceCuentasPuc === 'SI';
   const pucPrimaryResponse = shouldLoadBalancePuc && empresa && empresaCanUsePuc
     ? await getBalanceGeneralPuc({
         empresa,
@@ -674,7 +675,7 @@ export default async function FinanzasPage({
         balance_cuentas_puc: balanceCuentasPuc,
       })
     : null;
-  const shouldFallbackPuc = shouldLoadBalancePuc && empresaCanUsePuc && (
+  const shouldFallbackPuc = shouldLoadBalancePuc && empresaCanUsePuc && !isBalanceCuentasPuc && (
     !Array.isArray(pucPrimaryResponse?.data) || pucPrimaryResponse.data.length === 0
   );
   const pucClassicLocal = shouldFallbackPuc
