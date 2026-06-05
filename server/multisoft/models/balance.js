@@ -535,13 +535,14 @@ function runGeneralPucCuentasQuery(params, cb) {
                 var exportMeExpr = "sum(case DBA.PLANCTA.TipoSaldo when 'D' then coalesce(" + accumTable + ".TotalDbME,0) - coalesce(" + accumTable + ".TotalCrME,0) else coalesce(" + accumTable + ".TotalCrME,0) - coalesce(" + accumTable + ".TotalDbME,0) end)";
                 var exportSaldoExpr = exportLocalExpr;
                 var exportHaving = "(cast(" + exportLocalExpr + " as decimal(20,0)) <> 0 OR cast(" + exportMeExpr + " as decimal(20,2)) <> 0)";
-                var padreExpr = "cast(padre.codplanctaestrategico as varchar(60))";
-                var sql = "SELECT padre.cod_empresa as Cod_Empresa, " +
-                    "padre.codplanctaestrategico as CodPlanCta, " +
-                    "padre.nombre as Nombre, " +
-                    "padre.codplanctaestrategicopad as CodPlanCtaPad, " +
-                    "padre.nivel as Nivel, " +
-                    "padre.imputable as Imputable, " +
+                function exportSelect(parentAlias, parentJoin, extraWhere) {
+                    var parentExpr = "cast(" + parentAlias + ".codplanctaestrategico as varchar(60))";
+                    var sql = "SELECT " + parentAlias + ".cod_empresa as Cod_Empresa, " +
+                    parentAlias + ".codplanctaestrategico as CodPlanCta, " +
+                    parentAlias + ".nombre as Nombre, " +
+                    parentAlias + ".codplanctaestrategicopad as CodPlanCtaPad, " +
+                    parentAlias + ".nivel as Nivel, " +
+                    parentAlias + ".imputable as Imputable, " +
                     "cast(sum(coalesce(" + accumTable + ".TotalDb,0)) as decimal(20,0)) as TOTAL_DEBITO, " +
                     "cast(sum(coalesce(" + accumTable + ".TotalCr,0)) as decimal(20,0)) as TOTAL_CREDITO, " +
                     "cast(sum(coalesce(" + accumTable + ".TotalDbME,0)) as decimal(20,2)) as TOTAL_DEBITOME, " +
@@ -551,8 +552,8 @@ function runGeneralPucCuentasQuery(params, cb) {
                     "cast(" + exportSaldoExpr + " as decimal(20,2)) as SALDO, " +
                     "max(DBA.PLANCTA.TipoSaldo) as TipoSaldo, " +
                     "DBA.Control.CTCtaOrden as CTCtaOrden, " +
-                    "padre.codplanctaestrategico as codplanctauni, " +
-                    "padre.nombre as nombreuni, " +
+                    parentAlias + ".codplanctaestrategico as codplanctauni, " +
+                    parentAlias + ".nombre as nombreuni, " +
                     "max(planuni.tipo_cuenta) as tipo_cuenta, " +
                     "planuni.codmoneda as codmoneda_contable, " +
                     "planuni.codmoneda as simbolo " +
@@ -567,24 +568,35 @@ function runGeneralPucCuentasQuery(params, cb) {
                     "AND " + accumTable + ".Periodo = '" + params.periodo + "' " +
                     "AND " + rangeExpr + " >= " + rangeDesde + " " +
                     "AND " + rangeExpr + " <= " + rangeHasta + " " +
-                    "INNER JOIN " + pucTable + " as padre ON planuni.cod_empresa = padre.cod_empresa " +
-                    "AND planuni.periodo = padre.periodo " +
-                    "AND planuni.codplanctaestrategicopad = padre.codplanctaestrategico " +
+                    parentJoin +
                     "WHERE DBA.Control.Cod_Empresa = planuni.cod_empresa " +
                     "AND DBA.Control.Periodo = planuni.periodo " +
                     "AND planuni.cod_empresa = '" + params.empresa + "' " +
                     "AND planuni.periodo = '" + params.periodo + "' " +
                     "AND coalesce(planuni.imputable, 'N') = 'S' " +
-                    "AND " + padreExpr + " >= '" + params.cuentad + "' " +
-                    "AND " + padreExpr + " <= '" + params.cuentah + "' ";
+                    "AND " + parentExpr + " >= '" + params.cuentad + "' " +
+                    "AND " + parentExpr + " <= '" + params.cuentah + "' " +
+                    (extraWhere || "");
                 if (requestedNivel > 0) {
-                    sql += "AND padre.nivel <= " + requestedNivel + " ";
+                    sql += "AND " + parentAlias + ".nivel <= " + requestedNivel + " ";
                 }
-                sql += "GROUP BY padre.cod_empresa, padre.codplanctaestrategico, padre.nombre, padre.codplanctaestrategicopad, padre.nivel, padre.imputable, DBA.Control.CTCtaOrden, planuni.codmoneda ";
+                sql += "GROUP BY " + parentAlias + ".cod_empresa, " + parentAlias + ".codplanctaestrategico, " + parentAlias + ".nombre, " + parentAlias + ".codplanctaestrategicopad, " + parentAlias + ".nivel, " + parentAlias + ".imputable, DBA.Control.CTCtaOrden, planuni.codmoneda ";
                 if (params.incluir !== 'SI') {
                     sql += "HAVING " + exportHaving + " ";
                 }
-                sql += "ORDER BY padre.codplanctaestrategico, planuni.codmoneda";
+                return sql;
+                }
+                var parentJoin = "INNER JOIN " + pucTable + " as padre ON planuni.cod_empresa = padre.cod_empresa " +
+                    "AND planuni.periodo = padre.periodo " +
+                    "AND planuni.codplanctaestrategicopad = padre.codplanctaestrategico ";
+                var level4Join = parentJoin +
+                    "INNER JOIN " + pucTable + " as nivel4 ON padre.cod_empresa = nivel4.cod_empresa " +
+                    "AND padre.periodo = nivel4.periodo " +
+                    "AND padre.codplanctaestrategicopad = nivel4.codplanctaestrategico ";
+                var sql = exportSelect('padre', parentJoin, '') +
+                    " UNION ALL " +
+                    exportSelect('nivel4', level4Join, "AND coalesce(nivel4.nivel, 0) = 4 ") +
+                    " ORDER BY CodPlanCta, simbolo";
                 return sql;
             }
 
