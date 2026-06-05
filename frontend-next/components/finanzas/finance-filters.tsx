@@ -493,7 +493,7 @@ export function FinanceFilters({
                 </label>
                 <input type="hidden" name="aux" value={current.aux || 'NO'} />
                 <input type="hidden" name="saldo" value={current.saldo || 'NO'} />
-                <div className="whitespace-nowrap rounded-lg border border-cyan-200 bg-cyan-50 px-2.5 py-1.5 text-xs leading-none text-cyan-900">
+                <div className="min-w-max whitespace-nowrap rounded-lg border border-cyan-200 bg-cyan-50 px-2.5 py-1.5 text-xs leading-none text-cyan-900">
                   Obs. La exportacion TXT se genera desde nivel 5.
                 </div>
               </>
