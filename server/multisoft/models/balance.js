@@ -589,13 +589,7 @@ function runGeneralPucCuentasQuery(params, cb) {
                 var parentJoin = "INNER JOIN " + pucTable + " as padre ON planuni.cod_empresa = padre.cod_empresa " +
                     "AND planuni.periodo = padre.periodo " +
                     "AND planuni.codplanctaestrategicopad = padre.codplanctaestrategico ";
-                var level4Join = parentJoin +
-                    "INNER JOIN " + pucTable + " as nivel4 ON padre.cod_empresa = nivel4.cod_empresa " +
-                    "AND padre.periodo = nivel4.periodo " +
-                    "AND padre.codplanctaestrategicopad = nivel4.codplanctaestrategico ";
-                var sql = exportSelect('padre', parentJoin, '') +
-                    " UNION ALL " +
-                    exportSelect('nivel4', level4Join, "AND coalesce(nivel4.nivel, 0) = 4 ") +
+                var sql = exportSelect('padre', parentJoin, "AND coalesce(padre.nivel, 0) >= 5 ") +
                     " ORDER BY CodPlanCta, simbolo";
                 return sql;
             }
