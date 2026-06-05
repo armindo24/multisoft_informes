@@ -968,7 +968,7 @@ export default async function FinanzasPage({
           ) : null}
           <BalanceTable
             rows={pucRows}
-            pucExportRows={pucExportRows.length > 0 ? pucExportRows : undefined}
+            pucExportRows={isBalanceCuentasPuc ? pucExportRows : undefined}
             result={pucResult}
             resultME={pucResultME}
             moneda={moneda}

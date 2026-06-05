@@ -105,6 +105,7 @@ export function BalanceTable({
   };
 }) {
   const isBoth = moneda === 'ambas';
+  const hasExplicitPucExportRows = Array.isArray(pucExportRows);
 
   const normalizedRows = useMemo(() => rows.map((row) => ({
     cuenta: getCode(row),
@@ -118,7 +119,7 @@ export function BalanceTable({
     guaranies: num(row.SALDO_LOCAL || row.saldo_local || row.SALDO || row.saldo),
     dolares: num(row.SALDO_ME || row.saldo_me),
   })), [rows]);
-  const normalizedPucExportRows = useMemo(() => (pucExportRows || rows).map((row) => ({
+  const normalizedPucExportRows = useMemo(() => (hasExplicitPucExportRows ? pucExportRows : rows).map((row) => ({
     cuenta: getCode(row),
     descripcion: getName(row),
     cuentaPuc: String(rowValue(row, ['codplanctauni', 'CodPlanCtaUni', 'CodPlanCtaUNI', 'codplanctapuc'])).trim(),
@@ -129,7 +130,7 @@ export function BalanceTable({
     saldo: num(row.SALDO || row.saldo),
     guaranies: num(row.SALDO_LOCAL || row.saldo_local || row.SALDO || row.saldo),
     dolares: num(row.SALDO_ME || row.saldo_me),
-  })), [pucExportRows, rows]);
+  })), [hasExplicitPucExportRows, pucExportRows, rows]);
 
   const resultLabelLocal = result >= 0 ? 'Utilidad' : 'Perdida';
   const resultLabelME = resultME >= 0 ? 'Utilidad' : 'Perdida';
@@ -192,9 +193,13 @@ export function BalanceTable({
   }
 
   function exportPucTxt() {
-    const exportRows = pucExportRows || rows;
+    const exportRows = hasExplicitPucExportRows ? pucExportRows : rows;
     const normalizedExportRows = normalizedPucExportRows;
-    if (!pucExport || !exportRows.length) return;
+    if (!pucExport) return;
+    if (!exportRows.length) {
+      window.alert('No se pudo cargar el detalle PUC para exportar por moneda. Volve a aplicar el filtro antes de exportar.');
+      return;
+    }
 
     const codigoUnico = String(pucExport.codigoEntidad || '').trim();
     if (!codigoUnico) {
