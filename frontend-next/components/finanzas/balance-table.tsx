@@ -46,7 +46,7 @@ function formatCurrency(value: number, decimals = 0) {
 function normalizePucCurrency(value: unknown) {
   const raw = String(value || '').trim().toUpperCase();
   if (['GS', 'PY', 'PYG', 'GUARANI', 'GUARANIES'].includes(raw)) return 'PYG';
-  if (['US', 'USD', 'DOLAR', 'DOLARES'].includes(raw)) return 'USD';
+  if (['US', 'USD', 'U$S', '$', 'DLS', 'DOLAR', 'DOLARES'].includes(raw)) return 'USD';
   if (['EU', 'EUR', 'EURO', 'EUROS'].includes(raw)) return 'EUR';
   if (['AR', 'ARS', 'PESO', 'PESOS'].includes(raw)) return 'ARS';
   return raw || 'PYG';
