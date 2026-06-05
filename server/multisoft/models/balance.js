@@ -652,7 +652,7 @@ function runGeneralPucQuery(params, cb) {
     var saldoExpr = params.moneda == 'local'
         ? localExpr
         : (isAmbas
-            ? "(case when upper(coalesce(moneda.simbolo, " + (exportDetallePuc ? "plancta.codmoneda" : "padre.codmoneda") + ", '')) in ('GS','PYG') then " + localExpr + " else " + meExpr + " end)"
+            ? "(case when upper(coalesce(moneda.simbolo, " + (exportDetallePuc ? "planctaunico.codmoneda" : "padre.codmoneda") + ", '')) in ('GS','PYG') then " + localExpr + " else " + meExpr + " end)"
             : meExpr);
     var saldoScale = (params.moneda == 'local' ? "0" : "2");
     var havingExpr = isAmbas
@@ -684,8 +684,8 @@ function runGeneralPucQuery(params, cb) {
         " '0' as CTCtaOrden, " +
         " padre.codplanctaestrategico as codplanctauni, " +
         " max(planctaunico.tipo_cuenta) as tipo_cuenta, " +
-        (exportDetallePuc ? " plancta.codmoneda as codmoneda_contable, " : " '' as codmoneda_contable, ") +
-        " coalesce(moneda.simbolo, " + (exportDetallePuc ? "plancta.codmoneda" : "padre.codmoneda") + ", '') as simbolo, " +
+        (exportDetallePuc ? " planctaunico.codmoneda as codmoneda_contable, " : " '' as codmoneda_contable, ") +
+        " coalesce(moneda.simbolo, " + (exportDetallePuc ? "planctaunico.codmoneda" : "padre.codmoneda") + ", '') as simbolo, " +
         " max(factcamb.factor_compra_set) as factor_compra_set " +
         "FROM dba.control, __PUC_TABLE__ planctaunico " +
         "INNER JOIN dba.plancta " +
@@ -707,7 +707,7 @@ function runGeneralPucQuery(params, cb) {
         "AND planctaunico.periodo = padre.periodo " +
         "AND planctaunico.codplanctaestrategicopad = padre.codplanctaestrategico " +
         "LEFT OUTER JOIN dba.moneda " +
-        " ON " + (exportDetallePuc ? "plancta.codmoneda" : "padre.codmoneda") + " = moneda.codmoneda " +
+        " ON " + (exportDetallePuc ? "planctaunico.codmoneda" : "padre.codmoneda") + " = moneda.codmoneda " +
         "LEFT OUTER JOIN dba.factcamb " +
         " ON factcamb.codmoneda = 'US' " +
         "AND date(factcamb.fact_fecha) = (select max(date(fact_fecha)) from dba.factcamb where codmoneda = 'US' and date(fact_fecha) = cast('" + factDate + "' as date)) " +
@@ -725,9 +725,9 @@ function runGeneralPucQuery(params, cb) {
 
     string += "GROUP BY planctaunico.cod_empresa, padre.codplanctaestrategico, padre.nombre, padre.codplanctaestrategicopad, padre.nivel, padre.imputable, ";
     if (exportDetallePuc) {
-        string += "plancta.codmoneda, ";
+        string += "planctaunico.codmoneda, ";
     }
-    string += "coalesce(moneda.simbolo, " + (exportDetallePuc ? "plancta.codmoneda" : "padre.codmoneda") + ", '') ";
+    string += "coalesce(moneda.simbolo, " + (exportDetallePuc ? "planctaunico.codmoneda" : "padre.codmoneda") + ", '') ";
 
     if (params.incluir !== 'SI') {
         string += "HAVING " + havingExpr + " ";
