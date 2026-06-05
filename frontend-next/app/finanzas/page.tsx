@@ -675,7 +675,7 @@ export default async function FinanzasPage({
         balance_cuentas_puc: balanceCuentasPuc,
       })
     : null;
-  const pucExportResponse = shouldLoadBalancePuc && empresa && empresaCanUsePuc && isBalanceCuentasPuc
+  const pucExportResponse = shouldLoadBalancePuc && empresa && empresaCanUsePuc
     ? await getBalanceGeneralPuc({
         empresa,
         periodo,
@@ -690,7 +690,7 @@ export default async function FinanzasPage({
         practicado_al: practicadoAl,
         recalcular_saldos: 'NO',
         codigo_entidad: empresaCodigoEntidad,
-        balance_cuentas_puc: balanceCuentasPuc,
+        balance_cuentas_puc: 'SI',
         export_detalle_puc: 'SI',
       })
     : null;
@@ -968,7 +968,7 @@ export default async function FinanzasPage({
           ) : null}
           <BalanceTable
             rows={pucRows}
-            pucExportRows={isBalanceCuentasPuc ? pucExportRows : undefined}
+            pucExportRows={pucExportRows}
             result={pucResult}
             resultME={pucResultME}
             moneda={moneda}

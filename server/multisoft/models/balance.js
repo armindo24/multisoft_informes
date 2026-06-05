@@ -477,6 +477,7 @@ function attachResultadoEjercicio(params, rows, warning, cb) {
 
 function runGeneralPucCuentasQuery(params, cb) {
     var requestedNivel = parseInt(params.nivel, 10) || 0;
+    var exportDetallePuc = String(params.export_detalle_puc || '').trim().toUpperCase() === 'SI';
     var mesDesde = parseInt(params.mesd, 10) || 1;
     var mesHasta = parseInt(params.mesh, 10) || mesDesde;
     var anhoMesDiaDesde = parseInt(String(params.periodo) + (mesDesde < 10 ? ('0' + mesDesde) : String(mesDesde)) + '01', 10);
@@ -528,6 +529,64 @@ function runGeneralPucCuentasQuery(params, cb) {
             var havingExpr = isAmbas
                 ? ("(cast(" + localExpr + " as decimal(20,0)) <> 0 OR cast(" + meExpr + " as decimal(20,2)) <> 0)")
                 : ("cast(" + saldoExpr + " as decimal(20," + saldoScale + ")) <> 0");
+
+            function buildExportSql() {
+                var exportLocalExpr = "sum(case DBA.PLANCTA.TipoSaldo when 'D' then coalesce(" + accumTable + ".TotalDb,0) - coalesce(" + accumTable + ".TotalCr,0) else coalesce(" + accumTable + ".TotalCr,0) - coalesce(" + accumTable + ".TotalDb,0) end)";
+                var exportMeExpr = "sum(case DBA.PLANCTA.TipoSaldo when 'D' then coalesce(" + accumTable + ".TotalDbME,0) - coalesce(" + accumTable + ".TotalCrME,0) else coalesce(" + accumTable + ".TotalCrME,0) - coalesce(" + accumTable + ".TotalDbME,0) end)";
+                var exportSaldoExpr = exportLocalExpr;
+                var exportHaving = "(cast(" + exportLocalExpr + " as decimal(20,0)) <> 0 OR cast(" + exportMeExpr + " as decimal(20,2)) <> 0)";
+                var padreExpr = "cast(padre.codplanctaestrategico as varchar(60))";
+                var sql = "SELECT padre.cod_empresa as Cod_Empresa, " +
+                    "padre.codplanctaestrategico as CodPlanCta, " +
+                    "padre.nombre as Nombre, " +
+                    "padre.codplanctaestrategicopad as CodPlanCtaPad, " +
+                    "padre.nivel as Nivel, " +
+                    "padre.imputable as Imputable, " +
+                    "cast(sum(coalesce(" + accumTable + ".TotalDb,0)) as decimal(20,0)) as TOTAL_DEBITO, " +
+                    "cast(sum(coalesce(" + accumTable + ".TotalCr,0)) as decimal(20,0)) as TOTAL_CREDITO, " +
+                    "cast(sum(coalesce(" + accumTable + ".TotalDbME,0)) as decimal(20,2)) as TOTAL_DEBITOME, " +
+                    "cast(sum(coalesce(" + accumTable + ".TotalCrME,0)) as decimal(20,2)) as TOTAL_CREDITOME, " +
+                    "cast(" + exportLocalExpr + " as decimal(20,0)) as SALDO_LOCAL, " +
+                    "cast(" + exportMeExpr + " as decimal(20,2)) as SALDO_ME, " +
+                    "cast(" + exportSaldoExpr + " as decimal(20,2)) as SALDO, " +
+                    "max(DBA.PLANCTA.TipoSaldo) as TipoSaldo, " +
+                    "DBA.Control.CTCtaOrden as CTCtaOrden, " +
+                    "padre.codplanctaestrategico as codplanctauni, " +
+                    "padre.nombre as nombreuni, " +
+                    "max(planuni.tipo_cuenta) as tipo_cuenta, " +
+                    "planuni.codmoneda as codmoneda_contable, " +
+                    "planuni.codmoneda as simbolo " +
+                    "FROM DBA.Control, " + pucTable + " as planuni " +
+                    "INNER JOIN DBA.PLANCTA ON DBA.PLANCTA.Cod_Empresa = planuni.cod_empresa " +
+                    "AND DBA.PLANCTA.Periodo = planuni.periodo " +
+                    "AND DBA.PLANCTA.CodPlanCtauni = planuni.codplanctaestrategico " +
+                    "LEFT OUTER JOIN " + accumTable + " ON DBA.PLANCTA.Cod_Empresa = " + accumTable + ".Cod_Empresa " +
+                    "AND DBA.PLANCTA.Periodo = " + accumTable + ".Periodo " +
+                    "AND DBA.PLANCTA.CodPlanCta = " + accumTable + ".CodPlanCta " +
+                    "AND " + accumTable + ".Cod_Empresa = '" + params.empresa + "' " +
+                    "AND " + accumTable + ".Periodo = '" + params.periodo + "' " +
+                    "AND " + rangeExpr + " >= " + rangeDesde + " " +
+                    "AND " + rangeExpr + " <= " + rangeHasta + " " +
+                    "INNER JOIN " + pucTable + " as padre ON planuni.cod_empresa = padre.cod_empresa " +
+                    "AND planuni.periodo = padre.periodo " +
+                    "AND planuni.codplanctaestrategicopad = padre.codplanctaestrategico " +
+                    "WHERE DBA.Control.Cod_Empresa = planuni.cod_empresa " +
+                    "AND DBA.Control.Periodo = planuni.periodo " +
+                    "AND planuni.cod_empresa = '" + params.empresa + "' " +
+                    "AND planuni.periodo = '" + params.periodo + "' " +
+                    "AND coalesce(planuni.imputable, 'N') = 'S' " +
+                    "AND " + padreExpr + " >= '" + params.cuentad + "' " +
+                    "AND " + padreExpr + " <= '" + params.cuentah + "' ";
+                if (requestedNivel > 0) {
+                    sql += "AND padre.nivel <= " + requestedNivel + " ";
+                }
+                sql += "GROUP BY padre.cod_empresa, padre.codplanctaestrategico, padre.nombre, padre.codplanctaestrategicopad, padre.nivel, padre.imputable, DBA.Control.CTCtaOrden, planuni.codmoneda ";
+                if (params.incluir !== 'SI') {
+                    sql += "HAVING " + exportHaving + " ";
+                }
+                sql += "ORDER BY padre.codplanctaestrategico, planuni.codmoneda";
+                return sql;
+            }
 
             function buildSql(usePucJoin, useFiscalField) {
             var planCtaExpr = "cast(DBA.PLANCTA.CodPlanCta as varchar(60))";
@@ -589,6 +648,30 @@ function runGeneralPucCuentasQuery(params, cb) {
             }
 
             function runWithFallback() {
+            if (exportDetallePuc && allowPucJoin) {
+                var exportSql = buildExportSql();
+                return conn.exec(exportSql, function (errExport, rowExport) {
+                    if (errExport) {
+                        console.error('[runGeneralPucCuentasQuery] Error export detalle PUC:', errExport.message || errExport);
+                        return cb([], getSchemaWarning(errExport, 'Balance General PUC'));
+                    }
+                    if ((rowExport || []).length === 0 && hasAcumplanDia) {
+                        var exportSqlMes = exportSql
+                            .replace(/DBA\.AcumplanDia/g, 'DBA.Acumplan')
+                            .replace(/AnhoMesDia/g, 'AnhoMes')
+                            .replace(new RegExp(">=\\s*" + rangeDesde, "g"), ">= " + anhoMesDesde)
+                            .replace(new RegExp("<=\\s*" + rangeHasta, "g"), "<= " + anhoMesHasta);
+                        return conn.exec(exportSqlMes, function (errExportMes, rowExportMes) {
+                            if (errExportMes) {
+                                console.error('[runGeneralPucCuentasQuery] Error export detalle PUC mensual:', errExportMes.message || errExportMes);
+                                return cb([], getSchemaWarning(errExportMes, 'Balance General PUC'));
+                            }
+                            return cb(rowExportMes || [], '');
+                        });
+                    }
+                    return cb(rowExport || [], '');
+                });
+            }
             var sql = buildSql(allowPucJoin, true);
             conn.exec(sql, function (err, row) {
                 if (err) {
