@@ -843,6 +843,7 @@ export default async function FinanzasPage({
         eyebrow={section === 'rg90' ? 'Libro fiscal' : 'Informes gerenciales'}
         title={section === 'rg90' ? 'RG90' : 'Finanzas'}
         description={section === 'rg90' ? '' : 'Consulta balances, flujo financiero, libros contables y saldos de proveedores con filtros ejecutivos y exportacion de resultados.'}
+        compact
       />
 
       <FinanceFilters empresas={empresas} current={currentWithSection} tipoAsientos={tipoAsientos} accountOptions={cuentaOptions} auxOptions={auxiliarOptions} sucursalOptions={sucursalOptions} />
