@@ -977,7 +977,7 @@ export default async function FinanzasPage({
             showPucMapping={balanceCuentasPuc === 'SI'}
             exportMeta={reportMeta}
             exportBranding={exportBranding}
-            pucExport={{
+            pucExport={isBalanceCuentasPuc ? undefined : {
               codigoEntidad: empresaCodigoEntidad,
               periodo,
               mesh,
