@@ -838,7 +838,7 @@ export default async function FinanzasPage({
     : null;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <PageHeader
         eyebrow={section === 'rg90' ? 'Libro fiscal' : 'Informes gerenciales'}
         title={section === 'rg90' ? 'RG90' : 'Finanzas'}

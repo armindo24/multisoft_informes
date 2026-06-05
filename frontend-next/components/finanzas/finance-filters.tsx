@@ -246,8 +246,8 @@ export function FinanceFilters({
         className={[
           filtersOpen ? 'grid' : 'hidden',
           showRg90Advanced
-            ? 'card gap-3 p-3 md:grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[minmax(220px,1.2fr)_8.5rem_minmax(160px,0.8fr)_minmax(220px,1fr)_minmax(190px,0.9fr)_auto]'
-            : 'card gap-3 p-4 md:grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6',
+            ? 'card gap-2.5 p-3 md:grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[minmax(220px,1.2fr)_8.5rem_minmax(160px,0.8fr)_minmax(220px,1fr)_minmax(190px,0.9fr)_auto]'
+            : 'card gap-2.5 p-3 md:grid md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6',
         ].join(' ')}
         onSubmit={(event) => {
           event.preventDefault();
