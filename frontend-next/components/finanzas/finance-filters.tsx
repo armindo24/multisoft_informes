@@ -493,8 +493,8 @@ export function FinanceFilters({
                 </label>
                 <input type="hidden" name="aux" value={current.aux || 'NO'} />
                 <input type="hidden" name="saldo" value={current.saldo || 'NO'} />
-                <div className="rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
-                  Vista PUC con filtros heredados. Si la base no soporta la estructura PUC completa, se mostrara el respaldo clasico.
+                <div className="rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs leading-5 text-cyan-900">
+                  Vista PUC con filtros heredados. La exportacion TXT se genera desde nivel 5.
                 </div>
               </>
             ) : null}
