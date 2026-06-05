@@ -494,7 +494,7 @@ export function FinanceFilters({
                 <input type="hidden" name="aux" value={current.aux || 'NO'} />
                 <input type="hidden" name="saldo" value={current.saldo || 'NO'} />
                 <div className="rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs leading-5 text-cyan-900">
-                  Vista PUC con filtros heredados. La exportacion TXT se genera desde nivel 5.
+                  Obs. La exportacion TXT se genera desde nivel 5.
                 </div>
               </>
             ) : null}
