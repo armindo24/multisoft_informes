@@ -291,7 +291,7 @@ export function AppShell({
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)]">
-      <div className="grid min-h-screen lg:grid-cols-[284px_minmax(0,1fr)]">
+      <div className="grid min-h-screen lg:grid-cols-[252px_minmax(0,1fr)]">
         <aside className="hidden border-r border-slate-800 bg-slate-950 text-slate-100 lg:block">
           <div className="sticky top-0 flex h-screen flex-col overflow-y-auto px-3 py-4">
             <div className="px-2 pb-4">

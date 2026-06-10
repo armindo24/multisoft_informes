@@ -36,31 +36,31 @@ type ColumnDef = {
 function buildColumns(ecuacionMat?: boolean): readonly ColumnDef[] {
   if (ecuacionMat) {
     return [
-      { key: 'anio', label: 'AÑO', align: 'left', sticky: true, minWidth: '72px', left: '0px' },
-      { key: 'mes', label: 'MES', align: 'left', sticky: true, minWidth: '72px', left: '72px' },
-      { key: 'cod_articulo', label: 'CODIGO PY', align: 'left', sticky: true, minWidth: '120px', left: '144px' },
-      { key: 'cod_pt_reacondicionado', label: 'CODIGO PY REACOND.', align: 'left', sticky: true, minWidth: '132px', left: '264px' },
-      { key: 'des_art', label: 'PRODUCTO', align: 'left', sticky: true, minWidth: '280px', left: '396px' },
-      { key: 'fob_usd_origen', label: 'FOB U$S (CARTILLA EN ORIGEN)', align: 'right', decimals: 2 },
-      { key: 'porcentaje_costo_total_importacion', label: '% CTO. TOTAL IMPORT.', align: 'right', decimals: 2 },
-      { key: 'costo_total_us_actual', label: 'CTO. TOTAL USD (ACTUAL)', align: 'right', decimals: 2 },
-      { key: 'servicio_clasificacion_director', label: 'SERV. COLOCACION STICKER / ENGOMADO GS.', align: 'right', decimals: 0 },
-      { key: 'servicio_clasificacion_proveedor', label: 'SERV. COLOCACION PROSPECTO GS.', align: 'right', decimals: 0 },
-      { key: 'servicio_no_gr', label: 'SERVICIO MO GS.', align: 'right', decimals: 0 },
+      { key: 'anio', label: 'AÑO', align: 'left', sticky: true, minWidth: '50px', left: '0px' },
+      { key: 'mes', label: 'MES', align: 'left', sticky: true, minWidth: '46px', left: '50px' },
+      { key: 'cod_articulo', label: 'CÓD. PY', align: 'left', sticky: true, minWidth: '82px', left: '96px' },
+      { key: 'cod_pt_reacondicionado', label: 'CÓD. REAC.', align: 'left', sticky: true, minWidth: '92px', left: '178px' },
+      { key: 'des_art', label: 'PRODUCTO', align: 'left', sticky: true, minWidth: '210px', left: '270px' },
+      { key: 'fob_usd_origen', label: 'FOB USD', align: 'right', decimals: 2 },
+      { key: 'porcentaje_costo_total_importacion', label: '% CTO. IMP.', align: 'right', decimals: 2 },
+      { key: 'costo_total_us_actual', label: 'CTO. USD', align: 'right', decimals: 2 },
+      { key: 'servicio_clasificacion_director', label: 'STICKER / ENG.', align: 'right', decimals: 0 },
+      { key: 'servicio_clasificacion_proveedor', label: 'PROSPECTO', align: 'right', decimals: 0 },
+      { key: 'servicio_no_gr', label: 'SERV. MO', align: 'right', decimals: 0 },
       { key: 'estuche_gr', label: 'ESTUCHE GS.', align: 'right', decimals: 0 },
-      { key: 'prospecto_gr', label: 'PROSPECTO GS.', align: 'right', decimals: 0 },
+      { key: 'prospecto_gr', label: 'PROS. GS.', align: 'right', decimals: 0 },
       { key: 'inkjet_gr', label: 'INKJET GS.', align: 'right', decimals: 0 },
-      { key: 'sticker_sello_seguridad', label: 'STICKER / SELLO DE SEGURIDAD', align: 'right', decimals: 0 },
-      { key: 'solvente_celofane', label: 'SOLVENTE / CUCHARA', align: 'right', decimals: 0 },
-      { key: 'total_costo_produccion_gs', label: 'TOTAL COSTO PRODUCCION GS.', align: 'right', decimals: 0 },
-      { key: 'total_costo_produccion_us', label: 'TOTAL COSTO PRODUCCION U$S', align: 'right', decimals: 2 },
-      { key: 'costo_total_final_us', label: 'COSTO TOTAL FINAL U$S', align: 'right', decimals: 2 },
+      { key: 'sticker_sello_seguridad', label: 'STICKER / SELLO', align: 'right', decimals: 0 },
+      { key: 'solvente_celofane', label: 'SOLV. / CUCHARA', align: 'right', decimals: 0 },
+      { key: 'total_costo_produccion_gs', label: 'CTO. PROD. GS.', align: 'right', decimals: 0 },
+      { key: 'total_costo_produccion_us', label: 'CTO. PROD. USD', align: 'right', decimals: 2 },
+      { key: 'costo_total_final_us', label: 'CTO. FINAL USD', align: 'right', decimals: 2 },
     ] as const;
   }
 
   return [
-    { key: 'cod_articulo', label: 'Codigo', align: 'left' },
-    { key: 'des_art', label: 'Descripcion', align: 'left' },
+    { key: 'cod_articulo', label: 'Código', align: 'left' },
+    { key: 'des_art', label: 'Descripción', align: 'left' },
     { key: 'cod_tp_art', label: 'Tipo', align: 'left' },
     { key: 'estado', label: 'Estado', align: 'left' },
     { key: 'cto_prom_gs', label: 'Costo Promedio Gs', align: 'right', decimals: 0 },
@@ -165,11 +165,11 @@ export function StockCostoArticuloFullTable({
 
   return (
     <section className="card overflow-hidden">
-      <div className="sticky top-0 z-30 border-b border-slate-200 bg-white px-5 py-4">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="sticky top-0 z-30 border-b border-slate-200 bg-white px-4 py-2.5">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Costo Articulo Full</h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <h2 className="text-base font-semibold text-slate-900">Costo Articulo Full</h2>
+            <p className="mt-0.5 text-xs text-slate-500">
               {ecuacionMat
                 ? 'Vista Ecuacion BC materiales, con columnas alineadas al formato historico.'
                 : 'Vista basada en el endpoint actual del backend, alineada al informe historico.'}
@@ -210,13 +210,13 @@ export function StockCostoArticuloFullTable({
         </div>
       </div>
       <div className="max-h-[70vh] overflow-auto">
-        <table className="min-w-full border-separate border-spacing-0 text-sm">
+        <table className="min-w-full border-separate border-spacing-0 text-[11px] leading-4">
           <thead>
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`sticky top-0 z-30 border-b border-slate-200 bg-slate-50 px-4 py-3 align-top font-semibold text-slate-700 ${column.align === 'right' ? 'text-right' : 'text-left'} ${getStickyClasses(column, 'head')}`}
+                  className={`sticky top-0 z-30 h-8 border-b border-slate-200 bg-slate-50 px-2 py-1.5 align-middle font-semibold text-slate-700 ${column.align === 'right' ? 'text-right' : 'text-left'} ${getStickyClasses(column, 'head')}`}
                   style={getCellStyle(column)}
                 >
                   {column.label}
@@ -231,7 +231,7 @@ export function StockCostoArticuloFullTable({
                   {columns.map((column) => (
                     <td
                       key={`${column.key}-${index}`}
-                      className={`border-b border-slate-100 px-4 py-3 ${column.align === 'right' ? 'text-right tabular-nums' : ''} ${getStickyClasses(column, 'body')}`}
+                      className={`h-8 border-b border-slate-100 px-2 py-1.5 ${column.align === 'right' ? 'text-right tabular-nums' : ''} ${getStickyClasses(column, 'body')}`}
                       style={getCellStyle(column)}
                     >
                       {renderCellValue(row, column)}

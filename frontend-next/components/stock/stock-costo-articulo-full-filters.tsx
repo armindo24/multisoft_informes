@@ -49,7 +49,7 @@ export function StockCostoArticuloFullFilters({
       </button>
       <form
         id="costo-articulo-full"
-        className={`${filtersOpen ? 'grid' : 'hidden'} card gap-3 p-3 md:grid md:grid-cols-2 xl:grid-cols-[minmax(180px,1.3fr)_minmax(130px,0.8fr)_minmax(150px,1fr)_minmax(150px,1fr)_minmax(170px,1fr)_minmax(180px,1fr)_auto]`}
+        className={`${filtersOpen ? 'grid' : 'hidden'} card gap-2 p-2.5 md:grid md:grid-cols-2 xl:grid-cols-[minmax(180px,1.35fr)_minmax(120px,0.75fr)_minmax(140px,0.9fr)_minmax(140px,0.9fr)_minmax(130px,0.75fr)_minmax(130px,0.75fr)_auto]`}
         onSubmit={(event) => {
           event.preventDefault();
           setProgressValue(18);
@@ -92,8 +92,8 @@ export function StockCostoArticuloFullFilters({
         }}
       >
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Empresa</label>
-          <select name="empresa" defaultValue={current.empresa} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm">
+          <label className="mb-0.5 block text-xs font-medium text-slate-700">Empresa</label>
+          <select name="empresa" defaultValue={current.empresa} className="h-8 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs">
             {empresas.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -102,8 +102,8 @@ export function StockCostoArticuloFullFilters({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Estado</label>
-          <select name="estado" defaultValue={current.estado} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm">
+          <label className="mb-0.5 block text-xs font-medium text-slate-700">Estado</label>
+          <select name="estado" defaultValue={current.estado} className="h-8 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs">
             <option value="">Todos</option>
             <option value="A">Activo</option>
             <option value="I">Inactivo</option>
@@ -111,31 +111,31 @@ export function StockCostoArticuloFullFilters({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Fecha desde</label>
-          <input type="date" name="fechad" defaultValue={current.fechad} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" />
+          <label className="mb-0.5 block text-xs font-medium text-slate-700">Desde</label>
+          <input type="date" name="fechad" defaultValue={current.fechad} className="h-8 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Fecha hasta</label>
-          <input type="date" name="fechah" defaultValue={current.fechah} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" />
+          <label className="mb-0.5 block text-xs font-medium text-slate-700">Hasta</label>
+          <input type="date" name="fechah" defaultValue={current.fechah} className="h-8 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs" />
         </div>
-        <label className="flex min-h-[42px] items-center gap-2 self-end rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+        <label className="flex h-8 items-center gap-2 self-end px-1 text-xs text-slate-700">
           <input type="checkbox" name="calcular_empresa" value="S" defaultChecked={current.calcular_empresa === 'S'} />
-          Calcular toda empresa
+          Toda empresa
         </label>
-        <label className="flex min-h-[42px] items-center gap-2 self-end rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+        <label className="flex h-8 items-center gap-2 self-end px-1 text-xs text-slate-700">
           <input type="checkbox" name="ecuacion_mat" value="S" defaultChecked={current.ecuacion_mat === 'S'} />
-          Ecuacion BC materiales
+          Ecuacion BC
         </label>
         <div className="flex items-end justify-end gap-2 md:col-span-2 xl:col-span-1">
           <button
             type="submit"
             id="btn-procesar-costo-articulo-full"
             disabled={isSubmitting || isPending}
-            className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-sm font-medium text-white disabled:cursor-wait disabled:opacity-80"
+            className="inline-flex h-8 items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 text-xs font-medium text-white disabled:cursor-wait disabled:opacity-80"
           >
             {isSubmitting || isPending ? 'Procesando...' : 'Procesar'}
           </button>
-          <Link href="/stock?section=costo-articulo-full#costo-articulo-full" className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700">
+          <Link href="/stock?section=costo-articulo-full#costo-articulo-full" className="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700">
             Limpiar
           </Link>
         </div>
