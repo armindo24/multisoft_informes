@@ -22,6 +22,7 @@ type NotificationSummary = {
 };
 
 const NOTIFICATION_SUMMARY_EVENT = 'multisoft:notification-summary-updated';
+const COMPANY_ASSIGNMENTS_EVENT = 'multisoft:company-assignments-updated';
 
 function isActivePath(pathname: string, href: string) {
   if (href === '/') return pathname === '/';
@@ -154,6 +155,7 @@ export function AppShell({
     if (!user?.id) return;
     if (routeEmpresa) return;
 
+    const activeUserId = Number(user.id);
     let cancelled = false;
 
     async function loadEmpresa() {
@@ -168,17 +170,26 @@ export function AppShell({
       if (cancelled || !payload.ok) return;
 
       const nextEmpresa = String(payload.data?.empresa || '').trim().toUpperCase();
-      if (nextEmpresa && !cancelled) {
-        setResolvedEmpresa(nextEmpresa);
-      }
+      setResolvedEmpresa(nextEmpresa);
+    }
+
+    function handleAssignmentsUpdated(event: Event) {
+      const detail = (event as CustomEvent<{ userId?: number }>).detail;
+      if (Number(detail?.userId || 0) !== activeUserId) return;
+
+      setSelectedEmpresaOverride('');
+      void loadEmpresa();
+      router.refresh();
     }
 
     void loadEmpresa();
+    window.addEventListener(COMPANY_ASSIGNMENTS_EVENT, handleAssignmentsUpdated as EventListener);
 
     return () => {
       cancelled = true;
+      window.removeEventListener(COMPANY_ASSIGNMENTS_EVENT, handleAssignmentsUpdated as EventListener);
     };
-  }, [pathname, routeEmpresa, user?.id]);
+  }, [pathname, routeEmpresa, router, user?.id]);
 
   useEffect(() => {
     const activeItem = visibleNavigation.find((item) => isActivePath(pathname, item.href));

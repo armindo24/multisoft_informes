@@ -49,6 +49,7 @@ export function UserCompanyPanel() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [canManageAssignments, setCanManageAssignments] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(0);
 
   const selectedUser = users.find((user) => user.id === selectedUserId) || null;
 
@@ -73,6 +74,7 @@ export function UserCompanyPanel() {
       setUsers(payload.data.users);
       setOptions(payload.data.options);
       setCanManageAssignments(Boolean(payload.data.permissions?.canManageAssignments));
+      setCurrentUserId(Number(payload.data.permissions?.currentUserId || 0));
 
       const firstUserId = payload.data.users[0]?.id || 0;
       setSelectedUserId(firstUserId);
@@ -106,6 +108,7 @@ export function UserCompanyPanel() {
 
     const nextAssignments = payload.data.assignments.map(assignmentKey);
     setCanManageAssignments(Boolean(payload.data.permissions?.canManageAssignments));
+    setCurrentUserId(Number(payload.data.permissions?.currentUserId || 0));
     setSelectedValues(nextAssignments);
     setAssignmentCache((current) => ({ ...current, [userId]: nextAssignments }));
     setLoadingAssignments(false);
@@ -180,6 +183,11 @@ export function UserCompanyPanel() {
 
     setAssignmentCache((current) => ({ ...current, [selectedUserId]: [...selectedValues] }));
     setMessage({ type: 'success', text: 'Asignacion de empresas guardada correctamente.' });
+    if (selectedUserId === currentUserId) {
+      window.dispatchEvent(new CustomEvent('multisoft:company-assignments-updated', {
+        detail: { userId: selectedUserId },
+      }));
+    }
     setSaving(false);
   }
 

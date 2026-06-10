@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import {
   loadCompanyAccessOptions,
   loadUserCompanyAssignments,
@@ -85,6 +86,8 @@ export async function POST(request: Request) {
       userId,
       Array.isArray(body.values) ? body.values.map((item) => String(item)) : [],
     );
+
+    revalidatePath('/', 'layout');
 
     return NextResponse.json({ ok: true, data: saved });
   } catch (error) {
