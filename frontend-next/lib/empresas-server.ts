@@ -20,7 +20,7 @@ export function getEmpresaCode(item: Record<string, string>) {
   ).trim().toUpperCase();
 }
 
-function orderEmpresasByAssignments(
+function filterEmpresasByAssignments(
   empresas: Array<Record<string, string>>,
   assignments: Awaited<ReturnType<typeof loadUserCompanyAssignments>>,
   base: 'Integrado' | 'Sueldo',
@@ -32,7 +32,7 @@ function orderEmpresasByAssignments(
       .filter(Boolean),
   ));
 
-  if (!assignedCodes.length || !empresas.length) return empresas;
+  if (!assignedCodes.length || !empresas.length) return [];
 
   const byCode = new Map<string, Record<string, string>>();
   for (const item of empresas) {
@@ -42,17 +42,9 @@ function orderEmpresasByAssignments(
     }
   }
 
-  const orderedCodes = new Set<string>();
-  const ordered = assignedCodes
-    .map((code) => {
-      const item = byCode.get(code);
-      if (item) orderedCodes.add(code);
-      return item;
-    })
+  return assignedCodes
+    .map((code) => byCode.get(code))
     .filter(Boolean) as Array<Record<string, string>>;
-
-  const remaining = empresas.filter((item) => !orderedCodes.has(getEmpresaCode(item)));
-  return [...ordered, ...remaining];
 }
 
 export async function getScopedEmpresas(base: 'Integrado' | 'Sueldo' = 'Integrado'): Promise<EmpresaEnvelope> {
@@ -70,7 +62,7 @@ export async function getScopedEmpresas(base: 'Integrado' | 'Sueldo' = 'Integrad
   if (Array.isArray(response?.data)) {
     return {
       ...response,
-      data: orderEmpresasByAssignments(response.data, assignments, base),
+      data: filterEmpresasByAssignments(response.data, assignments, base),
     };
   }
 
