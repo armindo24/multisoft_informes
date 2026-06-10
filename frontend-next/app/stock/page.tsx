@@ -175,7 +175,7 @@ export default async function StockPage({
       : '';
 
   return (
-    <div className="space-y-5">
+    <div className={isCostoArticuloFullMode ? 'space-y-3' : 'space-y-5'}>
       <PageHeader
         eyebrow="Inventario"
         title={isCostoArticuloFullMode ? 'Costo Articulo Full' : 'Stock'}
@@ -184,6 +184,7 @@ export default async function StockPage({
             ? 'Consulta costos de articulos, materiales y componentes asociados con una vista compacta para analisis operativo.'
             : 'Consulta existencias, valorizacion y catalogos auxiliares con filtros por empresa, sucursal, deposito y familia.'
         }
+        compact={isCostoArticuloFullMode}
       />
 
       {isCostoArticuloFullMode ? (
