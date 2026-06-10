@@ -167,7 +167,7 @@ export default async function StockPage({
   const currencyLabel = moneda === 'E' ? 'USD' : 'Gs';
 
   const current = { empresa, sucursal, deposito, familia, grupo, tipo, estado, existencia, moneda };
-  const costoArticuloCurrent = { empresa, articulo, tipo, estado, fechad, fechah, calcular_empresa, ecuacion_mat };
+  const costoArticuloCurrent = { empresa, estado, fechad, fechah, calcular_empresa, ecuacion_mat };
   const connectionWarning = !empresa
     ? 'No se encontraron empresas configuradas en el API.'
     : !isCostoArticuloFullMode && !existenciaResponse && !valorizadoResponse
@@ -187,7 +187,7 @@ export default async function StockPage({
       />
 
       {isCostoArticuloFullMode ? (
-        <StockCostoArticuloFullFilters empresas={empresas} tipos={tipos} current={costoArticuloCurrent} />
+        <StockCostoArticuloFullFilters empresas={empresas} current={costoArticuloCurrent} />
       ) : (
         <StockFilters
           empresas={empresas}

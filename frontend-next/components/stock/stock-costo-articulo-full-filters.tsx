@@ -8,11 +8,9 @@ import { SelectOption } from '@/types/stock';
 
 export function StockCostoArticuloFullFilters({
   empresas,
-  tipos,
   current,
 }: {
   empresas: SelectOption[];
-  tipos: SelectOption[];
   current: Record<string, string>;
 }) {
   const router = useRouter();
@@ -51,7 +49,7 @@ export function StockCostoArticuloFullFilters({
       </button>
       <form
         id="costo-articulo-full"
-        className={`${filtersOpen ? 'grid' : 'hidden'} card gap-3 p-3 md:grid xl:grid-cols-8`}
+        className={`${filtersOpen ? 'grid' : 'hidden'} card gap-3 p-3 md:grid md:grid-cols-2 xl:grid-cols-[minmax(180px,1.3fr)_minmax(130px,0.8fr)_minmax(150px,1fr)_minmax(150px,1fr)_minmax(170px,1fr)_minmax(180px,1fr)_auto]`}
         onSubmit={(event) => {
           event.preventDefault();
           setProgressValue(18);
@@ -104,21 +102,6 @@ export function StockCostoArticuloFullFilters({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Articulo</label>
-          <input name="articulo" defaultValue={current.articulo} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" placeholder="Codigo articulo" />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Tipo</label>
-          <select name="tipo" defaultValue={current.tipo} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm">
-            <option value="">Todos</option>
-            {tipos.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">Estado</label>
           <select name="estado" defaultValue={current.estado} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm">
             <option value="">Todos</option>
@@ -135,24 +118,24 @@ export function StockCostoArticuloFullFilters({
           <label className="mb-1 block text-sm font-medium text-slate-700">Fecha hasta</label>
           <input type="date" name="fechah" defaultValue={current.fechah} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" />
         </div>
-        <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+        <label className="flex min-h-[42px] items-center gap-2 self-end rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
           <input type="checkbox" name="calcular_empresa" value="S" defaultChecked={current.calcular_empresa === 'S'} />
           Calcular toda empresa
         </label>
-        <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+        <label className="flex min-h-[42px] items-center gap-2 self-end rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
           <input type="checkbox" name="ecuacion_mat" value="S" defaultChecked={current.ecuacion_mat === 'S'} />
           Ecuacion BC materiales
         </label>
-        <div className="xl:col-span-8 flex items-end gap-2 justify-end">
+        <div className="flex items-end justify-end gap-2 md:col-span-2 xl:col-span-1">
           <button
             type="submit"
             id="btn-procesar-costo-articulo-full"
             disabled={isSubmitting || isPending}
-            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-wait disabled:opacity-80"
+            className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-sm font-medium text-white disabled:cursor-wait disabled:opacity-80"
           >
             {isSubmitting || isPending ? 'Procesando...' : 'Procesar'}
           </button>
-          <Link href="/stock?section=costo-articulo-full#costo-articulo-full" className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">
+          <Link href="/stock?section=costo-articulo-full#costo-articulo-full" className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700">
             Limpiar
           </Link>
         </div>
