@@ -713,7 +713,7 @@ export default async function FinanzasPage({
     : ((pucPrimaryResponse?.data || []) as BalanceRow[]);
   const pucExportRows = ((pucExportResponse?.data || []) as BalanceRow[]);
   const pucWarning = shouldLoadBalancePuc && !empresaCanUsePuc
-    ? 'Esta empresa usa balance clasico. La opcion PUC se habilita solo cuando dba.empresa tiene es_casa_de_bolsa activo y codigo_entidad.'
+    ? 'La opcion del PUC para esta empresa no esta habilitada porque no esta definida como casa de bolsa.'
     : shouldFallbackPuc
     ? (pucPrimaryResponse?.warning || 'La estructura PUC no pudo generarse con esta base. Se muestra el balance clasico como respaldo.')
     : (pucPrimaryResponse?.warning || '');
