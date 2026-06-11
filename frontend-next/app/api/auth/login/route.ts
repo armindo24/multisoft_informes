@@ -8,13 +8,13 @@ export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
-  const username = String(body?.username || '').trim();
+  const identifier = String(body?.identifier || body?.username || '').trim();
   const password = String(body?.password || '').trim();
 
   try {
-    const authenticatedUser = await authenticateWithPostgres(username, password);
+    const authenticatedUser = await authenticateWithPostgres(identifier, password);
     if (!authenticatedUser) {
-      return NextResponse.json({ ok: false, message: 'Usuario o contrasena incorrectos.' }, { status: 401 });
+      return NextResponse.json({ ok: false, message: 'Usuario, correo o contrasena incorrectos.' }, { status: 401 });
     }
 
     const maxAge = 60 * 60 * 12;

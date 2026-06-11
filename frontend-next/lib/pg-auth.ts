@@ -4,6 +4,7 @@ import { Pool } from 'pg';
 type AuthUserRow = {
   id: number;
   username: string;
+  email: string;
   first_name: string;
   last_name: string;
   is_active: boolean;
@@ -46,19 +47,28 @@ export type AuthenticatedUser = {
   groups: string[];
 };
 
-export async function authenticateWithPostgres(username: string, password: string): Promise<AuthenticatedUser | null> {
-  const normalizedUsername = String(username || '').trim();
-  if (!normalizedUsername || !password) return null;
+export async function authenticateWithPostgres(identifier: string, password: string): Promise<AuthenticatedUser | null> {
+  const normalizedIdentifier = String(identifier || '').trim().toLowerCase();
+  if (!normalizedIdentifier || !password) return null;
 
   const result = await pool.query<AuthUserRow>(
     `
-      SELECT id, username, first_name, last_name, is_active, is_superuser, password
+      SELECT id, username, email, first_name, last_name, is_active, is_superuser, password
       FROM auth_user
-      WHERE username = $1
-      LIMIT 1
+      WHERE LOWER(username) = $1
+         OR (email <> '' AND LOWER(email) = $1)
+      ORDER BY CASE WHEN LOWER(username) = $1 THEN 0 ELSE 1 END, id
+      LIMIT 2
     `,
-    [normalizedUsername],
+    [normalizedIdentifier],
   );
+
+  if (
+    result.rows.length > 1 &&
+    result.rows.every((row) => String(row.username || '').trim().toLowerCase() !== normalizedIdentifier)
+  ) {
+    return null;
+  }
 
   const user = result.rows[0];
   if (!user || !user.is_active) return null;

@@ -13,7 +13,7 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const nextParam = searchParams.get('next');
   const nextPath = nextParam && nextParam !== '/' ? nextParam : '/dashboard';
-  const [username, setUsername] = useState('admin');
+  const [identifier, setIdentifier] = useState('admin');
   const [password, setPassword] = useState('admin');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,7 +27,7 @@ export function LoginForm() {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ identifier, password }),
       });
 
       const data = await response.json().catch(() => ({}));
@@ -65,14 +65,15 @@ export function LoginForm() {
 
       <div className="mt-8 space-y-5">
         <label className="block">
-          <span className="mb-2 block text-sm font-medium text-slate-700">Usuario</span>
+          <span className="mb-2 block text-sm font-medium text-slate-700">Usuario o correo electrónico</span>
           <div className="flex items-center gap-3 rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_2px_6px_rgba(15,23,42,0.08)]">
             <User2 className="h-4 w-4 text-slate-500" />
             <input
               className="w-full border-0 bg-transparent text-sm outline-none"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              placeholder="admin"
+              value={identifier}
+              onChange={(event) => setIdentifier(event.target.value)}
+              placeholder="usuario@empresa.com"
+              autoComplete="username"
             />
           </div>
         </label>
