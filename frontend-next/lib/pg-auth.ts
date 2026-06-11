@@ -58,21 +58,19 @@ export async function authenticateWithPostgres(identifier: string, password: str
       WHERE LOWER(BTRIM(username)) = $1
          OR LOWER(NULLIF(BTRIM(email), '')) = $1
       ORDER BY CASE WHEN LOWER(BTRIM(username)) = $1 THEN 0 ELSE 1 END, id
-      LIMIT 2
     `,
     [normalizedIdentifier],
   );
 
-  if (
-    result.rows.length > 1 &&
-    result.rows.every((row) => String(row.username || '').trim().toLowerCase() !== normalizedIdentifier)
-  ) {
-    return null;
-  }
+  const usernameMatch = result.rows.find(
+    (row) => String(row.username || '').trim().toLowerCase() === normalizedIdentifier,
+  );
+  const passwordMatches = usernameMatch
+    ? [usernameMatch].filter((row) => row.is_active && comparePbkdf2Sha256(row.password, password))
+    : result.rows.filter((row) => row.is_active && comparePbkdf2Sha256(row.password, password));
 
-  const user = result.rows[0];
-  if (!user || !user.is_active) return null;
-  if (!comparePbkdf2Sha256(user.password, password)) return null;
+  if (passwordMatches.length !== 1) return null;
+  const user = passwordMatches[0];
 
   const groupsResult = await pool.query<GroupRow>(
     `

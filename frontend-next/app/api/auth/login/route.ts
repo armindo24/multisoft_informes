@@ -9,7 +9,7 @@ export const runtime = 'nodejs';
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const identifier = String(body?.identifier || body?.username || '').trim();
-  const password = String(body?.password || '').trim();
+  const password = String(body?.password || '');
 
   try {
     const authenticatedUser = await authenticateWithPostgres(identifier, password);
