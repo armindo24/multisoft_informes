@@ -55,9 +55,9 @@ export async function authenticateWithPostgres(identifier: string, password: str
     `
       SELECT id, username, email, first_name, last_name, is_active, is_superuser, password
       FROM auth_user
-      WHERE LOWER(username) = $1
-         OR (email <> '' AND LOWER(email) = $1)
-      ORDER BY CASE WHEN LOWER(username) = $1 THEN 0 ELSE 1 END, id
+      WHERE LOWER(BTRIM(username)) = $1
+         OR LOWER(NULLIF(BTRIM(email), '')) = $1
+      ORDER BY CASE WHEN LOWER(BTRIM(username)) = $1 THEN 0 ELSE 1 END, id
       LIMIT 2
     `,
     [normalizedIdentifier],

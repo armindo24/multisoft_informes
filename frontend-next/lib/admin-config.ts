@@ -5390,6 +5390,7 @@ export async function saveAdminUser(input: {
   maxSessionsPerUser?: number;
 }) {
   const username = String(input.username || '').trim();
+  const email = String(input.email || '').trim().toLowerCase();
   if (!username) {
     throw new Error('El usuario es obligatorio.');
   }
@@ -5407,6 +5408,23 @@ export async function saveAdminUser(input: {
 
   if (existing.rows[0]) {
     throw new Error('Ya existe un usuario con ese nombre.');
+  }
+
+  if (email) {
+    const existingEmail = await pool.query<{ id: number }>(
+      `
+        SELECT id
+        FROM auth_user
+        WHERE LOWER(BTRIM(email)) = $1
+          AND ($2::int IS NULL OR id <> $2::int)
+        LIMIT 1
+      `,
+      [email, input.id || null],
+    );
+
+    if (existingEmail.rows[0]) {
+      throw new Error('Ya existe un usuario con ese correo.');
+    }
   }
 
   const passwordToStore = input.password ? encodePbkdf2Sha256(input.password) : null;
@@ -5428,7 +5446,7 @@ export async function saveAdminUser(input: {
               password = $9
           WHERE id = $1
         `,
-        [userId, username, input.firstName, input.lastName, input.email, input.isActive, input.isSuperuser, isStaff, passwordToStore],
+        [userId, username, input.firstName, input.lastName, email, input.isActive, input.isSuperuser, isStaff, passwordToStore],
       );
     } else {
       await pool.query(
@@ -5443,7 +5461,7 @@ export async function saveAdminUser(input: {
               is_staff = $8
           WHERE id = $1
         `,
-        [userId, username, input.firstName, input.lastName, input.email, input.isActive, input.isSuperuser, isStaff],
+        [userId, username, input.firstName, input.lastName, email, input.isActive, input.isSuperuser, isStaff],
       );
     }
   } else {
@@ -5456,7 +5474,7 @@ export async function saveAdminUser(input: {
           ($1, NULL, $2, $3, $4, $5, $6, $7, $8, NOW())
         RETURNING id
       `,
-      [password, input.isSuperuser, username, input.firstName, input.lastName, input.email, isStaff, input.isActive],
+      [password, input.isSuperuser, username, input.firstName, input.lastName, email, isStaff, input.isActive],
     );
     userId = created.rows[0].id;
   }
@@ -5496,6 +5514,7 @@ export async function saveOwnAdminProfile(
   }
 
   const username = String(input.username || '').trim();
+  const email = String(input.email || '').trim().toLowerCase();
   if (!username) {
     throw new Error('El usuario es obligatorio.');
   }
@@ -5515,6 +5534,23 @@ export async function saveOwnAdminProfile(
     throw new Error('Ya existe un usuario con ese nombre.');
   }
 
+  if (email) {
+    const existingEmail = await pool.query<{ id: number }>(
+      `
+        SELECT id
+        FROM auth_user
+        WHERE LOWER(BTRIM(email)) = $1
+          AND id <> $2
+        LIMIT 1
+      `,
+      [email, actorUserId],
+    );
+
+    if (existingEmail.rows[0]) {
+      throw new Error('Ya existe un usuario con ese correo.');
+    }
+  }
+
   const passwordToStore = input.password ? encodePbkdf2Sha256(input.password) : null;
 
   if (passwordToStore) {
@@ -5528,7 +5564,7 @@ export async function saveOwnAdminProfile(
             password = $6
         WHERE id = $1
       `,
-      [actorUserId, username, input.firstName, input.lastName, input.email, passwordToStore],
+      [actorUserId, username, input.firstName, input.lastName, email, passwordToStore],
     );
   } else {
     await pool.query(
@@ -5540,7 +5576,7 @@ export async function saveOwnAdminProfile(
             email = $5
         WHERE id = $1
       `,
-      [actorUserId, username, input.firstName, input.lastName, input.email],
+      [actorUserId, username, input.firstName, input.lastName, email],
     );
   }
 
