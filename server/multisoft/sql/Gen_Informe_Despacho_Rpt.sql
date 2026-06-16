@@ -51,11 +51,25 @@ BEGIN
    DECLARE mProrrateoImport                CHAR(1);
    DECLARE mLimiteFaltantes                MONEY;
    DECLARE mMonedaLimFalt                  CHAR(2);
+   DECLARE mDespachoSucursal02             NUMERIC(5);
 
    SET _PRORRATEO_X_COSTO            = 'C';
    SET _PRORRATEO_X_PESO_BRUTO       = 'P';
    SET _PRORRATEO_X_PESO_NETO        = 'N';
    SET _PRORRATEO_X_PORC_ARANCELARIO = 'A';
+
+   SELECT COUNT(*)
+   INTO   mDespachoSucursal02
+   FROM   Despacho
+   WHERE  Cod_Empresa     = mCod_Empresa
+   AND    Anho            = mAnho
+   AND    CodDespachante  = mCodDespachante
+   AND    NroDespacho     = mNroDespacho
+   AND    COALESCE(Cod_Sucursal,'') = '02';
+
+   IF ( COALESCE(mDespachoSucursal02,0) > 0 ) THEN
+      RETURN;
+   END IF;
 
    SELECT MonedaLocal, MonedaExtranjera,
           CantDecimalME, CantDecimalGS,

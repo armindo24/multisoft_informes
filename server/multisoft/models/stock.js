@@ -958,6 +958,7 @@ Stock.costoArticuloFull = function (params, query) {
                 "FROM dba.despacho d " +
                 "WHERE d.cod_empresa = ? " +
                 "AND d.anho = ? " +
+                "AND COALESCE(d.cod_sucursal,'') <> '02' " +
                 "AND DATE(d.fechadespacho) BETWEEN ? AND ? ";
             var sqlDespParams = [empresaDespachos, anho, fDesde, fHasta];
 
@@ -1192,6 +1193,11 @@ Stock.costoArticuloFull = function (params, query) {
                 " AND t.cod_tp_comp = fd.cod_tp_comp " +
                 " AND t.nrofact = fd.nrofact " +
                 " AND t.cod_articulo = fd.cod_articulo " +
+                "LEFT JOIN dba.factcab fc " +
+                "  ON t.cod_empresa = fc.cod_empresa " +
+                " AND t.codprov = fc.codprov " +
+                " AND t.cod_tp_comp = fc.cod_tp_comp " +
+                " AND t.nrofact = fc.nrofact " +
                 "LEFT JOIN dba.articulo a " +
                 "  ON a.cod_empresa = t.cod_empresa " +
                 " AND a.cod_articulo = t.cod_articulo " +
@@ -1200,6 +1206,7 @@ Stock.costoArticuloFull = function (params, query) {
                 " AND ap.cod_articulo = a.codartpad " +
                 "WHERE t.cod_empresa = ? " +
                 "AND t.session_id = ? " +
+                "AND COALESCE(fc.cod_sucursal,'') <> '02' " +
                 "AND t.tipoitem = 'AR' ";
             var sqlImportParams = [empresaDespachos, sessionId];
 
@@ -1516,6 +1523,7 @@ Stock.costoArticuloFull = function (params, query) {
                 "  JOIN FactDet fd ON fd.Cod_Empresa = fc.Cod_Empresa AND fd.CodProv = fc.CodProv AND fd.Cod_Tp_Comp = fc.Cod_Tp_Comp AND fd.NroFact = fc.NroFact " +
                 "  JOIN Articulo a ON a.Cod_Empresa = fd.Cod_Empresa AND a.Cod_Articulo = fd.Cod_Articulo " +
                 "  WHERE fc.TipoCompra = 'I' AND fc.CostoGasto = 'G' AND fd.EsGasto = 'S' " +
+                "    AND COALESCE(fc.Cod_Sucursal,'') <> '02' " +
                 "    AND ( EXISTS ( " +
                 "            SELECT 1 FROM FactGastosImp fgi " +
                 "            WHERE fgi.Cod_Empresa = fc.Cod_Empresa AND fgi.CodProv = fc.CodProv " +
