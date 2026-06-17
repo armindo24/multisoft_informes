@@ -1639,20 +1639,15 @@ Stock.costoArticuloFull = function (params, query) {
 
         var fetchCostosFacturasDirectas = function () {
             var costoUnitExpr = "COALESCE(NULLIF(fd.PrecioCosto,0), fd.Pr_Unit, 0)";
-            var codPadExpr =
-                "COALESCE(NULLIF(a.CodArtPad,''), " +
-                "CASE WHEN CHARINDEX('-', fd.Cod_Articulo) > 0 " +
-                "THEN LEFT(fd.Cod_Articulo, CHARINDEX('-', fd.Cod_Articulo) - 1) " +
-                "ELSE fd.Cod_Articulo END)";
             var costoUnitUsExpr =
-                "CASE WHEN fc.CodMoneda = c.MonedaLocal " +
+                "CASE WHEN TRIM(fc.CodMoneda) IN ('GS','PYG') " +
                 "THEN CASE WHEN COALESCE(fc.FactCambio,0) <> 0 THEN " + costoUnitExpr + " / fc.FactCambio ELSE 0 END " +
                 "ELSE " + costoUnitExpr + " END";
             var sqlFact =
                 "SELECT fc.Cod_Empresa AS cod_empresa, fc.CodProv AS codprov, fd.Cod_Articulo AS cod_articulo, " +
-                codPadExpr + " AS cod_art_pad, " +
-                "COALESCE(ap.Des_Art, a.Des_Art, fd.Descrip) AS des_art_padre, " +
-                "fc.NroFact AS nrofact, fd.Descrip AS descrip, " +
+                "COALESCE(NULLIF(a.CodArtPad,''), fd.Cod_Articulo) AS cod_art_pad, " +
+                "COALESCE(ap.Des_Art, a.Des_Art, fd.Cod_Articulo) AS des_art_padre, " +
+                "fc.NroFact AS nrofact, COALESCE(a.Des_Art, fd.Cod_Articulo) AS descrip, " +
                 "COALESCE(fd.Cantidad,0) AS cantidad, COALESCE(fd.Cantidad,0) AS canttotal, " +
                 "0 AS prorrateo, 0 AS prorrateome, " +
                 costoUnitUsExpr + " AS costo_fob_us, " +
@@ -1666,15 +1661,12 @@ Stock.costoArticuloFull = function (params, query) {
                 " AND fd.CodProv = fc.CodProv " +
                 " AND fd.Cod_Tp_Comp = fc.Cod_Tp_Comp " +
                 " AND fd.NroFact = fc.NroFact " +
-                "JOIN dba.Control c " +
-                "  ON c.Cod_Empresa = fc.Cod_Empresa " +
-                " AND c.Periodo = ? " +
                 "LEFT JOIN dba.Articulo a " +
                 "  ON a.Cod_Empresa = fd.Cod_Empresa " +
                 " AND a.Cod_Articulo = fd.Cod_Articulo " +
                 "LEFT JOIN dba.Articulo ap " +
                 "  ON ap.Cod_Empresa = a.Cod_Empresa " +
-                " AND ap.Cod_Articulo = " + codPadExpr + " " +
+                " AND ap.Cod_Articulo = a.CodArtPad " +
                 "WHERE fc.Cod_Empresa = ? " +
                 "AND DATE(fc.FechaFact) BETWEEN ? AND ? " +
                 "AND COALESCE(fc.Cod_Sucursal,'') <> '02' " +
@@ -1692,21 +1684,31 @@ Stock.costoArticuloFull = function (params, query) {
                 "  AND t.cod_articulo = fd.Cod_Articulo " +
                 "  AND t.tipoitem = 'AR' " +
                 ") ";
-            var sqlFactParams = [periodo, empresaDespachos, fDesde, fHasta, sessionId];
+            var sqlFactParams = [empresaDespachos, fDesde, fHasta, sessionId];
 
             if (articulo) {
                 if (articulo.constructor === Array) {
-                    sqlFact += "AND (fd.Cod_Articulo IN " + q.in(articulo) + " OR a.CodArtPad IN " + q.in(articulo) + " OR " + codPadExpr + " IN " + q.in(articulo) + ") ";
+                    sqlFact += "AND (fd.Cod_Articulo IN " + q.in(articulo) + " OR a.CodArtPad IN " + q.in(articulo) + ") ";
                 } else {
-                    sqlFact += "AND (fd.Cod_Articulo = ? OR a.CodArtPad = ? OR " + codPadExpr + " = ?) ";
-                    sqlFactParams.push(articulo, articulo, articulo);
+                    sqlFact += "AND (fd.Cod_Articulo = ? OR fd.Cod_Articulo LIKE ? OR a.CodArtPad = ?) ";
+                    sqlFactParams.push(articulo, articulo + '-%', articulo);
                 }
             }
 
             sqlFact += "ORDER BY fd.Cod_Articulo, fc.NroFact";
             return conn.execAsync(sqlFact, sqlFactParams).then(function (rows) {
                 rows = rows || [];
+                rows.forEach(function (row) {
+                    var codArticulo = String(pickValue(row, ['cod_articulo', 'Cod_Articulo'], '') || '').trim();
+                    var codPad = String(pickValue(row, ['cod_art_pad', 'CodArtPad'], '') || '').trim();
+                    if ((!codPad || codPad === codArticulo) && codArticulo.indexOf('-') > 0) {
+                        row.cod_art_pad = codArticulo.split('-')[0];
+                    }
+                });
                 logCostoArticuloFull('[EBC_MAT_EXT] COSTOS_FACTCAB_DIRECTOS rows=' + rows.length + ' empresa=' + empresaDespachos + ' sessionId=' + sessionId);
+                if (rows.length) {
+                    logCostoArticuloFull('[EBC_MAT_EXT] COSTOS_FACTCAB_DIRECTOS sample art=' + pickValue(rows[0], ['cod_articulo'], '') + ' padre=' + pickValue(rows[0], ['cod_art_pad'], '') + ' fact=' + pickValue(rows[0], ['nrofact'], ''));
+                }
                 return rows;
             }).catch(function (err) {
                 logCostoArticuloFull('[EBC_MAT_EXT] COSTOS_FACTCAB_DIRECTOS ERROR sessionId=' + sessionId + ' detalle=' + String(err && (err.message || err)));
