@@ -1639,15 +1639,19 @@ Stock.costoArticuloFull = function (params, query) {
 
         var fetchCostosFacturasDirectas = function () {
             var costoUnitExpr = "COALESCE(NULLIF(fd.PrecioCosto,0), fd.Pr_Unit, 0)";
+            var cambioUsExpr =
+                "COALESCE(NULLIF(fcm.factor_vendedor,0), NULLIF(fcm.factor,0), " +
+                "CASE WHEN COALESCE(fc.FactCambio,0) > 1 THEN fc.FactCambio ELSE 0 END)";
             var costoUnitUsExpr =
                 "CASE WHEN TRIM(fc.CodMoneda) IN ('GS','PYG') " +
-                "THEN CASE WHEN COALESCE(fc.FactCambio,0) <> 0 THEN " + costoUnitExpr + " / fc.FactCambio ELSE 0 END " +
+                "THEN CASE WHEN " + cambioUsExpr + " > 0 THEN " + costoUnitExpr + " / " + cambioUsExpr + " ELSE 0 END " +
                 "ELSE " + costoUnitExpr + " END";
             var sqlFact =
                 "SELECT fc.Cod_Empresa AS cod_empresa, fc.CodProv AS codprov, fd.Cod_Articulo AS cod_articulo, " +
                 "COALESCE(NULLIF(a.CodArtPad,''), fd.Cod_Articulo) AS cod_art_pad, " +
                 "COALESCE(ap.Des_Art, a.Des_Art, fd.Cod_Articulo) AS des_art_padre, " +
                 "fc.NroFact AS nrofact, COALESCE(a.Des_Art, fd.Cod_Articulo) AS descrip, " +
+                cambioUsExpr + " AS factcambio_us, " +
                 "COALESCE(fd.Cantidad,0) AS cantidad, COALESCE(fd.Cantidad,0) AS canttotal, " +
                 "0 AS prorrateo, 0 AS prorrateome, " +
                 costoUnitUsExpr + " AS costo_fob_us, " +
@@ -1667,6 +1671,16 @@ Stock.costoArticuloFull = function (params, query) {
                 "LEFT JOIN dba.Articulo ap " +
                 "  ON ap.Cod_Empresa = a.Cod_Empresa " +
                 " AND ap.Cod_Articulo = a.CodArtPad " +
+                "LEFT JOIN dba.factcamb fcm " +
+                "  ON fcm.codmoneda = 'US' " +
+                " AND fcm.cod_empresa = fc.Cod_Empresa " +
+                " AND DATE(fcm.fact_fecha) = ( " +
+                "   SELECT MAX(DATE(f2.fact_fecha)) " +
+                "   FROM dba.factcamb f2 " +
+                "   WHERE f2.codmoneda = 'US' " +
+                "   AND f2.cod_empresa = fc.Cod_Empresa " +
+                "   AND DATE(f2.fact_fecha) <= DATE(fc.FechaFact) " +
+                " ) " +
                 "WHERE fc.Cod_Empresa = ? " +
                 "AND DATE(fc.FechaFact) BETWEEN ? AND ? " +
                 "AND COALESCE(fc.Cod_Sucursal,'') <> '02' " +
@@ -1707,7 +1721,7 @@ Stock.costoArticuloFull = function (params, query) {
                 });
                 logCostoArticuloFull('[EBC_MAT_EXT] COSTOS_FACTCAB_DIRECTOS rows=' + rows.length + ' empresa=' + empresaDespachos + ' sessionId=' + sessionId);
                 if (rows.length) {
-                    logCostoArticuloFull('[EBC_MAT_EXT] COSTOS_FACTCAB_DIRECTOS sample art=' + pickValue(rows[0], ['cod_articulo'], '') + ' padre=' + pickValue(rows[0], ['cod_art_pad'], '') + ' fact=' + pickValue(rows[0], ['nrofact'], ''));
+                    logCostoArticuloFull('[EBC_MAT_EXT] COSTOS_FACTCAB_DIRECTOS sample art=' + pickValue(rows[0], ['cod_articulo'], '') + ' padre=' + pickValue(rows[0], ['cod_art_pad'], '') + ' fact=' + pickValue(rows[0], ['nrofact'], '') + ' cambio_us=' + pickValue(rows[0], ['factcambio_us'], ''));
                 }
                 return rows;
             }).catch(function (err) {
