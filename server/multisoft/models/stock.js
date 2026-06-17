@@ -1775,10 +1775,18 @@ Stock.costoArticuloFull = function (params, query) {
                 return toNumber(currentValue);
             };
 
+            var normalizeArticuloPad = function (value) {
+                value = String(value || '').trim();
+                if (!value) return '';
+                return value.indexOf('-') > 0 ? value.split('-')[0] : value;
+            };
+
             (compRows || []).forEach(function (row) {
                 [
                     pickValue(row, ['cod_articulo_remitido'], ''),
-                    pickValue(row, ['cod_art_pad_remitido'], '')
+                    pickValue(row, ['cod_art_pad_remitido'], ''),
+                    normalizeArticuloPad(pickValue(row, ['cod_articulo_remitido'], '')),
+                    normalizeArticuloPad(pickValue(row, ['cod_art_pad_remitido'], ''))
                 ].filter(function (key, index, arr) {
                     return key && arr.indexOf(key) === index;
                 }).forEach(function (key) {
@@ -1786,7 +1794,9 @@ Stock.costoArticuloFull = function (params, query) {
                 });
                 [
                     pickValue(row, ['cod_articulo_acondicionado'], ''),
-                    pickValue(row, ['cod_art_pad_acondicionado'], '')
+                    pickValue(row, ['cod_art_pad_acondicionado'], ''),
+                    normalizeArticuloPad(pickValue(row, ['cod_articulo_acondicionado'], '')),
+                    normalizeArticuloPad(pickValue(row, ['cod_art_pad_acondicionado'], ''))
                 ].filter(function (key, index, arr) {
                     return key && arr.indexOf(key) === index;
                 }).forEach(function (key) {
@@ -2065,6 +2075,25 @@ Stock.costoArticuloFull = function (params, query) {
                         ' sessionId=' + sessionId
                     );
                     logCostoArticuloFull('[EBC_MAT_EXT] DEBUG_BG093_SAMPLE sessionId=' + sessionId + ' data=' + JSON.stringify(bg093Sample));
+                }
+                if (key === 'SA032' || base.cod_articulo === 'SA032') {
+                    var sa032Sample = (compList[0] || {});
+                    logCostoArticuloFull(
+                        '[EBC_MAT_EXT] DEBUG_SA032 key=' + key +
+                        ' comp_rem=' + ((compByRemitido[key] || []).length) +
+                        ' comp_acond=' + ((compByAcond[key] || []).length) +
+                        ' comp_total=' + compList.length +
+                        ' sticker_unit=' + compTotals.cto_unit_sticker +
+                        ' sello_unit=' + compTotals.cto_unit_sello +
+                        ' cant_sticker=' + compTotals.cant_sticker +
+                        ' cant_sello=' + compTotals.cant_sello +
+                        ' muestra_rem=' + pickValue(sa032Sample, ['cod_articulo_remitido'], '') +
+                        ' muestra_acond=' + pickValue(sa032Sample, ['cod_articulo_acondicionado'], '') +
+                        ' muestra_sticker=' + pickValue(sa032Sample, ['cto_unit_prom_sticker'], 0) +
+                        ' muestra_sello=' + pickValue(sa032Sample, ['cto_unit_prom_sello'], 0) +
+                        ' sessionId=' + sessionId
+                    );
+                    logCostoArticuloFull('[EBC_MAT_EXT] DEBUG_SA032_SAMPLE sessionId=' + sessionId + ' data=' + JSON.stringify(sa032Sample));
                 }
 
                 var displayCodArticulo = key;
