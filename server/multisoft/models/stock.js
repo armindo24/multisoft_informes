@@ -1639,13 +1639,18 @@ Stock.costoArticuloFull = function (params, query) {
 
         var fetchCostosFacturasDirectas = function () {
             var costoUnitExpr = "COALESCE(NULLIF(fd.PrecioCosto,0), fd.Pr_Unit, 0)";
+            var codPadExpr =
+                "COALESCE(NULLIF(a.CodArtPad,''), " +
+                "CASE WHEN CHARINDEX('-', fd.Cod_Articulo) > 0 " +
+                "THEN LEFT(fd.Cod_Articulo, CHARINDEX('-', fd.Cod_Articulo) - 1) " +
+                "ELSE fd.Cod_Articulo END)";
             var costoUnitUsExpr =
                 "CASE WHEN fc.CodMoneda = c.MonedaLocal " +
                 "THEN CASE WHEN COALESCE(fc.FactCambio,0) <> 0 THEN " + costoUnitExpr + " / fc.FactCambio ELSE 0 END " +
                 "ELSE " + costoUnitExpr + " END";
             var sqlFact =
                 "SELECT fc.Cod_Empresa AS cod_empresa, fc.CodProv AS codprov, fd.Cod_Articulo AS cod_articulo, " +
-                "COALESCE(NULLIF(a.codartpad,''), fd.Cod_Articulo) AS cod_art_pad, " +
+                codPadExpr + " AS cod_art_pad, " +
                 "COALESCE(ap.Des_Art, a.Des_Art, fd.Descrip) AS des_art_padre, " +
                 "fc.NroFact AS nrofact, fd.Descrip AS descrip, " +
                 "COALESCE(fd.Cantidad,0) AS cantidad, COALESCE(fd.Cantidad,0) AS canttotal, " +
@@ -1669,13 +1674,13 @@ Stock.costoArticuloFull = function (params, query) {
                 " AND a.Cod_Articulo = fd.Cod_Articulo " +
                 "LEFT JOIN dba.Articulo ap " +
                 "  ON ap.Cod_Empresa = a.Cod_Empresa " +
-                " AND ap.Cod_Articulo = a.CodArtPad " +
+                " AND ap.Cod_Articulo = " + codPadExpr + " " +
                 "WHERE fc.Cod_Empresa = ? " +
                 "AND DATE(fc.FechaFact) BETWEEN ? AND ? " +
                 "AND COALESCE(fc.Cod_Sucursal,'') <> '02' " +
-                "AND fc.CodProv IN ('4166','3718') " +
-                "AND fc.Cod_Tp_Comp IN ('CCR','CCO') " +
-                "AND fc.CostoGasto = 'C' " +
+                "AND TRIM(fc.CodProv) IN ('4166','3718') " +
+                "AND TRIM(fc.Cod_Tp_Comp) IN ('CCR','CCO') " +
+                "AND TRIM(fc.CostoGasto) = 'C' " +
                 "AND COALESCE(fd.Cantidad,0) <> 0 " +
                 "AND NOT EXISTS ( " +
                 "  SELECT 1 FROM dba.tmpdespachos t " +
@@ -1691,10 +1696,10 @@ Stock.costoArticuloFull = function (params, query) {
 
             if (articulo) {
                 if (articulo.constructor === Array) {
-                    sqlFact += "AND (fd.Cod_Articulo IN " + q.in(articulo) + " OR a.CodArtPad IN " + q.in(articulo) + ") ";
+                    sqlFact += "AND (fd.Cod_Articulo IN " + q.in(articulo) + " OR a.CodArtPad IN " + q.in(articulo) + " OR " + codPadExpr + " IN " + q.in(articulo) + ") ";
                 } else {
-                    sqlFact += "AND (fd.Cod_Articulo = ? OR a.CodArtPad = ?) ";
-                    sqlFactParams.push(articulo, articulo);
+                    sqlFact += "AND (fd.Cod_Articulo = ? OR a.CodArtPad = ? OR " + codPadExpr + " = ?) ";
+                    sqlFactParams.push(articulo, articulo, articulo);
                 }
             }
 
