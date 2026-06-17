@@ -1637,6 +1637,78 @@ Stock.costoArticuloFull = function (params, query) {
             });
         };
 
+        var fetchCostosFacturasDirectas = function () {
+            var costoUnitExpr = "COALESCE(NULLIF(fd.PrecioCosto,0), fd.Pr_Unit, 0)";
+            var costoUnitUsExpr =
+                "CASE WHEN fc.CodMoneda = c.MonedaLocal " +
+                "THEN CASE WHEN COALESCE(fc.FactCambio,0) <> 0 THEN " + costoUnitExpr + " / fc.FactCambio ELSE 0 END " +
+                "ELSE " + costoUnitExpr + " END";
+            var sqlFact =
+                "SELECT fc.Cod_Empresa AS cod_empresa, fc.CodProv AS codprov, fd.Cod_Articulo AS cod_articulo, " +
+                "COALESCE(NULLIF(a.codartpad,''), fd.Cod_Articulo) AS cod_art_pad, " +
+                "COALESCE(ap.Des_Art, a.Des_Art, fd.Descrip) AS des_art_padre, " +
+                "fc.NroFact AS nrofact, fd.Descrip AS descrip, " +
+                "COALESCE(fd.Cantidad,0) AS cantidad, COALESCE(fd.Cantidad,0) AS canttotal, " +
+                "0 AS prorrateo, 0 AS prorrateome, " +
+                costoUnitUsExpr + " AS costo_fob_us, " +
+                costoUnitUsExpr + " AS costo_cif_us, " +
+                "COALESCE(fd.Peso,0) AS peso, COALESCE(fd.PorcArancelario,0) AS porcarancelario, COALESCE(fd.IVA,0) AS iva, " +
+                "0 AS total_gastos, 0 AS total_gastos_me, 0 AS total_aranceles, 0 AS total_aranceles_me, " +
+                "0 AS total_tributo_aduanero, 0 AS total_tributo_aduanero_me " +
+                "FROM dba.FactCab fc " +
+                "JOIN dba.FactDet fd " +
+                "  ON fd.Cod_Empresa = fc.Cod_Empresa " +
+                " AND fd.CodProv = fc.CodProv " +
+                " AND fd.Cod_Tp_Comp = fc.Cod_Tp_Comp " +
+                " AND fd.NroFact = fc.NroFact " +
+                "JOIN dba.Control c " +
+                "  ON c.Cod_Empresa = fc.Cod_Empresa " +
+                " AND c.Periodo = ? " +
+                "LEFT JOIN dba.Articulo a " +
+                "  ON a.Cod_Empresa = fd.Cod_Empresa " +
+                " AND a.Cod_Articulo = fd.Cod_Articulo " +
+                "LEFT JOIN dba.Articulo ap " +
+                "  ON ap.Cod_Empresa = a.Cod_Empresa " +
+                " AND ap.Cod_Articulo = a.CodArtPad " +
+                "WHERE fc.Cod_Empresa = ? " +
+                "AND DATE(fc.FechaFact) BETWEEN ? AND ? " +
+                "AND COALESCE(fc.Cod_Sucursal,'') <> '02' " +
+                "AND fc.CodProv IN ('4166','3718') " +
+                "AND fc.Cod_Tp_Comp IN ('CCR','CCO') " +
+                "AND fc.CostoGasto = 'C' " +
+                "AND COALESCE(fd.Cantidad,0) <> 0 " +
+                "AND NOT EXISTS ( " +
+                "  SELECT 1 FROM dba.tmpdespachos t " +
+                "  WHERE t.session_id = ? " +
+                "  AND t.cod_empresa = fc.Cod_Empresa " +
+                "  AND t.codprov = fc.CodProv " +
+                "  AND t.cod_tp_comp = fc.Cod_Tp_Comp " +
+                "  AND t.nrofact = fc.NroFact " +
+                "  AND t.cod_articulo = fd.Cod_Articulo " +
+                "  AND t.tipoitem = 'AR' " +
+                ") ";
+            var sqlFactParams = [periodo, empresaDespachos, fDesde, fHasta, sessionId];
+
+            if (articulo) {
+                if (articulo.constructor === Array) {
+                    sqlFact += "AND (fd.Cod_Articulo IN " + q.in(articulo) + " OR a.CodArtPad IN " + q.in(articulo) + ") ";
+                } else {
+                    sqlFact += "AND (fd.Cod_Articulo = ? OR a.CodArtPad = ?) ";
+                    sqlFactParams.push(articulo, articulo);
+                }
+            }
+
+            sqlFact += "ORDER BY fd.Cod_Articulo, fc.NroFact";
+            return conn.execAsync(sqlFact, sqlFactParams).then(function (rows) {
+                rows = rows || [];
+                logCostoArticuloFull('[EBC_MAT_EXT] COSTOS_FACTCAB_DIRECTOS rows=' + rows.length + ' empresa=' + empresaDespachos + ' sessionId=' + sessionId);
+                return rows;
+            }).catch(function (err) {
+                logCostoArticuloFull('[EBC_MAT_EXT] COSTOS_FACTCAB_DIRECTOS ERROR sessionId=' + sessionId + ' detalle=' + String(err && (err.message || err)));
+                return [];
+            });
+        };
+
         // Deriva el GI validado para la factura objetivo desde el detalle ya calculado por linea.
         // Lo mantenemos acotado a la factura 10000000003 porque tmpdespachos sigue trayendo GI=0
         // para ese caso, y este prorrateo fue el que cerró contra el PB.
@@ -1659,7 +1731,7 @@ Stock.costoArticuloFull = function (params, query) {
             return result;
         };
 
-        var mergeRows = function (importRows, compRows, materialRows, liquidacionRows, gastosObjetivoControladoRows, factorCambioMes) {
+        var mergeRows = function (importRows, compRows, materialRows, liquidacionRows, gastosObjetivoControladoRows, factCabDirectRows, factorCambioMes) {
             var periodParts = buildPeriodParts(fHasta);
             var compByRemitido = {};
             var compByAcond = {};
@@ -1718,7 +1790,7 @@ Stock.costoArticuloFull = function (params, query) {
             });
 
             var importMap = {};
-            (importRows || []).forEach(function (row) {
+            (importRows || []).concat(factCabDirectRows || []).forEach(function (row) {
                 var key = pickValue(row, ['cod_art_pad', 'cod_articulo', 'Cod_Articulo'], '');
                 var nroFact = pickValue(row, ['nrofact'], '');
                 if (!key) return;
@@ -2098,6 +2170,7 @@ Stock.costoArticuloFull = function (params, query) {
                         fetchBaseMateriales(),
                         fetchLiquidacionDistribuida(),
                         fetchGastosFacturaObjetivoDetalle(),
+                        fetchCostosFacturasDirectas(),
                         fetchFactorCambioMes()
                     ]);
                 });
@@ -2110,7 +2183,7 @@ Stock.costoArticuloFull = function (params, query) {
             })
             .then(function (datasets) {
                 return logExtStep('merge dataset final', function () {
-                    return mergeRows(datasets[0], datasets[1], datasets[2], datasets[3], buildGastosImportacionObjetivoControlado(datasets[4]), datasets[5]);
+                    return mergeRows(datasets[0], datasets[1], datasets[2], datasets[3], buildGastosImportacionObjetivoControlado(datasets[4]), datasets[5], datasets[6]);
                 });
             });
     };
