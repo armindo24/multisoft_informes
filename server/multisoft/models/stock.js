@@ -1302,6 +1302,158 @@ Stock.costoArticuloFull = function (params, query) {
             });
         };
 
+        var fetchAcondicionamientoMaterialesDirectosPorEmpresa = function (empresaComp) {
+            var materialTypeExpr =
+                "COALESCE(NULLIF(ap.tipo_material_compuesto,''), NULLIF(ad.tipo_material_compuesto,''), '')";
+            var materialCostExpr =
+                "COALESCE(NULLIF(od.cto_prom_gs,0), NULLIF(ad.cto_prom_gs,0), NULLIF(tcu.cto_prom_gs,0), 0)";
+            var sqlMatComp =
+                "SELECT op.cod_empresa, op.cod_tp_comp, op.nroordprod, DATE(op.fechainicio) AS fechainicio, DATE(op.fechafin) AS fechafin, " +
+                "'' AS cod_articulo_remitido, ac.CodArtPad AS cod_art_pad_remitido, " +
+                "COALESCE(NULLIF(ac.CodArtPad,''), op.cod_articulo) AS cod_articulo_acondicionado, " +
+                "COALESCE(NULLIF(ac.CodArtPad,''), op.cod_articulo) AS cod_art_pad_acondicionado, " +
+                "COALESCE(apc.Des_Art, ac.Des_Art, op.cod_articulo) AS des_art_acondicionado, " +
+                "0 AS cant_articulo_acondicionado, 0 AS cant_articulo_remitido, 0 AS cant_activ_colocacion, " +
+                "0 AS pr_unit_acondicionado, 0 AS pr_unit_activ_colocacion, " +
+                "SUM(CASE WHEN " + materialTypeExpr + " = 'ES' AND COALESCE(c.cant_estuche,0) = 0 AND COALESCE(c.cto_unit_prom_estuche,0) = 0 THEN COALESCE(od.cantidad,0) ELSE 0 END) AS cant_estuche, " +
+                "SUM(CASE WHEN " + materialTypeExpr + " = 'ES' AND COALESCE(c.cant_estuche,0) = 0 AND COALESCE(c.cto_unit_prom_estuche,0) = 0 THEN " + materialCostExpr + " ELSE 0 END) AS cto_unit_prom_estuche, " +
+                "SUM(CASE WHEN " + materialTypeExpr + " = 'ST' AND COALESCE(c.cant_sticker,0) = 0 AND COALESCE(c.cto_unit_prom_sticker,0) = 0 THEN COALESCE(od.cantidad,0) ELSE 0 END) AS cant_sticker, " +
+                "SUM(CASE WHEN " + materialTypeExpr + " = 'ST' AND COALESCE(c.cant_sticker,0) = 0 AND COALESCE(c.cto_unit_prom_sticker,0) = 0 THEN " + materialCostExpr + " ELSE 0 END) AS cto_unit_prom_sticker, " +
+                "SUM(CASE WHEN " + materialTypeExpr + " = 'ET' AND COALESCE(c.cant_estampilla,0) = 0 AND COALESCE(c.cto_unit_prom_estampilla,0) = 0 THEN COALESCE(od.cantidad,0) ELSE 0 END) AS cant_estampilla, " +
+                "SUM(CASE WHEN " + materialTypeExpr + " = 'ET' AND COALESCE(c.cant_estampilla,0) = 0 AND COALESCE(c.cto_unit_prom_estampilla,0) = 0 THEN " + materialCostExpr + " ELSE 0 END) AS cto_unit_prom_estampilla, " +
+                "SUM(CASE WHEN " + materialTypeExpr + " = 'PR' AND COALESCE(c.cant_prospecto,0) = 0 AND COALESCE(c.cto_unit_prom_prospecto,0) = 0 THEN COALESCE(od.cantidad,0) ELSE 0 END) AS cant_prospecto, " +
+                "SUM(CASE WHEN " + materialTypeExpr + " = 'PR' AND COALESCE(c.cant_prospecto,0) = 0 AND COALESCE(c.cto_unit_prom_prospecto,0) = 0 THEN " + materialCostExpr + " ELSE 0 END) AS cto_unit_prom_prospecto, " +
+                "SUM(CASE WHEN " + materialTypeExpr + " = 'EQ' AND COALESCE(c.cant_etiqueta,0) = 0 AND COALESCE(c.cto_unit_prom_etiqueta,0) = 0 THEN COALESCE(od.cantidad,0) ELSE 0 END) AS cant_etiqueta, " +
+                "SUM(CASE WHEN " + materialTypeExpr + " = 'EQ' AND COALESCE(c.cant_etiqueta,0) = 0 AND COALESCE(c.cto_unit_prom_etiqueta,0) = 0 THEN " + materialCostExpr + " ELSE 0 END) AS cto_unit_prom_etiqueta, " +
+                "SUM(CASE WHEN " + materialTypeExpr + " = 'AM' AND COALESCE(c.cant_ampolla,0) = 0 AND COALESCE(c.cto_unit_prom_ampolla,0) = 0 THEN COALESCE(od.cantidad,0) ELSE 0 END) AS cant_ampolla, " +
+                "SUM(CASE WHEN " + materialTypeExpr + " = 'AM' AND COALESCE(c.cant_ampolla,0) = 0 AND COALESCE(c.cto_unit_prom_ampolla,0) = 0 THEN " + materialCostExpr + " ELSE 0 END) AS cto_unit_prom_ampolla, " +
+                "SUM(CASE WHEN " + materialTypeExpr + " = 'SE' AND COALESCE(c.cant_sello,0) = 0 AND COALESCE(c.cto_unit_prom_sello,0) = 0 THEN COALESCE(od.cantidad,0) ELSE 0 END) AS cant_sello, " +
+                "SUM(CASE WHEN " + materialTypeExpr + " = 'SE' AND COALESCE(c.cant_sello,0) = 0 AND COALESCE(c.cto_unit_prom_sello,0) = 0 THEN " + materialCostExpr + " ELSE 0 END) AS cto_unit_prom_sello, " +
+                "SUM(CASE WHEN " + materialTypeExpr + " = 'CU' AND COALESCE(c.cant_cuchara,0) = 0 AND COALESCE(c.cto_unit_prom_cuchara,0) = 0 THEN COALESCE(od.cantidad,0) ELSE 0 END) AS cant_cuchara, " +
+                "SUM(CASE WHEN " + materialTypeExpr + " = 'CU' AND COALESCE(c.cant_cuchara,0) = 0 AND COALESCE(c.cto_unit_prom_cuchara,0) = 0 THEN " + materialCostExpr + " ELSE 0 END) AS cto_unit_prom_cuchara, " +
+                "op.realizadopor " +
+                "FROM dba.ordprodcab op " +
+                "JOIN dba.ordproddet od ON od.cod_empresa = op.cod_empresa AND od.cod_tp_comp = op.cod_tp_comp AND od.nroordprod = op.nroordprod " +
+                "JOIN dba.articulo ac ON ac.cod_empresa = op.cod_empresa AND ac.cod_articulo = op.cod_articulo " +
+                "LEFT JOIN dba.articulo apc ON apc.cod_empresa = ac.cod_empresa AND apc.cod_articulo = ac.CodArtPad " +
+                "JOIN dba.articulo ad ON ad.cod_empresa = od.cod_empresa AND ad.cod_articulo = od.cod_articulo " +
+                "LEFT JOIN dba.articulo ap ON ap.cod_empresa = ad.cod_empresa AND ap.cod_articulo = ad.CodArtPad " +
+                "LEFT JOIN dba.tmp_cto_ult_dia_mes tcu ON tcu.cod_empresa = od.cod_empresa AND tcu.fecha = ? AND tcu.cod_articulo = od.cod_articulo " +
+                "LEFT JOIN dba.tmp_rpt_compuestos c ON c.SessionID = ? AND c.cod_empresa = op.cod_empresa AND c.cod_tp_comp = op.cod_tp_comp AND c.nroordprod = op.nroordprod " +
+                "WHERE op.cod_empresa = ? " +
+                "AND " + materialTypeExpr + " IN ('ES','ST','ET','PR','EQ','AM','SE','CU') ";
+            var sqlMatCompParams = [fHasta, sessionId, empresaComp];
+
+            if (fechaInicioDesde !== '1900-01-01' && fechaInicioHasta !== '1900-01-01') {
+                sqlMatComp += "AND DATE(op.fechainicio) BETWEEN ? AND ? ";
+                sqlMatCompParams.push(fechaInicioDesde, fechaInicioHasta);
+            }
+            if (fechaFinDesdeComp !== '1900-01-01' && fechaFinHastaComp !== '1900-01-01') {
+                sqlMatComp += "AND DATE(op.fechafin) BETWEEN ? AND ? ";
+                sqlMatCompParams.push(fechaFinDesdeComp, fechaFinHastaComp);
+            }
+            if (estadoCompuesto) {
+                sqlMatComp += "AND op.estado = ? ";
+                sqlMatCompParams.push(estadoCompuesto);
+            }
+            if (tipoCompuesto) {
+                sqlMatComp += "AND op.tipo_compuesto = ? ";
+                sqlMatCompParams.push(tipoCompuesto);
+            }
+            if (realizadoPor) {
+                sqlMatComp += "AND op.realizadopor LIKE ? ";
+                sqlMatCompParams.push('%' + realizadoPor + '%');
+            }
+
+            sqlMatComp +=
+                "GROUP BY op.cod_empresa, op.cod_tp_comp, op.nroordprod, DATE(op.fechainicio), DATE(op.fechafin), " +
+                "ac.CodArtPad, op.cod_articulo, apc.Des_Art, ac.Des_Art, op.realizadopor ";
+
+            return conn.execAsync(sqlMatComp, sqlMatCompParams).catch(function (err) {
+                logCostoArticuloFull('[EBC_MAT_EXT] COMPUESTOS_MATERIALES_DIRECTOS ERROR empresa=' + empresaComp + ' sessionId=' + sessionId + ' detalle=' + String(err && (err.message || err)));
+                return [];
+            });
+        };
+
+        var fetchAcondicionamientoMaterialesCabeceraPorEmpresa = function (empresaComp) {
+            var headerTypeExpr =
+                "COALESCE(NULLIF(ac.tipo_material_compuesto,''), NULLIF(apc.tipo_material_compuesto,''), '')";
+            var sqlHeader =
+                "SELECT op.cod_empresa, op.cod_tp_comp, op.nroordprod, DATE(op.fechainicio) AS fechainicio, DATE(op.fechafin) AS fechafin, " +
+                "'' AS cod_articulo_remitido, ac.CodArtPad AS cod_art_pad_remitido, " +
+                "COALESCE(NULLIF(ac.CodArtPad,''), op.cod_articulo) AS cod_articulo_acondicionado, " +
+                "COALESCE(NULLIF(ac.CodArtPad,''), op.cod_articulo) AS cod_art_pad_acondicionado, " +
+                "COALESCE(apc.Des_Art, ac.Des_Art, op.cod_articulo) AS des_art_acondicionado, " +
+                "0 AS cant_articulo_acondicionado, 0 AS cant_articulo_remitido, 0 AS cant_activ_colocacion, " +
+                "0 AS pr_unit_acondicionado, 0 AS pr_unit_activ_colocacion, " +
+                "CASE WHEN " + headerTypeExpr + " = 'ES' AND COALESCE(c.cant_estuche,0) = 0 AND COALESCE(c.cto_unit_prom_estuche,0) = 0 THEN COALESCE(op.cantidad,0) ELSE 0 END AS cant_estuche, " +
+                "CASE WHEN " + headerTypeExpr + " = 'ES' AND COALESCE(c.cant_estuche,0) = 0 AND COALESCE(c.cto_unit_prom_estuche,0) = 0 THEN COALESCE(op.cto_prom_gs,0) ELSE 0 END AS cto_unit_prom_estuche, " +
+                "CASE WHEN " + headerTypeExpr + " = 'ST' AND COALESCE(c.cant_sticker,0) = 0 AND COALESCE(c.cto_unit_prom_sticker,0) = 0 THEN COALESCE(op.cantidad,0) ELSE 0 END AS cant_sticker, " +
+                "CASE WHEN " + headerTypeExpr + " = 'ST' AND COALESCE(c.cant_sticker,0) = 0 AND COALESCE(c.cto_unit_prom_sticker,0) = 0 THEN COALESCE(op.cto_prom_gs,0) ELSE 0 END AS cto_unit_prom_sticker, " +
+                "0 AS cant_estampilla, 0 AS cto_unit_prom_estampilla, " +
+                "CASE WHEN " + headerTypeExpr + " = 'PR' AND COALESCE(c.cant_prospecto,0) = 0 AND COALESCE(c.cto_unit_prom_prospecto,0) = 0 THEN COALESCE(op.cantidad,0) ELSE 0 END AS cant_prospecto, " +
+                "CASE WHEN " + headerTypeExpr + " = 'PR' AND COALESCE(c.cant_prospecto,0) = 0 AND COALESCE(c.cto_unit_prom_prospecto,0) = 0 THEN COALESCE(op.cto_prom_gs,0) ELSE 0 END AS cto_unit_prom_prospecto, " +
+                "0 AS cant_etiqueta, 0 AS cto_unit_prom_etiqueta, 0 AS cant_ampolla, 0 AS cto_unit_prom_ampolla, " +
+                "CASE WHEN " + headerTypeExpr + " = 'SE' AND COALESCE(c.cant_sello,0) = 0 AND COALESCE(c.cto_unit_prom_sello,0) = 0 THEN COALESCE(op.cantidad,0) ELSE 0 END AS cant_sello, " +
+                "CASE WHEN " + headerTypeExpr + " = 'SE' AND COALESCE(c.cant_sello,0) = 0 AND COALESCE(c.cto_unit_prom_sello,0) = 0 THEN COALESCE(op.cto_prom_gs,0) ELSE 0 END AS cto_unit_prom_sello, " +
+                "0 AS cant_cuchara, 0 AS cto_unit_prom_cuchara, " +
+                "op.realizadopor " +
+                "FROM dba.ordprodcab op " +
+                "JOIN dba.articulo ac ON ac.cod_empresa = op.cod_empresa AND ac.cod_articulo = op.cod_articulo " +
+                "LEFT JOIN dba.articulo apc ON apc.cod_empresa = ac.cod_empresa AND apc.cod_articulo = ac.CodArtPad " +
+                "LEFT JOIN dba.tmp_rpt_compuestos c ON c.SessionID = ? AND c.cod_empresa = op.cod_empresa AND c.cod_tp_comp = op.cod_tp_comp AND c.nroordprod = op.nroordprod " +
+                "WHERE op.cod_empresa = ? " +
+                "AND " + headerTypeExpr + " IN ('ES','ST','PR','SE') ";
+            var sqlHeaderParams = [sessionId, empresaComp];
+
+            if (fechaInicioDesde !== '1900-01-01' && fechaInicioHasta !== '1900-01-01') {
+                sqlHeader += "AND DATE(op.fechainicio) BETWEEN ? AND ? ";
+                sqlHeaderParams.push(fechaInicioDesde, fechaInicioHasta);
+            }
+            if (fechaFinDesdeComp !== '1900-01-01' && fechaFinHastaComp !== '1900-01-01') {
+                sqlHeader += "AND DATE(op.fechafin) BETWEEN ? AND ? ";
+                sqlHeaderParams.push(fechaFinDesdeComp, fechaFinHastaComp);
+            }
+            if (estadoCompuesto) {
+                sqlHeader += "AND op.estado = ? ";
+                sqlHeaderParams.push(estadoCompuesto);
+            }
+            if (tipoCompuesto) {
+                sqlHeader += "AND op.tipo_compuesto = ? ";
+                sqlHeaderParams.push(tipoCompuesto);
+            }
+            if (realizadoPor) {
+                sqlHeader += "AND op.realizadopor LIKE ? ";
+                sqlHeaderParams.push('%' + realizadoPor + '%');
+            }
+
+            return conn.execAsync(sqlHeader, sqlHeaderParams).catch(function (err) {
+                logCostoArticuloFull('[EBC_MAT_EXT] COMPUESTOS_MATERIALES_CABECERA ERROR empresa=' + empresaComp + ' sessionId=' + sessionId + ' detalle=' + String(err && (err.message || err)));
+                return [];
+            });
+        };
+
+        var fetchAcondicionamientoMaterialesDirectos = function () {
+            var empresasComp = [empresa];
+            if (empresaDespachos !== empresa) {
+                empresasComp.push(empresaDespachos);
+            }
+            return empresasComp.reduce(function (promise, empresaComp) {
+                return promise.then(function (rows) {
+                    return Promise.all([
+                        fetchAcondicionamientoMaterialesDirectosPorEmpresa(empresaComp),
+                        fetchAcondicionamientoMaterialesCabeceraPorEmpresa(empresaComp)
+                    ]).then(function (datasets) {
+                        rows = rows || [];
+                        var detalleRows = datasets[0] || [];
+                        var cabeceraRows = datasets[1] || [];
+                        logCostoArticuloFull('[EBC_MAT_EXT] COMPUESTOS_MATERIALES_DIRECTOS rows=' + detalleRows.length + ' cabecera=' + cabeceraRows.length + ' empresa=' + empresaComp + ' sessionId=' + sessionId);
+                        return rows.concat(detalleRows, cabeceraRows);
+                    });
+                });
+            }, Promise.resolve([]));
+        };
+
         var fetchBaseMateriales = function () {
             var costoExpr =
                 "CASE " +
@@ -2221,6 +2373,7 @@ Stock.costoArticuloFull = function (params, query) {
                         fetchLiquidacionDistribuida(),
                         fetchGastosFacturaObjetivoDetalle(),
                         fetchCostosFacturasDirectas(),
+                        fetchAcondicionamientoMaterialesDirectos(),
                         fetchFactorCambioMes()
                     ]);
                 });
@@ -2233,7 +2386,7 @@ Stock.costoArticuloFull = function (params, query) {
             })
             .then(function (datasets) {
                 return logExtStep('merge dataset final', function () {
-                    return mergeRows(datasets[0], datasets[1], datasets[2], datasets[3], buildGastosImportacionObjetivoControlado(datasets[4]), datasets[5], datasets[6]);
+                    return mergeRows(datasets[0], (datasets[1] || []).concat(datasets[6] || []), datasets[2], datasets[3], buildGastosImportacionObjetivoControlado(datasets[4]), datasets[5], datasets[7]);
                 });
             });
     };
