@@ -1306,7 +1306,7 @@ Stock.costoArticuloFull = function (params, query) {
             var materialTypeExpr =
                 "COALESCE(NULLIF(ap.tipo_material_compuesto,''), NULLIF(ad.tipo_material_compuesto,''), '')";
             var materialCostExpr =
-                "COALESCE(NULLIF(od.cto_prom_gs,0), NULLIF(ad.cto_prom_gs,0), NULLIF(tcu.cto_prom_gs,0), 0)";
+                "COALESCE(NULLIF(od.cto_prom_gs,0), NULLIF(ad.cto_prom_gs,0), NULLIF(tcu.cto_prom_gs,0), NULLIF(op.cto_prom_gs,0), 0)";
             var sqlMatComp =
                 "SELECT op.cod_empresa, op.cod_tp_comp, op.nroordprod, DATE(op.fechainicio) AS fechainicio, DATE(op.fechafin) AS fechafin, " +
                 "'' AS cod_articulo_remitido, ac.CodArtPad AS cod_art_pad_remitido, " +
