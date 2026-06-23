@@ -1885,6 +1885,140 @@ Stock.costoArticuloFull = function (params, query) {
             });
         };
 
+        var fetchUltimosCostosHistoricos = function () {
+            var costoUnitExpr = "COALESCE(NULLIF(fd.PrecioCosto,0), fd.Pr_Unit, 0)";
+            var cambioUsExpr =
+                "COALESCE(NULLIF(fcm.factor_vendedor,0), NULLIF(fcm.factor,0), " +
+                "CASE WHEN COALESCE(fc.FactCambio,0) > 1 THEN fc.FactCambio ELSE 0 END)";
+            var costoUnitUsExpr =
+                "CASE WHEN TRIM(fc.CodMoneda) IN ('GS','PYG') " +
+                "THEN CASE WHEN " + cambioUsExpr + " > 0 THEN " + costoUnitExpr + " / " + cambioUsExpr + " ELSE 0 END " +
+                "ELSE " + costoUnitExpr + " END";
+            var sourceCondition =
+                "( " +
+                "  (TRIM(fc.CodProv) IN ('4166','3718') AND TRIM(fc.Cod_Tp_Comp) IN ('CCR','CCO')) " +
+                "  OR EXISTS ( " +
+                "    SELECT 1 FROM dba.DespFact df " +
+                "    JOIN dba.Despacho d " +
+                "      ON d.Cod_Empresa = df.Cod_Empresa " +
+                "     AND d.Anho = df.Anho " +
+                "     AND d.CodDespachante = df.CodDespachante " +
+                "     AND d.NroDespacho = df.NroDespacho " +
+                "    WHERE df.Cod_Empresa = fc.Cod_Empresa " +
+                "      AND df.CodProv = fc.CodProv " +
+                "      AND df.Cod_Tp_Comp = fc.Cod_Tp_Comp " +
+                "      AND df.NroFact = fc.NroFact " +
+                "      AND COALESCE(d.Cod_Sucursal,'') <> '02' " +
+                "  ) " +
+                ")";
+            var historicalSourceCondition = sourceCondition
+                .replace(/fc\./g, 'fc2.')
+                .replace(/df\./g, 'df2.')
+                .replace(/d\./g, 'd2.')
+                .replace(/DespFact df/g, 'DespFact df2')
+                .replace(/Despacho d /g, 'Despacho d2 ');
+            var sqlFact =
+                "SELECT fc.Cod_Empresa AS cod_empresa, fc.CodProv AS codprov, fd.Cod_Articulo AS cod_articulo, " +
+                "COALESCE(NULLIF(a.CodArtPad,''), fd.Cod_Articulo) AS cod_art_pad, " +
+                "COALESCE(ap.Des_Art, a.Des_Art, fd.Cod_Articulo) AS des_art_padre, " +
+                "fc.NroFact AS nrofact, DATE(fc.FechaFact) AS fecha_costo, " +
+                "COALESCE(a.Des_Art, fd.Cod_Articulo) AS descrip, " +
+                cambioUsExpr + " AS factcambio_us, " +
+                "COALESCE(fd.Cantidad,0) AS cantidad, COALESCE(fd.Cantidad,0) AS canttotal, " +
+                "0 AS prorrateo, 0 AS prorrateome, " +
+                costoUnitUsExpr + " AS costo_fob_us, " +
+                costoUnitUsExpr + " AS costo_cif_us, " +
+                "COALESCE(fd.Peso,0) AS peso, COALESCE(fd.PorcArancelario,0) AS porcarancelario, COALESCE(fd.IVA,0) AS iva, " +
+                "0 AS total_gastos, 0 AS total_gastos_me, 0 AS total_aranceles, 0 AS total_aranceles_me, " +
+                "0 AS total_tributo_aduanero, 0 AS total_tributo_aduanero_me " +
+                "FROM dba.FactCab fc " +
+                "JOIN dba.FactDet fd " +
+                "  ON fd.Cod_Empresa = fc.Cod_Empresa " +
+                " AND fd.CodProv = fc.CodProv " +
+                " AND fd.Cod_Tp_Comp = fc.Cod_Tp_Comp " +
+                " AND fd.NroFact = fc.NroFact " +
+                "LEFT JOIN dba.Articulo a " +
+                "  ON a.Cod_Empresa = fd.Cod_Empresa " +
+                " AND a.Cod_Articulo = fd.Cod_Articulo " +
+                "LEFT JOIN dba.Articulo ap " +
+                "  ON ap.Cod_Empresa = a.Cod_Empresa " +
+                " AND ap.Cod_Articulo = a.CodArtPad " +
+                "LEFT JOIN dba.factcamb fcm " +
+                "  ON fcm.codmoneda = 'US' " +
+                " AND fcm.cod_empresa = fc.Cod_Empresa " +
+                " AND DATE(fcm.fact_fecha) = ( " +
+                "   SELECT MAX(DATE(f2.fact_fecha)) " +
+                "   FROM dba.factcamb f2 " +
+                "   WHERE f2.codmoneda = 'US' " +
+                "   AND f2.cod_empresa = fc.Cod_Empresa " +
+                "   AND DATE(f2.fact_fecha) <= DATE(fc.FechaFact) " +
+                " ) " +
+                "WHERE fc.Cod_Empresa = ? " +
+                "AND DATE(fc.FechaFact) <= ? " +
+                "AND COALESCE(fc.Cod_Sucursal,'') <> '02' " +
+                "AND TRIM(fc.CostoGasto) = 'C' " +
+                "AND COALESCE(fd.Cantidad,0) <> 0 " +
+                "AND " + sourceCondition + " " +
+                "AND DATE(fc.FechaFact) = ( " +
+                "  SELECT MAX(DATE(fc2.FechaFact)) " +
+                "  FROM dba.FactCab fc2 " +
+                "  JOIN dba.FactDet fd2 " +
+                "    ON fd2.Cod_Empresa = fc2.Cod_Empresa " +
+                "   AND fd2.CodProv = fc2.CodProv " +
+                "   AND fd2.Cod_Tp_Comp = fc2.Cod_Tp_Comp " +
+                "   AND fd2.NroFact = fc2.NroFact " +
+                "  LEFT JOIN dba.Articulo a2 " +
+                "    ON a2.Cod_Empresa = fd2.Cod_Empresa " +
+                "   AND a2.Cod_Articulo = fd2.Cod_Articulo " +
+                "  WHERE fc2.Cod_Empresa = fc.Cod_Empresa " +
+                "    AND DATE(fc2.FechaFact) <= ? " +
+                "    AND COALESCE(fc2.Cod_Sucursal,'') <> '02' " +
+                "    AND TRIM(fc2.CostoGasto) = 'C' " +
+                "    AND COALESCE(fd2.Cantidad,0) <> 0 " +
+                "    AND COALESCE(NULLIF(a2.CodArtPad,''), fd2.Cod_Articulo) = " +
+                "        COALESCE(NULLIF(a.CodArtPad,''), fd.Cod_Articulo) " +
+                "    AND " + historicalSourceCondition + " " +
+                ") ";
+            var sqlFactParams = [empresaDespachos, fHasta, fHasta];
+
+            if (articulo) {
+                if (articulo.constructor === Array) {
+                    sqlFact += "AND (fd.Cod_Articulo IN " + q.in(articulo) + " OR a.CodArtPad IN " + q.in(articulo) + ") ";
+                } else {
+                    sqlFact += "AND (fd.Cod_Articulo = ? OR fd.Cod_Articulo LIKE ? OR a.CodArtPad = ?) ";
+                    sqlFactParams.push(articulo, articulo + '-%', articulo);
+                }
+            }
+
+            sqlFact += "ORDER BY COALESCE(NULLIF(a.CodArtPad,''), fd.Cod_Articulo), fc.FechaFact DESC, fc.NroFact";
+            return conn.execAsync(sqlFact, sqlFactParams).then(function (rows) {
+                rows = rows || [];
+                rows.forEach(function (row) {
+                    var codArticulo = String(pickValue(row, ['cod_articulo', 'Cod_Articulo'], '') || '').trim();
+                    var codPad = String(pickValue(row, ['cod_art_pad', 'CodArtPad'], '') || '').trim();
+                    if ((!codPad || codPad === codArticulo) && codArticulo.indexOf('-') > 0) {
+                        row.cod_art_pad = codArticulo.split('-')[0];
+                    }
+                });
+                var latestDateByArticle = {};
+                rows.forEach(function (row) {
+                    var key = String(pickValue(row, ['cod_art_pad', 'cod_articulo'], '') || '').trim();
+                    var fechaCosto = String(pickValue(row, ['fecha_costo'], '') || '');
+                    if (key && (!latestDateByArticle[key] || fechaCosto > latestDateByArticle[key])) {
+                        latestDateByArticle[key] = fechaCosto;
+                    }
+                });
+                rows = rows.filter(function (row) {
+                    var key = String(pickValue(row, ['cod_art_pad', 'cod_articulo'], '') || '').trim();
+                    return key && String(pickValue(row, ['fecha_costo'], '') || '') === latestDateByArticle[key];
+                });
+                logCostoArticuloFull('[EBC_MAT_EXT] ULTIMOS_COSTOS_HISTORICOS rows=' + rows.length + ' empresa=' + empresaDespachos + ' hasta=' + fHasta + ' sessionId=' + sessionId);
+                return rows;
+            }).catch(function (err) {
+                logCostoArticuloFull('[EBC_MAT_EXT] ULTIMOS_COSTOS_HISTORICOS ERROR sessionId=' + sessionId + ' detalle=' + String(err && (err.message || err)));
+                return [];
+            });
+        };
         // Deriva el GI validado para la factura objetivo desde el detalle ya calculado por linea.
         // Lo mantenemos acotado a la factura 10000000003 porque tmpdespachos sigue trayendo GI=0
         // para ese caso, y este prorrateo fue el que cerró contra el PB.
@@ -1907,7 +2041,7 @@ Stock.costoArticuloFull = function (params, query) {
             return result;
         };
 
-        var mergeRows = function (importRows, compRows, materialRows, liquidacionRows, gastosObjetivoControladoRows, factCabDirectRows, factorCambioMes) {
+        var mergeRows = function (importRows, compRows, materialRows, liquidacionRows, gastosObjetivoControladoRows, factCabDirectRows, historicalCostRows, factorCambioMes) {
             var periodParts = buildPeriodParts(fHasta);
             var compByRemitido = {};
             var compByAcond = {};
@@ -1976,7 +2110,30 @@ Stock.costoArticuloFull = function (params, query) {
             });
 
             var importMap = {};
-            (importRows || []).concat(factCabDirectRows || []).forEach(function (row) {
+            var currentCostRows = (importRows || []).concat(factCabDirectRows || []);
+            var currentCostKeys = {};
+            var historicalCandidateKeys = {};
+            currentCostRows.forEach(function (row) {
+                var currentKey = pickValue(row, ['cod_art_pad', 'cod_articulo', 'Cod_Articulo'], '');
+                if (currentKey) currentCostKeys[currentKey] = true;
+            });
+            (materialRows || []).forEach(function (row) {
+                var materialKey = pickValue(row, ['cod_articulo', 'codigo_pt', 'Cod_Articulo'], '');
+                if (materialKey) historicalCandidateKeys[materialKey] = true;
+            });
+            Object.keys(compByAcond).forEach(function (key) {
+                historicalCandidateKeys[key] = true;
+                historicalCandidateKeys[normalizeArticuloPad(key)] = true;
+            });
+            Object.keys(compByRemitido).forEach(function (key) {
+                historicalCandidateKeys[key] = true;
+                historicalCandidateKeys[normalizeArticuloPad(key)] = true;
+            });
+            var fallbackHistoricalRows = (historicalCostRows || []).filter(function (row) {
+                var historicalKey = pickValue(row, ['cod_art_pad', 'cod_articulo', 'Cod_Articulo'], '');
+                return historicalKey && historicalCandidateKeys[historicalKey] && !currentCostKeys[historicalKey];
+            });
+            currentCostRows.concat(fallbackHistoricalRows).forEach(function (row) {
                 var key = pickValue(row, ['cod_art_pad', 'cod_articulo', 'Cod_Articulo'], '');
                 var nroFact = pickValue(row, ['nrofact'], '');
                 if (!key) return;
@@ -2381,6 +2538,7 @@ Stock.costoArticuloFull = function (params, query) {
                         fetchGastosFacturaObjetivoDetalle(),
                         fetchCostosFacturasDirectas(),
                         fetchAcondicionamientoMaterialesDirectos(),
+                        fetchUltimosCostosHistoricos(),
                         fetchFactorCambioMes()
                     ]);
                 });
@@ -2393,7 +2551,7 @@ Stock.costoArticuloFull = function (params, query) {
             })
             .then(function (datasets) {
                 return logExtStep('merge dataset final', function () {
-                    return mergeRows(datasets[0], (datasets[1] || []).concat(datasets[6] || []), datasets[2], datasets[3], buildGastosImportacionObjetivoControlado(datasets[4]), datasets[5], datasets[7]);
+                    return mergeRows(datasets[0], (datasets[1] || []).concat(datasets[6] || []), datasets[2], datasets[3], buildGastosImportacionObjetivoControlado(datasets[4]), datasets[5], datasets[7], datasets[8]);
                 });
             });
     };
