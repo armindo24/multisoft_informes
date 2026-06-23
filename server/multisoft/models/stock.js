@@ -1306,7 +1306,8 @@ Stock.costoArticuloFull = function (params, query) {
             var materialTypeExpr =
                 "COALESCE(NULLIF(ap.tipo_material_compuesto,''), NULLIF(ad.tipo_material_compuesto,''), '')";
             var materialCostExpr =
-                "COALESCE(NULLIF(od.cto_prom_gs,0), NULLIF(ad.cto_prom_gs,0), NULLIF(tcu.cto_prom_gs,0), NULLIF(op.cto_prom_gs,0), 0)";
+                "COALESCE(NULLIF(od.cto_prom_gs,0), NULLIF(ad.cto_prom_gs,0), NULLIF(tcu.cto_prom_gs,0), " +
+                "CASE WHEN COALESCE(op.cto_prom_gs,0) <> 0 AND COALESCE(od.cantidad,0) <> 0 THEN od.cantidad / op.cto_prom_gs ELSE 0 END, 0)";
             var sqlMatComp =
                 "SELECT op.cod_empresa, op.cod_tp_comp, op.nroordprod, DATE(op.fechainicio) AS fechainicio, DATE(op.fechafin) AS fechafin, " +
                 "'' AS cod_articulo_remitido, ac.CodArtPad AS cod_art_pad_remitido, " +
@@ -1378,6 +1379,8 @@ Stock.costoArticuloFull = function (params, query) {
         var fetchAcondicionamientoMaterialesCabeceraPorEmpresa = function (empresaComp) {
             var headerTypeExpr =
                 "COALESCE(NULLIF(ac.tipo_material_compuesto,''), NULLIF(apc.tipo_material_compuesto,''), '')";
+            var headerCostExpr =
+                "CASE WHEN COALESCE(op.cto_prom_gs,0) <> 0 AND COALESCE(op.cantidad,0) <> 0 THEN op.cantidad / op.cto_prom_gs ELSE COALESCE(op.cto_prom_gs,0) END";
             var sqlHeader =
                 "SELECT op.cod_empresa, op.cod_tp_comp, op.nroordprod, DATE(op.fechainicio) AS fechainicio, DATE(op.fechafin) AS fechafin, " +
                 "'' AS cod_articulo_remitido, ac.CodArtPad AS cod_art_pad_remitido, " +
@@ -1387,15 +1390,15 @@ Stock.costoArticuloFull = function (params, query) {
                 "0 AS cant_articulo_acondicionado, 0 AS cant_articulo_remitido, 0 AS cant_activ_colocacion, " +
                 "0 AS pr_unit_acondicionado, 0 AS pr_unit_activ_colocacion, " +
                 "CASE WHEN " + headerTypeExpr + " = 'ES' AND COALESCE(c.cant_estuche,0) = 0 AND COALESCE(c.cto_unit_prom_estuche,0) = 0 THEN COALESCE(op.cantidad,0) ELSE 0 END AS cant_estuche, " +
-                "CASE WHEN " + headerTypeExpr + " = 'ES' AND COALESCE(c.cant_estuche,0) = 0 AND COALESCE(c.cto_unit_prom_estuche,0) = 0 THEN COALESCE(op.cto_prom_gs,0) ELSE 0 END AS cto_unit_prom_estuche, " +
+                "CASE WHEN " + headerTypeExpr + " = 'ES' AND COALESCE(c.cant_estuche,0) = 0 AND COALESCE(c.cto_unit_prom_estuche,0) = 0 THEN " + headerCostExpr + " ELSE 0 END AS cto_unit_prom_estuche, " +
                 "CASE WHEN " + headerTypeExpr + " = 'ST' AND COALESCE(c.cant_sticker,0) = 0 AND COALESCE(c.cto_unit_prom_sticker,0) = 0 THEN COALESCE(op.cantidad,0) ELSE 0 END AS cant_sticker, " +
-                "CASE WHEN " + headerTypeExpr + " = 'ST' AND COALESCE(c.cant_sticker,0) = 0 AND COALESCE(c.cto_unit_prom_sticker,0) = 0 THEN COALESCE(op.cto_prom_gs,0) ELSE 0 END AS cto_unit_prom_sticker, " +
+                "CASE WHEN " + headerTypeExpr + " = 'ST' AND COALESCE(c.cant_sticker,0) = 0 AND COALESCE(c.cto_unit_prom_sticker,0) = 0 THEN " + headerCostExpr + " ELSE 0 END AS cto_unit_prom_sticker, " +
                 "0 AS cant_estampilla, 0 AS cto_unit_prom_estampilla, " +
                 "CASE WHEN " + headerTypeExpr + " = 'PR' AND COALESCE(c.cant_prospecto,0) = 0 AND COALESCE(c.cto_unit_prom_prospecto,0) = 0 THEN COALESCE(op.cantidad,0) ELSE 0 END AS cant_prospecto, " +
-                "CASE WHEN " + headerTypeExpr + " = 'PR' AND COALESCE(c.cant_prospecto,0) = 0 AND COALESCE(c.cto_unit_prom_prospecto,0) = 0 THEN COALESCE(op.cto_prom_gs,0) ELSE 0 END AS cto_unit_prom_prospecto, " +
+                "CASE WHEN " + headerTypeExpr + " = 'PR' AND COALESCE(c.cant_prospecto,0) = 0 AND COALESCE(c.cto_unit_prom_prospecto,0) = 0 THEN " + headerCostExpr + " ELSE 0 END AS cto_unit_prom_prospecto, " +
                 "0 AS cant_etiqueta, 0 AS cto_unit_prom_etiqueta, 0 AS cant_ampolla, 0 AS cto_unit_prom_ampolla, " +
                 "CASE WHEN " + headerTypeExpr + " = 'SE' AND COALESCE(c.cant_sello,0) = 0 AND COALESCE(c.cto_unit_prom_sello,0) = 0 THEN COALESCE(op.cantidad,0) ELSE 0 END AS cant_sello, " +
-                "CASE WHEN " + headerTypeExpr + " = 'SE' AND COALESCE(c.cant_sello,0) = 0 AND COALESCE(c.cto_unit_prom_sello,0) = 0 THEN COALESCE(op.cto_prom_gs,0) ELSE 0 END AS cto_unit_prom_sello, " +
+                "CASE WHEN " + headerTypeExpr + " = 'SE' AND COALESCE(c.cant_sello,0) = 0 AND COALESCE(c.cto_unit_prom_sello,0) = 0 THEN " + headerCostExpr + " ELSE 0 END AS cto_unit_prom_sello, " +
                 "0 AS cant_cuchara, 0 AS cto_unit_prom_cuchara, " +
                 "op.realizadopor " +
                 "FROM dba.ordprodcab op " +
