@@ -2053,7 +2053,14 @@ Stock.costoArticuloFull = function (params, query) {
             var allKeysMap = {};
             Object.keys(importMap).forEach(function (key) { allKeysMap[key] = true; });
             Object.keys(materialMap).forEach(function (key) { allKeysMap[key] = true; });
-            Object.keys(compByAcond).forEach(function (key) { allKeysMap[key] = true; });
+            Object.keys(compByAcond).forEach(function (key) {
+                var normalizedKey = normalizeArticuloPad(key);
+                if ((importMap[key] || materialMap[key]) || !normalizedKey || normalizedKey === key) {
+                    allKeysMap[key] = true;
+                } else {
+                    allKeysMap[normalizedKey] = true;
+                }
+            });
 
             var rows = Object.keys(allKeysMap).sort().map(function (key) {
                 var compPreview = (compByRemitido[key] || []).concat(compByAcond[key] || []);
@@ -2252,9 +2259,6 @@ Stock.costoArticuloFull = function (params, query) {
                 }
 
                 var displayCodArticulo = key;
-                if (!importMap[key] && !materialMap[key] && fallbackBaseKey) {
-                    displayCodArticulo = fallbackBaseKey;
-                }
                 var displayDesArt = base.des_art || pickValue(compPreviewRow, ['des_art_acondicionado'], '');
 
                 return {
