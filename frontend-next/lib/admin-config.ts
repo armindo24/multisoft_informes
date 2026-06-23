@@ -2003,6 +2003,19 @@ function formatScheduledDate(value: unknown) {
   return String(value || '').slice(0, 10) || '-';
 }
 
+function formatScheduledDateTime(value: unknown) {
+  if (!value) return '-';
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString('es-PY', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 function salesGroupLabel(groupBy: string) {
   if (groupBy === 'cod_tp_comp') return 'Comprobante';
   if (groupBy === 'cod_vendedor') return 'Vendedor';
@@ -2977,6 +2990,7 @@ async function loadScheduledTabularReportData(schedule: ReportScheduleRecord): P
           'MES',
           'CODIGO PY',
           'CODIGO PY REACOND.',
+          'FECHA REACONDICIONADO',
           'PRODUCTO',
           'FOB U$S (CARTILLA EN ORIGEN)',
           '% CTO. TOTAL IMPORT.',
@@ -2998,6 +3012,7 @@ async function loadScheduledTabularReportData(schedule: ReportScheduleRecord): P
           String(row.mes || '-'),
           String(row.cod_articulo || '-'),
           String(row.cod_pt_reacondicionado || '-'),
+          formatScheduledDateTime(row.fecha_reacondicionado),
           String(row.des_art || '-'),
           formatScheduledCurrency(row.fob_usd_origen, 2),
           formatScheduledCurrency(row.porcentaje_costo_total_importacion, 2),

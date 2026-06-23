@@ -16,6 +16,19 @@ function formatNumber(value: unknown, decimals = 0) {
   });
 }
 
+function formatDateTime(value: unknown) {
+  if (!value) return '-';
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString('es-PY', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 function escapeHtml(value: unknown) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -28,6 +41,7 @@ type ColumnDef = {
   label: string;
   align: 'left' | 'right';
   decimals?: number;
+  dateTime?: boolean;
   sticky?: boolean;
   minWidth?: string;
   left?: string;
@@ -39,8 +53,9 @@ function buildColumns(ecuacionMat?: boolean): readonly ColumnDef[] {
       { key: 'anio', label: 'AÑO', align: 'left', sticky: true, minWidth: '50px', left: '0px' },
       { key: 'mes', label: 'MES', align: 'left', sticky: true, minWidth: '46px', left: '50px' },
       { key: 'cod_articulo', label: 'CÓD. PY', align: 'left', sticky: true, minWidth: '82px', left: '96px' },
-      { key: 'cod_pt_reacondicionado', label: 'CÓD. REAC.', align: 'left', sticky: true, minWidth: '92px', left: '178px' },
-      { key: 'des_art', label: 'PRODUCTO', align: 'left', sticky: true, minWidth: '210px', left: '270px' },
+      { key: 'cod_pt_reacondicionado', label: 'C�D. REAC.', align: 'left', sticky: true, minWidth: '92px', left: '178px' },
+      { key: 'fecha_reacondicionado', label: 'FECHA REAC.', align: 'left', dateTime: true, sticky: true, minWidth: '120px', left: '270px' },
+      { key: 'des_art', label: 'PRODUCTO', align: 'left', sticky: true, minWidth: '210px', left: '390px' },
       { key: 'fob_usd_origen', label: 'FOB USD', align: 'right', decimals: 2 },
       { key: 'porcentaje_costo_total_importacion', label: '% CTO. IMP.', align: 'right', decimals: 2 },
       { key: 'costo_total_us_actual', label: 'CTO. USD', align: 'right', decimals: 2 },
@@ -82,6 +97,9 @@ function getCellValue(row: StockCostoArticuloFullRow, key: string) {
 
 function renderCellValue(row: StockCostoArticuloFullRow, column: ColumnDef) {
   const value = getCellValue(row, column.key);
+  if (column.dateTime) {
+    return formatDateTime(value);
+  }
   if (typeof column.decimals === 'number') {
     return formatNumber(value, column.decimals);
   }

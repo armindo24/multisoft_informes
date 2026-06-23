@@ -35,6 +35,8 @@ export type StockValorizadoRow = {
 
 export type StockCostoArticuloFullRow = {
   cod_articulo?: string;
+  cod_pt_reacondicionado?: string;
+  fecha_reacondicionado?: string;
   des_art?: string;
   cod_tp_art?: string;
   estado?: string;

@@ -1227,7 +1227,7 @@ Stock.costoArticuloFull = function (params, query) {
 
         var fetchAcondicionamientoPorEmpresa = function (empresaAcond) {
             var sqlComp =
-                "SELECT c.cod_empresa, c.cod_tp_comp, c.nroordprod, c.fechainicio, c.fechafin, " +
+                "SELECT c.cod_empresa, c.cod_tp_comp, c.nroordprod, c.fechainicio, c.fechafin, op.fechahoraprod, " +
                 "c.cod_articulo_remitido, c.cod_articulo_acondicionado, c.des_art_acondicionado, " +
                 "COALESCE(NULLIF(ar.codartpad,''), c.cod_articulo_remitido) AS cod_art_pad_remitido, " +
                 "COALESCE(NULLIF(aa.codartpad,''), c.cod_articulo_acondicionado) AS cod_art_pad_acondicionado, " +
@@ -1243,6 +1243,10 @@ Stock.costoArticuloFull = function (params, query) {
                 "c.cant_cuchara, c.cto_unit_prom_cuchara, " +
                 "c.realizadopor " +
                 "FROM dba.tmp_rpt_compuestos c " +
+                "LEFT JOIN dba.ordprodcab op " +
+                "  ON op.cod_empresa = c.cod_empresa " +
+                " AND op.cod_tp_comp = c.cod_tp_comp " +
+                " AND op.nroordprod = c.nroordprod " +
                 "LEFT JOIN dba.articulo ar " +
                 "  ON ar.cod_empresa = c.cod_empresa " +
                 " AND ar.cod_articulo = c.cod_articulo_remitido " +
@@ -1255,7 +1259,7 @@ Stock.costoArticuloFull = function (params, query) {
 
         var fetchBaseAcondicionamiento = function () {
             var sqlCompAll =
-                "SELECT c.cod_empresa, c.cod_tp_comp, c.nroordprod, c.fechainicio, c.fechafin, " +
+                "SELECT c.cod_empresa, c.cod_tp_comp, c.nroordprod, c.fechainicio, c.fechafin, op.fechahoraprod, " +
                 "c.cod_articulo_remitido, c.cod_articulo_acondicionado, c.des_art_acondicionado, " +
                 "COALESCE(NULLIF(ar.codartpad,''), c.cod_articulo_remitido) AS cod_art_pad_remitido, " +
                 "COALESCE(NULLIF(aa.codartpad,''), c.cod_articulo_acondicionado) AS cod_art_pad_acondicionado, " +
@@ -1271,6 +1275,10 @@ Stock.costoArticuloFull = function (params, query) {
                 "c.cant_cuchara, c.cto_unit_prom_cuchara, " +
                 "c.realizadopor " +
                 "FROM dba.tmp_rpt_compuestos c " +
+                "LEFT JOIN dba.ordprodcab op " +
+                "  ON op.cod_empresa = c.cod_empresa " +
+                " AND op.cod_tp_comp = c.cod_tp_comp " +
+                " AND op.nroordprod = c.nroordprod " +
                 "LEFT JOIN dba.articulo ar " +
                 "  ON ar.cod_empresa = c.cod_empresa " +
                 " AND ar.cod_articulo = c.cod_articulo_remitido " +
@@ -1309,7 +1317,7 @@ Stock.costoArticuloFull = function (params, query) {
                 "COALESCE(NULLIF(od.cto_prom_gs,0), NULLIF(ad.cto_prom_gs,0), NULLIF(tcu.cto_prom_gs,0), " +
                 "CASE WHEN COALESCE(op.cto_prom_gs,0) <> 0 AND COALESCE(od.cantidad,0) <> 0 THEN CEILING(od.cantidad / op.cto_prom_gs) ELSE 0 END, 0)";
             var sqlMatComp =
-                "SELECT op.cod_empresa, op.cod_tp_comp, op.nroordprod, DATE(op.fechainicio) AS fechainicio, DATE(op.fechafin) AS fechafin, " +
+                "SELECT op.cod_empresa, op.cod_tp_comp, op.nroordprod, DATE(op.fechainicio) AS fechainicio, DATE(op.fechafin) AS fechafin, op.fechahoraprod, " +
                 "'' AS cod_articulo_remitido, ac.CodArtPad AS cod_art_pad_remitido, " +
                 "COALESCE(NULLIF(ac.CodArtPad,''), op.cod_articulo) AS cod_articulo_acondicionado, " +
                 "COALESCE(NULLIF(ac.CodArtPad,''), op.cod_articulo) AS cod_art_pad_acondicionado, " +
@@ -1367,7 +1375,7 @@ Stock.costoArticuloFull = function (params, query) {
             }
 
             sqlMatComp +=
-                "GROUP BY op.cod_empresa, op.cod_tp_comp, op.nroordprod, DATE(op.fechainicio), DATE(op.fechafin), " +
+                "GROUP BY op.cod_empresa, op.cod_tp_comp, op.nroordprod, DATE(op.fechainicio), DATE(op.fechafin), op.fechahoraprod, " +
                 "ac.CodArtPad, op.cod_articulo, apc.Des_Art, ac.Des_Art, op.realizadopor ";
 
             return conn.execAsync(sqlMatComp, sqlMatCompParams).catch(function (err) {
@@ -1382,7 +1390,7 @@ Stock.costoArticuloFull = function (params, query) {
             var headerCostExpr =
                 "CASE WHEN COALESCE(op.cto_prom_gs,0) <> 0 AND COALESCE(op.cantidad,0) <> 0 THEN CEILING(op.cantidad / op.cto_prom_gs) ELSE COALESCE(op.cto_prom_gs,0) END";
             var sqlHeader =
-                "SELECT op.cod_empresa, op.cod_tp_comp, op.nroordprod, DATE(op.fechainicio) AS fechainicio, DATE(op.fechafin) AS fechafin, " +
+                "SELECT op.cod_empresa, op.cod_tp_comp, op.nroordprod, DATE(op.fechainicio) AS fechainicio, DATE(op.fechafin) AS fechafin, op.fechahoraprod, " +
                 "'' AS cod_articulo_remitido, ac.CodArtPad AS cod_art_pad_remitido, " +
                 "COALESCE(NULLIF(ac.CodArtPad,''), op.cod_articulo) AS cod_articulo_acondicionado, " +
                 "COALESCE(NULLIF(ac.CodArtPad,''), op.cod_articulo) AS cod_art_pad_acondicionado, " +
@@ -2305,6 +2313,12 @@ Stock.costoArticuloFull = function (params, query) {
                     var colocacionUnit = safeDivide(toNumber(pickValue(row, ['pr_unit_activ_colocacion'], 0)), 1.1);
                     var actividadQty = toNumber(pickValue(row, ['cant_activ_colocacion'], 0));
                     acc.cod_pt_reacondicionado = acc.cod_pt_reacondicionado || pickValue(row, ['cod_art_pad_acondicionado', 'cod_articulo_acondicionado'], '');
+                    var fechaHoraProd = pickValue(row, ['fechahoraprod'], '');
+                    var fechaHoraProdTs = fechaHoraProd ? new Date(fechaHoraProd).getTime() : 0;
+                    if (fechaHoraProd && (!acc.fecha_reacondicionado || (!isNaN(fechaHoraProdTs) && fechaHoraProdTs > acc.fecha_reacondicionado_ts))) {
+                        acc.fecha_reacondicionado = fechaHoraProd;
+                        acc.fecha_reacondicionado_ts = isNaN(fechaHoraProdTs) ? 0 : fechaHoraProdTs;
+                    }
                     acc.servicio_acondicionamiento += actividadQty * actividadUnit;
                     acc.servicio_colocacion += actividadQty * colocacionUnit;
                     acc.cant_activ_colocacion += actividadQty;
@@ -2329,6 +2343,8 @@ Stock.costoArticuloFull = function (params, query) {
                     return acc;
                 }, {
                     cod_pt_reacondicionado: '',
+                    fecha_reacondicionado: '',
+                    fecha_reacondicionado_ts: 0,
                     servicio_acondicionamiento: 0,
                     servicio_colocacion: 0,
                     cant_activ_colocacion: 0,
@@ -2423,6 +2439,7 @@ Stock.costoArticuloFull = function (params, query) {
                     mes: periodParts.mes,
                     cod_articulo: displayCodArticulo,
                     cod_pt_reacondicionado: compTotals.cod_pt_reacondicionado,
+                    fecha_reacondicionado: compTotals.fecha_reacondicionado,
                     des_art: displayDesArt,
                     fob_usd_origen: roundNumber(fobUsd, 4),
                     porcentaje_costo_total_importacion: roundNumber(porcentajeImport, 2),
@@ -2597,6 +2614,7 @@ Stock.costoArticuloFull = function (params, query) {
                     mes: pickValue(r, ['mes'], periodMonth || ''),
                     cod_articulo: pickValue(r, ['cod_articulo', 'codigo_pt', 'Cod_Articulo'], ''),
                     cod_pt_reacondicionado: pickValue(r, ['cod_pt_reacondicionado', 'codigo_pt_reacondicionado', 'cod_reacondicionado'], ''),
+                    fecha_reacondicionado: pickValue(r, ['fecha_reacondicionado', 'fechahoraprod'], ''),
                     des_art: pickValue(r, ['des_art', 'producto', 'Des_Art'], ''),
                     fob_usd_origen: toNumber(pickValue(r, ['fob_usd_origen', 'fob_usd', 'fob_costo_utilidad_origen', 'fob'], 0)),
                     porcentaje_costo_total_importacion: toNumber(pickValue(r, ['porcentaje_costo_total_importacion', 'z_costo_total_importacion', 'porc_costo_total_importacion'], 0)),
