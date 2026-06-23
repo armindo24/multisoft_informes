@@ -1307,7 +1307,7 @@ Stock.costoArticuloFull = function (params, query) {
                 "COALESCE(NULLIF(ap.tipo_material_compuesto,''), NULLIF(ad.tipo_material_compuesto,''), '')";
             var materialCostExpr =
                 "COALESCE(NULLIF(od.cto_prom_gs,0), NULLIF(ad.cto_prom_gs,0), NULLIF(tcu.cto_prom_gs,0), " +
-                "CASE WHEN COALESCE(op.cto_prom_gs,0) <> 0 AND COALESCE(od.cantidad,0) <> 0 THEN od.cantidad / op.cto_prom_gs ELSE 0 END, 0)";
+                "CASE WHEN COALESCE(op.cto_prom_gs,0) <> 0 AND COALESCE(od.cantidad,0) <> 0 THEN CEILING(od.cantidad / op.cto_prom_gs) ELSE 0 END, 0)";
             var sqlMatComp =
                 "SELECT op.cod_empresa, op.cod_tp_comp, op.nroordprod, DATE(op.fechainicio) AS fechainicio, DATE(op.fechafin) AS fechafin, " +
                 "'' AS cod_articulo_remitido, ac.CodArtPad AS cod_art_pad_remitido, " +
@@ -1380,7 +1380,7 @@ Stock.costoArticuloFull = function (params, query) {
             var headerTypeExpr =
                 "COALESCE(NULLIF(ac.tipo_material_compuesto,''), NULLIF(apc.tipo_material_compuesto,''), '')";
             var headerCostExpr =
-                "CASE WHEN COALESCE(op.cto_prom_gs,0) <> 0 AND COALESCE(op.cantidad,0) <> 0 THEN op.cantidad / op.cto_prom_gs ELSE COALESCE(op.cto_prom_gs,0) END";
+                "CASE WHEN COALESCE(op.cto_prom_gs,0) <> 0 AND COALESCE(op.cantidad,0) <> 0 THEN CEILING(op.cantidad / op.cto_prom_gs) ELSE COALESCE(op.cto_prom_gs,0) END";
             var sqlHeader =
                 "SELECT op.cod_empresa, op.cod_tp_comp, op.nroordprod, DATE(op.fechainicio) AS fechainicio, DATE(op.fechafin) AS fechafin, " +
                 "'' AS cod_articulo_remitido, ac.CodArtPad AS cod_art_pad_remitido, " +
