@@ -15,10 +15,22 @@ function buildAsyncJobId() {
 }
 
 function getAsyncClientKey(params, query) {
-    return [
-        params.empresa || '',
-        String(query.client_session_id || '').trim()
-    ].join('|');
+    var normalizedQuery = {};
+    Object.keys(query || {}).sort().forEach(function (key) {
+        if (
+            key === 'client_session_id' ||
+            key === 'frontend_build' ||
+            key === 'debug_recall' ||
+            key === 'recall_dbg'
+        ) {
+            return;
+        }
+        normalizedQuery[key] = query[key];
+    });
+    return JSON.stringify({
+        empresa: String(params && params.empresa || '').trim(),
+        query: normalizedQuery
+    });
 }
 
 function sanitizeAsyncJob(job) {
@@ -74,7 +86,9 @@ function finishAsyncJob(job, status, payload) {
         job.error = String((payload && payload.error) || 'Error');
     }
 
-    cleanupAsyncJobIndex(job);
+    if (status !== 'done') {
+        cleanupAsyncJobIndex(job);
+    }
     scheduleAsyncJobCleanup(job);
 }
 
@@ -131,7 +145,11 @@ function createAsyncCostoArticuloJob(params, query) {
     var empresa = String(params && params.empresa || '').trim();
     if (clientKey && asyncCostoArticuloJobsByClient[clientKey]) {
         var existing = asyncCostoArticuloJobs[asyncCostoArticuloJobsByClient[clientKey]];
-        if (existing && (existing.status === 'pending' || existing.status === 'running')) {
+        if (existing && (
+            existing.status === 'pending' ||
+            existing.status === 'running' ||
+            existing.status === 'done'
+        )) {
             return existing;
         }
     }

@@ -1925,6 +1925,29 @@ Stock.costoArticuloFull = function (params, query) {
                 .replace(/d\./g, 'd2.')
                 .replace(/DespFact df/g, 'DespFact df2')
                 .replace(/Despacho d /g, 'Despacho d2 ');
+            var latestCostJoin =
+                "JOIN ( " +
+                "  SELECT COALESCE(NULLIF(a2.CodArtPad,''), fd2.Cod_Articulo) AS cod_art_pad, " +
+                "         MAX(DATE(fc2.FechaFact)) AS fecha_costo " +
+                "  FROM dba.FactCab fc2 " +
+                "  JOIN dba.FactDet fd2 " +
+                "    ON fd2.Cod_Empresa = fc2.Cod_Empresa " +
+                "   AND fd2.CodProv = fc2.CodProv " +
+                "   AND fd2.Cod_Tp_Comp = fc2.Cod_Tp_Comp " +
+                "   AND fd2.NroFact = fc2.NroFact " +
+                "  LEFT JOIN dba.Articulo a2 " +
+                "    ON a2.Cod_Empresa = fd2.Cod_Empresa " +
+                "   AND a2.Cod_Articulo = fd2.Cod_Articulo " +
+                "  WHERE fc2.Cod_Empresa = ? " +
+                "    AND DATE(fc2.FechaFact) <= ? " +
+                "    AND COALESCE(fc2.Cod_Sucursal,'') <> '02' " +
+                "    AND TRIM(fc2.CostoGasto) = 'C' " +
+                "    AND COALESCE(fd2.Cantidad,0) <> 0 " +
+                "    AND " + historicalSourceCondition + " " +
+                "  GROUP BY COALESCE(NULLIF(a2.CodArtPad,''), fd2.Cod_Articulo) " +
+                ") latest " +
+                "  ON latest.cod_art_pad = COALESCE(NULLIF(a.CodArtPad,''), fd.Cod_Articulo) " +
+                " AND latest.fecha_costo = DATE(fc.FechaFact) ";
             var sqlFact =
                 "SELECT fc.Cod_Empresa AS cod_empresa, fc.CodProv AS codprov, fd.Cod_Articulo AS cod_articulo, " +
                 "COALESCE(NULLIF(a.CodArtPad,''), fd.Cod_Articulo) AS cod_art_pad, " +
@@ -1951,6 +1974,7 @@ Stock.costoArticuloFull = function (params, query) {
                 "LEFT JOIN dba.Articulo ap " +
                 "  ON ap.Cod_Empresa = a.Cod_Empresa " +
                 " AND ap.Cod_Articulo = a.CodArtPad " +
+                latestCostJoin +
                 "LEFT JOIN dba.factcamb fcm " +
                 "  ON fcm.codmoneda = 'US' " +
                 " AND fcm.cod_empresa = fc.Cod_Empresa " +
@@ -1966,28 +1990,8 @@ Stock.costoArticuloFull = function (params, query) {
                 "AND COALESCE(fc.Cod_Sucursal,'') <> '02' " +
                 "AND TRIM(fc.CostoGasto) = 'C' " +
                 "AND COALESCE(fd.Cantidad,0) <> 0 " +
-                "AND " + sourceCondition + " " +
-                "AND DATE(fc.FechaFact) = ( " +
-                "  SELECT MAX(DATE(fc2.FechaFact)) " +
-                "  FROM dba.FactCab fc2 " +
-                "  JOIN dba.FactDet fd2 " +
-                "    ON fd2.Cod_Empresa = fc2.Cod_Empresa " +
-                "   AND fd2.CodProv = fc2.CodProv " +
-                "   AND fd2.Cod_Tp_Comp = fc2.Cod_Tp_Comp " +
-                "   AND fd2.NroFact = fc2.NroFact " +
-                "  LEFT JOIN dba.Articulo a2 " +
-                "    ON a2.Cod_Empresa = fd2.Cod_Empresa " +
-                "   AND a2.Cod_Articulo = fd2.Cod_Articulo " +
-                "  WHERE fc2.Cod_Empresa = fc.Cod_Empresa " +
-                "    AND DATE(fc2.FechaFact) <= ? " +
-                "    AND COALESCE(fc2.Cod_Sucursal,'') <> '02' " +
-                "    AND TRIM(fc2.CostoGasto) = 'C' " +
-                "    AND COALESCE(fd2.Cantidad,0) <> 0 " +
-                "    AND COALESCE(NULLIF(a2.CodArtPad,''), fd2.Cod_Articulo) = " +
-                "        COALESCE(NULLIF(a.CodArtPad,''), fd.Cod_Articulo) " +
-                "    AND " + historicalSourceCondition + " " +
-                ") ";
-            var sqlFactParams = [empresaDespachos, fHasta, fHasta];
+                "AND " + sourceCondition + " ";
+            var sqlFactParams = [empresaDespachos, fHasta, empresaDespachos, fHasta];
 
             if (articulo) {
                 if (articulo.constructor === Array) {
