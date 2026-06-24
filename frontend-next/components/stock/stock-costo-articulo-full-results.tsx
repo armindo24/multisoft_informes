@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ExportBrandingOverride } from '@/components/ui/export-utils';
 import {
   getStockCostoArticuloFull,
@@ -30,6 +30,9 @@ export function StockCostoArticuloFullResults(props: Props) {
   const [warning, setWarning] = useState('');
   const [progress, setProgress] = useState(14);
   const [phase, setPhase] = useState('Preparando consulta');
+  const clientSessionId = useRef(
+    `costo-full-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+  );
 
   const fechaBase = props.fechad || props.fechah || '';
   const periodInfo = useMemo(() => {
@@ -66,7 +69,7 @@ export function StockCostoArticuloFullResults(props: Props) {
       setPhase(props.ecuacion_mat === 'S' ? 'Iniciando proceso en segundo plano' : 'Consultando datos del informe');
 
       if (props.ecuacion_mat === 'S') {
-        const start = await startStockCostoArticuloFullAsync({
+        const startJob = () => startStockCostoArticuloFullAsync({
           empresa: props.empresa,
           articulo: props.articulo,
           tipo: props.tipo,
@@ -82,9 +85,11 @@ export function StockCostoArticuloFullResults(props: Props) {
           fecha_fin_desde: props.fechad,
           fecha_fin_hasta: props.fechah,
           recalcular: props.ecuacion_mat === 'S' ? 'S' : undefined,
+          client_session_id: clientSessionId.current,
         });
+        let start = await startJob();
 
-        const jobId = String(start?.data?.job_id || '');
+        let jobId = String(start?.data?.job_id || '');
         if (!jobId) {
           if (!cancelled) {
             setWarning('No se pudo iniciar el proceso de Ecuacion BC materiales.');
@@ -93,13 +98,56 @@ export function StockCostoArticuloFullResults(props: Props) {
           return;
         }
 
+        let consecutiveStatusFailures = 0;
+        let recoveryAttempts = 0;
+
         while (!cancelled) {
-          const status = await getStockCostoArticuloFullAsyncStatus(props.empresa, jobId);
+          const statusController = new AbortController();
+          const statusTimeout = window.setTimeout(() => statusController.abort(), 20_000);
+          const status = await getStockCostoArticuloFullAsyncStatus(
+            props.empresa,
+            jobId,
+            statusController.signal,
+          );
+          window.clearTimeout(statusTimeout);
+
+          if (!status) {
+            consecutiveStatusFailures += 1;
+            if (!cancelled) {
+              setPhase('El servidor sigue procesando. Reintentando conexion');
+            }
+
+            if (consecutiveStatusFailures >= 15 && recoveryAttempts < 1) {
+              recoveryAttempts += 1;
+              start = await startJob();
+              const recoveredJobId = String(start?.data?.job_id || '');
+              if (recoveredJobId) {
+                jobId = recoveredJobId;
+                consecutiveStatusFailures = 0;
+                if (!cancelled) {
+                  setPhase('Conexion recuperada. Continuando proceso');
+                }
+              }
+            }
+
+            await new Promise((resolve) => window.setTimeout(resolve, 5_000));
+            continue;
+          }
+
+          consecutiveStatusFailures = 0;
           const job = status?.data || {};
           const statusValue = String(job.status || '');
           const nextProgress = Number(job.progress ?? 0);
           const statusLabel =
-            String(job.stage_label || job.current_stage_label || job.current_stage || job.status_label || '').trim();
+            String(
+              job.stage_label
+              || job.current_stage_label
+              || job.current_stage
+              || job.status_label
+              || job.step
+              || job.message
+              || '',
+            ).trim();
 
           if (!cancelled) {
             setProgress(Number.isFinite(nextProgress) && nextProgress > 0 ? Math.min(98, nextProgress) : 72);
@@ -107,8 +155,20 @@ export function StockCostoArticuloFullResults(props: Props) {
           }
 
           if (statusValue === 'done') {
-            const result = await getStockCostoArticuloFullAsyncResult(props.empresa, jobId);
+            let result = null;
+            for (let attempt = 0; attempt < 5 && !cancelled && !result; attempt += 1) {
+              result = await getStockCostoArticuloFullAsyncResult(props.empresa, jobId);
+              if (!result) {
+                setPhase('Recuperando resultado generado');
+                await new Promise((resolve) => window.setTimeout(resolve, 3_000));
+              }
+            }
             if (!cancelled) {
+              if (!result) {
+                setWarning('El informe termino, pero no se pudo recuperar el resultado. Intenta nuevamente.');
+                setLoading(false);
+                return;
+              }
               setRows(((result?.data || []) as StockCostoArticuloFullRow[]) ?? []);
               setProgress(100);
               setPhase('Informe generado correctamente');
@@ -125,7 +185,7 @@ export function StockCostoArticuloFullResults(props: Props) {
             return;
           }
 
-          await new Promise((resolve) => window.setTimeout(resolve, 1400));
+          await new Promise((resolve) => window.setTimeout(resolve, 3_000));
         }
 
         return;

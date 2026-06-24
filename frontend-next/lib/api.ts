@@ -388,6 +388,7 @@ export async function startStockCostoArticuloFullAsync(params: {
   fecha_fin_desde?: string;
   fecha_fin_hasta?: string;
   recalcular?: string;
+  client_session_id?: string;
 }) {
   const query = toQuery({
     articulo: params.articulo,
@@ -405,13 +406,14 @@ export async function startStockCostoArticuloFullAsync(params: {
     fecha_fin_desde: params.fecha_fin_desde,
     fecha_fin_hasta: params.fecha_fin_hasta,
     recalcular: params.recalcular,
+    client_session_id: params.client_session_id,
   });
   return safeFetch<ApiEnvelope<Record<string, unknown>>>(`/stock/informes/${params.empresa}/costo_articulo_full_async/start${query}`);
 }
 
-export async function getStockCostoArticuloFullAsyncStatus(empresa: string, jobId: string) {
+export async function getStockCostoArticuloFullAsyncStatus(empresa: string, jobId: string, signal?: AbortSignal) {
   const query = toQuery({ job_id: jobId });
-  return safeFetch<ApiEnvelope<Record<string, unknown>>>(`/stock/informes/${empresa}/costo_articulo_full_async/status${query}`);
+  return safeFetch<ApiEnvelope<Record<string, unknown>>>(`/stock/informes/${empresa}/costo_articulo_full_async/status${query}`, { signal });
 }
 
 export async function getStockCostoArticuloFullAsyncResult(empresa: string, jobId: string) {

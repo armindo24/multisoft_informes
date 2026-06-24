@@ -2,11 +2,13 @@ var express = require('express');
 var router = express.Router();
 var fs = require('fs');
 var path = require('path');
+var fork = require('child_process').fork;
 
 var Stock = require('../models/stock');
 var Articulo = require('../models/articulo');
 var asyncCostoArticuloJobs = Object.create(null);
 var asyncCostoArticuloJobsByClient = Object.create(null);
+var ASYNC_COSTO_JOB_TTL_MS = 15 * 60 * 1000;
 
 function buildAsyncJobId() {
     return String(Date.now()) + '-' + Math.floor(Math.random() * 1000000);
@@ -44,6 +46,86 @@ function cleanupAsyncJobIndex(job) {
     }
 }
 
+function scheduleAsyncJobCleanup(job) {
+    if (!job || job._cleanup_timer) return;
+    job._cleanup_timer = setTimeout(function () {
+        cleanupAsyncJobIndex(job);
+        delete asyncCostoArticuloJobs[job.id];
+    }, ASYNC_COSTO_JOB_TTL_MS);
+    if (job._cleanup_timer && typeof job._cleanup_timer.unref === 'function') {
+        job._cleanup_timer.unref();
+    }
+}
+
+function finishAsyncJob(job, status, payload) {
+    if (!job || job._settled) return;
+    job._settled = true;
+    job.status = status;
+    job.progress = 100;
+    job.ended_at = new Date().toISOString();
+
+    if (status === 'done') {
+        job.step = 'Finalizado';
+        job.message = 'Informe generado';
+        job.result = (payload && payload.rows) || [];
+    } else {
+        job.step = 'Error';
+        job.message = 'No se pudo generar el informe';
+        job.error = String((payload && payload.error) || 'Error');
+    }
+
+    cleanupAsyncJobIndex(job);
+    scheduleAsyncJobCleanup(job);
+}
+
+function runAsyncCostoArticuloWorker(job, params, query) {
+    var workerPath = path.join(__dirname, '..', 'workers', 'costo-articulo-full-worker.js');
+    var worker = fork(workerPath, [], {
+        env: process.env,
+        execArgv: [],
+        stdio: ['ignore', 'inherit', 'inherit', 'ipc']
+    });
+    job.worker_pid = worker.pid;
+
+    worker.on('message', function (message) {
+        message = message || {};
+        if (message.type === 'progress') {
+            var update = message.update || {};
+            if (typeof update.progress === 'number') job.progress = update.progress;
+            if (update.step) job.step = update.step;
+            if (update.message) job.message = update.message;
+            return;
+        }
+        if (message.type === 'done') {
+            finishAsyncJob(job, 'done', message);
+            return;
+        }
+        if (message.type === 'error') {
+            finishAsyncJob(job, 'error', message);
+        }
+    });
+
+    worker.on('error', function (err) {
+        finishAsyncJob(job, 'error', {
+            error: String(err && (err.message || err) || 'No se pudo iniciar el proceso de calculo.')
+        });
+    });
+
+    worker.on('exit', function (code, signal) {
+        if (!job._settled) {
+            finishAsyncJob(job, 'error', {
+                error: 'El proceso de calculo finalizo inesperadamente. Codigo=' +
+                    String(code) + ' Senal=' + String(signal || '-')
+            });
+        }
+    });
+
+    worker.send({
+        params: params,
+        query: query
+    });
+}
+
 function createAsyncCostoArticuloJob(params, query) {
     var clientKey = getAsyncClientKey(params, query);
     var empresa = String(params && params.empresa || '').trim();
@@ -77,40 +159,12 @@ function createAsyncCostoArticuloJob(params, query) {
         asyncCostoArticuloJobsByClient[clientKey] = job.id;
     }
 
-    setImmediate(function () {
-        job.status = 'running';
-        job.progress = 2;
-        job.step = 'Iniciando';
-        job.message = 'Preparando informe';
-        job.started_at = new Date().toISOString();
-
-        var asyncQuery = Object.assign({}, query, {
-            _progressCallback: function (update) {
-                update = update || {};
-                if (typeof update.progress === 'number') job.progress = update.progress;
-                if (update.step) job.step = update.step;
-                if (update.message) job.message = update.message;
-            }
-        });
-
-        Stock.costoArticuloFull(params, asyncQuery).then(function (rows) {
-            job.status = 'done';
-            job.progress = 100;
-            job.step = 'Finalizado';
-            job.message = 'Informe generado';
-            job.result = rows || [];
-            job.ended_at = new Date().toISOString();
-            cleanupAsyncJobIndex(job);
-        }).catch(function (err) {
-            job.status = 'error';
-            job.progress = job.progress || 100;
-            job.step = 'Error';
-            job.message = 'No se pudo generar el informe';
-            job.error = String(err && (err.message || err) || 'Error');
-            job.ended_at = new Date().toISOString();
-            cleanupAsyncJobIndex(job);
-        });
-    });
+    job.status = 'running';
+    job.progress = 2;
+    job.step = 'Iniciando';
+    job.message = 'Preparando informe';
+    job.started_at = new Date().toISOString();
+    runAsyncCostoArticuloWorker(job, params, query);
 
     return job;
 }
