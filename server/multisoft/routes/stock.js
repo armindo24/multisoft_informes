@@ -9,6 +9,8 @@ var Articulo = require('../models/articulo');
 var asyncCostoArticuloJobs = Object.create(null);
 var asyncCostoArticuloJobsByClient = Object.create(null);
 var ASYNC_COSTO_JOB_TTL_MS = 15 * 60 * 1000;
+var ASYNC_COSTO_WORKER_TIMEOUT_MS = 12 * 60 * 1000;
+var activeCostoWorkers = Object.create(null);
 
 function buildAsyncJobId() {
     return String(Date.now()) + '-' + Math.floor(Math.random() * 1000000);
@@ -72,6 +74,13 @@ function scheduleAsyncJobCleanup(job) {
 function finishAsyncJob(job, status, payload) {
     if (!job || job._settled) return;
     job._settled = true;
+    if (job._worker_timeout) {
+        clearTimeout(job._worker_timeout);
+        job._worker_timeout = null;
+    }
+    if (job.worker_pid) {
+        delete activeCostoWorkers[job.worker_pid];
+    }
     job.status = status;
     job.progress = 100;
     job.ended_at = new Date().toISOString();
@@ -100,6 +109,16 @@ function runAsyncCostoArticuloWorker(job, params, query) {
         stdio: ['ignore', 'inherit', 'inherit', 'ipc']
     });
     job.worker_pid = worker.pid;
+    activeCostoWorkers[worker.pid] = worker;
+    job._worker_timeout = setTimeout(function () {
+        if (job._settled) return;
+        try {
+            worker.kill();
+        } catch (e) {}
+        finishAsyncJob(job, 'error', {
+            error: 'El calculo supero el tiempo maximo permitido. Vuelve a procesar el informe.'
+        });
+    }, ASYNC_COSTO_WORKER_TIMEOUT_MS);
 
     worker.on('message', function (message) {
         message = message || {};
@@ -139,6 +158,20 @@ function runAsyncCostoArticuloWorker(job, params, query) {
         query: query
     });
 }
+
+function stopActiveCostoWorkers() {
+    Object.keys(activeCostoWorkers).forEach(function (pid) {
+        var worker = activeCostoWorkers[pid];
+        try {
+            worker.kill();
+        } catch (e) {}
+        delete activeCostoWorkers[pid];
+    });
+}
+
+process.once('SIGINT', stopActiveCostoWorkers);
+process.once('SIGTERM', stopActiveCostoWorkers);
+process.once('disconnect', stopActiveCostoWorkers);
 
 function createAsyncCostoArticuloJob(params, query) {
     var clientKey = getAsyncClientKey(params, query);
