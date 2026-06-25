@@ -97,7 +97,7 @@ export function StockCostoArticuloFullResults(props: Props) {
       setPhase(props.ecuacion_mat === 'S' ? 'Iniciando proceso en segundo plano' : 'Consultando datos del informe');
 
       if (props.ecuacion_mat === 'S') {
-        const start = await startStockCostoArticuloFullAsync({
+        const startJob = () => startStockCostoArticuloFullAsync({
           empresa: props.empresa,
           articulo: props.articulo,
           tipo: props.tipo,
@@ -114,8 +114,9 @@ export function StockCostoArticuloFullResults(props: Props) {
           fecha_fin_hasta: props.fechah,
           recalcular: props.ecuacion_mat === 'S' ? 'S' : undefined,
         });
+        let start = await startJob();
 
-        const jobId = String(start?.data?.job_id || '');
+        let jobId = String(start?.data?.job_id || '');
         if (!jobId) {
           if (!cancelled) {
             setWarning('No se pudo iniciar el proceso de Ecuacion BC materiales.');
@@ -124,25 +125,90 @@ export function StockCostoArticuloFullResults(props: Props) {
           return;
         }
 
+        let consecutiveStatusFailures = 0;
+        let recoveryAttempts = 0;
+
         while (!cancelled) {
-          const status = await getStockCostoArticuloFullAsyncStatus(props.empresa, jobId);
-          const job = status?.data || {};
-          const statusValue = String(job.status || '');
+          const statusController = new AbortController();
+          const statusTimeout = window.setTimeout(() => statusController.abort(), 20_000);
+          const status = await getStockCostoArticuloFullAsyncStatus(
+            props.empresa,
+            jobId,
+            statusController.signal,
+          );
+          window.clearTimeout(statusTimeout);
+
+          const statusJob = status?.data;
+          const statusJobId = String(statusJob?.job_id || '').trim();
+          const statusValue = String(statusJob?.status || '').trim();
+          const statusIsValid = Boolean(
+            statusJob
+            && statusJobId === jobId
+            && ['pending', 'running', 'done', 'error'].includes(statusValue),
+          );
+
+          if (!statusIsValid) {
+            consecutiveStatusFailures += 1;
+            if (!cancelled) {
+              setPhase('Verificando el proceso en el servidor');
+            }
+
+            if (consecutiveStatusFailures >= 3 && recoveryAttempts < 1) {
+              recoveryAttempts += 1;
+              start = await startJob();
+              const recoveredJobId = String(start?.data?.job_id || '');
+              if (recoveredJobId) {
+                jobId = recoveredJobId;
+                consecutiveStatusFailures = 0;
+                if (!cancelled) {
+                  setPhase('Conexion recuperada. Reiniciando proceso');
+                }
+              }
+            } else if (consecutiveStatusFailures >= 6) {
+              if (!cancelled) {
+                setWarning('El proceso se interrumpio porque el API dejo de responder. Reinicia el API y vuelve a procesar.');
+                setLoading(false);
+              }
+              return;
+            }
+
+            await new Promise((resolve) => window.setTimeout(resolve, 5_000));
+            continue;
+          }
+
+          consecutiveStatusFailures = 0;
+          const job = statusJob as Record<string, unknown>;
           const nextProgress = Number(job.progress ?? 0);
           const statusLabel =
-            String(job.stage_label || job.current_stage_label || job.current_stage || job.status_label || '').trim();
+            String(
+              job.stage_label
+              || job.current_stage_label
+              || job.current_stage
+              || job.status_label
+              || job.message
+              || job.step
+              || '',
+            ).trim();
+          const visibleStatusLabel = nextProgress === 15
+            ? `${statusLabel || 'Preparando materiales'}. Esta etapa puede tardar varios minutos`
+            : statusLabel;
 
           if (!cancelled) {
             setProgress(Number.isFinite(nextProgress) && nextProgress > 0 ? Math.min(98, nextProgress) : 72);
-            setPhase(statusLabel || (statusValue === 'done' ? 'Armando resultado final' : 'Procesando informe'));
+            setPhase(visibleStatusLabel || (statusValue === 'done' ? 'Armando resultado final' : 'Procesando informe'));
           }
 
           if (statusValue === 'done') {
             const result = await getStockCostoArticuloFullAsyncResult(props.empresa, jobId);
             if (!cancelled) {
-              setRows(((result?.data || []) as StockCostoArticuloFullRow[]) ?? []);
-              setProgress(100);
-              setPhase('Informe generado correctamente');
+              if (!result || !Array.isArray(result.data)) {
+                setWarning('El proceso termino, pero el resultado ya no esta disponible en el API. Vuelve a procesar el informe.');
+                setRows([]);
+              } else {
+                setRows(result.data as StockCostoArticuloFullRow[]);
+                setProgress(100);
+                setPhase('Informe generado correctamente');
+              }
               setLoading(false);
             }
             return;
@@ -156,7 +222,7 @@ export function StockCostoArticuloFullResults(props: Props) {
             return;
           }
 
-          await new Promise((resolve) => window.setTimeout(resolve, 1400));
+          await new Promise((resolve) => window.setTimeout(resolve, 3_000));
         }
 
         return;

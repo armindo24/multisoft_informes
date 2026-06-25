@@ -26,6 +26,35 @@ async function safeFetch<T>(path: string, init?: RequestInit): Promise<T | null>
   }
 }
 
+async function safeDirectNodeFetch<T>(path: string, init?: RequestInit): Promise<T | null> {
+  try {
+    let directBase = API_BASE;
+    if (
+      typeof window !== 'undefined'
+      && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/api\/v1\/?$/i.test(directBase)
+    ) {
+      directBase = `${window.location.protocol}//${window.location.hostname}:3000/api/v1`;
+    }
+
+    const response = await fetch(`${directBase}${path}`, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(init?.headers || {}),
+      },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
 function hasItems<T>(response: ApiEnvelope<T[]> | null | undefined): response is ApiEnvelope<T[]> {
   return Array.isArray(response?.data) && response.data.length > 0;
 }
@@ -406,17 +435,17 @@ export async function startStockCostoArticuloFullAsync(params: {
     fecha_fin_hasta: params.fecha_fin_hasta,
     recalcular: params.recalcular,
   });
-  return safeFetch<ApiEnvelope<Record<string, unknown>>>(`/stock/informes/${params.empresa}/costo_articulo_full_async/start${query}`);
+  return safeDirectNodeFetch<ApiEnvelope<Record<string, unknown>>>(`/stock/informes/${params.empresa}/costo_articulo_full_async/start${query}`);
 }
 
-export async function getStockCostoArticuloFullAsyncStatus(empresa: string, jobId: string) {
+export async function getStockCostoArticuloFullAsyncStatus(empresa: string, jobId: string, signal?: AbortSignal) {
   const query = toQuery({ job_id: jobId });
-  return safeFetch<ApiEnvelope<Record<string, unknown>>>(`/stock/informes/${empresa}/costo_articulo_full_async/status${query}`);
+  return safeDirectNodeFetch<ApiEnvelope<Record<string, unknown>>>(`/stock/informes/${empresa}/costo_articulo_full_async/status${query}`, { signal });
 }
 
 export async function getStockCostoArticuloFullAsyncResult(empresa: string, jobId: string) {
   const query = toQuery({ job_id: jobId });
-  return safeFetch<ApiEnvelope<Array<Record<string, unknown>>>>(`/stock/informes/${empresa}/costo_articulo_full_async/result${query}`);
+  return safeDirectNodeFetch<ApiEnvelope<Array<Record<string, unknown>>>>(`/stock/informes/${empresa}/costo_articulo_full_async/result${query}`);
 }
 
 

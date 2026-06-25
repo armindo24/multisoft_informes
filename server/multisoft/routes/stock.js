@@ -9,7 +9,7 @@ var Articulo = require('../models/articulo');
 var asyncCostoArticuloJobs = Object.create(null);
 var asyncCostoArticuloJobsByClient = Object.create(null);
 var ASYNC_COSTO_JOB_TTL_MS = 15 * 60 * 1000;
-var ASYNC_COSTO_WORKER_TIMEOUT_MS = 12 * 60 * 1000;
+var ASYNC_COSTO_WORKER_TIMEOUT_MS = 30 * 60 * 1000;
 var activeCostoWorkers = Object.create(null);
 
 function buildAsyncJobId() {
