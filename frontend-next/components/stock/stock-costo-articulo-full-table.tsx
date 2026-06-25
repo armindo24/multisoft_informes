@@ -50,10 +50,10 @@ type ColumnDef = {
 function buildColumns(ecuacionMat?: boolean): readonly ColumnDef[] {
   if (ecuacionMat) {
     return [
-      { key: 'anio', label: 'ANO', align: 'left', sticky: true, minWidth: '50px', left: '0px' },
+      { key: 'anio', label: 'AÑO', align: 'left', sticky: true, minWidth: '50px', left: '0px' },
       { key: 'mes', label: 'MES', align: 'left', sticky: true, minWidth: '46px', left: '50px' },
-      { key: 'cod_articulo', label: 'COD. PY', align: 'left', sticky: true, minWidth: '82px', left: '96px' },
-      { key: 'cod_pt_reacondicionado', label: 'COD. REAC.', align: 'left', sticky: true, minWidth: '92px', left: '178px' },
+      { key: 'cod_articulo', label: 'CÓD. PY', align: 'left', sticky: true, minWidth: '82px', left: '96px' },
+      { key: 'cod_pt_reacondicionado', label: 'C�D. REAC.', align: 'left', sticky: true, minWidth: '92px', left: '178px' },
       { key: 'fecha_reacondicionado', label: 'FECHA REAC.', align: 'left', dateTime: true, sticky: true, minWidth: '120px', left: '270px' },
       { key: 'des_art', label: 'PRODUCTO', align: 'left', sticky: true, minWidth: '210px', left: '390px' },
       { key: 'fob_usd_origen', label: 'FOB USD', align: 'right', decimals: 2 },
@@ -74,8 +74,8 @@ function buildColumns(ecuacionMat?: boolean): readonly ColumnDef[] {
   }
 
   return [
-    { key: 'cod_articulo', label: 'Codigo', align: 'left' },
-    { key: 'des_art', label: 'Descripcion', align: 'left' },
+    { key: 'cod_articulo', label: 'Código', align: 'left' },
+    { key: 'des_art', label: 'Descripción', align: 'left' },
     { key: 'cod_tp_art', label: 'Tipo', align: 'left' },
     { key: 'estado', label: 'Estado', align: 'left' },
     { key: 'cto_prom_gs', label: 'Costo Promedio Gs', align: 'right', decimals: 0 },
