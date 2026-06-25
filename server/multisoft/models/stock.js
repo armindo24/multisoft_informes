@@ -848,11 +848,22 @@ Stock.costoArticuloFull = function (params, query) {
         }).then(function () {
             var recallProc = "CALL dba.Recall_Existencia_bago_ebc_rpt_materiales_Rpt(?,?,?,?)";
             logCostoArticuloFull('[EBC_MAT] PROC recall=' + recallProc + ' sessionId=' + sessionId);
+            reportProgress(
+                'Recall_Existencia_bago_ebc_rpt_materiales_Rpt',
+                15,
+                'Ejecutando Recall_Existencia_bago_ebc_rpt_materiales_Rpt'
+            );
             return conn.queryAsync(
                 recallProc,
                 [sessionId, empresa, '1901-01-01', fHastaRecall]
             );
         }).then(function () {
+            logCostoArticuloFull('[EBC_MAT] PROC sp_tmp_ebc_materiales_Rpt sessionId=' + sessionId);
+            reportProgress(
+                'sp_tmp_ebc_materiales_Rpt',
+                30,
+                'Ejecutando sp_tmp_ebc_materiales_Rpt'
+            );
             return conn.queryAsync(
                 "CALL dba.sp_tmp_ebc_materiales_Rpt(?,?,?,?)",
                 [sessionId, empresa, fDesde, fHasta]
