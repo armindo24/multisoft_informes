@@ -110,8 +110,6 @@ export default async function StockPage({
     ? {
         clientName: brandingConfig.clientName || undefined,
         tagline: brandingConfig.tagline || undefined,
-        logoUrl: brandingConfig.logoUrl || undefined,
-        faviconUrl: brandingConfig.faviconUrl || undefined,
       }
     : undefined;
 

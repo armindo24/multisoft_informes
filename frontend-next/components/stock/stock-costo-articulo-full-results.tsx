@@ -26,10 +26,41 @@ type Props = {
 
 export function StockCostoArticuloFullResults(props: Props) {
   const [rows, setRows] = useState<StockCostoArticuloFullRow[]>([]);
+  const [exportBranding, setExportBranding] = useState<ExportBrandingOverride | undefined>(props.exportBranding);
   const [loading, setLoading] = useState(false);
   const [warning, setWarning] = useState('');
   const [progress, setProgress] = useState(14);
   const [phase, setPhase] = useState('Preparando consulta');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadExportBranding() {
+      try {
+        const response = await fetch(`/api/config/branding?empresa=${encodeURIComponent(props.empresa)}`, {
+          cache: 'no-store',
+        });
+        const payload = await response.json().catch(() => null);
+        if (!cancelled && response.ok && payload?.data) {
+          setExportBranding({
+            clientName: String(payload.data.clientName || ''),
+            tagline: String(payload.data.tagline || ''),
+            logoUrl: String(payload.data.logoUrl || ''),
+            faviconUrl: String(payload.data.faviconUrl || ''),
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          setExportBranding(props.exportBranding);
+        }
+      }
+    }
+
+    void loadExportBranding();
+    return () => {
+      cancelled = true;
+    };
+  }, [props.empresa, props.exportBranding]);
 
   const fechaBase = props.fechad || props.fechah || '';
   const periodInfo = useMemo(() => {
@@ -193,7 +224,7 @@ export function StockCostoArticuloFullResults(props: Props) {
         fechad={props.fechad}
         fechah={props.fechah}
         ecuacionMat={props.ecuacion_mat === 'S'}
-        exportBranding={props.exportBranding}
+        exportBranding={exportBranding}
         scheduleConfig={{
           reportKey: 'stock.costo_articulo_full',
           reportModule: 'Stock',
