@@ -113,11 +113,11 @@ export default async function StockPage({
       }
     : undefined;
 
-  const sucursalesResponse = empresa ? await getSucursales(empresa) : null;
+  const sucursalesResponse = empresa && !isCostoArticuloFullMode ? await getSucursales(empresa) : null;
   const sucursales = sanitizeOptions((sucursalesResponse?.data || []) as Array<Record<string, string>>);
   const sucursal = typeof params.sucursal === 'string' ? params.sucursal : '';
 
-  const [depositosResponse, familiasResponse, tiposResponse] = empresa
+  const [depositosResponse, familiasResponse, tiposResponse] = empresa && !isCostoArticuloFullMode
     ? await Promise.all([
         sucursal ? getStockDepositos(empresa, sucursal) : Promise.resolve(null),
         getStockFamilias(),
@@ -126,7 +126,7 @@ export default async function StockPage({
     : [null, null, null];
 
   const familia = String(params.familia || '');
-  const gruposResponse = familia ? await getStockGrupos(familia) : null;
+  const gruposResponse = familia && !isCostoArticuloFullMode ? await getStockGrupos(familia) : null;
 
   const depositos = sanitizeOptions((depositosResponse?.data || []) as Array<Record<string, string>>);
   const familias = sanitizeOptions((familiasResponse?.data || []) as Array<Record<string, string>>);
@@ -149,7 +149,7 @@ export default async function StockPage({
   const calcular_empresa = String(params.calcular_empresa || '');
   const ecuacion_mat = String(params.ecuacion_mat || '');
 
-  const [existenciaResponse, valorizadoResponse] = empresa && hasSubmittedFilters
+  const [existenciaResponse, valorizadoResponse] = empresa && hasSubmittedFilters && !isCostoArticuloFullMode
     ? await Promise.all([
         getStockExistenciaDeposito({ empresa, sucursal, deposito, estado, tipo, familia, grupo, existencia }),
         getStockValorizado({ empresa, sucursal, deposito, estado, tipo, familia, grupo, existencia, moneda, costeo }),
