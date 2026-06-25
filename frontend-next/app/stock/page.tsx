@@ -115,11 +115,11 @@ export default async function StockPage({
       }
     : undefined;
 
-  const sucursalesResponse = empresa && !isCostoArticuloFullMode ? await getSucursales(empresa) : null;
+  const sucursalesResponse = empresa ? await getSucursales(empresa) : null;
   const sucursales = sanitizeOptions((sucursalesResponse?.data || []) as Array<Record<string, string>>);
   const sucursal = typeof params.sucursal === 'string' ? params.sucursal : '';
 
-  const [depositosResponse, familiasResponse, tiposResponse] = empresa && !isCostoArticuloFullMode
+  const [depositosResponse, familiasResponse, tiposResponse] = empresa
     ? await Promise.all([
         sucursal ? getStockDepositos(empresa, sucursal) : Promise.resolve(null),
         getStockFamilias(),
@@ -128,7 +128,7 @@ export default async function StockPage({
     : [null, null, null];
 
   const familia = String(params.familia || '');
-  const gruposResponse = familia && !isCostoArticuloFullMode ? await getStockGrupos(familia) : null;
+  const gruposResponse = familia ? await getStockGrupos(familia) : null;
 
   const depositos = sanitizeOptions((depositosResponse?.data || []) as Array<Record<string, string>>);
   const familias = sanitizeOptions((familiasResponse?.data || []) as Array<Record<string, string>>);
