@@ -107,9 +107,11 @@ export default async function StockPage({
   const empresa = String(params.empresa || empresas[0]?.value || '');
   const brandingConfig = empresa ? await loadBrandingConfig(empresa) : await loadBrandingConfig();
   const exportBranding = brandingConfig
-      ? {
+    ? {
         clientName: brandingConfig.clientName || undefined,
         tagline: brandingConfig.tagline || undefined,
+        logoUrl: brandingConfig.logoUrl || undefined,
+        faviconUrl: brandingConfig.faviconUrl || undefined,
       }
     : undefined;
 
