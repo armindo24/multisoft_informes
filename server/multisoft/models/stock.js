@@ -901,6 +901,7 @@ Stock.costoArticuloFull = function (params, query) {
                 'buscar despachos por rango': 40,
                 'Gen_Informe_Despacho por rango': 50,
                 'sp_tmp_rpt_compuestos': 70,
+                'recalculo costo tmpdespachos': 82,
                 'lectura datasets extendidos': 85,
                 'merge dataset final': 95
             };
@@ -910,6 +911,7 @@ Stock.costoArticuloFull = function (params, query) {
                 'buscar despachos por rango': 45,
                 'Gen_Informe_Despacho por rango': 65,
                 'sp_tmp_rpt_compuestos': 80,
+                'recalculo costo tmpdespachos': 84,
                 'lectura datasets extendidos': 92,
                 'merge dataset final': 99
             };
@@ -925,40 +927,43 @@ Stock.costoArticuloFull = function (params, query) {
         };
 
         var cleanupExtendedTemps = function () {
-            return Promise.all([
-                conn.execAsync(
+            var cleanupSteps = [
+                function () { return conn.execAsync(
                     "DELETE FROM dba.tmparticulo WHERE sessionid = ? AND cod_empresa = ?",
                     [sessionId, empresa]
-                ),
-                conn.execAsync(
+                ); },
+                function () { return conn.execAsync(
                     "DELETE FROM dba.TmpRecallExistenciaEBC_Materiales WHERE SessionID = ?",
                     [sessionId]
-                ),
-                conn.execAsync(
+                ); },
+                function () { return conn.execAsync(
                     "DELETE FROM dba.tmp_ExistenciaEBC_Materiales WHERE SessionID = ?",
                     [sessionId]
-                ),
-                conn.execAsync(
+                ); },
+                function () { return conn.execAsync(
                     "DELETE FROM dba.tmp_ecuacion_bienes_cambio_materiales WHERE SessionID = ?",
                     [sessionId]
-                ),
-                conn.execAsync(
+                ); },
+                function () { return conn.execAsync(
                     "DELETE FROM dba.tmp_ecuacion_bienes_cambio WHERE id = ?",
                     [sessionId]
-                ),
-                conn.execAsync(
+                ); },
+                function () { return conn.execAsync(
                     "DELETE FROM dba.tmp_ebc_ipr_aux WHERE fecha_ini = ? AND fecha_fin = ?",
                     [fDesde, fHasta]
-                ),
-                conn.execAsync(
+                ); },
+                function () { return conn.execAsync(
                     "DELETE FROM dba.TmpRecallExistenciaEBC WHERE SessionID = ?",
                     [sessionId]
-                ),
-                conn.execAsync(
+                ); },
+                function () { return conn.execAsync(
                     "DELETE FROM dba.tmp_existencia WHERE id = ?",
                     [sessionId]
-                )
-            ]).then(function () {
+                ); }
+            ];
+            return cleanupSteps.reduce(function (chain, cleanupStep) {
+                return chain.then(cleanupStep);
+            }, Promise.resolve()).then(function () {
                 return [];
             });
         };
@@ -2558,17 +2563,25 @@ Stock.costoArticuloFull = function (params, query) {
             })
             .then(function () {
                 return logExtStep('lectura datasets extendidos', function () {
-                    return Promise.all([
-                        fetchBaseImportacion(),
-                        fetchBaseAcondicionamiento(),
-                        fetchBaseMateriales(),
-                        fetchLiquidacionDistribuida(),
-                        fetchGastosFacturaObjetivoDetalle(),
-                        fetchCostosFacturasDirectas(),
-                        fetchAcondicionamientoMaterialesDirectos(),
-                        fetchUltimosCostosHistoricos(),
-                        fetchFactorCambioMes()
-                    ]);
+                    var loaders = [
+                        fetchBaseImportacion,
+                        fetchBaseAcondicionamiento,
+                        fetchBaseMateriales,
+                        fetchLiquidacionDistribuida,
+                        fetchGastosFacturaObjetivoDetalle,
+                        fetchCostosFacturasDirectas,
+                        fetchAcondicionamientoMaterialesDirectos,
+                        fetchUltimosCostosHistoricos,
+                        fetchFactorCambioMes
+                    ];
+                    return loaders.reduce(function (chain, loader) {
+                        return chain.then(function (datasets) {
+                            return loader().then(function (rows) {
+                                datasets.push(rows);
+                                return datasets;
+                            });
+                        });
+                    }, Promise.resolve([]));
                 });
             })
             .then(function (datasets) {
@@ -3060,52 +3073,54 @@ Stock.costoArticuloFull = function (params, query) {
             });
         }
         var cleanup = [
-            conn.execAsync(
+            function () { return conn.execAsync(
                 "DELETE FROM dba.tmparticulo WHERE sessionid = ? AND cod_empresa = ?",
                 [sessionId, empresa]
-            ),
-            conn.execAsync(
+            ); },
+            function () { return conn.execAsync(
                 "DELETE FROM dba.TmpRecallExistenciaEBC_Materiales WHERE SessionID = ?",
                 [sessionId]
-            ),
-            conn.execAsync(
+            ); },
+            function () { return conn.execAsync(
                 "DELETE FROM dba.tmp_ExistenciaEBC_Materiales WHERE SessionID = ?",
                 [sessionId]
-            ),
-            conn.execAsync(
+            ); },
+            function () { return conn.execAsync(
                 "DELETE FROM dba.tmp_ecuacion_bienes_cambio_materiales WHERE SessionID = ?",
                 [sessionId]
-            ),
-            conn.execAsync(
+            ); },
+            function () { return conn.execAsync(
                 "DELETE FROM dba.tmp_ecuacion_bienes_cambio WHERE id = ?",
                 [sessionId]
-            ),
-            conn.execAsync(
+            ); },
+            function () { return conn.execAsync(
                 "DELETE FROM dba.tmp_ebc_ipr_aux WHERE fecha_ini = ? AND fecha_fin = ?",
                 [fechaDesde || fechaHasta || null, fechaHasta || fechaDesde || null]
-            ),
-            conn.execAsync(
+            ); },
+            function () { return conn.execAsync(
                 "DELETE FROM dba.TmpRecallExistenciaEBC WHERE SessionID = ?",
                 [sessionId]
-            ),
-            conn.execAsync(
+            ); },
+            function () { return conn.execAsync(
                 "DELETE FROM dba.tmp_existencia WHERE id = ?",
                 [sessionId]
-            ),
-            conn.execAsync(
+            ); },
+            function () { return conn.execAsync(
                 "DELETE FROM dba.tmpdespachos WHERE session_id = ? AND cod_empresa = ?",
                 [sessionId, empresaDespachos]
-            ),
-            conn.execAsync(
+            ); },
+            function () { return conn.execAsync(
                 "DELETE FROM dba.tmp_rpt_compuestos WHERE SessionID = ?",
                 [sessionId]
-            ),
-            conn.execAsync(
+            ); },
+            function () { return conn.execAsync(
                 "DELETE FROM dba.tmp_realizadopor_compuesto WHERE SessionID = ?",
                 [sessionId]
-            )
+            ); }
         ];
-        return Promise.all(cleanup)
+        return cleanup.reduce(function (chain, cleanupStep) {
+            return chain.then(cleanupStep);
+        }, Promise.resolve())
             .catch(function () {
                 return null;
             })
