@@ -40,6 +40,16 @@ function getSectionKey(moduleHref: string, sectionLabel: string) {
   return `${moduleHref}::${sectionLabel}`;
 }
 
+function navigateSection(event: React.MouseEvent<HTMLAnchorElement>, href: string) {
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.defaultPrevented) return;
+  const target = new URL(href, window.location.href);
+  if (!target.hash || target.pathname !== window.location.pathname || target.search !== window.location.search) return;
+
+  // El cambio nativo emite hashchange, que actualiza Configuración y Migraciones.
+  event.preventDefault();
+  window.location.hash = target.hash;
+}
+
 function normalizeGroupName(value: string) {
   return String(value || '').trim().toLowerCase();
 }
@@ -110,6 +120,22 @@ export function AppShell({
     () => navigation.filter((item) => canAccessItem(item, user)),
     [user],
   );
+
+  useEffect(() => {
+    if (!user?.sessionKey || pathname === '/login' || pathname.startsWith('/password-reset')) return;
+    let cancelled = false;
+    async function heartbeat() {
+      const response = await fetch('/api/auth/session', { method: 'POST', cache: 'no-store' }).catch(() => null);
+      if (!cancelled && response?.status === 401) window.location.assign('/login');
+    }
+    void heartbeat();
+    const interval = window.setInterval(() => void heartbeat(), 60_000);
+    return () => { cancelled = true; window.clearInterval(interval); };
+  }, [user?.sessionKey, pathname]);
+
+  useEffect(() => {
+    if (!user && pathname !== '/login' && !pathname.startsWith('/password-reset')) router.replace('/login');
+  }, [user, pathname, router]);
 
   const notificationCount = useMemo(() => {
     if (!notificationSummary) return 0;
@@ -404,6 +430,7 @@ export function AppShell({
                                         key={`${section.label}-${subItem.label}`}
                                         href={subItem.href as Route}
                                         prefetch={false}
+                                        onClick={(event) => navigateSection(event, subItem.href)}
                                         className="flex items-center justify-between gap-3 px-3 py-2 text-xs text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
                                       >
                                         <span>{subItem.label}</span>
@@ -539,7 +566,7 @@ export function AppShell({
                                           key={`${section.label}-${subItem.label}`}
                                           href={subItem.href as Route}
                                         prefetch={false}
-                                          onClick={() => setMobileNavOpen(false)}
+                                          onClick={(event) => { navigateSection(event, subItem.href); setMobileNavOpen(false); }}
                                           className="flex items-center justify-between gap-3 px-3 py-2 text-xs text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
                                         >
                                           <span>{subItem.label}</span>

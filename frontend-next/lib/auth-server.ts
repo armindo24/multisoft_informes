@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { cache } from 'react';
+import { validateNextSession } from '@/lib/pg-auth';
 import { cookies } from 'next/headers';
 
 import { AUTH_COOKIE, SessionUser } from '@/lib/auth';
@@ -10,7 +12,7 @@ type StoredSessionUser = SessionUser & {
   sessionKey?: string;
 };
 
-export async function getSessionUser(): Promise<StoredSessionUser | null> {
+export const getSessionUser = cache(async (): Promise<StoredSessionUser | null> => {
   const cookieStore = await cookies();
   const rawSession = cookieStore.get(AUTH_COOKIE)?.value;
 
@@ -25,6 +27,8 @@ export async function getSessionUser(): Promise<StoredSessionUser | null> {
     }
 
     const numericId = Number(parsed.id);
+    const sessionKey = String(parsed.sessionKey || '').trim();
+    if (!sessionKey || !Number.isInteger(numericId) || numericId <= 0 || !await validateNextSession(sessionKey, numericId)) return null;
 
     return {
       id: Number.isFinite(numericId) && numericId > 0 ? numericId : undefined,
@@ -40,4 +44,4 @@ export async function getSessionUser(): Promise<StoredSessionUser | null> {
   } catch {
     return null;
   }
-}
+});

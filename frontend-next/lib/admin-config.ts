@@ -630,7 +630,7 @@ async function enforceNextSessionLimit(userId: number, keepSessionKey?: string, 
 
   await ensureNextSessionTable();
 
-  await pool.query('DELETE FROM custom_permissions_nextsession WHERE expires_at <= NOW()');
+  await cleanupAbandonedNextSessions();
   const result = await pool.query<{ deleted_count: string }>(
     `
       WITH deleted AS (
@@ -670,7 +670,7 @@ async function enforceNextSessionLimit(userId: number, keepSessionKey?: string, 
 async function enforceAllNextSessionLimits() {
   await ensureNextSessionTable();
 
-  await pool.query('DELETE FROM custom_permissions_nextsession WHERE expires_at <= NOW()');
+  await cleanupAbandonedNextSessions();
   const activeResult = await pool.query<Record<string, unknown>>(
     `
       SELECT user_id
@@ -714,6 +714,11 @@ async function enforceDjangoSessionLimits(candidates: Array<{ key: string; userI
   }
 
   return new Set(djangoKeysToDelete);
+}
+
+export async function cleanupAbandonedNextSessions() {
+  await pool.query(`DELETE FROM custom_permissions_nextsession
+    WHERE expires_at <= NOW() OR last_activity < NOW() - INTERVAL '5 minutes'`);
 }
 
 export async function touchNextSession(sessionKey?: string) {

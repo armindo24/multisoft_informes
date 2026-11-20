@@ -38,7 +38,6 @@ export function ActiveSessionsPanel() {
 
   useEffect(() => {
     async function load() {
-      setLoading(true);
       const response = await fetch('/api/config/active-sessions', { cache: 'no-store' });
       const payload = (await response.json().catch(() => ({}))) as { ok?: boolean; data?: Payload; message?: string };
 
@@ -53,6 +52,8 @@ export function ActiveSessionsPanel() {
     }
 
     void load();
+    const interval = window.setInterval(() => void load(), 30_000);
+    return () => window.clearInterval(interval);
   }, []);
 
   async function closeSession(row: ActiveSessionRecord) {

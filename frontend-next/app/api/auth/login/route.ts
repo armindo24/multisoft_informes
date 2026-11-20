@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { AUTH_COOKIE } from '@/lib/auth';
 import { authenticateWithPostgres, FirstLoginPasswordError } from '@/lib/pg-auth';
-import { createNextSessionKey, registerNextSession } from '@/lib/admin-config';
+import { closeNextSession, createNextSessionKey, registerNextSession } from '@/lib/admin-config';
 
 export const runtime = 'nodejs';
 
@@ -21,6 +21,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, requiresPasswordChange: true });
     }
 
+    const cookieStore = await cookies();
+    let previousKey: string | undefined;
+    try { previousKey = JSON.parse(cookieStore.get(AUTH_COOKIE)?.value || 'null')?.sessionKey; } catch {}
+    await closeNextSession(previousKey);
+
     const maxAge = 60 * 60 * 12;
     const sessionKey = createNextSessionKey();
     const sessionUser = { ...authenticatedUser, sessionKey };
@@ -36,7 +41,6 @@ export async function POST(request: Request) {
       expiresAt: new Date(Date.now() + maxAge * 1000),
     });
 
-    const cookieStore = await cookies();
     cookieStore.set(AUTH_COOKIE, JSON.stringify(sessionUser), {
       httpOnly: true,
       sameSite: 'lax',

@@ -33,6 +33,18 @@ const pool = new Pool({
   password: process.env.AUTH_DB_PASSWORD || 'postgres',
 });
 
+export async function validateNextSession(sessionKey: string, userId: number) {
+  const result = await pool.query(
+    `UPDATE custom_permissions_nextsession
+     SET last_activity = CASE WHEN last_activity < NOW() - INTERVAL '1 minute' THEN NOW() ELSE last_activity END
+     WHERE session_key = $1 AND user_id = $2 AND expires_at > NOW()
+       AND EXISTS (SELECT 1 FROM auth_user WHERE id = $2 AND is_active = TRUE)
+     RETURNING session_key`,
+    [sessionKey, userId],
+  );
+  return result.rowCount === 1;
+}
+
 function comparePbkdf2Sha256(encoded: string, rawPassword: string): boolean {
   const [algorithm, iterationsRaw, salt, digest] = String(encoded || '').split('$');
   if (algorithm !== 'pbkdf2_sha256' || !iterationsRaw || !salt || !digest) return false;
