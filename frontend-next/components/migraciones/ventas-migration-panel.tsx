@@ -198,11 +198,11 @@ export function VentasMigrationPanel({
   const summary = validationResult?.summary || {};
 
   return (
-    <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="mt-3 border-t border-slate-200 pt-3">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-700">Carga de Excel</p>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700">Carga de Excel</p>
+          <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-600">
             Parametros heredados: Empresa, Periodo, Tipo comprobante, Sucursal y archivo Excel.
           </p>
         </div>
@@ -210,7 +210,7 @@ export function VentasMigrationPanel({
           <button
             type="button"
             onClick={resetAll}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
           >
             <Eraser className="h-4 w-4" />
             Limpiar pantalla
@@ -219,7 +219,7 @@ export function VentasMigrationPanel({
             type="button"
             onClick={handleMigrate}
             disabled={!validationOk || isMigrating}
-            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
           >
             {isMigrating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
             Migrar
@@ -227,10 +227,10 @@ export function VentasMigrationPanel({
         </div>
       </div>
 
-      <form onSubmit={handleValidate} className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <label className="space-y-2 text-sm font-medium text-slate-700">
+      <form onSubmit={handleValidate} className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+        <label className="space-y-1.5 text-xs font-medium text-slate-700">
           <span>Empresa</span>
-          <select value={empresa} onChange={(e) => setEmpresa(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
+          <select value={empresa} onChange={(e) => setEmpresa(e.target.value)} className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm">
             <option value="">Seleccione...</option>
             {empresas.map((option) => (
               <option key={option.value} value={option.value}>
@@ -240,14 +240,14 @@ export function VentasMigrationPanel({
           </select>
         </label>
 
-        <label className="space-y-2 text-sm font-medium text-slate-700">
+        <label className="space-y-1.5 text-xs font-medium text-slate-700">
           <span>Periodo</span>
-          <input value={periodo} onChange={(e) => setPeriodo(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm" maxLength={4} />
+          <input value={periodo} onChange={(e) => setPeriodo(e.target.value)} className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm" maxLength={4} />
         </label>
 
-        <label className="space-y-2 text-sm font-medium text-slate-700">
+        <label className="space-y-1.5 text-xs font-medium text-slate-700">
           <span>Tipo comprobante</span>
-          <select value={tipoComprobante} onChange={(e) => setTipoComprobante(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm" disabled={isLoadingOptions}>
+          <select value={tipoComprobante} onChange={(e) => setTipoComprobante(e.target.value)} className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm" disabled={isLoadingOptions}>
             <option value="">Seleccione...</option>
             {tipos.map((option) => (
               <option key={option.value} value={option.value}>
@@ -257,9 +257,9 @@ export function VentasMigrationPanel({
           </select>
         </label>
 
-        <label className="space-y-2 text-sm font-medium text-slate-700">
+        <label className="space-y-1.5 text-xs font-medium text-slate-700">
           <span>Sucursal</span>
-          <select value={sucursal} onChange={(e) => setSucursal(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm" disabled={isLoadingOptions}>
+          <select value={sucursal} onChange={(e) => setSucursal(e.target.value)} className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm" disabled={isLoadingOptions}>
             <option value="">Seleccione...</option>
             {sucursales.map((option) => (
               <option key={option.value} value={option.value}>
@@ -269,19 +269,19 @@ export function VentasMigrationPanel({
           </select>
         </label>
 
-        <label className="space-y-2 text-sm font-medium text-slate-700">
+        <label className="space-y-1.5 text-xs font-medium text-slate-700">
           <span>Archivo Excel</span>
           <input
             ref={fileRef}
             type="file"
             accept=".xls,.xlsx"
             onChange={(event) => setSelectedFile(event.target.files?.[0] || null)}
-            className="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2"
+            className="block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2"
           />
         </label>
 
         <div className="xl:col-span-5 flex justify-end">
-          <button type="submit" disabled={isValidating || isMigrating} className="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-cyan-700 disabled:bg-cyan-300">
+          <button type="submit" disabled={isValidating || isMigrating} className="inline-flex items-center gap-2 rounded-lg bg-cyan-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-cyan-700 disabled:bg-cyan-300">
             {isValidating ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
             Validar Excel
           </button>
@@ -309,7 +309,7 @@ export function VentasMigrationPanel({
 
       {validationResult ? (
         <>
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
+          <div className="mt-3 grid gap-3 md:grid-cols-3">
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><p className="text-sm text-slate-500">Total filas</p><p className="mt-2 text-2xl font-semibold text-slate-900">{summary.total_rows || 0}</p></div>
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><p className="text-sm text-slate-500">Filas validas</p><p className="mt-2 text-2xl font-semibold text-slate-900">{summary.valid_rows || 0}</p></div>
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><p className="text-sm text-slate-500">Filas con error</p><p className="mt-2 text-2xl font-semibold text-slate-900">{summary.error_rows || 0}</p></div>

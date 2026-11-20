@@ -90,3 +90,7 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# Artefactos locales de validacion visual
+/.playwright-cli/
+/output/

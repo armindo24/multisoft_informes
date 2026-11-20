@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Calculator, CalendarDays, CheckCircle2, FileText, Info, Search, X } from 'lucide-react';
+import { searchAccounts } from '@/lib/account-search';
 import type { AccountPlanOption, AuxiliarOption, SelectOption } from '@/types/finanzas';
 
 type DifferenceRow = {
@@ -139,6 +140,7 @@ export function DiferenciaCambioPanel({
   const [localAuxOptions, setLocalAuxOptions] = useState<AuxiliarOption[]>(auxOptions);
   const [accountPickerOpen, setAccountPickerOpen] = useState(false);
   const [accountPickerSearch, setAccountPickerSearch] = useState('');
+  const [accountDescending, setAccountDescending] = useState(false);
   const [auxPickerOpen, setAuxPickerOpen] = useState(false);
   const [auxPickerSearch, setAuxPickerSearch] = useState('');
   const [diffAccountPickerOpen, setDiffAccountPickerOpen] = useState(false);
@@ -160,16 +162,10 @@ export function DiferenciaCambioPanel({
     }
   }, [fechaDesde, periodo]);
 
-  const filteredAccounts = useMemo(() => {
-    const term = accountPickerSearch.trim().toLowerCase();
-    if (!term) return localAccountOptions;
-    return localAccountOptions.filter((option) =>
-      option.value.toLowerCase().includes(term) ||
-      option.label.toLowerCase().includes(term) ||
-      option.name.toLowerCase().includes(term) ||
-      option.moneda.toLowerCase().includes(term),
-    );
-  }, [localAccountOptions, accountPickerSearch]);
+  const filteredAccounts = useMemo(
+    () => searchAccounts(localAccountOptions, accountPickerSearch, accountDescending),
+    [localAccountOptions, accountPickerSearch, accountDescending],
+  );
 
   const filteredAuxOptions = useMemo(() => {
     const accountCode = cuenta.trim();
@@ -220,7 +216,8 @@ export function DiferenciaCambioPanel({
   }, [selectedAccount]);
 
   function openAccountPicker() {
-    setAccountPickerSearch('');
+    setAccountPickerSearch(cuenta.trim());
+    setAccountDescending(false);
     setAccountPickerOpen(true);
   }
 
@@ -468,7 +465,16 @@ export function DiferenciaCambioPanel({
       fecha_hasta: fechaHasta,
       recalcular: recalcular ? 'SI' : 'NO',
     });
-    if (cuenta.trim()) params.set('cuenta', cuenta.trim());
+    if (cuenta.trim()) {
+      const expression = cuenta.trim();
+      if (/^\d+:$/.test(expression)) {
+        const last = searchAccounts(localAccountOptions, expression)[0];
+        if (!last) { setMessage('No se encontraron cuentas para ese grupo.'); setLoading(false); return; }
+        params.set('cuenta', last.value);
+      } else {
+        params.set('cuenta', expression);
+      }
+    }
     if (auxiliar.trim()) params.set('auxiliar', auxiliar.trim());
 
     const response = await fetch(`/api/registraciones/diferencia-cambio/consultar?${params.toString()}`, {
@@ -634,7 +640,7 @@ export function DiferenciaCambioPanel({
             <label className="text-[13px]">
               <span className="mb-0.5 block font-medium text-slate-700">Codigo de cuentas</span>
               <div className="flex gap-1.5">
-                <input value={cuenta} onChange={(event) => setCuenta(event.target.value)} placeholder="Ej: 112201" className="h-9 min-w-0 flex-1 rounded-md border border-slate-200 px-2.5 py-1.5 text-[13px]" />
+                <input value={cuenta} onChange={(event) => setCuenta(event.target.value)} placeholder="Ej: 1: o 1280112102;1280112103" className="h-9 min-w-0 flex-1 rounded-md border border-slate-200 px-2.5 py-1.5 text-[13px]" />
                 <button type="button" onClick={openAccountPicker} className="inline-flex h-9 items-center justify-center rounded-md border border-cyan-200 bg-white px-2.5 text-cyan-800 transition hover:bg-cyan-50" title="Buscar cuenta contable">
                   <Search className="h-4 w-4" />
                 </button>
@@ -874,7 +880,7 @@ export function DiferenciaCambioPanel({
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
               <div>
                 <h3 className="text-lg font-semibold text-slate-900">Elegir cuenta contable</h3>
-                <p className="mt-1 text-sm text-slate-500">Busca por codigo o nombre de la cuenta.</p>
+                <p className="mt-1 text-sm text-slate-500">Busca por nombre, prefijo (1), última imputable (1:) o códigos separados por ;.</p>
               </div>
               <button type="button" onClick={() => setAccountPickerOpen(false)} className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-600">
                 Cerrar
@@ -885,14 +891,15 @@ export function DiferenciaCambioPanel({
                 autoFocus
                 value={accountPickerSearch}
                 onChange={(event) => setAccountPickerSearch(event.target.value)}
-                placeholder="Buscar por codigo o nombre..."
+                placeholder="Ej: 1, 1: o 1280112102;1280112103"
                 className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
               />
+              {/[;,]/.test(accountPickerSearch) ? <button type="button" disabled={!filteredAccounts.length} onClick={() => { setCuenta(filteredAccounts.map((option) => option.value).join(';')); setAuxiliar(''); setAccountPickerOpen(false); }} className="rounded-lg bg-cyan-700 px-3 py-2 text-sm font-medium text-white disabled:opacity-50">Usar estas cuentas ({filteredAccounts.length})</button> : null}
               <div className="max-h-[26rem] overflow-auto rounded-2xl border border-slate-200">
                 <table className="min-w-full text-sm">
                   <thead className="sticky top-0 bg-slate-50 text-slate-700">
                     <tr className="border-b border-slate-200">
-                      <th className="px-4 py-3 text-left">Codigo</th>
+                      <th className="px-4 py-3 text-left" aria-sort={accountDescending ? 'descending' : 'ascending'}><button type="button" onClick={() => { const term = accountPickerSearch.trim(); if (/^\d+$/.test(term)) setAccountPickerSearch(`${term}:`); else if (/^\d+:$/.test(term)) setAccountPickerSearch(term.slice(0, -1)); else setAccountDescending((value) => !value); }} title="Con un prefijo, muestra la última cuenta imputable del grupo. Sin prefijo, cambia el orden." className="inline-flex items-center gap-2 hover:text-cyan-700">Código <span aria-hidden="true">{accountDescending ? '\u2193' : '\u2195'}</span></button></th>
                       <th className="px-4 py-3 text-left">Nombre</th>
                       <th className="px-4 py-3 text-center">Imp</th>
                       <th className="px-4 py-3 text-center">Aux</th>

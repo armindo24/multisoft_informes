@@ -1,5 +1,4 @@
 import { MigrationsWorkspace } from '@/components/migraciones/migrations-workspace';
-import { PageHeader } from '@/components/ui/page-header';
 import { getSessionUser } from '@/lib/auth-server';
 import { getScopedEmpresas } from '@/lib/empresas-server';
 
@@ -21,13 +20,7 @@ export default async function Page() {
   const defaultPeriodo = String(new Date().getFullYear());
 
   return (
-    <div className="space-y-5">
-      <PageHeader
-        eyebrow="Procesos operativos"
-        title="Migraciones"
-        description="Ejecuta procesos de validacion y migracion con parametros controlados por empresa, periodo y archivo."
-      />
-
+    <div className="min-w-0">
       <MigrationsWorkspace
         empresas={empresas}
         defaultPeriodo={defaultPeriodo}

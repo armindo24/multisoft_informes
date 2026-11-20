@@ -12,6 +12,7 @@ type BrandingConfigRecord = {
   logoUrl: string;
   faviconUrl: string;
   logoBackground: 'auto' | 'light' | 'dark';
+  hideAppTitleInReports: boolean;
   updatedAt: string | null;
 };
 
@@ -28,6 +29,7 @@ const emptyRecord: BrandingConfigRecord = {
   logoUrl: '',
   faviconUrl: '',
   logoBackground: 'auto',
+  hideAppTitleInReports: true,
   updatedAt: null,
 };
 
@@ -299,9 +301,15 @@ export function BrandingConfigPanel() {
             </div>
           </div>
 
+          <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <input type="checkbox" checked={form.hideAppTitleInReports !== false} onChange={(event) => updateField('hideAppTitleInReports', event.target.checked)} className="mt-0.5 h-4 w-4 accent-cyan-700" />
+            <span><span className="block text-sm font-medium text-slate-800">Ocultar título MultiSoft Informes al exportar o imprimir</span><span className="mt-1 block text-xs text-slate-500">Conserva el logo, el nombre del cliente y el título del informe. Activado por defecto.</span></span>
+          </label>
+
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-700">Vista previa</p>
             <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-5">
+              {form.hideAppTitleInReports === false ? <p className="mb-2 text-xs font-semibold uppercase tracking-[0.26em] text-cyan-700">MultiSoft Informes</p> : null}
               <p className="text-xs font-semibold uppercase tracking-[0.26em] text-cyan-700">{form.clientName || 'Cliente'}</p>
               <h3 className="mt-2 text-2xl font-semibold text-slate-950">Informe corporativo</h3>
               <p className="mt-2 text-sm text-slate-500">{form.tagline || 'Informes ejecutivos y exportaciones con identidad visual propia.'}</p>

@@ -1,3 +1,4 @@
+import { ensureFirstLoginTable } from '@/lib/pg-auth';
 import { Pool } from 'pg';
 import nodemailer from 'nodemailer';
 import PDFDocument from 'pdfkit';
@@ -97,6 +98,7 @@ export type BrandingConfigRecord = {
   logoUrl: string;
   faviconUrl: string;
   logoBackground: 'auto' | 'light' | 'dark';
+  hideAppTitleInReports: boolean;
   updatedAt: string | null;
 };
 
@@ -352,6 +354,7 @@ async function ensureBrandingConfigTable() {
     ALTER TABLE custom_permissions_brandconfig
     ADD COLUMN IF NOT EXISTS logo_background VARCHAR(20) NOT NULL DEFAULT 'auto'
   `);
+  await pool.query(`ALTER TABLE custom_permissions_brandconfig ADD COLUMN IF NOT EXISTS hide_app_title_in_reports BOOLEAN NOT NULL DEFAULT TRUE`);
 }
 
 async function ensureTaskTables() {
@@ -983,6 +986,7 @@ function normalizeBrandingRow(row: Record<string, unknown>): BrandingConfigRecor
     logoUrl: String(row.logo_url || ''),
     faviconUrl: String(row.favicon_url || ''),
     logoBackground: logoBackground === 'light' || logoBackground === 'dark' ? logoBackground : 'auto',
+    hideAppTitleInReports: row.hide_app_title_in_reports !== false,
     updatedAt: row.updated_at ? String(row.updated_at) : null,
   };
 }
@@ -1016,7 +1020,7 @@ export async function loadBrandingConfigs(): Promise<BrandingConfigRecord[]> {
 
   const result = await pool.query<Record<string, unknown>>(
     `
-      SELECT empresa, client_name, tagline, logo_url, favicon_url, logo_background, updated_at
+      SELECT empresa, client_name, tagline, logo_url, favicon_url, logo_background, hide_app_title_in_reports, updated_at
       FROM custom_permissions_brandconfig
       ORDER BY CASE WHEN empresa = 'GLOBAL' THEN 0 ELSE 1 END, empresa
     `,
@@ -1031,7 +1035,7 @@ export async function loadBrandingConfig(empresa?: string | null): Promise<Brand
   const normalizedEmpresa = String(empresa || '').trim().toUpperCase();
   const result = await pool.query<Record<string, unknown>>(
     `
-      SELECT empresa, client_name, tagline, logo_url, favicon_url, logo_background, updated_at
+      SELECT empresa, client_name, tagline, logo_url, favicon_url, logo_background, hide_app_title_in_reports, updated_at
       FROM custom_permissions_brandconfig
       WHERE empresa = ANY($1::varchar[])
       ORDER BY CASE WHEN empresa = $2::varchar THEN 0 WHEN empresa = 'GLOBAL' THEN 1 ELSE 2 END
@@ -1054,6 +1058,7 @@ export async function saveBrandingConfig(input: {
   logoUrl: string;
   faviconUrl: string;
   logoBackground: string;
+  hideAppTitleInReports?: boolean;
 }) {
   await ensureBrandingConfigTable();
 
@@ -1064,15 +1069,16 @@ export async function saveBrandingConfig(input: {
   await pool.query(
     `
       INSERT INTO custom_permissions_brandconfig
-        (empresa, client_name, tagline, logo_url, favicon_url, logo_background, updated_at)
+        (empresa, client_name, tagline, logo_url, favicon_url, logo_background, hide_app_title_in_reports, updated_at)
       VALUES
-        ($1, $2, $3, $4, $5, $6, NOW())
+        ($1, $2, $3, $4, $5, $6, $7, NOW())
       ON CONFLICT (empresa) DO UPDATE
       SET client_name = EXCLUDED.client_name,
           tagline = EXCLUDED.tagline,
           logo_url = EXCLUDED.logo_url,
           favicon_url = EXCLUDED.favicon_url,
           logo_background = EXCLUDED.logo_background,
+          hide_app_title_in_reports = EXCLUDED.hide_app_title_in_reports,
           updated_at = NOW()
     `,
     [
@@ -1082,6 +1088,7 @@ export async function saveBrandingConfig(input: {
       String(input.logoUrl || '').trim(),
       String(input.faviconUrl || '').trim(),
       logoBackground,
+      input.hideAppTitleInReports !== false,
     ],
   );
 
@@ -1278,16 +1285,24 @@ export async function saveUserCompanyAssignments(userId: number, values: string[
     })
     .filter((item) => item.empresa);
 
-  await pool.query('DELETE FROM custom_permissions_usuarioempresa WHERE user_id = $1', [userId]);
-
-  for (const item of pairs) {
-    await pool.query(
-      `
-        INSERT INTO custom_permissions_usuarioempresa (user_id, empresa, db)
-        VALUES ($1, $2, $3)
-      `,
-      [userId, item.empresa, item.db],
-    );
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    // Serializa guardados simultaneos del mismo usuario.
+    await client.query('SELECT id FROM auth_user WHERE id = $1 FOR UPDATE', [userId]);
+    await client.query('DELETE FROM custom_permissions_usuarioempresa WHERE user_id = $1', [userId]);
+    for (const item of pairs) {
+      await client.query(
+        'INSERT INTO custom_permissions_usuarioempresa (user_id, empresa, db) VALUES ($1, $2, $3)',
+        [userId, item.empresa, item.db],
+      );
+    }
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
   }
 
   return loadUserCompanyAssignments(userId);
@@ -5480,14 +5495,18 @@ export async function saveAdminUser(input: {
       );
     }
   } else {
+    await ensureFirstLoginTable();
     const password = passwordToStore || encodePbkdf2Sha256('admin');
     const created = await pool.query<{ id: number }>(
       `
-        INSERT INTO auth_user
+        WITH new_user AS (INSERT INTO auth_user
           (password, last_login, is_superuser, username, first_name, last_name, email, is_staff, is_active, date_joined)
         VALUES
           ($1, NULL, $2, $3, $4, $5, $6, $7, $8, NOW())
-        RETURNING id
+        RETURNING id, password)
+        INSERT INTO custom_permissions_firstlogin (user_id, initial_password)
+        SELECT id, password FROM new_user
+        RETURNING user_id AS id
       `,
       [password, input.isSuperuser, username, input.firstName, input.lastName, email, isStaff, input.isActive],
     );

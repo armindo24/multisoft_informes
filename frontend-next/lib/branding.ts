@@ -1,5 +1,6 @@
 export type BrandingConfig = {
   appName: string;
+  hideAppTitleInReports?: boolean;
   clientName: string;
   tagline: string;
   logoUrl: string;
@@ -15,6 +16,7 @@ export function getBranding(): BrandingConfig {
     logoUrl: process.env.NEXT_PUBLIC_CLIENT_LOGO_URL || '',
     faviconUrl: process.env.NEXT_PUBLIC_CLIENT_FAVICON_URL || process.env.NEXT_PUBLIC_CLIENT_LOGO_URL || '',
     logoBackground: 'auto',
+    hideAppTitleInReports: true,
   };
 }
 

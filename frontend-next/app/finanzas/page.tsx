@@ -556,6 +556,7 @@ export default async function FinanzasPage({
   const exportBranding = brandingConfig
     ? {
         clientName: brandingConfig.clientName || undefined,
+        hideAppTitleInReports: brandingConfig.hideAppTitleInReports,
         tagline: brandingConfig.tagline || undefined,
         logoUrl: brandingConfig.logoUrl || undefined,
         faviconUrl: brandingConfig.faviconUrl || undefined,
@@ -591,7 +592,7 @@ export default async function FinanzasPage({
     cuentaah,
   };
   const connectionWarning = !empresa
-    ? 'No se encontraron empresas configuradas en el API.'
+    ? 'No hay empresas disponibles para consultar informes. Revisa la asignación en Configuración → Asignación de Empresas o solicita acceso al administrador.'
     : hasSubmittedFilters && shouldLoadBalance && !effectiveBalanceResponse
       ? 'No se pudo obtener informacion financiera para este filtro. Revisa la conexion o intenta nuevamente.'
       : '';

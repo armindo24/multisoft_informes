@@ -6,15 +6,16 @@ import type { Route } from 'next';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LockKeyhole, User2 } from 'lucide-react';
 
-const isDevelopment = process.env.NODE_ENV !== 'production';
-
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextParam = searchParams.get('next');
   const nextPath = nextParam && nextParam !== '/' ? nextParam : '/dashboard';
-  const [identifier, setIdentifier] = useState('admin');
-  const [password, setPassword] = useState('admin');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [requiresPasswordChange, setRequiresPasswordChange] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -27,13 +28,19 @@ export function LoginForm() {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password }),
+        body: JSON.stringify({ identifier, password, ...(requiresPasswordChange ? { newPassword, confirmPassword } : {}) }),
       });
 
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
         setError(data?.message || 'No se pudo iniciar sesión.');
+        setLoading(false);
+        return;
+      }
+
+      if (data?.requiresPasswordChange) {
+        setRequiresPasswordChange(true);
         setLoading(false);
         return;
       }
@@ -53,23 +60,25 @@ export function LoginForm() {
   return (
     <form
       onSubmit={onSubmit}
-      className="w-full max-w-[438px] rounded-[32px] border border-slate-200/80 bg-white px-8 py-9 shadow-[0_30px_80px_rgba(3,10,28,0.35)]"
+      className="w-full max-w-[440px] rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_24px_64px_rgba(0,0,0,0.22)] sm:p-8"
     >
       <div>
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-cyan-700">Acceso seguro</p>
-        <h1 className="mt-2 text-4xl font-bold tracking-tight text-slate-950">Ingresar al panel</h1>
-        <p className="mt-4 text-base leading-8 text-slate-600">
-          Accede a tu entorno gerencial con credenciales protegidas y una experiencia pensada para operación diaria.
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">Acceso seguro</p>
+        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{requiresPasswordChange ? 'Crear nueva contraseña' : 'Iniciar sesión'}</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-500">
+          {requiresPasswordChange ? 'Define tu nueva clave para continuar.' : 'Ingresa tus credenciales para acceder a tu entorno gerencial.'}
         </p>
       </div>
 
-      <div className="mt-8 space-y-5">
+      {!requiresPasswordChange ? <div className="mt-6 space-y-4">
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-slate-700">Usuario o correo electrónico</span>
-          <div className="flex items-center gap-3 rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_2px_6px_rgba(15,23,42,0.08)]">
+          <div className="flex items-center gap-3 h-12 rounded-xl border border-slate-200 bg-slate-50/60 px-3 transition focus-within:border-cyan-600 focus-within:ring-2 focus-within:ring-cyan-600/15">
             <User2 className="h-4 w-4 text-slate-500" />
             <input
-              className="w-full border-0 bg-transparent text-sm outline-none"
+              required
+              className="min-w-0 w-full border-0 bg-transparent text-sm outline-none"
+              disabled={requiresPasswordChange}
               value={identifier}
               onChange={(event) => setIdentifier(event.target.value)}
               placeholder="usuario@empresa.com"
@@ -80,52 +89,55 @@ export function LoginForm() {
 
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-slate-700">Contraseña</span>
-          <div className="flex items-center gap-3 rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_2px_6px_rgba(15,23,42,0.08)]">
-            <LockKeyhole className="h-4 w-4 text-amber-500" />
+          <div className="flex items-center gap-3 h-12 rounded-xl border border-slate-200 bg-slate-50/60 px-3 transition focus-within:border-cyan-600 focus-within:ring-2 focus-within:ring-cyan-600/15">
+            <LockKeyhole className="h-4 w-4 text-slate-500" />
             <input
               type="password"
-              className="w-full border-0 bg-transparent text-sm outline-none"
+              required
+              className="min-w-0 w-full border-0 bg-transparent text-sm outline-none"
+              disabled={requiresPasswordChange}
+              autoComplete="current-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="********"
             />
           </div>
         </label>
-      </div>
+      </div> : null}
 
-      <div className="mt-4 flex items-center justify-end text-sm">
+      {requiresPasswordChange ? (
+        <div className="mt-5 space-y-4">
+          <p className="rounded-xl bg-cyan-50 p-3 text-sm text-cyan-900">En tu primer ingreso debes cambiar la contraseña inicial. Usa al menos 8 caracteres y una contraseña diferente.</p>
+          <label className="block text-sm font-medium text-slate-700">
+            Nueva contraseña
+            <input type="password" autoComplete="new-password" required minLength={8} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" />
+          </label>
+          <label className="block text-sm font-medium text-slate-700">
+            Confirmar nueva contraseña
+            <input type="password" autoComplete="new-password" required minLength={8} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" />
+          </label>
+          <button type="button" disabled={loading} onClick={() => { setRequiresPasswordChange(false); setNewPassword(''); setConfirmPassword(''); setPassword(''); setError(''); }} className="text-sm text-cyan-700">Volver al ingreso</button>
+        </div>
+      ) : null}
+
+      {!requiresPasswordChange ? <div className="mt-4 flex items-center justify-end text-sm">
         <Link href="/password-reset" className="font-medium text-cyan-700 transition hover:text-cyan-800">
           ¿Olvidó su contraseña?
         </Link>
-      </div>
+      </div> : null}
 
       {error ? <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
 
       <button
         type="submit"
         disabled={loading}
-        className="mt-7 w-full rounded-[18px] bg-[#050b23] px-4 py-4 text-base font-semibold text-white shadow-[0_16px_28px_rgba(2,6,23,0.28)] transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-6 h-12 w-full rounded-xl bg-[#0c1930] px-4 text-sm font-semibold text-white transition hover:bg-[#152d4e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading ? 'Ingresando...' : 'Acceder al panel'}
+        {loading ? 'Ingresando...' : requiresPasswordChange ? 'Guardar contraseña e ingresar' : 'Acceder al panel'}
       </button>
 
-      {isDevelopment ? (
-        <div className="mt-5 rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
-          Modo desarrollo: <span className="font-semibold text-slate-700">admin / admin</span>
-        </div>
-      ) : null}
-
-      <div className="mt-6 grid grid-cols-3 gap-3">
-        {[
-          { value: '24h', label: 'Disponibilidad' },
-          { value: '4', label: 'Módulos clave' },
-          { value: '100%', label: 'Acceso web' },
-        ].map((item) => (
-          <div key={item.label} className="rounded-[18px] bg-slate-50 px-3 py-4 text-center">
-            <div className="text-[1.7rem] font-bold tracking-tight text-slate-950">{item.value}</div>
-            <div className="mt-1 text-xs text-slate-500">{item.label}</div>
-          </div>
-        ))}
+      <div className="mt-6 flex items-center justify-center gap-2 border-t border-slate-100 pt-4 text-xs text-slate-500">
+        <LockKeyhole aria-hidden="true" className="h-3.5 w-3.5" /> Acceso corporativo
       </div>
     </form>
   );

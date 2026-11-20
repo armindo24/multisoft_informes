@@ -75,16 +75,18 @@ export function MigrationsWorkspace({
 
   return (
     <section>
-      <article id={activeItem.id} className="card scroll-mt-28 p-6 shadow-[0_0_0_1px_rgba(8,145,178,0.12)]">
+      <article id={activeItem.id} className="card scroll-mt-28 p-4 sm:p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex items-start gap-4">
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-cyan-200 bg-cyan-50 text-cyan-700">
-              <ActiveIcon className="h-5 w-5" />
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-cyan-200 bg-cyan-50 text-cyan-700">
+              <ActiveIcon className="h-4 w-4" />
             </span>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-700">Proceso heredado</p>
-              <h2 className="mt-2 text-xl font-semibold text-slate-900">{activeItem.title}</h2>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">{activeItem.description}</p>
+              <h1 className="flex flex-wrap items-center gap-x-2 text-base font-semibold text-slate-900">
+                <span className="font-normal text-slate-500">Migraciones</span>
+                <span aria-hidden="true" className="font-normal text-slate-300">/</span>
+                {activeItem.title.replace('Migracion de ', '')}
+              </h1>
             </div>
           </div>
         </div>

@@ -89,6 +89,7 @@ function buildExportBranding(config: Awaited<ReturnType<typeof loadBrandingConfi
   if (!config) return undefined;
   return {
     clientName: config.clientName || undefined,
+    hideAppTitleInReports: config.hideAppTitleInReports,
     tagline: config.tagline || undefined,
     logoUrl: config.logoUrl || undefined,
     faviconUrl: config.faviconUrl || undefined,

@@ -20,7 +20,7 @@ export function ExecutiveOverview({ items }: { items: ExecutiveModuleStatus[] })
       <div className="flex items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Estado de módulos</h2>
-          <p className="mt-1 text-sm text-slate-500">Resumen rápido del avance de migración y conectividad del nuevo frontend.</p>
+          <p className="mt-1 text-sm text-slate-500">Disponibilidad y resumen de cada módulo.</p>
         </div>
       </div>
 

@@ -136,18 +136,21 @@ export function ConfigAdminWorkspace({ currentUser }: ConfigAdminWorkspaceProps)
       <div className="space-y-4">
         <article
           id={activeItem.id}
-          className="card scroll-mt-28 border-cyan-200 p-6 shadow-[0_0_0_1px_rgba(8,145,178,0.12)] transition"
+          className={activeItem.id === 'usuarios' ? 'card scroll-mt-28 border-slate-200 p-4 sm:p-5' : 'card scroll-mt-28 border-cyan-200 p-6 shadow-[0_0_0_1px_rgba(8,145,178,0.12)] transition'}
         >
           {activeItem.aliases?.map((alias) => <div key={alias} id={alias} className="scroll-mt-28" />)}
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="flex items-start gap-4">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-200 bg-cyan-50 text-cyan-700">
-                <ActiveIcon className="h-5 w-5" />
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-cyan-200 bg-cyan-50 text-cyan-700">
+                <ActiveIcon className="h-4 w-4" />
               </span>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-700">Admin</p>
-                <h2 className="mt-2 text-xl font-semibold text-slate-900">{activeItem.title}</h2>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">{activeItem.description}</p>
+                <h1 className="flex flex-wrap items-center gap-x-2 text-base font-semibold text-slate-900">
+                  <span className="font-normal text-slate-500">Configuración</span>
+                  <span aria-hidden="true" className="font-normal text-slate-300">/</span>
+                  {activeItem.title}
+                </h1>
+                {activeItem.id !== 'usuarios' ? <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-500">{activeItem.description}</p> : null}
               </div>
             </div>
 
@@ -193,7 +196,7 @@ export function ConfigAdminWorkspace({ currentUser }: ConfigAdminWorkspaceProps)
           ) : null}
 
           {activeItem.id === 'usuarios' ? (
-            <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
+            <div className="mt-3 border-t border-slate-200 pt-3">
               <UsersPanel currentUser={currentUser} />
             </div>
           ) : null}

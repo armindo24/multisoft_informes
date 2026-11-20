@@ -1,6 +1,7 @@
 import 'server-only';
+import { cache } from 'react';
 
-import { getEmpresasByUser } from '@/lib/api';
+import { getCompanyCatalog } from '@/lib/api';
 import { loadUserCompanyAssignments } from '@/lib/admin-config';
 import { getSessionUser } from '@/lib/auth-server';
 
@@ -47,17 +48,19 @@ function filterEmpresasByAssignments(
     .filter(Boolean) as Array<Record<string, string>>;
 }
 
-export async function getScopedEmpresas(base: 'Integrado' | 'Sueldo' = 'Integrado'): Promise<EmpresaEnvelope> {
+export const getScopedEmpresas = cache(async (base: 'Integrado' | 'Sueldo' = 'Integrado'): Promise<EmpresaEnvelope> => {
   const sessionUser = await getSessionUser();
 
   if (!sessionUser?.id) {
     return { data: [] };
   }
 
-  const [response, assignments] = await Promise.all([
-    getEmpresasByUser(sessionUser.id, base),
-    loadUserCompanyAssignments(sessionUser.id).catch(() => []),
-  ]);
+  // Permisos vigentes desde PostgreSQL; evita volver a consultar el usuario en la API legacy.
+  const assignments = await loadUserCompanyAssignments(sessionUser.id).catch(() => []);
+  if (!assignments.some((item) => item.db === base && String(item.empresa || '').trim())) {
+    return { data: [] };
+  }
+  const response = await getCompanyCatalog(base);
 
   if (Array.isArray(response?.data)) {
     return {
@@ -67,7 +70,7 @@ export async function getScopedEmpresas(base: 'Integrado' | 'Sueldo' = 'Integrad
   }
 
   return { data: [] };
-}
+});
 
 export async function getPrimaryScopedEmpresa(base: 'Integrado' | 'Sueldo' = 'Integrado') {
   const sessionUser = await getSessionUser();
@@ -78,8 +81,5 @@ export async function getPrimaryScopedEmpresa(base: 'Integrado' | 'Sueldo' = 'In
     if (assignedEmpresa) return assignedEmpresa;
   }
 
-  const response = await getScopedEmpresas(base);
-  const first = response?.data?.[0];
-  const empresa = first ? getEmpresaCode(first) : '';
-  return empresa || null;
+  return null;
 }

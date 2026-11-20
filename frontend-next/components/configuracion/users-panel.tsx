@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus, Save, Trash2, UserPlus } from 'lucide-react';
+import { Plus, Save, Trash2, Search, ShieldCheck, KeyRound, UserRound } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { SessionUser } from '@/lib/auth';
 
@@ -271,220 +271,83 @@ export function UsersPanel({ currentUser }: UsersPanelProps) {
     setDeleting(false);
   }
 
+  const inputClass = 'h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-cyan-600 focus:ring-2 focus:ring-cyan-600/10 disabled:bg-slate-50 disabled:text-slate-500';
+  const busy = saving || deleting || loading;
+
   return (
-    <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-700">Usuarios</h3>
-          {permissions.canCreateUsers ? (
-            <button
-              type="button"
-              onClick={prepareNewUser}
-              className="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-cyan-700"
-            >
-              <Plus className="h-4 w-4" />
-              Agregar usuario
+    <div className="grid min-w-0 gap-5 lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[290px_minmax(0,1fr)]">
+      <aside className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50">
+        <div className="border-b border-slate-200 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-slate-900">Directorio <span className="ml-1 text-xs font-normal text-slate-500">({users.length})</span></h3>
+            {permissions.canCreateUsers ? <button type="button" disabled={busy} onClick={prepareNewUser} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50"><Plus className="h-3.5 w-3.5" />Nuevo</button> : null}
+          </div>
+          <label className="relative mt-4 block">
+            <span className="sr-only">Buscar usuario</span>
+            <Search aria-hidden="true" className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar usuario, nombre o correo" className={inputClass + ' pl-9'} />
+          </label>
+          <p className="mt-2 text-xs text-slate-500">{query ? `${filteredUsers.length} resultado(s)` : `${users.filter((user) => user.isActive).length} activos`}</p>
+        </div>
+        <div className="max-h-[250px] overflow-y-auto p-2 lg:max-h-[600px]">
+          {loading ? <div className="space-y-2 p-2">{[1, 2, 3].map((item) => <div key={item} className="h-16 animate-pulse rounded-lg bg-slate-200/60" />)}</div> : filteredUsers.length === 0 ? <p className="px-3 py-8 text-center text-sm text-slate-500">{query ? 'No se encontraron usuarios.' : 'No hay usuarios disponibles.'}</p> : filteredUsers.map((user) => (
+            <button key={user.id} type="button" disabled={saving || deleting} aria-pressed={selectedUserId === user.id} onClick={() => { setSelectedUserId(user.id); selectUser(user); setMessage(null); }} className={['mb-1 flex w-full min-w-0 items-start gap-3 rounded-lg border p-3 text-left transition disabled:opacity-50', selectedUserId === user.id ? 'border-cyan-200 bg-cyan-50' : 'border-transparent hover:bg-white'].join(' ')}>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-xs font-semibold uppercase text-slate-600">{user.username.slice(0, 2)}</span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center justify-between gap-2"><span className="truncate text-sm font-semibold text-slate-900">{user.username}</span><span title={user.isActive ? 'Activo' : 'Inactivo'} className={['h-2 w-2 shrink-0 rounded-full', user.isActive ? 'bg-emerald-500' : 'bg-slate-300'].join(' ')} /><span className="sr-only">{user.isActive ? 'Activo' : 'Inactivo'}</span></span>
+                <span className="mt-0.5 block truncate text-xs text-slate-500">{[user.firstName, user.lastName].filter(Boolean).join(' ') || 'Sin nombre'}</span>
+                <span className="mt-1 block truncate text-xs text-slate-400">{user.email || 'Sin correo'}</span>
+              </span>
             </button>
-          ) : null}
+          ))}
         </div>
+      </aside>
 
-        <label className="block text-sm text-slate-700">
-          <span className="mb-2 block font-medium">Buscar usuario</span>
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Usuario, nombre o email"
-            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2"
-          />
-        </label>
-
-        {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3, 4].map((item) => (
-              <div key={item} className="h-20 animate-pulse rounded-2xl border border-slate-200 bg-slate-100" />
-            ))}
+      <form className="min-w-0" onSubmit={(event) => { event.preventDefault(); void save(); }}>
+        <div className="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-4">
+          <div className="min-w-0">
+            <h3 className="break-words text-lg font-semibold text-slate-900">{selectedUser ? selectedUser.username : 'Nuevo usuario'}</h3>
+            <p className="mt-1 text-xs leading-5 text-slate-500">{permissions.canManageAllUsers ? 'Gestiona el perfil, la seguridad y los permisos de acceso.' : 'Actualiza tus datos personales y tu contraseña.'}</p>
           </div>
-        ) : (
-          <div className="max-h-[520px] space-y-2 overflow-y-auto pr-1">
-            {filteredUsers.map((user) => {
-              const active = selectedUserId === user.id;
-              return (
-                <button
-                  key={user.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedUserId(user.id);
-                    selectUser(user);
-                    setMessage(null);
-                  }}
-                  className={[
-                    'w-full rounded-2xl border px-4 py-3 text-left transition',
-                    active ? 'border-cyan-300 bg-cyan-50' : 'border-slate-200 bg-white hover:bg-slate-50',
-                  ].join(' ')}
-                >
-                  <p className="font-medium text-slate-900">{user.username}</p>
-                  <p className="mt-1 text-sm text-slate-600">{[user.firstName, user.lastName].filter(Boolean).join(' ') || 'Sin nombre'}</p>
-                  <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
-                    <span className="rounded-full bg-white px-2 py-1">{user.email || 'Sin email'}</span>
-                    <span className={['rounded-full px-2 py-1', user.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'].join(' ')}>
-                      {user.isActive ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      <div className="space-y-4">
-        {message ? (
-          <div className={['rounded-xl px-4 py-3 text-sm', message.type === 'success' ? 'border border-emerald-200 bg-emerald-50 text-emerald-800' : 'border border-rose-200 bg-rose-50 text-rose-800'].join(' ')}>
-            {message.text}
-          </div>
-        ) : null}
-
-        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-700">Edicion</p>
-            <h3 className="mt-1 text-lg font-semibold text-slate-900">
-              {selectedUser ? `Editar usuario: ${selectedUser.username}` : 'Nuevo usuario'}
-            </h3>
-            <p className="mt-1 text-sm text-slate-600">
-              {permissions.canManageAllUsers
-                ? selectedUser
-                  ? 'Actualiza los datos, grupos y estado del usuario seleccionado.'
-                  : 'Completa los datos basicos para crear un nuevo usuario dentro del sistema.'
-                : 'Aqui solo puedes actualizar tu propio perfil. Los permisos y otros usuarios quedan reservados para el administrador total.'}
-            </p>
-          </div>
-
-          {permissions.canCreateUsers ? (
-            <button
-              type="button"
-              onClick={prepareNewUser}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-white px-4 py-2.5 text-sm font-medium text-cyan-800 transition hover:bg-cyan-50"
-            >
-              <UserPlus className="h-4 w-4" />
-              Nuevo usuario
-            </button>
-          ) : null}
-
-          <button
-            type="button"
-            onClick={() => void save()}
-            disabled={saving}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-cyan-700 disabled:opacity-60"
-          >
-            <Save className="h-4 w-4" />
-            {saving ? 'Guardando...' : selectedUser ? 'Guardar cambios' : 'Crear usuario'}
-          </button>
-
-          {selectedUser && permissions.canManageAllUsers && selectedUser.id !== permissions.currentUserId ? (
-            <button
-              type="button"
-              onClick={() => void deleteSelectedUser()}
-              disabled={deleting || saving}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-800 transition hover:bg-rose-100 disabled:opacity-60"
-            >
-              <Trash2 className="h-4 w-4" />
-              {deleting ? 'Eliminando...' : 'Eliminar usuario'}
-            </button>
-          ) : null}
+          {selectedUser ? <span className={['rounded-full px-2.5 py-1 text-xs font-medium', selectedUser.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'].join(' ')}>{selectedUser.isActive ? 'Activo' : 'Inactivo'}</span> : null}
         </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="text-sm text-slate-700">
-            <span className="mb-2 block font-medium">Usuario</span>
-            <input value={form.username} onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2" />
-          </label>
-          <label className="text-sm text-slate-700">
-            <span className="mb-2 block font-medium">Email</span>
-            <input type="email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2" />
-          </label>
-          <label className="text-sm text-slate-700">
-            <span className="mb-2 block font-medium">Nombre</span>
-            <input value={form.firstName} onChange={(event) => setForm((current) => ({ ...current, firstName: event.target.value }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2" />
-          </label>
-          <label className="text-sm text-slate-700">
-            <span className="mb-2 block font-medium">Apellido</span>
-            <input value={form.lastName} onChange={(event) => setForm((current) => ({ ...current, lastName: event.target.value }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2" />
-          </label>
-          <label className="text-sm text-slate-700 md:col-span-2">
-            <span className="mb-2 block font-medium">{selectedUser ? 'Cambiar contrasena' : 'Contrasena inicial'}</span>
-            <input type="password" value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} placeholder={selectedUser ? 'Dejar vacio para mantener actual' : 'Si queda vacio se usara admin'} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2" />
-          </label>
-          <label className="text-sm text-slate-700">
-            <span className="mb-2 block font-medium">Sesiones permitidas</span>
-            <input
-              type="number"
-              min={1}
-              max={20}
-              value={form.maxSessionsPerUser}
-              disabled={!permissions.canEditPermissions}
-              onChange={(event) => setForm((current) => ({ ...current, maxSessionsPerUser: Number(event.target.value || 1) }))}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2"
-            />
-          </label>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-            <input
-              type="checkbox"
-              checked={form.isActive}
-              disabled={!permissions.canEditPermissions}
-              onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))}
-            />
-            <span>Usuario activo</span>
-          </label>
-          <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-            <input
-              type="checkbox"
-              checked={form.isSuperuser}
-              disabled={!permissions.canEditPermissions}
-              onChange={(event) => setForm((current) => ({ ...current, isSuperuser: event.target.checked }))}
-            />
-            <span>Administrador total</span>
-          </label>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <p className="text-sm font-medium text-slate-900">Grupos</p>
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
-            {groups.map((group) => (
-              <label key={group.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700">
-                <input type="checkbox" checked={form.groups.includes(group.id)} disabled={!permissions.canEditPermissions} onChange={() => toggleGroup(group.id)} />
-                <span>{group.name}</span>
-              </label>
-            ))}
-          </div>
-          {!permissions.canEditPermissions ? (
-            <p className="mt-3 text-sm text-slate-500">Tus grupos se muestran solo como referencia. La asignacion de permisos la realiza un administrador total.</p>
-          ) : null}
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <button type="button" onClick={() => void save()} disabled={saving} className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60">
-            {saving ? 'Guardando...' : selectedUser ? 'Guardar cambios' : 'Crear usuario'}
-          </button>
-          {selectedUser ? (
-            <button
-              type="button"
-              onClick={() => void deleteSelectedUser()}
-              disabled={deleting || saving || !permissions.canManageAllUsers || selectedUser.id === permissions.currentUserId}
-              className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-800 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {deleting ? 'Eliminando...' : 'Eliminar usuario'}
-            </button>
-          ) : null}
-          {selectedUser ? (
-            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-600">
-              Alta: {selectedUser.dateJoined ? new Date(selectedUser.dateJoined).toLocaleString('es-PY') : '-'}
+        {message ? <div role={message.type === 'error' ? 'alert' : 'status'} className={['mb-4 rounded-lg border px-4 py-3 text-sm', message.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-rose-200 bg-rose-50 text-rose-800'].join(' ')}>{message.text}</div> : null}
+        <fieldset disabled={busy} className="space-y-5 disabled:opacity-60">
+          <section>
+            <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800"><UserRound className="h-4 w-4 text-cyan-700" />Datos del usuario</h4>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="text-xs font-medium text-slate-600"><span className="mb-1.5 block">Usuario <span className="text-cyan-700">*</span></span><input required autoComplete="off" value={form.username} onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))} className={inputClass} /></label>
+              <label className="text-xs font-medium text-slate-600"><span className="mb-1.5 block">Correo electrónico</span><input type="email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} className={inputClass} /></label>
+              <label className="text-xs font-medium text-slate-600"><span className="mb-1.5 block">Nombre</span><input value={form.firstName} onChange={(event) => setForm((current) => ({ ...current, firstName: event.target.value }))} className={inputClass} /></label>
+              <label className="text-xs font-medium text-slate-600"><span className="mb-1.5 block">Apellido</span><input value={form.lastName} onChange={(event) => setForm((current) => ({ ...current, lastName: event.target.value }))} className={inputClass} /></label>
             </div>
-          ) : null}
+          </section>
+          <section className="border-t border-slate-100 pt-4">
+            <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800"><KeyRound className="h-4 w-4 text-cyan-700" />Seguridad y acceso</h4>
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_160px]">
+              <label className="text-xs font-medium text-slate-600"><span className="mb-1.5 block">{selectedUser ? 'Nueva contraseña' : 'Contraseña inicial'}</span><input type="password" autoComplete="new-password" value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} placeholder={selectedUser ? 'Dejar vacío para mantener la actual' : 'Si queda vacío se usará admin'} className={inputClass} /></label>
+              <label className="text-xs font-medium text-slate-600"><span className="mb-1.5 block">Sesiones permitidas</span><input type="number" min={1} max={20} value={form.maxSessionsPerUser} disabled={!permissions.canEditPermissions} onChange={(event) => setForm((current) => ({ ...current, maxSessionsPerUser: Number(event.target.value || 1) }))} className={inputClass} /></label>
+            </div>
+            {!selectedUser ? <p className="mt-3 rounded-lg bg-cyan-50 px-3 py-2 text-xs leading-5 text-cyan-800">En el primer ingreso, el usuario deberá elegir una nueva contraseña antes de acceder al panel.</p> : null}
+            <div className="mt-3 flex flex-wrap gap-x-6 gap-y-3 rounded-lg bg-slate-50 px-3 py-3">
+              <label className="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" className="h-4 w-4 accent-cyan-700" checked={form.isActive} disabled={!permissions.canEditPermissions} onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))} />Usuario activo</label>
+              <label className="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" className="h-4 w-4 accent-cyan-700" checked={form.isSuperuser} disabled={!permissions.canEditPermissions} onChange={(event) => setForm((current) => ({ ...current, isSuperuser: event.target.checked }))} />Administrador total</label>
+            </div>
+          </section>
+          <section className="border-t border-slate-100 pt-4">
+            <div className="mb-3 flex items-center justify-between gap-2"><h4 className="flex items-center gap-2 text-sm font-semibold text-slate-800"><ShieldCheck className="h-4 w-4 text-cyan-700" />Grupos y permisos</h4><span className="text-xs text-slate-500">{form.groups.length} seleccionados</span></div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {groups.map((group) => <label key={group.id} className={['flex min-w-0 items-center gap-2 rounded-lg border px-3 py-2 text-sm', form.groups.includes(group.id) ? 'border-cyan-200 bg-cyan-50 text-cyan-900' : 'border-slate-200 text-slate-600'].join(' ')}><input type="checkbox" className="h-4 w-4 shrink-0 accent-cyan-700" checked={form.groups.includes(group.id)} disabled={!permissions.canEditPermissions} onChange={() => toggleGroup(group.id)} /><span className="break-words">{group.name}</span></label>)}
+            </div>
+            {groups.length === 0 ? <p className="text-xs text-slate-500">No hay grupos disponibles.</p> : null}
+            {!permissions.canEditPermissions ? <p className="mt-3 text-xs text-slate-500">Los permisos y los grupos son administrados por un administrador total.</p> : null}
+          </section>
+        </fieldset>
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
+          <div>{selectedUser && permissions.canManageAllUsers && selectedUser.id !== permissions.currentUserId ? <button type="button" onClick={() => void deleteSelectedUser()} disabled={busy} className="inline-flex items-center gap-2 rounded-lg px-2 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-50"><Trash2 className="h-4 w-4" />{deleting ? 'Eliminando...' : 'Eliminar usuario'}</button> : selectedUser?.dateJoined ? <span className="text-xs text-slate-400">Alta: {new Date(selectedUser.dateJoined).toLocaleDateString('es-PY')}</span> : null}</div>
+          <button type="submit" disabled={busy || (!selectedUser && !permissions.canCreateUsers)} className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"><Save className="h-4 w-4" />{saving ? 'Guardando...' : selectedUser ? 'Guardar cambios' : 'Crear usuario'}</button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }

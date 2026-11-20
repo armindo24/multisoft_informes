@@ -103,6 +103,7 @@ export default async function ComprasPage({
   const exportBranding = brandingConfig
     ? {
         clientName: brandingConfig.clientName || undefined,
+        hideAppTitleInReports: brandingConfig.hideAppTitleInReports,
         tagline: brandingConfig.tagline || undefined,
         logoUrl: brandingConfig.logoUrl || undefined,
         faviconUrl: brandingConfig.faviconUrl || undefined,

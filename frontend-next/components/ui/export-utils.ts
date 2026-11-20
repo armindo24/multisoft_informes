@@ -141,7 +141,7 @@ function buildPdfCover(title: string, subtitle?: string, meta?: ExportMetaItem[]
         <div class="cover-header">
           ${logo}
           <div>
-            <div class="cover-kicker">${escapeHtml(branding.appName)}</div>
+            ${branding.hideAppTitleInReports !== false ? '' : `<div class="cover-kicker">${escapeHtml(branding.appName)}</div>`}
             <div class="cover-client">${escapeHtml(branding.clientName)}</div>
             <div class="cover-tagline">${escapeHtml(branding.tagline)}</div>
           </div>
@@ -174,7 +174,7 @@ export function exportRowsToExcel(params: {
     .join('');
 
   const html =
-    '<html><head><meta charset="utf-8"><title>Multisoft Reporte</title>' +
+    `<html><head><meta charset="utf-8"><title>${escapeHtml(params.title)}</title>` +
     buildCorporateStyles() +
     '</head><body>' +
     buildBrandBlock(params.title, params.subtitle, params.branding) +
@@ -210,7 +210,7 @@ export function exportRowsToPdf(params: {
     : '';
 
   popup.document.write(
-    '<html><head><meta charset="utf-8"><title>Multisoft Reporte</title>' +
+    `<html><head><meta charset="utf-8"><title>${escapeHtml(params.title)}</title>` +
       buildCorporateStyles() +
       landscapeStyles +
       compactStyles +

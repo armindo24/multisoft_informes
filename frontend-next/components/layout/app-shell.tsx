@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import type { Route } from 'next';
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Bell, ChevronRight, Menu, Search, X } from 'lucide-react';
+import { Bell, ChevronRight, Menu, Search, X, PanelLeftClose, PanelLeftOpen, ShieldCheck } from 'lucide-react';
 
 import { LogoutButton } from '@/components/ui/logout-button';
 import { BrandSignature } from '@/components/ui/brand-signature';
@@ -27,6 +28,12 @@ const COMPANY_ASSIGNMENTS_EVENT = 'multisoft:company-assignments-updated';
 function isActivePath(pathname: string, href: string) {
   if (href === '/') return pathname === '/';
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function navigationCategory(href: string) {
+  if (['/dashboard', '/cartera', '/informes-personalizados'].includes(href)) return 'Inicio';
+  if (['/migraciones', '/configuracion'].includes(href)) return 'Administración';
+  return 'Gestión';
 }
 
 function getSectionKey(moduleHref: string, sectionLabel: string) {
@@ -82,11 +89,22 @@ export function AppShell({
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const [notificationSummary, setNotificationSummary] = useState<NotificationSummary | null>(null);
   const [loginNotice, setLoginNotice] = useState('');
-  const [resolvedEmpresa, setResolvedEmpresa] = useState('');
+  const [resolvedEmpresa, setResolvedEmpresa] = useState<string | null>(null);
   const [selectedEmpresaOverride, setSelectedEmpresaOverride] = useState('');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    try { setSidebarCollapsed(window.localStorage.getItem('multisoft:sidebar-collapsed') === 'true'); } catch {}
+  }, []);
+
+  function changeSidebarCollapsed(collapsed: boolean) {
+    setSidebarCollapsed(collapsed);
+    try { window.localStorage.setItem('multisoft:sidebar-collapsed', String(collapsed)); } catch {}
+  }
+
   const routeEmpresa = String(searchParams.get('empresa') || '').trim().toUpperCase();
-  const effectiveEmpresa = selectedEmpresaOverride || routeEmpresa || String(resolvedEmpresa || empresa || '').trim().toUpperCase() || undefined;
+  const effectiveEmpresa = selectedEmpresaOverride || routeEmpresa || String(resolvedEmpresa ?? empresa ?? '').trim().toUpperCase() || undefined;
 
   const visibleNavigation = useMemo(
     () => navigation.filter((item) => canAccessItem(item, user)),
@@ -153,7 +171,6 @@ export function AppShell({
   useEffect(() => {
     if (pathname === '/login' || pathname.startsWith('/password-reset')) return;
     if (!user?.id) return;
-    if (routeEmpresa) return;
 
     const activeUserId = Number(user.id);
     let cancelled = false;
@@ -291,62 +308,69 @@ export function AppShell({
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)]">
-      <div className="grid min-h-screen lg:grid-cols-[252px_minmax(0,1fr)]">
+      <div className={sidebarCollapsed ? 'grid min-h-screen lg:grid-cols-[72px_minmax(0,1fr)]' : 'grid min-h-screen lg:grid-cols-[252px_minmax(0,1fr)]'}>
         <aside className="hidden border-r border-slate-800 bg-slate-950 text-slate-100 lg:block">
           <div className="sticky top-0 flex h-screen flex-col overflow-y-auto px-3 py-4">
-            <div className="px-2 pb-4">
-              <div className="mb-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
-                <SoftwareOwnerMark compact light />
-              </div>
-              <h1 className="mt-2.5 text-[1.7rem] font-black leading-tight text-white">Panel ejecutivo</h1>
-              <p className="mt-2 max-w-[17rem] text-[0.92rem] leading-5 text-slate-400">
-                Acceso ejecutivo a informes, indicadores y consultas operativas.
-              </p>
+            <div className="mb-4 flex min-h-10 items-center justify-between gap-2 px-1">
+              {!sidebarCollapsed ? <SoftwareOwnerMark compact light /> : null}
+              <button type="button" onClick={() => changeSidebarCollapsed(!sidebarCollapsed)} aria-label={sidebarCollapsed ? 'Expandir menú' : 'Contraer menú'} title={sidebarCollapsed ? 'Expandir menú' : 'Contraer menú'} aria-expanded={!sidebarCollapsed} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-800 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-400">
+                {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+              </button>
             </div>
 
-            <nav className="flex-1 space-y-2">
-              {visibleNavigation.map((item) => {
+            <nav className="flex-1 space-y-1">
+              {visibleNavigation.map((item, index) => {
                 const active = isActivePath(pathname, item.href);
                 const Icon = item.icon;
+                const groupLabel = index === 0 || navigationCategory(visibleNavigation[index - 1].href) !== navigationCategory(item.href) ? navigationCategory(item.href) : '';
+
 
                 return (
                   <div
                     key={item.href}
-                    className={[
-                      'overflow-hidden rounded-[1.4rem] border transition',
-                      active ? 'border-cyan-500/30 bg-slate-900 shadow-[0_0_0_1px_rgba(34,211,238,0.08)]' : 'border-transparent bg-transparent',
+                    className="space-y-1"
+                  >
+                    {groupLabel ? <p className={sidebarCollapsed ? 'sr-only' : 'px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500'}>{groupLabel}</p> : null}
+                    <div className={[
+                      'overflow-hidden rounded-lg border transition',
+                      active ? 'border-cyan-800/40 bg-slate-900/50' : 'border-transparent bg-transparent',
                     ].join(' ')}
                   >
-                    <a
-                      href={item.href}
+                    <Link
+                      href={item.href as Route}
+                      prefetch={false}
+                      title={sidebarCollapsed ? item.label : undefined}
+                      aria-label={item.label}
+                      aria-current={active ? 'page' : undefined}
+                      onClick={() => { if (sidebarCollapsed && item.sections?.length) changeSidebarCollapsed(false); }}
                       className={[
-                        'group flex items-center gap-3 rounded-[1.2rem] px-4 py-2.5 text-sm font-semibold transition',
-                        active ? 'bg-cyan-600 text-white' : 'text-slate-300 hover:bg-slate-900 hover:text-white',
+                        'group flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition',
+                        active ? 'bg-cyan-950/70 text-cyan-200' : 'text-slate-300 hover:bg-slate-900 hover:text-white',
                       ].join(' ')}
                     >
                       <span
                         className={[
-                          'flex h-9 w-9 items-center justify-center rounded-xl border transition',
-                          active ? 'border-white/15 bg-white/10' : 'border-slate-800 bg-slate-900 text-slate-300 group-hover:border-slate-700',
+                          'flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition',
+                          active ? 'bg-cyan-800/40 text-cyan-200' : 'text-slate-400 group-hover:text-white',
                         ].join(' ')}
                       >
                         <Icon className="h-4 w-4" />
                       </span>
-                      <span className="flex-1">{item.label}</span>
-                      {item.sections?.length ? (
+                      <span className={sidebarCollapsed ? 'sr-only' : 'flex-1'}>{item.label}</span>
+                      {!sidebarCollapsed && item.sections?.length ? (
                         <ChevronRight className={['h-4 w-4 transition', active ? 'rotate-90 text-white' : 'text-slate-500'].join(' ')} />
                       ) : null}
-                    </a>
+                    </Link>
 
-                    {active && item.sections?.length ? (
-                      <div className="space-y-3 px-3 pb-3 pt-3">
+                    {!sidebarCollapsed && active && item.sections?.length ? (
+                      <div className="space-y-2 px-2 pb-2 pt-2">
                         {item.sections.map((section) => {
                           const sectionKey = getSectionKey(item.href, section.label);
                           const isOpen = Boolean(openSections[sectionKey]);
                           const hasSectionLabel = Boolean(section.label.trim());
 
                           return (
-                            <div key={section.label} className="rounded-2xl border border-slate-800 bg-slate-900/70">
+                            <div key={section.label} className="rounded-lg border border-slate-800/60 bg-slate-900/40">
                               {hasSectionLabel ? (
                                 <button
                                   type="button"
@@ -356,7 +380,7 @@ export function AppShell({
                                       [sectionKey]: !current[sectionKey],
                                     }))
                                   }
-                                  className="flex w-full items-center justify-between px-4 py-2.5 text-left"
+                                  className="flex w-full items-center justify-between px-3 py-2 text-left"
                                 >
                                   <p className="text-sm font-semibold text-slate-100">{section.label}</p>
                                   <ChevronRight className={['h-4 w-4 text-cyan-300 transition', isOpen ? 'rotate-90' : 'rotate-0'].join(' ')} />
@@ -368,7 +392,7 @@ export function AppShell({
                                     subItem.disabled ? (
                                       <div
                                         key={`${section.label}-${subItem.label}`}
-                                        className="flex items-center justify-between gap-3 px-4 py-2 text-sm text-slate-500"
+                                        className="flex items-center justify-between gap-3 px-3 py-2 text-xs text-slate-500"
                                       >
                                         <span>{subItem.label}</span>
                                         <span className="rounded-full border border-slate-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
@@ -376,13 +400,14 @@ export function AppShell({
                                         </span>
                                       </div>
                                     ) : (
-                                      <a
+                                      <Link
                                         key={`${section.label}-${subItem.label}`}
-                                        href={subItem.href}
-                                        className="flex items-center justify-between gap-3 px-4 py-2 text-sm text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
+                                        href={subItem.href as Route}
+                                        prefetch={false}
+                                        className="flex items-center justify-between gap-3 px-3 py-2 text-xs text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
                                       >
                                         <span>{subItem.label}</span>
-                                      </a>
+                                      </Link>
                                     )
                                   ))}
                                 </div>
@@ -392,19 +417,15 @@ export function AppShell({
                         })}
                       </div>
                     ) : null}
+                    </div>
                   </div>
                 );
               })}
             </nav>
 
-            <div className="mt-3 rounded-[1.5rem] border border-slate-800 bg-slate-900/80 p-4 text-sm text-slate-300">
-              <p className="text-sm font-semibold text-white">Acceso actual</p>
-              <p className="mt-1.5 leading-5">
-                {user?.groups?.length
-                  ? `Modulos habilitados: ${user.groups.join(', ')}`
-                  : 'No hay grupos asignados para este usuario.'}
-              </p>
-            </div>
+            <Link href="/perfil" title={profileSubtitle(user)} className="mt-4 flex items-center gap-2 border-t border-slate-800 px-2 pt-3 text-xs text-slate-400 hover:text-white">
+              <ShieldCheck className="h-4 w-4 shrink-0" /><span className={sidebarCollapsed ? 'sr-only' : 'truncate'}>{profileSubtitle(user)}</span>
+            </Link>
           </div>
         </aside>
 
@@ -419,10 +440,9 @@ export function AppShell({
             <aside className="relative z-10 flex h-full w-[min(86vw,340px)] flex-col overflow-y-auto border-r border-slate-800 bg-slate-950 px-3 py-4 text-slate-100 shadow-2xl">
               <div className="flex items-start justify-between gap-3 px-2 pb-4">
                 <div>
-                  <div className="mb-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
+                  <div className="mb-4 rounded-lg border border-slate-800/60 bg-slate-900/40 p-3">
                     <SoftwareOwnerMark compact light />
                   </div>
-                  <p className="mt-2 text-sm text-slate-400">Panel ejecutivo</p>
                 </div>
                 <button
                   type="button"
@@ -434,33 +454,39 @@ export function AppShell({
                 </button>
               </div>
 
-              <nav className="flex-1 space-y-2">
-                {visibleNavigation.map((item) => {
+              <nav className="flex-1 space-y-1">
+                {visibleNavigation.map((item, index) => {
                   const active = isActivePath(pathname, item.href);
                   const Icon = item.icon;
+                const groupLabel = index === 0 || navigationCategory(visibleNavigation[index - 1].href) !== navigationCategory(item.href) ? navigationCategory(item.href) : '';
+
 
                   return (
                     <div
                       key={item.href}
-                      className={[
-                        'overflow-hidden rounded-[1.4rem] border transition',
-                        active ? 'border-cyan-500/30 bg-slate-900 shadow-[0_0_0_1px_rgba(34,211,238,0.08)]' : 'border-transparent bg-transparent',
+                      className="space-y-1"
+                    >
+                      {groupLabel ? <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">{groupLabel}</p> : null}
+                      <div className={[
+                        'overflow-hidden rounded-lg border transition',
+                        active ? 'border-cyan-800/40 bg-slate-900/50' : 'border-transparent bg-transparent',
                       ].join(' ')}
                     >
-                      <a
-                        href={item.href}
+                      <Link
+                        href={item.href as Route}
+                      prefetch={false}
                         onClick={() => {
                           if (!item.sections?.length) setMobileNavOpen(false);
                         }}
                         className={[
-                          'group flex items-center gap-3 rounded-[1.2rem] px-4 py-2.5 text-sm font-semibold transition',
-                          active ? 'bg-cyan-600 text-white' : 'text-slate-300 hover:bg-slate-900 hover:text-white',
+                          'group flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition',
+                          active ? 'bg-cyan-950/70 text-cyan-200' : 'text-slate-300 hover:bg-slate-900 hover:text-white',
                         ].join(' ')}
                       >
                         <span
                           className={[
-                            'flex h-9 w-9 items-center justify-center rounded-xl border transition',
-                            active ? 'border-white/15 bg-white/10' : 'border-slate-800 bg-slate-900 text-slate-300 group-hover:border-slate-700',
+                            'flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition',
+                            active ? 'bg-cyan-800/40 text-cyan-200' : 'text-slate-400 group-hover:text-white',
                           ].join(' ')}
                         >
                           <Icon className="h-4 w-4" />
@@ -469,17 +495,17 @@ export function AppShell({
                         {item.sections?.length ? (
                           <ChevronRight className={['h-4 w-4 transition', active ? 'rotate-90 text-white' : 'text-slate-500'].join(' ')} />
                         ) : null}
-                      </a>
+                      </Link>
 
                       {active && item.sections?.length ? (
-                        <div className="space-y-3 px-3 pb-3 pt-3">
+                        <div className="space-y-2 px-2 pb-2 pt-2">
                           {item.sections.map((section) => {
                             const sectionKey = getSectionKey(item.href, section.label);
                             const isOpen = Boolean(openSections[sectionKey]);
                             const hasSectionLabel = Boolean(section.label.trim());
 
                             return (
-                              <div key={section.label} className="rounded-2xl border border-slate-800 bg-slate-900/70">
+                              <div key={section.label} className="rounded-lg border border-slate-800/60 bg-slate-900/40">
                                 {hasSectionLabel ? (
                                   <button
                                     type="button"
@@ -489,7 +515,7 @@ export function AppShell({
                                         [sectionKey]: !current[sectionKey],
                                       }))
                                     }
-                                    className="flex w-full items-center justify-between px-4 py-2.5 text-left"
+                                    className="flex w-full items-center justify-between px-3 py-2 text-left"
                                   >
                                     <p className="text-sm font-semibold text-slate-100">{section.label}</p>
                                     <ChevronRight className={['h-4 w-4 text-cyan-300 transition', isOpen ? 'rotate-90' : 'rotate-0'].join(' ')} />
@@ -501,7 +527,7 @@ export function AppShell({
                                       subItem.disabled ? (
                                         <div
                                           key={`${section.label}-${subItem.label}`}
-                                          className="flex items-center justify-between gap-3 px-4 py-2 text-sm text-slate-500"
+                                          className="flex items-center justify-between gap-3 px-3 py-2 text-xs text-slate-500"
                                         >
                                           <span>{subItem.label}</span>
                                           <span className="rounded-full border border-slate-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
@@ -509,14 +535,15 @@ export function AppShell({
                                           </span>
                                         </div>
                                       ) : (
-                                        <a
+                                        <Link
                                           key={`${section.label}-${subItem.label}`}
-                                          href={subItem.href}
+                                          href={subItem.href as Route}
+                                        prefetch={false}
                                           onClick={() => setMobileNavOpen(false)}
-                                          className="flex items-center justify-between gap-3 px-4 py-2 text-sm text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
+                                          className="flex items-center justify-between gap-3 px-3 py-2 text-xs text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
                                         >
                                           <span>{subItem.label}</span>
-                                        </a>
+                                        </Link>
                                       )
                                     ))}
                                   </div>
@@ -526,6 +553,7 @@ export function AppShell({
                           })}
                         </div>
                       ) : null}
+                      </div>
                     </div>
                   );
                 })}

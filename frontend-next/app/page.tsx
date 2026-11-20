@@ -1,5 +1,4 @@
 import { KpiCard } from '@/components/ui/kpi-card';
-import { PageHeader } from '@/components/ui/page-header';
 import { ExecutiveModuleStatus, ExecutiveOverview } from '@/components/dashboard/executive-overview';
 import { QuickActions } from '@/components/dashboard/quick-actions';
 import { SalesChart } from '@/components/dashboard/sales-chart';
@@ -154,12 +153,13 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-5">
-      <PageHeader
-        eyebrow="Dashboard ejecutivo"
-        title="Panel gerencial consolidado"
-        description="Vista principal fortalecida con métricas reales del backend actual, accesos rápidos, rutas protegidas y una base más lista para seguir migrando el sistema sin depender de templates clásicos."
-      />
+    <div className="space-y-4">
+      <header className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <div>
+          <h1 className="text-base font-semibold text-slate-900">Dashboard gerencial</h1>
+          <p className="mt-0.5 text-xs leading-5 text-slate-500">Resumen de finanzas, ventas, compras y stock.</p>
+        </div>
+      </header>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <KpiCard item={{ title: 'Facturación visible', value: formatInteger(facturacion), change: 'Ventas', trend: 'up', tooltip: 'Ventas del periodo actual hasta la fecha.' }} />

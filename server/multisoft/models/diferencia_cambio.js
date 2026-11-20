@@ -27,8 +27,8 @@ function filterCondition(field, value) {
     var raw = esc(value);
     if (!raw) return '';
 
-    var parts = raw.split(',').map(function (item) { return esc(item); }).filter(Boolean);
-    if (parts.length > 1) {
+    var parts = String(value || '').split(/[;,]/).map(function (item) { return esc(item); }).filter(Boolean);
+    if (/[;,]/.test(raw) && parts.length) {
         return ' AND ' + field + " IN ('" + parts.join("','") + "') ";
     }
 

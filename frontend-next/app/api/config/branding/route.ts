@@ -31,6 +31,7 @@ export async function POST(request: Request) {
       logoUrl: String(body.logoUrl || ''),
       faviconUrl: String(body.faviconUrl || ''),
       logoBackground: String(body.logoBackground || 'auto'),
+      hideAppTitleInReports: body.hideAppTitleInReports !== false,
     });
 
     return NextResponse.json({ ok: true, data: saved });

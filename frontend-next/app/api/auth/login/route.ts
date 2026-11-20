@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { AUTH_COOKIE } from '@/lib/auth';
-import { authenticateWithPostgres } from '@/lib/pg-auth';
+import { authenticateWithPostgres, FirstLoginPasswordError } from '@/lib/pg-auth';
 import { createNextSessionKey, registerNextSession } from '@/lib/admin-config';
 
 export const runtime = 'nodejs';
@@ -12,9 +12,13 @@ export async function POST(request: Request) {
   const password = String(body?.password || '');
 
   try {
-    const authenticatedUser = await authenticateWithPostgres(identifier, password);
+    const authenticatedUser = await authenticateWithPostgres(identifier, password, typeof body?.newPassword === 'string' ? body.newPassword : undefined, typeof body?.confirmPassword === 'string' ? body.confirmPassword : undefined);
     if (!authenticatedUser) {
       return NextResponse.json({ ok: false, message: 'Usuario, correo o contrasena incorrectos.' }, { status: 401 });
+    }
+
+    if (authenticatedUser.requiresPasswordChange) {
+      return NextResponse.json({ ok: true, requiresPasswordChange: true });
     }
 
     const maxAge = 60 * 60 * 12;
@@ -53,6 +57,9 @@ export async function POST(request: Request) {
       maxSessionsPerUser: sessionStatus.maxSessionsPerUser,
     });
   } catch (error) {
+    if (error instanceof FirstLoginPasswordError) {
+      return NextResponse.json({ ok: false, message: error.message }, { status: 400 });
+    }
     console.error('Login PostgreSQL error:', error);
     return NextResponse.json(
       { ok: false, message: 'No se pudo validar el acceso contra PostgreSQL.' },

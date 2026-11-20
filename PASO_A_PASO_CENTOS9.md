@@ -46,13 +46,23 @@ cp .envariables.example .envariables
 nano .envariables
 ```
 
+
 Ejemplo basico:
 
 ```env
-DJANGO_SECRET_KEY=una-clave-segura-y-larga
+DJANGO_SECRET_KEY=reemplazar-por-una-clave-segura-y-larga
 DB_USER=multisoft_user
-DB_PASSWORD=tu_password_real
+DB_PASSWORD=REEMPLAZAR_PASSWORD
 REDIS_SOCK=/var/run/redis/redis.sock
+# Ejemplo de configuracion (reemplazar los valores antes de usar)
+DJANGO_SECRET_KEY=reemplazar-por-una-clave-segura-y-larga
+DB_NAME=multisoft_informes
+DB_USER=multisoft_user
+DB_PASSWORD=REEMPLAZAR_PASSWORD
+DB_HOST=localhost
+DB_PORT=5432
+REDIS_SOCK=/var/run/redis/redis.sock
+
 ```
 
 ## 7. Instalar NVM
@@ -106,7 +116,13 @@ pip install requests xlrd openpyxl
 ## 11. Instalar dependencias Node en la raiz
 
 ```bash
+Tiene que tener instalado el sqlanywhere12 >ASA12
+
+
 cd /opt/multisoft/multisoft_informes
+cd frontend-next
+source /home/multisoft/.nvm/nvm.sh
+nvm use 20.20.2
 npm install
 ```
 
@@ -122,16 +138,40 @@ npm run build
 
 ```bash
 cd /opt/multisoft/multisoft_informes/server/multisoft
+source /home/multisoft/.nvm/nvm.sh
+nvm install 12.22.12
+nvm use 12.22.12
+npm install --unsafe-perm
+--entrar como root y ejecutar: /// importante
+dnf groupinstall -y "Development Tools"
+--Después volver como multisoft:
+nvm use 12.22.12
 npm install
 ```
 
 ## 14. Ejecutar migraciones Django
 
 ```bash
+-- configurar Postgresql
+postgresql-setup --initdb
+systemctl start postgresql
+systemctl enable postgresql
+--) Base de datos Postgres (Django)
+sudo -u postgres psql
+postgres= CREATE DATABASE multisoft_informes;
+postgres= CREATE USER multisoft_user WITH PASSWORD 'REEMPLAZAR_PASSWORD';
+postgres= ALTER ROLE multisoft_user SET client_encoding TO 'utf8';
+postgres= ALTER ROLE multisoft_user SET default_transaction_isolation TO 'read committed';
+postgres= ALTER ROLE multisoft_user SET timezone TO 'America/Asuncion';
+postgres= GRANT ALL PRIVILEGES ON DATABASE multisoft_informes TO multisoft_user;
+ALTER USER postgres WITH PASSWORD 'REEMPLAZAR_PASSWORD_POSTGRES';
+vim  /var/lib/pgsql/data/pg_hba.conf /// md5 a las conexiones
+
+-- con el usuario su - multisoft
 cd /opt/multisoft/multisoft_informes
 source .venv/bin/activate
 python manage.py migrate --noinput
-python manage.py collectstatic --noinput
+--python manage.py collectstatic --noinput
 ```
 
 ## 15. Crear superusuario Django
@@ -158,6 +198,14 @@ npm run start
 ```
 
 ## 18. Probar API Node legacy manualmente
+
+-- copiar los archivos
+cp /opt/multisoft/multisoft_informes/deploy/systemd/centos9/multisoft-django.service /etc/systemd/system/
+cp /opt/multisoft/multisoft_informes/deploy/systemd/centos9/multisoft-next.service /etc/systemd/system/
+cp /opt/multisoft/multisoft_informes/deploy/systemd/centos9/multisoft-node-api.service /etc/systemd/system
+systemctl daemon-reload
+
+vim /etc/systemd/system/multisoft-node-api.service -- revisar en "production" tiene que ser "development"
 
 ```bash
 cd /opt/multisoft/multisoft_informes/server/multisoft

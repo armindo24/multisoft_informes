@@ -1,7 +1,7 @@
 'use client';
 
 import { Building2, RefreshCcw, Save, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type AdminUserRecord = {
   id: number;
@@ -51,6 +51,8 @@ export function UserCompanyPanel() {
   const [canManageAssignments, setCanManageAssignments] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(0);
 
+  const assignmentRequest = useRef(0);
+
   const selectedUser = users.find((user) => user.id === selectedUserId) || null;
 
   function resetAssignmentSelection() {
@@ -90,8 +92,10 @@ export function UserCompanyPanel() {
   }, []);
 
   async function loadAssignments(userId: number) {
+    const requestId = ++assignmentRequest.current;
     const cached = assignmentCache[userId];
     if (cached) {
+      setLoadingAssignments(false);
       setSelectedValues(cached);
       return;
     }
@@ -99,6 +103,8 @@ export function UserCompanyPanel() {
     setLoadingAssignments(true);
     const response = await fetch(`/api/config/user-company?userId=${userId}`, { cache: 'no-store' });
     const payload = (await response.json().catch(() => ({}))) as { ok?: boolean; data?: LoadPayload; message?: string };
+
+    if (requestId !== assignmentRequest.current) return;
 
     if (!response.ok || !payload.ok || !payload.data) {
       setMessage({ type: 'error', text: payload.message || 'No se pudo cargar las empresas del usuario.' });
@@ -112,14 +118,6 @@ export function UserCompanyPanel() {
     setSelectedValues(nextAssignments);
     setAssignmentCache((current) => ({ ...current, [userId]: nextAssignments }));
     setLoadingAssignments(false);
-  }
-
-  function warmAssignments(userId: number) {
-    if (!userId || assignmentCache[userId] || loadingAssignments) {
-      return;
-    }
-
-    void loadAssignments(userId);
   }
 
   const groupedOptions = useMemo(() => {
@@ -232,7 +230,7 @@ export function UserCompanyPanel() {
               <button
                 type="button"
                 onClick={resetAssignmentSelection}
-                disabled={!canManageAssignments}
+                disabled={saving || loadingAssignments || !canManageAssignments}
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-white px-4 py-2.5 text-sm font-medium text-cyan-800 transition hover:bg-cyan-50"
               >
                 <RefreshCcw className="h-4 w-4" />
@@ -241,7 +239,7 @@ export function UserCompanyPanel() {
               <button
                 type="button"
                 onClick={() => void handleSave()}
-                disabled={saving || !canManageAssignments}
+                disabled={saving || loadingAssignments || !canManageAssignments}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-cyan-700 disabled:opacity-60"
               >
                 <Save className="h-4 w-4" />
@@ -275,7 +273,7 @@ export function UserCompanyPanel() {
                   void loadAssignments(userId);
                 }
               }}
-              disabled={!canManageAssignments}
+              disabled={saving || loadingAssignments || !canManageAssignments}
               className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2"
             >
               {users.map((user) => (
@@ -298,8 +296,6 @@ export function UserCompanyPanel() {
               <button
                 type="button"
                 onClick={() => setPickerOpen(true)}
-                onMouseEnter={() => warmAssignments(selectedUserId)}
-                onFocus={() => warmAssignments(selectedUserId)}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
               >
                 <Building2 className="h-4 w-4" />
@@ -321,10 +317,10 @@ export function UserCompanyPanel() {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={() => setSelectedValues([])} disabled={!canManageAssignments} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 disabled:opacity-60">
+            <button type="button" onClick={() => setSelectedValues([])} disabled={saving || loadingAssignments || !canManageAssignments} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 disabled:opacity-60">
               Limpiar seleccion
             </button>
-            <button type="button" onClick={() => void handleSave()} disabled={saving || !canManageAssignments} className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60">
+            <button type="button" onClick={() => void handleSave()} disabled={saving || loadingAssignments || !canManageAssignments} className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60">
               {saving ? 'Guardando...' : 'Guardar asignacion'}
             </button>
           </div>
@@ -381,7 +377,7 @@ export function UserCompanyPanel() {
 
                           return (
                             <label key={option.key} className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700">
-                              <input type="checkbox" checked={checked} onChange={() => toggleValue(option.key)} disabled={!canManageAssignments} className="mt-1" />
+                              <input type="checkbox" checked={checked} onChange={() => toggleValue(option.key)} disabled={saving || loadingAssignments || !canManageAssignments} className="mt-1" />
                               <span>{option.label}</span>
                             </label>
                           );

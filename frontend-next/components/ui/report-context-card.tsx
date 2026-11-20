@@ -18,26 +18,24 @@ export function ReportContextCard({ empresa, periodo, rango, moneda, usuario }: 
   ];
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-soft">
-      <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">Contexto del informe</p>
-          <p className="mt-0.5 text-sm text-slate-500">Generado: {generatedAt}</p>
+    <section aria-label="Contexto del informe" className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h2 className="text-xs font-semibold text-cyan-700">Contexto del informe</h2>
+          <p className="text-[11px] text-slate-400">Generado: {generatedAt}</p>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        <dl className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-2 lg:justify-end">
           {items.map((item) => {
             const Icon = item.icon;
             return (
-              <div key={item.label} className="min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  <Icon className="h-3.5 w-3.5 shrink-0 text-cyan-700" />
-                  {item.label}
-                </div>
-                <p className="mt-1 truncate text-sm font-semibold text-slate-900" title={item.value}>{item.value}</p>
+              <div key={item.label} className="flex min-w-0 max-w-full items-center gap-1.5 text-xs">
+                <Icon aria-hidden="true" className="h-3 w-3 shrink-0 text-cyan-700" />
+                <dt className="shrink-0 text-slate-500">{item.label}:</dt>
+                <dd className="truncate font-medium text-slate-800" title={item.value}>{item.value}</dd>
               </div>
             );
           })}
-        </div>
+        </dl>
       </div>
     </section>
   );

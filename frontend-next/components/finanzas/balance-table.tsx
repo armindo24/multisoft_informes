@@ -291,9 +291,9 @@ export function BalanceTable({
             <EmptyState title="Sin datos de balance" description="No hay datos disponibles para este balance." />
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="max-h-[70vh] overflow-auto print:max-h-none print:overflow-visible" tabIndex={0} role="region" aria-label={`Detalle de ${title}`}>
             <table className="min-w-full border-collapse text-sm">
-              <thead className="bg-slate-50 text-slate-700">
+              <thead className="sticky top-0 z-10 bg-slate-50 text-slate-700 shadow-[0_1px_0_0_#e2e8f0] print:static">
                 <tr className="border-b border-slate-200">
                   <th className="px-3 py-3 text-left font-semibold">Cuenta</th>
                   <th className="px-3 py-3 text-left font-semibold">Descripcion</th>

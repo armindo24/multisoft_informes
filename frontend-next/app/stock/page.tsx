@@ -109,6 +109,7 @@ export default async function StockPage({
   const exportBranding = brandingConfig
     ? {
         clientName: brandingConfig.clientName || undefined,
+        hideAppTitleInReports: brandingConfig.hideAppTitleInReports,
         tagline: brandingConfig.tagline || undefined,
       }
     : undefined;

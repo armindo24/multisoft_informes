@@ -169,11 +169,11 @@ export function AsientosMigrationPanel({
   }
 
   return (
-    <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="mt-3 border-t border-slate-200 pt-3">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-700">Carga de Excel</p>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cyan-700">Carga de Excel</p>
+          <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-600">
             Formato esperado: Cod_Empresa, TipoAsiento, NroCompr, NroTransaccion, Linea, CodPlanCta, CodPlanAux,
             Concepto, DbCr, Importe, ImporteME, Fecha.
           </p>
@@ -182,7 +182,7 @@ export function AsientosMigrationPanel({
           <button
             type="button"
             onClick={resetAll}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
           >
             <Eraser className="h-4 w-4" />
             Limpiar pantalla
@@ -191,7 +191,7 @@ export function AsientosMigrationPanel({
             type="button"
             onClick={handleMigrate}
             disabled={!validationOk || isMigrating}
-            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
           >
             {isMigrating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
             Migrar
@@ -199,14 +199,14 @@ export function AsientosMigrationPanel({
         </div>
       </div>
 
-      <form onSubmit={handleValidate} className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,180px)_minmax(0,1.2fr)_auto]">
-        <label className="space-y-2 text-sm font-medium text-slate-700">
+      <form onSubmit={handleValidate} className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,180px)_minmax(0,1.2fr)_auto]">
+        <label className="space-y-1.5 text-xs font-medium text-slate-700">
           <span>Empresa</span>
           <select
             value={empresa}
             onChange={(event) => setEmpresa(event.target.value)}
             disabled={validationOk || isValidating || isMigrating}
-            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-100"
+            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-100"
           >
             <option value="">Seleccione...</option>
             {empresas.map((option) => (
@@ -217,20 +217,20 @@ export function AsientosMigrationPanel({
           </select>
         </label>
 
-        <label className="space-y-2 text-sm font-medium text-slate-700">
+        <label className="space-y-1.5 text-xs font-medium text-slate-700">
           <span>Periodo</span>
           <input
             value={periodo}
             onChange={(event) => setPeriodo(event.target.value)}
             disabled={validationOk || isValidating || isMigrating}
-            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-100"
+            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-100"
             inputMode="numeric"
             maxLength={4}
             placeholder="2026"
           />
         </label>
 
-        <label className="space-y-2 text-sm font-medium text-slate-700">
+        <label className="space-y-1.5 text-xs font-medium text-slate-700">
           <span>Archivo Excel</span>
           <input
             ref={fileRef}
@@ -238,7 +238,7 @@ export function AsientosMigrationPanel({
             accept=".xls,.xlsx"
             onChange={(event) => setSelectedFile(event.target.files?.[0] || null)}
             disabled={isValidating || isMigrating}
-            className="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-700"
+            className="block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-700"
           />
         </label>
 
@@ -246,7 +246,7 @@ export function AsientosMigrationPanel({
           <button
             type="submit"
             disabled={isValidating || isMigrating}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-cyan-300"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-cyan-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-cyan-300"
           >
             {isValidating ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
             Validar Excel
@@ -284,7 +284,7 @@ export function AsientosMigrationPanel({
 
       {validationResult ? (
         <>
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
+          <div className="mt-3 grid gap-3 md:grid-cols-3">
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-sm text-slate-500">Total filas</p>
               <p className="mt-2 text-2xl font-semibold text-slate-900">{summary.total_rows || 0}</p>

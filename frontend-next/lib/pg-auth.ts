@@ -1,5 +1,14 @@
-import { pbkdf2Sync, timingSafeEqual } from 'node:crypto';
+import { pbkdf2Sync, randomBytes, timingSafeEqual } from 'node:crypto';
 import { Pool } from 'pg';
+
+export class FirstLoginPasswordError extends Error {}
+
+export async function ensureFirstLoginTable() {
+  await pool.query(`CREATE TABLE IF NOT EXISTS custom_permissions_firstlogin (
+    user_id integer PRIMARY KEY REFERENCES auth_user(id) ON DELETE CASCADE,
+    initial_password text NOT NULL
+  )`);
+}
 
 type AuthUserRow = {
   id: number;
@@ -45,9 +54,10 @@ export type AuthenticatedUser = {
   role: string;
   isSuperuser: boolean;
   groups: string[];
+  requiresPasswordChange: boolean;
 };
 
-export async function authenticateWithPostgres(identifier: string, password: string): Promise<AuthenticatedUser | null> {
+export async function authenticateWithPostgres(identifier: string, password: string, newPassword?: string, confirmPassword?: string): Promise<AuthenticatedUser | null> {
   const normalizedIdentifier = String(identifier || '').trim().toLowerCase();
   if (!normalizedIdentifier || !password) return null;
 
@@ -71,6 +81,25 @@ export async function authenticateWithPostgres(identifier: string, password: str
 
   if (passwordMatches.length !== 1) return null;
   const user = passwordMatches[0];
+  await ensureFirstLoginTable();
+  const pending = await pool.query(
+    'SELECT user_id FROM custom_permissions_firstlogin WHERE user_id = $1 AND initial_password = $2',
+    [user.id, user.password],
+  );
+  let requiresPasswordChange = pending.rowCount === 1;
+  if (requiresPasswordChange && newPassword !== undefined) {
+    if (newPassword.length < 8) throw new FirstLoginPasswordError('La nueva contraseña debe tener al menos 8 caracteres.');
+    if (newPassword !== confirmPassword) throw new FirstLoginPasswordError('Las contraseñas no coinciden.');
+    if (comparePbkdf2Sha256(user.password, newPassword)) throw new FirstLoginPasswordError('La nueva contraseña debe ser diferente de la inicial.');
+    const salt = randomBytes(16).toString('hex');
+    const digest = pbkdf2Sync(newPassword, salt, 600000, 32, 'sha256').toString('base64');
+    const updated = await pool.query(
+      'UPDATE auth_user SET password = $3 WHERE id = $1 AND password = $2 AND is_active = TRUE RETURNING id',
+      [user.id, user.password, `pbkdf2_sha256$600000$${salt}$${digest}`],
+    );
+    if (updated.rowCount !== 1) return null;
+    requiresPasswordChange = false;
+  }
 
   const groupsResult = await pool.query<GroupRow>(
     `
@@ -97,5 +126,6 @@ export async function authenticateWithPostgres(identifier: string, password: str
     role: primaryRole,
     isSuperuser: user.is_superuser,
     groups,
+    requiresPasswordChange,
   };
 }

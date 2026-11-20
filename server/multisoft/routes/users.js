@@ -4,8 +4,6 @@ var pg = require('../postgres');
 var _ = require('lodash');
 var Empresa = require('../models/empresa');
 var EmpresaSueldo = require('../models/empresa_sueldo');
-var empresasCache = Object.create(null);
-var EMPRESAS_CACHE_TTL_MS = 60000;
 
 function getModelStatus(model) {
     try {
@@ -66,13 +64,8 @@ router.get('/:user', function (req, res, next) {
 });
 
 router.get('/:user/empresas/:base', function (req, res, next) {
-    var cacheKey = String(req.params.user) + '|' + String(req.params.base || '');
-    var now = Date.now();
-    var cached = empresasCache[cacheKey];
-    if (cached && (now - cached.ts) < EMPRESAS_CACHE_TTL_MS) {
-        return res.json({data: cached.data});
-    }
-
+    // Las asignaciones pueden cambiar durante una sesion activa.
+    res.setHeader('Cache-Control', 'no-store');
     pg.User.findById(req.params.user).then(function (user) {
         if (!user) throw new UserNotFoundError();
         return user.getEmpresa({
@@ -101,10 +94,6 @@ router.get('/:user/empresas/:base', function (req, res, next) {
         }
     }).then(function (result) {
         var payload = Array.isArray(result) ? { data: result } : (result || { data: [] });
-        empresasCache[cacheKey] = {
-            ts: now,
-            data: payload.data || []
-        };
         res.json(payload);
     }).catch(function (error) {
         if (isDatabaseUnavailableError(error)) {

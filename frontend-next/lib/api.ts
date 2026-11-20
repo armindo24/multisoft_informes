@@ -69,6 +69,13 @@ export async function getEmpresas() {
   return primary || fallback;
 }
 
+export async function getCompanyCatalog(base: 'Integrado' | 'Sueldo' = 'Integrado') {
+  return safeFetch<ApiEnvelope<Array<Record<string, string>>>>(
+    base === 'Sueldo' ? '/empresa_sueldo/select' : '/empresa/select',
+    { cache: 'no-store' },
+  );
+}
+
 export async function getEmpresasByUser(userId: number | string, base = 'Integrado') {
   const normalizedUserId = String(userId || '').trim();
   const normalizedBase = String(base || 'Integrado').trim() || 'Integrado';
@@ -78,8 +85,7 @@ export async function getEmpresasByUser(userId: number | string, base = 'Integra
   }
 
   return safeFetch<ApiEnvelope<Array<Record<string, string>>>>(`/users/${normalizedUserId}/empresas/${normalizedBase}`, {
-    cache: 'force-cache',
-    next: { revalidate: 60 },
+    cache: 'no-store',
   });
 }
 
