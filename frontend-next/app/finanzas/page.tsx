@@ -656,7 +656,9 @@ export default async function FinanzasPage({
   const integralForeignRows = ((integralForeignResponse?.data || []) as BalanceRow[]);
   const integralClientes = ((integralAuxResponse?.clientes || []) as BalanceAuxRow[]);
   const integralProveedores = ((integralAuxResponse?.proveedores || []) as BalanceAuxRow[]);
-  const integralWarning = integralAuxResponse?.warning || '';
+  const rawIntegralWarning = integralAuxResponse?.warning || '';
+  const isAuxFallbackNotice = rawIntegralWarning.trim() === 'No se encontro la funcion dba.f_vmayoraux. Se uso ACUMAUXI como respaldo.';
+  const integralWarning = isAuxFallbackNotice ? '' : rawIntegralWarning;
   const isBalanceCuentasPuc = balanceCuentasPuc === 'SI';
   const pucPrimaryResponse = shouldLoadBalancePuc && empresa && empresaCanUsePuc
     ? await getBalanceGeneralPuc({

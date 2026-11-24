@@ -64,8 +64,10 @@ export function DataTable<T extends Record<string, unknown>>({
   scheduleConfig,
   tableClassName,
   pdfOptions,
+  compact = false,
 }: {
   title: string;
+  compact?: boolean;
   subtitle?: string;
   columns: Array<DataColumn<T>>;
   rows: T[];
@@ -164,11 +166,11 @@ export function DataTable<T extends Record<string, unknown>>({
 
   return (
     <section className="card overflow-hidden">
-      <div className="border-b border-slate-200 px-4 py-3">
+      <div className={compact ? 'border-b border-slate-200 px-3 py-2' : 'border-b border-slate-200 px-4 py-3'}>
         <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-            {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
+            <h2 className={`${compact ? 'text-sm' : 'text-lg'} font-semibold text-slate-900`}>{title}</h2>
+            {subtitle ? <p className={`${compact ? 'mt-0.5 text-xs' : 'mt-1 text-sm'} text-slate-500`}>{subtitle}</p> : null}
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">

@@ -43,11 +43,16 @@ function getSectionKey(moduleHref: string, sectionLabel: string) {
 function navigateSection(event: React.MouseEvent<HTMLAnchorElement>, href: string) {
   if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.defaultPrevented) return;
   const target = new URL(href, window.location.href);
-  if (!target.hash || target.pathname !== window.location.pathname || target.search !== window.location.search) return;
+  if (target.pathname !== window.location.pathname || target.search !== window.location.search) return;
 
-  // El cambio nativo emite hashchange, que actualiza Configuración y Migraciones.
+  // Actualiza la sección sin el salto automático del navegador hacia el ancla.
   event.preventDefault();
-  window.location.hash = target.hash;
+  const oldURL = window.location.href;
+  if (oldURL !== target.href) {
+    window.history.pushState(null, '', target.href);
+    window.dispatchEvent(new HashChangeEvent('hashchange', { oldURL, newURL: target.href }));
+  }
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
 }
 
 function normalizeGroupName(value: string) {
@@ -262,6 +267,7 @@ export function AppShell({
   useEffect(() => {
     setMobileNavOpen(false);
     setSelectedEmpresaOverride('');
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [pathname]);
 
   useEffect(() => {
@@ -368,7 +374,7 @@ export function AppShell({
                       title={sidebarCollapsed ? item.label : undefined}
                       aria-label={item.label}
                       aria-current={active ? 'page' : undefined}
-                      onClick={() => { if (sidebarCollapsed && item.sections?.length) changeSidebarCollapsed(false); }}
+                      onClick={(event) => { navigateSection(event, item.href); if (sidebarCollapsed && item.sections?.length) changeSidebarCollapsed(false); }}
                       className={[
                         'group flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition',
                         active ? 'bg-cyan-950/70 text-cyan-200' : 'text-slate-300 hover:bg-slate-900 hover:text-white',
@@ -502,7 +508,8 @@ export function AppShell({
                       <Link
                         href={item.href as Route}
                       prefetch={false}
-                        onClick={() => {
+                        onClick={(event) => {
+                          navigateSection(event, item.href);
                           if (!item.sections?.length) setMobileNavOpen(false);
                         }}
                         className={[

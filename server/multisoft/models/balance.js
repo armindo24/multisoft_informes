@@ -1065,7 +1065,7 @@ Balance.integralAuxiliares = function (params, cb) {
             var code = (err && (err.code || err.Code));
             var fnMissing = msg.indexOf('f_vmayoraux') >= 0 || msg.indexOf('not found') >= 0 || code === -141 || code === -143;
             if (fnMissing) {
-                return runFallback('No se encontro la funcion dba.f_vmayoraux. Se uso ACUMAUXI como respaldo.');
+                return runFallback(dbIsPostgres() ? '' : 'No se encontro la funcion dba.f_vmayoraux. Se uso ACUMAUXI como respaldo.');
             }
             console.error('[Balance.integralAuxiliares] Error ejecutando funcion:', err.message || err);
             return runFallback(getSchemaWarning(err, 'Detalle auxiliar de Balance Integral'));

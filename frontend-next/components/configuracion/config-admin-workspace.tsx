@@ -117,6 +117,10 @@ export function ConfigAdminWorkspace({ currentUser }: ConfigAdminWorkspaceProps)
   const [activeId, setActiveId] = useState(visibleItems[0]?.id || adminItems[0].id);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [activeId]);
+
+  useEffect(() => {
     function syncFromHash() {
       const resolved = resolveActiveId(window.location.hash);
       const isAllowed = visibleItems.some((item) => item.id === resolved);

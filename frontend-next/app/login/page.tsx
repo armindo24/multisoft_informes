@@ -3,7 +3,7 @@ import { LoginForm } from '@/components/auth/login-form';
 
 export default function LoginPage() {
   return (
-    <AuthShell>
+    <AuthShell subtitle="Información precisa para la toma de decisiones.">
       <LoginForm />
     </AuthShell>
   );

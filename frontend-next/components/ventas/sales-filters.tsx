@@ -73,7 +73,7 @@ export function SalesFilters({
       <form
         className={[
           filtersOpen ? 'grid' : 'hidden',
-          `card gap-3 p-3 md:grid ${showStatsFields || showReceivablesFields ? 'lg:grid-cols-5 xl:grid-cols-8' : 'lg:grid-cols-4 xl:grid-cols-8'}`,
+          `card items-end gap-2.5 p-3 md:grid md:grid-cols-2 ${showStatsFields || showReceivablesFields ? 'lg:grid-cols-5 xl:grid-cols-8' : 'lg:grid-cols-3 2xl:grid-cols-[minmax(180px,1.3fr)_minmax(110px,1fr)_110px_minmax(110px,1fr)_minmax(140px,1fr)_minmax(140px,1fr)_auto]'}`,
         ].join(' ')}
         onSubmit={(event) => {
           event.preventDefault();
@@ -94,8 +94,8 @@ export function SalesFilters({
         }}
       >
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Empresa</label>
-          <select name="empresa" defaultValue={current.empresa} className={`w-full rounded-xl border border-slate-200 bg-white px-3 ${showStatsFields || showReceivablesFields ? 'py-2 text-[13px]' : 'py-2 text-sm'}`}>
+          <label className="mb-1 block text-xs font-medium text-slate-700">Empresa</label>
+          <select name="empresa" defaultValue={current.empresa} className={`h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 ${showStatsFields || showReceivablesFields ? 'py-2 text-[13px]' : 'py-2 text-[13px]'}`}>
             {empresas.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -105,8 +105,8 @@ export function SalesFilters({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Sucursal</label>
-          <select name="sucursal" defaultValue={current.sucursal} className={`w-full rounded-xl border border-slate-200 bg-white px-3 ${showStatsFields || showReceivablesFields ? 'py-2 text-[13px]' : 'py-2 text-sm'}`}>
+          <label className="mb-1 block text-xs font-medium text-slate-700">Sucursal</label>
+          <select name="sucursal" defaultValue={current.sucursal} className={`h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 ${showStatsFields || showReceivablesFields ? 'py-2 text-[13px]' : 'py-2 text-[13px]'}`}>
             <option value="">Todas</option>
             {sucursales.map((option) => (
               <option key={option.value} value={option.value}>
@@ -117,8 +117,8 @@ export function SalesFilters({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Moneda</label>
-          <select name="moneda" defaultValue={current.moneda} className={`w-full rounded-xl border border-slate-200 bg-white px-3 ${showStatsFields || showReceivablesFields ? 'py-2 text-[13px]' : 'py-2 text-sm'}`}>
+          <label className="mb-1 block text-xs font-medium text-slate-700">Moneda</label>
+          <select name="moneda" defaultValue={current.moneda} className={`h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 ${showStatsFields || showReceivablesFields ? 'py-2 text-[13px]' : 'py-2 text-[13px]'}`}>
             <option value="GS">Guaranies</option>
             <option value="US">Dolares</option>
           </select>
@@ -126,8 +126,8 @@ export function SalesFilters({
 
         {!showReceivablesFields ? (
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Agrupar por</label>
-          <select name="order" defaultValue={current.order || 'cod_cliente'} className={`w-full rounded-xl border border-slate-200 bg-white px-3 ${showStatsFields || showReceivablesFields ? 'py-2 text-[13px]' : 'py-2 text-sm'}`}>
+          <label className="mb-1 block text-xs font-medium text-slate-700">Agrupar por</label>
+          <select name="order" defaultValue={current.order || 'cod_cliente'} className={`h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 ${showStatsFields || showReceivablesFields ? 'py-2 text-[13px]' : 'py-2 text-[13px]'}`}>
             <option value="cod_tp_comp">Comprobante</option>
             <option value="cod_cliente">Cliente</option>
             <option value="cod_vendedor">Vendedor</option>
@@ -138,40 +138,40 @@ export function SalesFilters({
         {showReceivablesFields ? (
           <>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Calificacion</label>
-              <select name="calificacion" defaultValue={current.calificacion} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px]">
+              <label className="mb-1 block text-xs font-medium text-slate-700">Calificacion</label>
+              <select name="calificacion" defaultValue={current.calificacion} className="h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[13px]">
                 <option value="">Todas</option>
                 {calificaciones.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Tipo Cliente</label>
-              <select name="tipoCliente" defaultValue={current.tipoCliente} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px]">
+              <label className="mb-1 block text-xs font-medium text-slate-700">Tipo Cliente</label>
+              <select name="tipoCliente" defaultValue={current.tipoCliente} className="h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[13px]">
                 <option value="">Todos</option>
                 {tiposCliente.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Cliente</label>
-              <input name="cliente" defaultValue={current.cliente} placeholder="Codigo de cliente" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px]" />
+              <label className="mb-1 block text-xs font-medium text-slate-700">Cliente</label>
+              <input name="cliente" defaultValue={current.cliente} placeholder="Codigo de cliente" className="h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[13px]" />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Movimiento</label>
-              <select name="movimiento" defaultValue={current.movimiento} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px]">
+              <label className="mb-1 block text-xs font-medium text-slate-700">Movimiento</label>
+              <select name="movimiento" defaultValue={current.movimiento} className="h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[13px]">
                 <option value="">Todos</option>
                 {movimientosCobrar.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Zona</label>
-              <select name="zona" defaultValue={current.zona} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px]">
+              <label className="mb-1 block text-xs font-medium text-slate-700">Zona</label>
+              <select name="zona" defaultValue={current.zona} className="h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[13px]">
                 <option value="">Todas</option>
                 {zonas.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Cobrador</label>
-              <select name="cobrador" defaultValue={current.cobrador} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px]">
+              <label className="mb-1 block text-xs font-medium text-slate-700">Cobrador</label>
+              <select name="cobrador" defaultValue={current.cobrador} className="h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[13px]">
                 <option value="">Todos</option>
                 {cobradores.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
@@ -181,12 +181,12 @@ export function SalesFilters({
 
         {showStatsFields ? (
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Estadistica por</label>
+            <label className="mb-1 block text-xs font-medium text-slate-700">Estadistica por</label>
             <select
               name="agrupacion"
               value={agrupacion}
               onChange={(event) => setAgrupacion(event.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px]"
+            className="h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[13px]"
             >
               <option value="clientes">Clientes</option>
               <option value="articulos">Articulos</option>
@@ -197,8 +197,8 @@ export function SalesFilters({
 
         {showStatsFields ? (
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Tipo Cliente</label>
-            <select name="tipo_cliente" defaultValue={current.tipo_cliente} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px]">
+            <label className="mb-1 block text-xs font-medium text-slate-700">Tipo Cliente</label>
+            <select name="tipo_cliente" defaultValue={current.tipo_cliente} className="h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[13px]">
               <option value="">Todos</option>
               {tiposCliente.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -211,20 +211,20 @@ export function SalesFilters({
 
         {showStatsFields && agrupacion === 'clientes' ? (
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Cliente</label>
+            <label className="mb-1 block text-xs font-medium text-slate-700">Cliente</label>
             <input
               name="cliente"
               defaultValue={current.cliente}
               placeholder="Codigo de cliente"
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px]"
+              className="h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[13px]"
             />
           </div>
         ) : null}
 
         {showStatsFields && agrupacion === 'vendedores' ? (
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Vendedor</label>
-            <select name="vendedor" defaultValue={current.vendedor} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px]">
+            <label className="mb-1 block text-xs font-medium text-slate-700">Vendedor</label>
+            <select name="vendedor" defaultValue={current.vendedor} className="h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[13px]">
               <option value="">Todos</option>
               {vendedores.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -237,24 +237,24 @@ export function SalesFilters({
 
         {showStatsFields && agrupacion === 'articulos' ? (
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Articulo</label>
+            <label className="mb-1 block text-xs font-medium text-slate-700">Articulo</label>
             <input
               name="articulo"
               defaultValue={current.articulo}
               placeholder="Codigo de articulo"
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px]"
+              className="h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[13px]"
             />
           </div>
         ) : null}
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Desde</label>
-          <input name="desde" type="date" defaultValue={current.desde} className={`w-full rounded-xl border border-slate-200 bg-white px-3 ${showStatsFields || showReceivablesFields ? 'py-2 text-[13px]' : 'py-2 text-sm'}`} />
+          <label className="mb-1 block text-xs font-medium text-slate-700">Desde</label>
+          <input name="desde" type="date" defaultValue={current.desde} className={`h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 ${showStatsFields || showReceivablesFields ? 'py-2 text-[13px]' : 'py-2 text-[13px]'}`} />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Hasta</label>
-          <input name="hasta" type="date" defaultValue={current.hasta} className={`w-full rounded-xl border border-slate-200 bg-white px-3 ${showStatsFields || showReceivablesFields ? 'py-2 text-[13px]' : 'py-2 text-sm'}`} />
+          <label className="mb-1 block text-xs font-medium text-slate-700">Hasta</label>
+          <input name="hasta" type="date" defaultValue={current.hasta} className={`h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 ${showStatsFields || showReceivablesFields ? 'py-2 text-[13px]' : 'py-2 text-[13px]'}`} />
         </div>
 
         {showReceivablesFields ? (
@@ -264,11 +264,11 @@ export function SalesFilters({
           </label>
         ) : null}
 
-        <div className="flex items-end gap-2 lg:col-span-2 xl:col-span-8 xl:justify-end">
-          <button disabled={isSubmitting || isPending} className={`rounded-xl bg-slate-900 px-4 ${showStatsFields || showReceivablesFields ? 'min-w-[120px] py-2 text-[13px]' : 'min-w-[140px] py-2 text-sm'} font-medium text-white disabled:cursor-wait disabled:opacity-80`}>
+        <div className={`flex items-end justify-end gap-2 ${showStatsFields || showReceivablesFields ? 'md:col-span-2 lg:col-span-5 xl:col-span-8' : 'md:col-span-2 lg:col-span-3 2xl:col-span-1'}`}>
+          <button disabled={isSubmitting || isPending} className={`rounded-xl bg-slate-900 px-4 ${showStatsFields || showReceivablesFields ? 'min-w-[120px] py-2 text-[13px]' : 'min-w-[90px] py-2 text-[13px]'} font-medium text-white disabled:cursor-wait disabled:opacity-80`}>
             {isSubmitting || isPending ? 'Aplicando...' : 'Aplicar'}
           </button>
-          <Link href={showStatsFields ? '/ventas?agrupacion=clientes#estadisticas-ventas' : showReceivablesFields ? '/ventas?section=cuentas-cobrar#cuentas-cobrar' : '/ventas'} className={`rounded-xl border border-slate-200 px-4 ${showStatsFields || showReceivablesFields ? 'py-2 text-[13px]' : 'py-2 text-sm'} font-medium text-slate-700`}>
+          <Link href={showStatsFields ? '/ventas?agrupacion=clientes#estadisticas-ventas' : showReceivablesFields ? '/ventas?section=cuentas-cobrar#cuentas-cobrar' : '/ventas'} className={`rounded-xl border border-slate-200 px-4 ${showStatsFields || showReceivablesFields ? 'py-2 text-[13px]' : 'py-2 text-[13px]'} font-medium text-slate-700`}>
             Limpiar
           </Link>
         </div>

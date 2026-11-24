@@ -6,15 +6,17 @@ export function AuthShell({
   children,
   title = (
     <>
-      Información
+      Informes
       <br />
-      <span className="text-cyan-300">para decidir.</span>
+      Gerenciales
     </>
   ),
+  subtitle,
   description = 'Consulta y analiza las finanzas, ventas, compras y stock de tu empresa.',
 }: {
   children: ReactNode;
   title?: ReactNode;
+  subtitle?: string;
   description?: string;
 }) {
   return (
@@ -29,6 +31,8 @@ export function AuthShell({
           <h1 className="hidden sm:block mt-4 text-4xl font-semibold leading-[1.12] tracking-tight text-white sm:text-5xl lg:text-[3.5rem]">
             {title}
           </h1>
+
+          {subtitle ? <p className="mt-4 hidden max-w-[440px] text-xl font-medium leading-8 text-cyan-300 sm:block">{subtitle}</p> : null}
 
           <p className="hidden sm:block mt-5 max-w-[440px] text-base leading-7 text-slate-300">
             {description}

@@ -1,5 +1,4 @@
 import { KpiCard } from '@/components/ui/kpi-card';
-import { PageHeader } from '@/components/ui/page-header';
 import { ReceivablesTable } from '@/components/ventas/receivables-table';
 import { SalesFilters } from '@/components/ventas/sales-filters';
 import { SalesStats } from '@/components/ventas/sales-stats';
@@ -347,12 +346,11 @@ export default async function VentasPage({
       : '';
 
   return (
-    <div className="space-y-5">
-      <PageHeader
-        eyebrow="Gestion comercial"
-        title="Ventas"
-        description="Analiza ventas, estadisticas comerciales y cuentas por cobrar con filtros por periodo, cliente, vendedor y sucursal."
-      />
+    <div className="space-y-3">
+      <header className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <h1 className="text-base font-semibold text-slate-900">Ventas</h1>
+        <p className="mt-0.5 text-xs text-slate-500">Ventas, estadísticas comerciales y cuentas por cobrar.</p>
+      </header>
 
       <SalesFilters empresas={empresas} sucursales={sucursales} tiposCliente={tiposCliente} vendedores={vendedores} calificaciones={calificaciones} condicionesVenta={condicionesVenta} cobradores={cobradores} zonas={zonas} movimientosCobrar={movimientosCobrar} current={current} showStatsFields={isStatsMode} showReceivablesFields={isReceivablesMode} />
 
@@ -383,11 +381,11 @@ export default async function VentasPage({
       ) : (
         <>
           <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-            <KpiCard item={{ title: 'Comprobantes', value: totalComprobantes.toLocaleString('es-PY'), change: 'Ventas', trend: 'up' }} />
-            <KpiCard item={{ title: 'Gravado', value: totalGravado.toLocaleString('es-PY'), change: moneda, trend: 'up' }} />
-            <KpiCard item={{ title: 'IVA', value: totalIva.toLocaleString('es-PY'), change: moneda, trend: 'neutral' }} />
-            <KpiCard item={{ title: 'Total', value: totalFacturado.toLocaleString('es-PY'), change: 'Facturacion', trend: 'up' }} />
-            <KpiCard item={{ title: 'Saldo por cobrar', value: saldoPendiente.toLocaleString('es-PY'), change: `${cuentasCobrar.length} documentos`, trend: saldoPendiente > 0 ? 'neutral' : 'up' }} />
+            <KpiCard compact item={{ title: 'Comprobantes', value: totalComprobantes.toLocaleString('es-PY'), change: 'Ventas', trend: 'up' }} />
+            <KpiCard compact item={{ title: 'Gravado', value: totalGravado.toLocaleString('es-PY'), change: moneda, trend: 'up' }} />
+            <KpiCard compact item={{ title: 'IVA', value: totalIva.toLocaleString('es-PY'), change: moneda, trend: 'neutral' }} />
+            <KpiCard compact item={{ title: 'Total', value: totalFacturado.toLocaleString('es-PY'), change: 'Facturacion', trend: 'up' }} />
+            <KpiCard compact item={{ title: 'Saldo por cobrar', value: saldoPendiente.toLocaleString('es-PY'), change: `${cuentasCobrar.length} documentos`, trend: saldoPendiente > 0 ? 'neutral' : 'up' }} />
           </section>
 
           <div id="ventas-resumen" className="scroll-mt-28">

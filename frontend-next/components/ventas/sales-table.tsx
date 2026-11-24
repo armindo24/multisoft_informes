@@ -105,28 +105,6 @@ export function SalesTable({
     return Array.from(buckets.entries());
   }, [groupBy, rows]);
 
-  const summary = useMemo(
-    () => rows.reduce<{
-      comprobantes: number;
-      gravado: number;
-      iva: number;
-      exento: number;
-      descuento: number;
-      total: number;
-    }>(
-      (acc, row) => ({
-        comprobantes: acc.comprobantes + 1,
-        gravado: acc.gravado + rowGravado(row),
-        iva: acc.iva + rowIva(row),
-        exento: acc.exento + rowExento(row),
-        descuento: acc.descuento + rowDescuento(row),
-        total: acc.total + rowTotal(row),
-      }),
-      { comprobantes: 0, gravado: 0, iva: 0, exento: 0, descuento: 0, total: 0 },
-    ),
-    [rows],
-  );
-
   const selectedSummary = useMemo(() => detailSummary(detailRows), [detailRows]);
 
   async function openDetail(row: VentaResumen) {
@@ -239,33 +217,15 @@ export function SalesTable({
   return (
     <>
       <section className="card overflow-hidden">
-        <div className="border-b border-slate-200 px-5 py-4">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div className="border-b border-slate-200 px-4 py-3">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">Ventas resumido y detallado</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                Agrupado por {groupLabel(groupBy).toLowerCase()} y con acceso al detalle completo por comprobante, como en la pantalla anterior.
+              <h2 className="text-sm font-semibold text-slate-900">Ventas resumidas y detalle</h2>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Agrupado por {groupLabel(groupBy).toLowerCase()}. Consulta el detalle de cada comprobante.
               </p>
             </div>
-            <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-[8.25rem_8.25rem_8.25rem_8.25rem]">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Comprobantes</p>
-                <p className="mt-1 text-lg font-semibold text-slate-900">{summary.comprobantes}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Gravado</p>
-                <p className="mt-1 text-lg font-semibold text-slate-900">{money(summary.gravado)}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">IVA</p>
-                <p className="mt-1 text-lg font-semibold text-slate-900">{money(summary.iva)}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Total</p>
-                <p className="mt-1 text-lg font-semibold text-slate-900">{money(summary.total)}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <ReportNoticeButton
                 reportTitle="Ventas resumido y detallado"
                 detailHint={`Agrupado por ${groupLabel(groupBy).toLowerCase()}.`}
@@ -301,10 +261,10 @@ export function SalesTable({
             <EmptyState title="Sin ventas" description="No hay ventas para mostrar con los filtros actuales." />
           </div>
         ) : (
-          <div className="space-y-5 px-5 py-5">
+          <div className="space-y-3 p-3">
             {groupedRows.map(([group, items]) => (
-              <div key={group} className="overflow-hidden rounded-2xl border border-slate-200">
-                <div className="flex flex-col gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div key={group} className="overflow-hidden rounded-xl border border-slate-200">
+                <div className="flex flex-col gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-700">{groupLabel(groupBy)}</p>
                     <h3 className="mt-1 text-base font-semibold text-slate-900">{group}</h3>
@@ -316,21 +276,21 @@ export function SalesTable({
                   <table className="min-w-full divide-y divide-slate-200 text-sm">
                     <thead className="bg-white text-left text-slate-600">
                       <tr>
-                        <th className="px-4 py-3 font-semibold">Detalle</th>
-                        <th className="px-4 py-3 font-semibold">Comprobante</th>
-                        <th className="px-4 py-3 font-semibold">Cliente</th>
-                        <th className="px-4 py-3 font-semibold">RUC</th>
-                        <th className="px-4 py-3 font-semibold">Fecha</th>
-                        <th className="px-4 py-3 text-right font-semibold">IVA</th>
-                        <th className="px-4 py-3 text-right font-semibold">Gravado</th>
-                        <th className="px-4 py-3 text-right font-semibold">Descuento</th>
-                        <th className="px-4 py-3 text-right font-semibold">Total</th>
+                        <th className="px-3 py-2 font-semibold">Detalle</th>
+                        <th className="px-3 py-2 font-semibold">Comprobante</th>
+                        <th className="px-3 py-2 font-semibold">Cliente</th>
+                        <th className="px-3 py-2 font-semibold">RUC</th>
+                        <th className="px-3 py-2 font-semibold">Fecha</th>
+                        <th className="px-3 py-2 text-right font-semibold">IVA</th>
+                        <th className="px-3 py-2 text-right font-semibold">Gravado</th>
+                        <th className="px-3 py-2 text-right font-semibold">Descuento</th>
+                        <th className="px-3 py-2 text-right font-semibold">Total</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white">
                       {items.map((row, index) => (
                         <tr key={`${row.comp_numero || 'comp'}-${index}`} className="hover:bg-slate-50/80">
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-2">
                             <button
                               type="button"
                               onClick={() => openDetail(row)}
@@ -340,14 +300,14 @@ export function SalesTable({
                               Ver detalle
                             </button>
                           </td>
-                          <td className="px-4 py-3 text-slate-700">{`${row.cod_tp_comp || ''} - ${row.comp_numero || ''}`}</td>
-                          <td className="px-4 py-3 text-slate-700">{String(row.razon_social || row.cliente || '-')}</td>
-                          <td className="px-4 py-3 text-slate-700">{String(row.ruc || '-')}</td>
-                          <td className="px-4 py-3 text-slate-700">{String(row.fecha || '').slice(0, 10) || '-'}</td>
-                          <td className="px-4 py-3 text-right text-slate-700">{money(row.total_iva)}</td>
-                          <td className="px-4 py-3 text-right text-slate-700">{money(row.to_gravado)}</td>
-                          <td className="px-4 py-3 text-right text-slate-700">{money(row.totaldescuento)}</td>
-                          <td className="px-4 py-3 text-right font-semibold text-slate-900">{money(num(row.to_gravado) + num(row.total_iva))}</td>
+                          <td className="px-3 py-2 text-slate-700">{`${row.cod_tp_comp || ''} - ${row.comp_numero || ''}`}</td>
+                          <td className="px-3 py-2 text-slate-700">{String(row.razon_social || row.cliente || '-')}</td>
+                          <td className="px-3 py-2 text-slate-700">{String(row.ruc || '-')}</td>
+                          <td className="px-3 py-2 text-slate-700">{String(row.fecha || '').slice(0, 10) || '-'}</td>
+                          <td className="px-3 py-2 text-right text-slate-700">{money(row.total_iva)}</td>
+                          <td className="px-3 py-2 text-right text-slate-700">{money(row.to_gravado)}</td>
+                          <td className="px-3 py-2 text-right text-slate-700">{money(row.totaldescuento)}</td>
+                          <td className="px-3 py-2 text-right font-semibold text-slate-900">{money(num(row.to_gravado) + num(row.total_iva))}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -433,27 +393,27 @@ export function SalesTable({
                   <table className="min-w-full divide-y divide-slate-200 text-sm">
                     <thead className="bg-slate-50 text-left text-slate-600">
                       <tr>
-                        <th className="px-4 py-3 font-semibold">Dep.</th>
-                        <th className="px-4 py-3 font-semibold">Art.</th>
-                        <th className="px-4 py-3 font-semibold">Descripcion</th>
-                        <th className="px-4 py-3 font-semibold">Lista</th>
-                        <th className="px-4 py-3 text-right font-semibold">Cant.</th>
-                        <th className="px-4 py-3 text-right font-semibold">Pr. Unit.</th>
-                        <th className="px-4 py-3 text-right font-semibold">% Dcto.</th>
-                        <th className="px-4 py-3 text-right font-semibold">Total</th>
+                        <th className="px-3 py-2 font-semibold">Dep.</th>
+                        <th className="px-3 py-2 font-semibold">Art.</th>
+                        <th className="px-3 py-2 font-semibold">Descripcion</th>
+                        <th className="px-3 py-2 font-semibold">Lista</th>
+                        <th className="px-3 py-2 text-right font-semibold">Cant.</th>
+                        <th className="px-3 py-2 text-right font-semibold">Pr. Unit.</th>
+                        <th className="px-3 py-2 text-right font-semibold">% Dcto.</th>
+                        <th className="px-3 py-2 text-right font-semibold">Total</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white">
                       {detailRows.map((item, index) => (
                         <tr key={`${item.linea || 'linea'}-${item.cod_articulo || 'art'}-${item.cod_deposito || 'dep'}-${index}`} className="hover:bg-slate-50/80">
-                          <td className="px-4 py-3">{String(item.cod_deposito || '-')}</td>
-                          <td className="px-4 py-3">{String(item.cod_articulo || '-')}</td>
-                          <td className="px-4 py-3">{String(item.descrip || '-')}</td>
-                          <td className="px-4 py-3">{String(item.lista_prec || '-')}</td>
-                          <td className="px-4 py-3 text-right">{money(item.cantidad)}</td>
-                          <td className="px-4 py-3 text-right">{money(item.pr_unit)}</td>
-                          <td className="px-4 py-3 text-right">{money(item.descuento)}</td>
-                          <td className="px-4 py-3 text-right font-medium text-slate-900">{money(item.total_neto)}</td>
+                          <td className="px-3 py-2">{String(item.cod_deposito || '-')}</td>
+                          <td className="px-3 py-2">{String(item.cod_articulo || '-')}</td>
+                          <td className="px-3 py-2">{String(item.descrip || '-')}</td>
+                          <td className="px-3 py-2">{String(item.lista_prec || '-')}</td>
+                          <td className="px-3 py-2 text-right">{money(item.cantidad)}</td>
+                          <td className="px-3 py-2 text-right">{money(item.pr_unit)}</td>
+                          <td className="px-3 py-2 text-right">{money(item.descuento)}</td>
+                          <td className="px-3 py-2 text-right font-medium text-slate-900">{money(item.total_neto)}</td>
                         </tr>
                       ))}
                     </tbody>

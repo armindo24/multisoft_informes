@@ -11,12 +11,12 @@ function isNumericValue(value: string) {
   return /^[\d\s.,-]+$/.test(String(value || '').trim());
 }
 
-export function KpiCard({ item }: { item: KPI }) {
+export function KpiCard({ item, compact = false }: { item: KPI; compact?: boolean }) {
   const numericValue = isNumericValue(item.value);
 
   return (
-    <div className="card p-3.5 sm:p-4">
-      <div className="flex items-start justify-between gap-2.5">
+    <div className={compact ? 'card px-3 py-2.5' : 'card p-3.5 sm:p-4'}>
+      <div className={compact ? 'flex flex-wrap items-center justify-between gap-1' : 'flex items-start justify-between gap-2.5'}>
         <div className="flex min-w-0 items-center gap-1.5">
           <p className="min-w-0 text-[13px] leading-5 text-slate-500">{item.title}</p>
           {item.tooltip ? (
@@ -28,7 +28,7 @@ export function KpiCard({ item }: { item: KPI }) {
             </span>
           ) : null}
         </div>
-        <span className={`badge max-w-[96px] shrink-0 whitespace-normal break-words px-2 py-1 text-right text-xs leading-tight ${trendClasses[item.trend]}`}>
+        <span className={`badge shrink-0 whitespace-normal break-words px-2 text-right text-xs leading-tight ${compact ? 'max-w-none py-0.5' : 'max-w-[96px] py-1'} ${trendClasses[item.trend]}`}>
           {item.change}
         </span>
       </div>

@@ -1,6 +1,5 @@
 import { DataTable } from '@/components/ui/data-table';
 import { KpiCard } from '@/components/ui/kpi-card';
-import { PageHeader } from '@/components/ui/page-header';
 import { ReportScheduleButton } from '@/components/ui/report-schedule-button';
 import type { ExportBrandingOverride } from '@/components/ui/export-utils';
 import { loadBrandingConfig } from '@/lib/admin-config';
@@ -235,12 +234,10 @@ export default async function CarteraPage({
       : '';
 
   return (
-    <div className="space-y-5">
-      <PageHeader
-        eyebrow="Informe unificado"
-        title="Cartera gerencial"
-        description="Cruza cuentas por cobrar y cuentas por pagar en una sola vista ejecutiva para analizar exposición, cobertura y saldo neto del periodo."
-        actions={empresa ? (
+    <div className="space-y-3">
+      <header className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <div><h1 className="text-base font-semibold text-slate-900">Cartera gerencial</h1><p className="mt-0.5 text-xs text-slate-500">Cuentas por cobrar y pagar, saldo neto y cobertura del período.</p></div>
+        {empresa ? (
           <ReportScheduleButton
             reportKey="cartera.unificada"
             reportTitle="Cartera gerencial"
@@ -249,7 +246,7 @@ export default async function CarteraPage({
             reportParams={scheduleParams}
           />
         ) : null}
-      />
+      </header>
 
       <section>
         <input id="cartera-filters-toggle" type="checkbox" className="peer sr-only md:hidden" />
@@ -259,19 +256,19 @@ export default async function CarteraPage({
         >
           Filtros
         </label>
-        <form className="card hidden gap-3 px-5 py-5 peer-checked:grid md:grid md:grid-cols-2 xl:grid-cols-6">
-          <label className="text-sm font-medium text-slate-700">
+        <form className="card hidden items-end gap-2.5 p-3 peer-checked:grid md:grid md:grid-cols-3 2xl:grid-cols-[minmax(180px,1.4fr)_minmax(110px,1fr)_80px_minmax(130px,1fr)_minmax(130px,1fr)_minmax(130px,1fr)_auto]">
+          <label className="min-w-0 text-xs font-medium text-slate-600">
             Empresa
-            <select name="empresa" defaultValue={empresa} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400">
+            <select name="empresa" defaultValue={empresa} className="mt-1 h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs outline-none transition focus:border-slate-400">
               {empresas.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
             </select>
           </label>
 
-          <label className="text-sm font-medium text-slate-700">
+          <label className="min-w-0 text-xs font-medium text-slate-600">
             Sucursal
-            <select name="sucursal" defaultValue={sucursal} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400">
+            <select name="sucursal" defaultValue={sucursal} className="mt-1 h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs outline-none transition focus:border-slate-400">
               <option value="">Todas</option>
               {sucursales.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
@@ -279,39 +276,39 @@ export default async function CarteraPage({
             </select>
           </label>
 
-          <label className="text-sm font-medium text-slate-700">
+          <label className="min-w-0 text-xs font-medium text-slate-600">
             Periodo
-            <input name="periodo" defaultValue={periodo} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400" />
+            <input name="periodo" defaultValue={periodo} className="mt-1 h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs outline-none transition focus:border-slate-400" />
           </label>
 
-          <label className="text-sm font-medium text-slate-700">
+          <label className="min-w-0 text-xs font-medium text-slate-600">
             Desde
-            <input type="date" name="desde" defaultValue={desde} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400" />
+            <input type="date" name="desde" defaultValue={desde} className="mt-1 h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs outline-none transition focus:border-slate-400" />
           </label>
 
-          <label className="text-sm font-medium text-slate-700">
+          <label className="min-w-0 text-xs font-medium text-slate-600">
             Hasta
-            <input type="date" name="hasta" defaultValue={hasta} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400" />
+            <input type="date" name="hasta" defaultValue={hasta} className="mt-1 h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs outline-none transition focus:border-slate-400" />
           </label>
 
-          <label className="text-sm font-medium text-slate-700">
+          <label className="min-w-0 text-xs font-medium text-slate-600">
             Cobrar por vencimiento
-            <select name="vencimiento" defaultValue={vencimiento} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-slate-400">
+            <select name="vencimiento" defaultValue={vencimiento} className="mt-1 h-9 min-w-0 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs outline-none transition focus:border-slate-400">
               <option value="true">Sí</option>
               <option value="false">No</option>
             </select>
           </label>
 
-          <div className="md:col-span-2 xl:col-span-6 flex justify-end gap-2">
+          <div className="flex justify-end gap-2 md:col-span-3 2xl:col-span-1">
             <a
               href="/cartera"
-              className="inline-flex items-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              className="inline-flex items-center h-9 rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
             >
               Limpiar
             </a>
             <button
               type="submit"
-              className="inline-flex items-center rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+              className="inline-flex items-center h-9 rounded-lg bg-slate-950 px-3 text-xs font-semibold text-white transition hover:bg-slate-800"
             >
               Aplicar
             </button>
@@ -324,37 +321,17 @@ export default async function CarteraPage({
       ) : null}
 
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-        <KpiCard item={{ title: 'Saldo por cobrar', value: formatAmount(totalCobrarSaldo), change: `${receivablesRows.length} documentos`, trend: totalCobrarSaldo > 0 ? 'neutral' : 'up' }} />
-        <KpiCard item={{ title: 'Importe por cobrar', value: formatAmount(totalCobrarImporte), change: 'Ventas pendientes', trend: 'up' }} />
-        <KpiCard item={{ title: 'Saldo por pagar', value: formatAmount(totalPagarSaldo), change: `${payablesRows.length} proveedores`, trend: totalPagarSaldo > 0 ? 'neutral' : 'up' }} />
-        <KpiCard item={{ title: 'Debitos de pagar', value: formatAmount(totalPagarDebitos), change: 'Movimiento proveedor', trend: 'neutral' }} />
-        <KpiCard item={{ title: 'Neto de cartera', value: formatAmount(netoCartera), change: `${coverage.toFixed(1)}% cobertura`, trend: netoCartera >= 0 ? 'up' : 'down' }} />
-      </section>
-
-      <section className="card px-5 py-5">
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-700">Lectura ejecutiva</p>
-            <p className="mt-2 text-sm leading-6 text-slate-700">
-              Este bloque compara en una sola vista la presión de cobro contra la obligación de pago del mismo periodo operativo.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-700">Saldo neto</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{formatAmount(netoCartera)}</p>
-            <p className="mt-1 text-sm text-slate-500">Cobrar menos pagar en el rango consultado.</p>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-700">Cobertura</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{coverage.toFixed(1)}%</p>
-            <p className="mt-1 text-sm text-slate-500">Relación entre saldo por cobrar y saldo por pagar.</p>
-          </div>
-        </div>
+        <KpiCard compact item={{ title: 'Saldo por cobrar', value: formatAmount(totalCobrarSaldo), change: `${receivablesRows.length} documentos`, trend: totalCobrarSaldo > 0 ? 'neutral' : 'up' }} />
+        <KpiCard compact item={{ title: 'Importe por cobrar', value: formatAmount(totalCobrarImporte), change: 'Ventas pendientes', trend: 'up' }} />
+        <KpiCard compact item={{ title: 'Saldo por pagar', value: formatAmount(totalPagarSaldo), change: `${payablesRows.length} proveedores`, trend: totalPagarSaldo > 0 ? 'neutral' : 'up' }} />
+        <KpiCard compact item={{ title: 'Debitos de pagar', value: formatAmount(totalPagarDebitos), change: 'Movimiento proveedor', trend: 'neutral' }} />
+        <KpiCard compact item={{ title: 'Neto de cartera', value: formatAmount(netoCartera), change: `${coverage.toFixed(1)}% cobertura`, trend: netoCartera >= 0 ? 'up' : 'down' }} />
       </section>
 
       <DataTable
+        compact
         title="Resumen comparativo"
-        subtitle="Cruce ejecutivo de cartera para leer rapidamente el equilibrio entre cobrar y pagar antes de entrar al detalle."
+        subtitle="Comparativo de cobros, pagos y saldo neto."
         exportName="cartera-resumen-comparativo"
         rows={summaryRows}
         exportMeta={exportMeta}
@@ -372,6 +349,7 @@ export default async function CarteraPage({
       />
 
       <DataTable
+        compact
         title="Cuentas por cobrar"
         subtitle="Detalle consolidado de documentos pendientes a clientes dentro del rango consultado."
         exportName="cartera-cuentas-cobrar"
@@ -395,6 +373,7 @@ export default async function CarteraPage({
       />
 
       <DataTable
+        compact
         title="Cuentas por pagar"
         subtitle="Detalle consolidado de saldos abiertos a proveedores dentro del mismo rango operativo."
         exportName="cartera-cuentas-pagar"
